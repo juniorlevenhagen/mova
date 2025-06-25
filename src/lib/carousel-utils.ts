@@ -22,7 +22,7 @@ export const getPositionClass = (
 export const getStyleClass = (style: StyleType | undefined): string => {
   switch (style) {
     case "large":
-      return "text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold bg-black/60 px-8 py-4 rounded-xl";
+      return "text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold bg-black/40 px-8 py-4 rounded-xl";
     case "medium":
       return "text-lg sm:text-xl md:text-2xl font-semibold bg-black/40 backdrop-blur-sm px-4 py-2 rounded-xl";
     case "small":

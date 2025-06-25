@@ -26,9 +26,18 @@ export function CarouselSlide({ image, isActive }: CarouselSlideProps) {
         priority={isActive}
       />
 
+      {/* Textos apenas em desktop */}
       {image.message && (
-        <div className={`absolute ${getPositionClass(image.message.position)}`}>
-          <div className={`text-white ${getStyleClass(image.message.style)} whitespace-pre-line`}>
+        <div
+          className={`absolute hidden md:block ${getPositionClass(
+            image.message.position
+          )}`}
+        >
+          <div
+            className={`text-white ${getStyleClass(
+              image.message.style
+            )} whitespace-pre-line`}
+          >
             {image.message.text}
           </div>
         </div>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="230.08592mm"
+   height="58.178886mm"
+   viewBox="0 0 230.08592 58.178886"
+   version="1.1"
+   id="svg1"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Camada 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(4.722751,-110.48812)">
+    <g
+       id="g3"
+       transform="translate(-42.397463,76.059411)"
+       style="stroke:#102b52;stroke-opacity:1">
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:70.5556px;line-height:0;font-family:Roboto;-inkscape-font-specification:'Roboto Medium';letter-spacing:-2.64583px;word-spacing:0px;fill:#102b52;fill-opacity:1;stroke:#102b52;stroke-width:0.266965;stroke-linejoin:round;stroke-dashoffset:15.0341;stroke-opacity:1"
+         x="32.70945"
+         y="91.785088"
+         id="text1-7"><tspan
+           sodipodi:role="line"
+           id="tspan1-9"
+           x="32.70945"
+           y="91.785088"
+           style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:70.5556px;font-family:Roboto;-inkscape-font-specification:'Roboto Medium';letter-spacing:-2.64583px;fill:#102b52;fill-opacity:1;stroke:#102b52;stroke-width:0.266965;stroke-opacity:1">Mova</tspan></text>
+      <g
+         id="g2"
+         transform="translate(0,-58.178885)"
+         style="stroke:#102b52;stroke-opacity:1">
+        <path
+           style="fill:none;stroke:#102b52;stroke-width:8.14321;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:15.0341;stroke-opacity:1"
+           d="m 204.7657,124.20992 c 18.67453,1.28504 27.51802,-4.08879 32.31955,-15.73671 1.74959,-4.24427 2.96251,-9.321562 3.91883,-15.213267"
+           id="path1"
+           sodipodi:nodetypes="csc" />
+        <path
+           style="fill:none;stroke:#102b52;stroke-width:8.14321;stroke-linejoin:round;stroke-dasharray:none;stroke-dashoffset:15.0341;stroke-opacity:1"
+           d="m 266.999,123.24937 c -18.38826,-3.50155 -27.80918,0.78 -33.96471,11.77264 -2.24296,4.0055 -4.05237,8.90204 -5.70405,14.63778"
+           id="path1-8"
+           sodipodi:nodetypes="csc" />
+      </g>
+    </g>
+  </g>
+</svg>

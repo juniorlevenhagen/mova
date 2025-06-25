@@ -2,10 +2,9 @@
 
 import { CarouselImage } from "@/types/carousel";
 import { useCarousel } from "@/hooks/useCarousel";
-import { CarouselButton } from "./CarouselButton";
 import { CarouselDots } from "./CarouselDots";
 import { CarouselSlide } from "./CarouselSlide";
-import { Logo } from "./Logo";
+import { Navbar } from "./Navbar";
 
 // Dados das imagens do carrossel - agora tipado
 const carouselImages: CarouselImage[] = [
@@ -71,36 +70,39 @@ const carouselImages: CarouselImage[] = [
 ];
 
 export default function Carousel() {
-  const { currentIndex, goToSlide, goToPrevious, goToNext } = useCarousel(
-    carouselImages.length
-  );
+  const { currentIndex, goToSlide } = useCarousel(carouselImages.length);
+
+  const handleStartNow = () => {
+    console.log("Comece Agora clicado!");
+  };
+
+  const handleEnter = () => {
+    console.log("Entrar clicado!");
+  };
 
   return (
-    <div className="relative w-full h-[60vh] overflow-hidden">
-      <Logo />
+    <div className="w-full bg-[#f5f1e8]">
+      {/* Navbar */}
+      <Navbar onStartNow={handleStartNow} onEnter={handleEnter} />
 
-      <div className="relative w-full h-full">
-        {carouselImages.map((image, index) => (
-          <CarouselSlide
-            key={index}
-            image={image}
-            isActive={index === currentIndex}
-          />
-        ))}
+      {/* Carrossel */}
+      <div className="relative w-full h-[60vh] overflow-hidden">
+        <div className="relative w-full h-full">
+          {carouselImages.map((image, index) => (
+            <CarouselSlide
+              key={index}
+              image={image}
+              isActive={index === currentIndex}
+            />
+          ))}
+        </div>
+
+        <CarouselDots
+          totalSlides={carouselImages.length}
+          currentIndex={currentIndex}
+          onDotClick={goToSlide}
+        />
       </div>
-
-      <CarouselButton
-        direction="prev"
-        onClick={goToPrevious}
-        className="left-4"
-      />
-      <CarouselButton direction="next" onClick={goToNext} className="right-4" />
-
-      <CarouselDots
-        totalSlides={carouselImages.length}
-        currentIndex={currentIndex}
-        onDotClick={goToSlide}
-      />
     </div>
   );
 }

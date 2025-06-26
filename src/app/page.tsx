@@ -1,5 +1,6 @@
 import Carousel from "@/components/ui/Carousel";
 import { FeaturesSection } from "@/components/ui/FeaturesSection";
+import { HowItWorksSection } from "@/components/ui/HowItWorksSection";
 
 export default function Home() {
   return (
@@ -9,18 +10,22 @@ export default function Home() {
       {/* Seção de texto abaixo do carrossel */}
       <section className="w-full bg-[#f5f1e8] py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
+          <h2 className="text-3xl md:text-6xl font-bold text-gray-800 mb-6">
             Tudo que você precisa para desenvolver seu físico e melhorar sua
             saúde.
           </h2>
-          <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+          <p className="text-lg md:text-2xl text-gray-600 leading-relaxed">
             Descubra como o Mova+ pode acelerar sua jornada fitness com
             ferramentas inteligentes e conteúdo de qualidade.
           </p>
         </div>
       </section>
 
+      {/* Adicionando espaçamento antes da FeaturesSection */}
+      <div className="py-8 bg-white"></div>
+
       <FeaturesSection />
+      <HowItWorksSection />
     </div>
   );
 }

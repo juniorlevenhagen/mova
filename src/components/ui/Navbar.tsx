@@ -17,7 +17,7 @@ export function Navbar({ onStartNow, onEnter }: NavbarProps) {
           alt="Mova+ Logo"
           width={120}
           height={40}
-          className="h-6 sm:h-8 w-auto"
+          className="h-4 sm:h-6 w-auto"
         />
       </div>
 

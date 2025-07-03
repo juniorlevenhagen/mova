@@ -22,12 +22,12 @@ export const getPositionClass = (
 export const getStyleClass = (style: StyleType | undefined): string => {
   switch (style) {
     case "large":
-      return "text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold bg-black/40 px-8 py-4 rounded-xl";
+      return "text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold bg-black/40 px-8 py-4 rounded-xl";
     case "medium":
-      return "text-lg sm:text-xl md:text-2xl font-semibold bg-black/40 backdrop-blur-sm px-4 py-2 rounded-xl";
+      return "text-base sm:text-lg md:text-xl font-semibold bg-black/40 backdrop-blur-sm px-4 py-2 rounded-xl";
     case "small":
-      return "text-base sm:text-lg font-medium bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full";
+      return "text-sm sm:text-base font-medium bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full";
     default:
-      return "text-lg sm:text-xl font-medium bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full";
+      return "text-base sm:text-lg font-medium bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full";
   }
 };

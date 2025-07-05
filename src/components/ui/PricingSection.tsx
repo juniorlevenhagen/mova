@@ -1,113 +1,145 @@
 "use client";
 
-const plans = [
-  {
-    name: "Básico",
-    price: "R$ 29,90",
-    period: "/mês",
-    description: "Perfeito para quem está começando sua jornada fitness",
-    features: [
-      "Treinos personalizados básicos",
-      "Acesso à biblioteca de exercícios",
-      "Acompanhamento de progresso",
-      "Suporte por email",
-    ],
-    popular: false,
-    buttonText: "Começar Agora",
-    buttonVariant: "outline",
-  },
-  {
-    name: "Premium",
-    price: "R$ 49,90",
-    period: "/mês",
-    description: "Para quem quer resultados mais rápidos e completos",
-    features: [
-      "Tudo do plano Básico",
-      "Planos de nutrição personalizados",
-      "Acesso à comunidade exclusiva",
-      "Consultoria com especialistas",
-      "Análises avançadas de progresso",
-      "Suporte prioritário",
-    ],
-    popular: true,
-    buttonText: "Escolher Premium",
-    buttonVariant: "primary",
-  },
-  {
-    name: "Pro",
-    price: "R$ 79,90",
-    period: "/mês",
-    description: "Para atletas e profissionais que buscam excelência",
-    features: [
-      "Tudo do plano Premium",
-      "Treinos específicos por modalidade",
-      "Acompanhamento 1:1 com coach",
-      "Planos de recuperação",
-      "Acesso antecipado a novos recursos",
-      "Suporte 24/7",
-    ],
-    popular: false,
-    buttonText: "Escolher Pro",
-    buttonVariant: "outline",
-  },
-];
+import { useEffect, useRef, useState } from "react";
+
+const plan = {
+  name: "Mova+ Complete",
+  price: "R$ 29,90",
+  period: "/mês",
+  description: "Sua jornada fitness completa e personalizada",
+  features: [
+    "Treinos personalizados baseados no seu perfil",
+    "Planos nutricionais adaptados às suas preferências",
+    "Acompanhamento semanal do seu progresso",
+    "Biblioteca completa de exercícios com vídeos",
+    "Receitas deliciosas para cada objetivo",
+    "Comunidade ativa para trocar experiências",
+    "Acompanhamento visual do seu progresso",
+    "Lembretes personalizados para manter a consistência",
+    "Suporte para suas dúvidas mais comuns",
+  ],
+  buttonText: "Começar Minha Jornada",
+  trialText: "7 dias grátis",
+};
 
 export function PricingSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="w-full bg-[#f5f1e8] py-16 md:py-24 px-4">
-      <div className="max-w-7xl mx-auto">
+    <section ref={sectionRef} className="w-full bg-white py-16 md:py-20 px-4">
+      <div className="max-w-6xl mx-auto">
         {/* Título da seção */}
-        <div className="text-center mb-16">
+        <div
+          className={`text-center mb-12 transition-all duration-1000 ease-out ${
+            isVisible
+              ? "opacity-100 transform translate-y-0"
+              : "opacity-0 transform translate-y-10"
+          }`}
+        >
           <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-4">
-            Escolha seu plano
+            Sua transformação começa aqui
           </h2>
-          <p className="text-base md:text-xl text-gray-600 max-w-3xl mx-auto">
-            Planos flexíveis que se adaptam ao seu ritmo e objetivos.
+          <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
+            Tudo que você precisa para transformar seu corpo e sua vida, com uma
+            experiência personalizada que se adapta ao seu ritmo.
           </p>
         </div>
 
-        {/* Grid dos planos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10">
-          {plans.map((plan, index) => (
+        {/* Layout horizontal principal */}
+        <div
+          className={`bg-[#f5f1e8] rounded-2xl p-8 md:p-12 shadow-lg transition-all duration-1000 ease-out ${
+            isVisible
+              ? "opacity-100 transform translate-y-0 scale-100"
+              : "opacity-0 transform translate-y-10 scale-95"
+          }`}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            {/* Lado esquerdo - Informações do plano */}
             <div
-              key={index}
-              className={`relative bg-white rounded-2xl p-8 md:p-10 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col ${
-                plan.popular
-                  ? "ring-2 ring-gray-800 scale-105"
-                  : "hover:scale-105"
+              className={`transition-all duration-1000 ease-out delay-200 ${
+                isVisible
+                  ? "opacity-100 transform translate-x-0"
+                  : "opacity-0 transform -translate-x-10"
               }`}
             >
-              {/* Badge Popular */}
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium">
-                    Mais Popular
-                  </span>
-                </div>
-              )}
-
-              {/* Cabeçalho do plano */}
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              <div className="mb-6">
+                <span className="inline-block bg-gray-800 text-white px-4 py-1 rounded-full text-sm font-medium mb-4 hover:scale-105 transition-transform duration-200">
+                  Plano Completo
+                </span>
+                <h3 className="text-3xl md:text-4xl font-bold text-gray-800 mb-3">
                   {plan.name}
                 </h3>
-                <p className="text-gray-600 mb-6">{plan.description}</p>
+                <p className="text-gray-600 mb-4">{plan.description}</p>
+              </div>
 
-                {/* Preço */}
-                <div className="mb-6">
-                  <span className="text-4xl md:text-5xl font-bold text-gray-800">
+              {/* Preço */}
+              <div className="mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-5xl md:text-6xl font-bold text-gray-800">
                     {plan.price}
                   </span>
-                  <span className="text-gray-600 ml-1">{plan.period}</span>
+                  <span className="text-gray-600 ml-2 text-xl">
+                    {plan.period}
+                  </span>
+                </div>
+                <div className="text-gray-600 text-sm mt-2">
+                  {plan.trialText}
                 </div>
               </div>
 
-              {/* Lista de recursos */}
-              <ul className="space-y-4 mb-8 flex-grow">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start">
+              {/* Botão CTA */}
+              <button className="w-full md:w-auto bg-gray-800 text-white py-3 px-8 rounded-lg font-medium hover:bg-gray-900 hover:scale-105 transition-all duration-200 text-lg shadow-lg hover:shadow-xl">
+                {plan.buttonText}
+              </button>
+              <p className="text-xs text-gray-500 mt-3">
+                Cancele a qualquer momento. Sem taxas ocultas.
+              </p>
+            </div>
+
+            {/* Lado direito - Lista de recursos */}
+            <div
+              className={`transition-all duration-1000 ease-out delay-400 ${
+                isVisible
+                  ? "opacity-100 transform translate-x-0"
+                  : "opacity-0 transform translate-x-10"
+              }`}
+            >
+              <h4 className="text-lg font-semibold text-gray-800 mb-4">
+                O que está incluído:
+              </h4>
+              <div className="grid grid-cols-1 gap-3">
+                {plan.features.map((feature, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-start transition-all duration-500 ease-out ${
+                      isVisible
+                        ? "opacity-100 transform translate-x-0"
+                        : "opacity-0 transform translate-x-5"
+                    }`}
+                    style={{ transitionDelay: `${600 + index * 100}ms` }}
+                  >
                     <svg
-                      className="w-5 h-5 text-gray-800 mt-0.5 mr-3 flex-shrink-0"
+                      className="w-4 h-4 text-gray-800 mt-0.5 mr-3 flex-shrink-0"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -117,31 +149,49 @@ export function PricingSection() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
+                    <span className="text-sm text-gray-700">{feature}</span>
+                  </div>
                 ))}
-              </ul>
-
-              {/* Botão */}
-              <button
-                className={`w-full py-3 px-6 rounded-lg font-medium transition-colors duration-200 mt-auto ${
-                  plan.buttonVariant === "primary"
-                    ? "bg-gray-800 text-white hover:bg-gray-900"
-                    : "bg-white text-gray-800 border-2 border-gray-800 hover:bg-gray-800 hover:text-white"
-                }`}
-              >
-                {plan.buttonText}
-              </button>
+              </div>
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Nota adicional */}
-        <div className="text-center mt-12">
-          <p className="text-sm text-gray-500">
-            Todos os planos incluem 7 dias de teste grátis. Cancele a qualquer
-            momento.
-          </p>
+        {/* Benefícios em linha horizontal */}
+        <div
+          className={`mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 transition-all duration-1000 ease-out delay-600 ${
+            isVisible
+              ? "opacity-100 transform translate-y-0"
+              : "opacity-0 transform translate-y-10"
+          }`}
+        >
+          <div className="text-center group">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-gray-600 transition-colors duration-200">
+              Personalizado
+            </h4>
+            <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
+              Cada treino e plano nutricional é criado pensando especificamente
+              em você
+            </p>
+          </div>
+          <div className="text-center group">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-gray-600 transition-colors duration-200">
+              Acompanhamento
+            </h4>
+            <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
+              Seu progresso é monitorado e os planos são ajustados conforme sua
+              evolução
+            </p>
+          </div>
+          <div className="text-center group">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2 group-hover:text-gray-600 transition-colors duration-200">
+              Comunidade
+            </h4>
+            <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
+              Conecte-se com pessoas que compartilham dos mesmos objetivos que
+              você
+            </p>
+          </div>
         </div>
       </div>
     </section>

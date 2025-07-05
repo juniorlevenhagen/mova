@@ -3,6 +3,7 @@ import { FeaturesSection } from "@/components/ui/FeaturesSection";
 import { HowItWorksSection } from "@/components/ui/HowItWorksSection";
 import { PricingSection } from "@/components/ui/PricingSection";
 import { AboutSection } from "@/components/ui/AboutSection";
+import { Footer } from "@/components/ui/Footer";
 
 export default function Home() {
   return (
@@ -34,6 +35,9 @@ export default function Home() {
       <PricingSection />
 
       <AboutSection />
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

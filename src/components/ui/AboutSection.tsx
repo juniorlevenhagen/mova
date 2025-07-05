@@ -35,8 +35,8 @@ export function AboutSection() {
             <Image
               src="/images/about-woman-exercising.webp"
               alt="Mulher praticando exercícios"
-              width={600}
-              height={700}
+              width={400}
+              height={500}
               className="w-full h-auto object-cover"
               priority
             />

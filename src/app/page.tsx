@@ -4,6 +4,7 @@ import { HowItWorksSection } from "@/components/ui/HowItWorksSection";
 import { PricingSection } from "@/components/ui/PricingSection";
 import { AboutSection } from "@/components/ui/AboutSection";
 import { Footer } from "@/components/ui/Footer";
+import { MotivationalSection } from "@/components/ui/MotivationalSection";
 
 export default function Home() {
   return (
@@ -34,6 +35,9 @@ export default function Home() {
       {/* Seção de planos */}
       <PricingSection />
 
+      <MotivationalSection />
+
+      {/* Seção About */}
       <AboutSection />
 
       {/* Footer */}

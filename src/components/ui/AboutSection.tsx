@@ -21,12 +21,17 @@ export function AboutSection() {
                 corpo, mas sua vida.
               </p>
 
-              <p className="text-base md:text-lg text-gray-600 leading-relaxed">
+              <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-8">
                 Combinando tecnologia de ponta com conhecimento especializado,
                 oferecemos treinos personalizados, planos nutricionais
                 inteligentes e uma comunidade que te motiva a alcançar seus
                 objetivos.
               </p>
+
+              {/* Botão */}
+              <button className="bg-gray-800 text-white px-8 py-4 rounded-lg font-medium hover:bg-gray-900 transition-colors duration-200 text-lg shadow-lg hover:shadow-xl">
+                Participar do Clube
+              </button>
             </div>
           </div>
 
@@ -37,7 +42,7 @@ export function AboutSection() {
               alt="Mulher praticando exercícios"
               width={400}
               height={500}
-              className="w-full h-auto object-cover"
+              className="w-full h-auto object-cover rounded-3xl shadow-lg"
               priority
             />
           </div>

@@ -190,8 +190,13 @@ export function Footer() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             {/* Copyright */}
-            <div className="text-gray-400 text-sm">
+            <div className="text-gray-400 text-sm text-center md:text-left">
               © 2024 Mova+. Todos os direitos reservados.
+            </div>
+
+            {/* Desenvolvido por ELEVEN - Centralizado */}
+            <div className="text-gray-400 text-sm text-center">
+              Desenvolvido por ELEVEN
             </div>
 
             {/* Links legais */}

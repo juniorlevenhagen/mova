@@ -25,7 +25,7 @@ const features = [
   {
     title: "Comunidade Fitness",
     description:
-      "Conecte-se com outros usuários, compartilhe conquistas e mantenha-se motivado.",
+      "Conecte-se com outros usuários e compartilhe suas conquistas.",
     backgroundImage: "/images/feature-card-4.webp",
   },
 ];

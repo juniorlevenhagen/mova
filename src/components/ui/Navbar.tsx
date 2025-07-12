@@ -1,13 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-interface NavbarProps {
-  onStartNow?: () => void;
-  onEnter?: () => void;
-}
+export function Navbar() {
+  const router = useRouter();
 
-export function Navbar({ onStartNow, onEnter }: NavbarProps) {
+  const handleEnter = () => {
+    router.push("/auth/login");
+  };
+
+  const handleStartNow = () => {
+    router.push("/auth/cadastro");
+  };
+
   return (
     <nav className="w-full bg-[#f5f1e8] px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-sm">
       {/* Logo à esquerda */}
@@ -24,13 +30,13 @@ export function Navbar({ onStartNow, onEnter }: NavbarProps) {
       {/* Botões à direita */}
       <div className="flex items-center gap-2 sm:gap-4">
         <button
-          onClick={onEnter}
+          onClick={handleEnter}
           className="px-3 sm:px-6 py-2 text-sm sm:text-base text-gray-700 font-medium hover:text-gray-900 transition-colors duration-200"
         >
           Entrar
         </button>
         <button
-          onClick={onStartNow}
+          onClick={handleStartNow}
           className="px-3 sm:px-6 py-2 text-sm sm:text-base bg-gray-800 text-white font-medium rounded-lg hover:bg-gray-900 transition-colors duration-200"
         >
           Cadastre-se

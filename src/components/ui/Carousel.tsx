@@ -72,18 +72,10 @@ const carouselImages: CarouselImage[] = [
 export default function Carousel() {
   const { currentIndex, goToSlide } = useCarousel(carouselImages.length);
 
-  const handleStartNow = () => {
-    console.log("Comece Agora clicado!");
-  };
-
-  const handleEnter = () => {
-    console.log("Entrar clicado!");
-  };
-
   return (
     <div className="w-full bg-[#f5f1e8]">
       {/* Navbar */}
-      <Navbar onStartNow={handleStartNow} onEnter={handleEnter} />
+      <Navbar />
 
       {/* Carrossel */}
       <div className="relative w-full h-[60vh] overflow-hidden">

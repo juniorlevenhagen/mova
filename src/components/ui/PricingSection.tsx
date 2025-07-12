@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const plan = {
   name: "Mova+ Complete",
@@ -24,6 +25,7 @@ const plan = {
 };
 
 export function PricingSection() {
+  const router = useRouter();
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -45,6 +47,10 @@ export function PricingSection() {
 
     return () => observer.disconnect();
   }, []);
+
+  const handleStartJourney = () => {
+    router.push("/auth/cadastro");
+  };
 
   return (
     <div>
@@ -135,7 +141,10 @@ export function PricingSection() {
                 </div>
 
                 {/* Botão CTA */}
-                <button className="w-full md:w-auto bg-gray-800 text-white py-3 px-6 md:px-8 rounded-lg font-medium hover:bg-gray-900 transition-colors duration-200 text-base md:text-lg shadow-lg hover:shadow-xl">
+                <button
+                  onClick={handleStartJourney}
+                  className="w-full md:w-auto bg-gray-800 text-white py-3 px-6 md:px-8 rounded-lg font-medium hover:bg-gray-900 transition-colors duration-200 text-base md:text-lg shadow-lg hover:shadow-xl"
+                >
                   {plan.buttonText}
                 </button>
                 <p className="text-xs text-gray-500 mt-2 md:mt-3">

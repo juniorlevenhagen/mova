@@ -78,92 +78,124 @@ export function HowItWorksSection() {
             </p>
           </div>
 
-          {/* Lado direito - Cards maiores */}
+          {/* Lado direito - Cards responsivos */}
           <div
-            className={`relative h-[700px] transition-all duration-1000 ease-out ${
+            className={`transition-all duration-1000 ease-out ${
               isVisible
                 ? "opacity-100 transform translate-x-0"
                 : "opacity-0 transform translate-x-[100px]"
             }`}
           >
-            {/* Card 1 */}
-            <div
-              className={`absolute top-0 left-10 w-80 h-80 bg-[#f5f1e8] rounded-2xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-2 shadow-md ${
-                isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              }`}
-              style={{ zIndex: 4, animationDelay: "200ms" }}
-            >
-              <div className="h-full flex flex-col">
-                <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
-                  1.
+            {/* Versão Desktop - Cards sobrepostos */}
+            <div className="hidden lg:block relative h-[700px]">
+              {/* Card 1 */}
+              <div
+                className={`absolute top-0 left-10 w-80 h-80 bg-[#f5f1e8] rounded-2xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-2 shadow-md ${
+                  isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                }`}
+                style={{ zIndex: 4, animationDelay: "200ms" }}
+              >
+                <div className="h-full flex flex-col">
+                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                    1.
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                    Cadastre-se
+                  </h3>
+                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                    {steps[0].description}
+                  </p>
                 </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
-                  Cadastre-se
-                </h3>
-                <p className="text-xl text-gray-600 font-inter leading-relaxed">
-                  {steps[0].description}
-                </p>
+              </div>
+
+              {/* Card 2 */}
+              <div
+                className={`absolute top-0 -right-25 w-80 h-80 bg-[#f5f1e8] rounded-3xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-2 shadow-md ${
+                  isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                }`}
+                style={{ zIndex: 3, animationDelay: "400ms" }}
+              >
+                <div className="h-full flex flex-col">
+                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                    2.
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                    Configure
+                  </h3>
+                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                    {steps[1].description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 3 */}
+              <div
+                className={`absolute bottom-7 left-10 w-80 h-80 bg-[#f5f1e8] rounded-xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-1 shadow-md ${
+                  isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                }`}
+                style={{ zIndex: 2, animationDelay: "600ms" }}
+              >
+                <div className="h-full flex flex-col">
+                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                    3.
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                    Treine
+                  </h3>
+                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                    {steps[2].description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 4 */}
+              <div
+                className={`absolute bottom-7 -right-25 w-80 h-80 bg-[#f5f1e8] rounded-2xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-1 shadow-md ${
+                  isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                }`}
+                style={{ zIndex: 1, animationDelay: "800ms" }}
+              >
+                <div className="h-full flex flex-col">
+                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                    4.
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                    Evolua
+                  </h3>
+                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                    {steps[3].description}
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Card 2 */}
-            <div
-              className={`absolute top-0 -right-25 w-80 h-80 bg-[#f5f1e8]  rounded-3xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-2 shadow-md ${
-                isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              }`}
-              style={{ zIndex: 3, animationDelay: "400ms" }}
-            >
-              <div className="h-full flex flex-col">
-                <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
-                  2.
+            {/* Versão Mobile - Cards empilhados */}
+            <div className="lg:hidden space-y-6">
+              {steps.map((step, index) => (
+                <div
+                  key={index}
+                  className={`bg-[#f5f1e8] rounded-2xl p-6 shadow-md transition-all duration-500 transform hover:scale-105 ${
+                    isVisible
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 translate-y-10"
+                  }`}
+                  style={{ animationDelay: `${(index + 1) * 200}ms` }}
+                >
+                  <div className="flex items-start space-x-4">
+                    <div className="text-4xl font-bold text-gray-800 font-poppins tracking-tight flex-shrink-0">
+                      {index + 1}.
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-gray-800 mb-2 font-poppins">
+                        {step.title}
+                      </h3>
+                      <p className="text-lg text-gray-600 font-inter leading-relaxed">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
-                  Configure
-                </h3>
-                <p className="text-xl text-gray-600 font-inter leading-relaxed">
-                  {steps[1].description}
-                </p>
-              </div>
-            </div>
-
-            {/* Card 3 */}
-            <div
-              className={`absolute bottom-7 left-10 w-80 h-80 bg-[#f5f1e8]  rounded-xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-1 shadow-md ${
-                isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              }`}
-              style={{ zIndex: 2, animationDelay: "600ms" }}
-            >
-              <div className="h-full flex flex-col">
-                <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
-                  3.
-                </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
-                  Treine
-                </h3>
-                <p className="text-xl text-gray-600 font-inter leading-relaxed">
-                  {steps[2].description}
-                </p>
-              </div>
-            </div>
-
-            {/* Card 4 */}
-            <div
-              className={`absolute bottom-7 -right-25 w-80 h-80 bg-[#f5f1e8]  rounded-2xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-1 shadow-md ${
-                isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              }`}
-              style={{ zIndex: 1, animationDelay: "800ms" }}
-            >
-              <div className="h-full flex flex-col">
-                <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
-                  4.
-                </div>
-                <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
-                  Evolua
-                </h3>
-                <p className="text-xl text-gray-600 font-inter leading-relaxed">
-                  {steps[3].description}
-                </p>
-              </div>
+              ))}
             </div>
           </div>
         </div>

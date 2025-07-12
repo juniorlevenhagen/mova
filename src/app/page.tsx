@@ -5,7 +5,7 @@ import { PricingSection } from "@/components/ui/PricingSection";
 import { AboutSection } from "@/components/ui/AboutSection";
 import { Footer } from "@/components/ui/Footer";
 import { MotivationalSection } from "@/components/ui/MotivationalSection";
-import { FAQSection } from "@/components/FAQSection";
+import { FAQSection } from "@/components/ui/FAQSection";
 
 export default function Home() {
   return (

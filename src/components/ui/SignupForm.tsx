@@ -1,139 +1,160 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Step1BasicData } from "./signup/Step1BasicData";
+import { Step2ProfileCustomization } from "./signup/Step2ProfileCustomization";
+import { Step3PlanSelection } from "./signup/Step3PlanSelection";
+
+export type SignupData = {
+  // Etapa 1 - Dados básicos
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  agreeToTerms: boolean;
+
+  // Etapa 2 - Personalização
+  objective:
+    | "emagrecer"
+    | "ganho_massa"
+    | "definicao"
+    | "saude_cardiovascular"
+    | "";
+  trainingFrequency: number;
+  trainingLocation: "casa" | "academia" | "";
+  specificities: string;
+  dietaryRestrictions: string;
+  weight: number;
+  height: number;
+  age: number;
+  currentActivityLevel: "iniciante" | "intermediario" | "avancado" | "";
+  alreadyExercises: boolean;
+
+  // Etapa 3 - Plano
+  selectedPlan: "gratuito" | "completo" | "";
+};
 
 export function SignupForm() {
-  const [formData, setFormData] = useState({
-    name: "",
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<SignupData>({
+    // Etapa 1
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    agreeToTerms: false,
+
+    // Etapa 2
+    objective: "",
+    trainingFrequency: 0,
+    trainingLocation: "",
+    specificities: "",
+    dietaryRestrictions: "",
+    weight: 0,
+    height: 0,
+    age: 0,
+    currentActivityLevel: "",
+    alreadyExercises: false,
+
+    // Etapa 3
+    selectedPlan: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // TODO: Implementar lógica de cadastro
-    console.log("Cadastro:", formData);
-
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+  const updateFormData = (data: Partial<SignupData>) => {
+    setFormData((prev) => ({ ...prev, ...data }));
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const nextStep = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
+    console.log("Dados finais:", formData);
+    // TODO: Implementar envio dos dados
+  };
+
+  const handleGoHome = () => {
+    router.push("/");
+  };
+
+  const renderStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <Step1BasicData
+            data={formData}
+            updateData={updateFormData}
+            onNext={nextStep}
+            onBack={handleGoHome}
+          />
+        );
+      case 2:
+        return (
+          <Step2ProfileCustomization
+            data={formData}
+            updateData={updateFormData}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        );
+      case 3:
+        return (
+          <Step3PlanSelection
+            data={formData}
+            updateData={updateFormData}
+            onSubmit={handleSubmit}
+            onBack={prevStep}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label
-          htmlFor="name"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Nome completo
-        </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-          placeholder="Seu nome completo"
-        />
+    <div className="space-y-6">
+      {/* Indicador de progresso */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    step <= currentStep
+                      ? "bg-gray-800 text-white"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {step}
+                </div>
+                {step < 3 && (
+                  <div
+                    className={`w-12 h-1 mx-2 ${
+                      step < currentStep ? "bg-gray-800" : "bg-gray-200"
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <span className="text-sm text-gray-600">
+            Etapa {currentStep} de 3
+          </span>
+        </div>
       </div>
 
-      <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Email
-        </label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-          placeholder="seu@email.com"
-        />
-      </div>
-
-      <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Senha
-        </label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-          placeholder="Mínimo 6 caracteres"
-        />
-      </div>
-
-      <div>
-        <label
-          htmlFor="confirmPassword"
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
-          Confirmar senha
-        </label>
-        <input
-          type="password"
-          id="confirmPassword"
-          name="confirmPassword"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-          placeholder="Confirme sua senha"
-        />
-      </div>
-
-      <div className="flex items-start">
-        <input
-          type="checkbox"
-          id="terms"
-          required
-          className="mt-1 rounded border-gray-300 text-gray-800 focus:ring-gray-800"
-        />
-        <label htmlFor="terms" className="ml-2 text-sm text-gray-600">
-          Concordo com os{" "}
-          <a href="#" className="text-gray-800 hover:underline">
-            termos de uso
-          </a>{" "}
-          e{" "}
-          <a href="#" className="text-gray-800 hover:underline">
-            política de privacidade
-          </a>
-        </label>
-      </div>
-
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? "Criando conta..." : "Criar conta"}
-      </button>
-    </form>
+      {renderStep()}
+    </div>
   );
 }

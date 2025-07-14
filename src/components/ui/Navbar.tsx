@@ -11,7 +11,7 @@ export function Navbar() {
   };
 
   const handleStartNow = () => {
-    router.push("/auth/cadastro");
+    router.push("/welcome/step0");
   };
 
   return (

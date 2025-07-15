@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogoBlue } from "@/components/ui/LogoBlue";
 
 export default function Step1Page() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function Step1Page() {
     ) {
       // Salvar dados no localStorage
       localStorage.setItem("registerStep1", JSON.stringify(formData));
-      router.push("/welcome/step2");
+      router.push("/register/step2");
     }
   };
 
@@ -35,7 +36,9 @@ export default function Step1Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 relative">
+      <LogoBlue />
+
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
         {/* Indicador de progresso */}
         <div className="mb-8">
@@ -43,7 +46,6 @@ export default function Step1Page() {
             <h2 className="text-2xl font-bold text-gray-800">
               Cadastro simples
             </h2>
-            <span className="text-sm text-gray-600">1 de 3</span>
           </div>
           <div className="flex items-center space-x-2">
             {[1, 2, 3].map((step) => (

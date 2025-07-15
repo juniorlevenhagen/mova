@@ -11,7 +11,7 @@ export function Navbar() {
   };
 
   const handleStartNow = () => {
-    router.push("/welcome/step0");
+    router.push("/register/step0");
   };
 
   return (

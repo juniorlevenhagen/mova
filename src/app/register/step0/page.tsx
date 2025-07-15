@@ -7,7 +7,7 @@ export default function WelcomePage() {
   const router = useRouter();
 
   const handleStartJourney = () => {
-    router.push("/welcome/step1");
+    router.push("/register/step1");
   };
 
   return (

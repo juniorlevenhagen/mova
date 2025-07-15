@@ -87,82 +87,82 @@ export function HowItWorksSection() {
             }`}
           >
             {/* Versão Desktop - Cards sobrepostos */}
-            <div className="hidden lg:block relative h-[700px]">
-              {/* Card 1 */}
+            <div className="hidden lg:block relative h-[600px]">
+              {/* Card 1 - Topo esquerdo */}
               <div
-                className={`absolute top-0 left-10 w-80 h-80 bg-[#f5f1e8] rounded-2xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-2 shadow-md ${
+                className={`absolute top-0 left-0 w-72 h-72 bg-[#f5f1e8] rounded-2xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-2 shadow-md ${
                   isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                 }`}
                 style={{ zIndex: 4, animationDelay: "200ms" }}
               >
                 <div className="h-full flex flex-col">
-                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                  <div className="text-5xl font-bold text-gray-800 mb-4 font-poppins tracking-tight">
                     1.
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3 font-poppins">
                     Cadastre-se
                   </h3>
-                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                  <p className="text-lg text-gray-600 font-inter leading-relaxed">
                     {steps[0].description}
                   </p>
                 </div>
               </div>
 
-              {/* Card 2 */}
+              {/* Card 2 - Topo direito */}
               <div
-                className={`absolute top-0 -right-25 w-80 h-80 bg-[#f5f1e8] rounded-3xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-2 shadow-md ${
+                className={`absolute top-0 right-0 w-72 h-72 bg-[#f5f1e8] rounded-3xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-2 shadow-md ${
                   isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                 }`}
                 style={{ zIndex: 3, animationDelay: "400ms" }}
               >
                 <div className="h-full flex flex-col">
-                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                  <div className="text-5xl font-bold text-gray-800 mb-4 font-poppins tracking-tight">
                     2.
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3 font-poppins">
                     Configure
                   </h3>
-                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                  <p className="text-lg text-gray-600 font-inter leading-relaxed">
                     {steps[1].description}
                   </p>
                 </div>
               </div>
 
-              {/* Card 3 */}
+              {/* Card 3 - Baixo esquerdo */}
               <div
-                className={`absolute bottom-7 left-10 w-80 h-80 bg-[#f5f1e8] rounded-xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-1 shadow-md ${
+                className={`absolute bottom-0 left-0 w-72 h-72 bg-[#f5f1e8] rounded-xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-1 shadow-md ${
                   isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                 }`}
                 style={{ zIndex: 2, animationDelay: "600ms" }}
               >
                 <div className="h-full flex flex-col">
-                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                  <div className="text-5xl font-bold text-gray-800 mb-4 font-poppins tracking-tight">
                     3.
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3 font-poppins">
                     Treine
                   </h3>
-                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                  <p className="text-lg text-gray-600 font-inter leading-relaxed">
                     {steps[2].description}
                   </p>
                 </div>
               </div>
 
-              {/* Card 4 */}
+              {/* Card 4 - Baixo direito */}
               <div
-                className={`absolute bottom-7 -right-25 w-80 h-80 bg-[#f5f1e8] rounded-2xl p-10 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-1 shadow-md ${
+                className={`absolute bottom-0 right-0 w-72 h-72 bg-[#f5f1e8] rounded-2xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-1 shadow-md ${
                   isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                 }`}
                 style={{ zIndex: 1, animationDelay: "800ms" }}
               >
                 <div className="h-full flex flex-col">
-                  <div className="text-6xl font-bold text-gray-800 mb-6 font-poppins tracking-tight">
+                  <div className="text-5xl font-bold text-gray-800 mb-4 font-poppins tracking-tight">
                     4.
                   </div>
-                  <h3 className="text-3xl font-bold text-gray-800 mb-3 font-poppins">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3 font-poppins">
                     Evolua
                   </h3>
-                  <p className="text-xl text-gray-600 font-inter leading-relaxed">
+                  <p className="text-lg text-gray-600 font-inter leading-relaxed">
                     {steps[3].description}
                   </p>
                 </div>

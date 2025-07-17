@@ -62,7 +62,7 @@ const carouselImages: CarouselImage[] = [
     objectPosition: "center 20%",
     message: {
       text: "Comece hoje. \nVem pro Mova+",
-      position: "default",
+      position: "center",
       style: "large",
       color: "",
     },

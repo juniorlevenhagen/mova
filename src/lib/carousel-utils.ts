@@ -5,7 +5,7 @@ export const getPositionClass = (
 ): string => {
   switch (position) {
     case "top-left":
-      return "top-30 left-8";
+      return "top-20 left-8";
     case "top-right":
       return "top-8 right-8";
     case "bottom-left":
@@ -13,9 +13,9 @@ export const getPositionClass = (
     case "bottom-right":
       return "bottom-8 right-8";
     case "center":
-      return "inset-0 flex items-center justify-center";
+      return "bottom-20 right-20";
     default:
-      return "top-50 left-220";
+      return "top-50 right-220";
   }
 };
 

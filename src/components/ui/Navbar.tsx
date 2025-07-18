@@ -19,7 +19,7 @@ export function Navbar() {
       {/* Logo à esquerda */}
       <div className="flex items-center">
         <Image
-          src="/images/logo_blue.svg"
+          src="/images/logo_blue.webp"
           alt="Mova+ Logo"
           width={120}
           height={40}

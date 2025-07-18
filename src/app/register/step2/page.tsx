@@ -52,7 +52,7 @@ export default function Step2Page() {
       {/* Logo no canto superior esquerdo */}
       <div className="absolute top-6 left-6 z-20">
         <Image
-          src="/images/logo_blue.svg"
+          src="/images/logo_blue.webp"
           alt="Mova+ Logo"
           width={120}
           height={40}

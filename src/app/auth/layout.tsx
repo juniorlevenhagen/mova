@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { Logo } from "@/components/ui/Logo";
 
 export default function AuthLayout({
   children,
@@ -41,6 +42,9 @@ export default function AuthLayout({
         </div>
 
         {/* Imagem Desktop - Lado esquerdo */}
+        <div>
+          <Logo />
+        </div>
         <div className="hidden lg:block lg:w-1/2 relative">
           <Image
             src="/images/jakub-klucky-O3UrNIU1FVQ-unsplash.webp"
@@ -52,9 +56,7 @@ export default function AuthLayout({
           />
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white px-8">
-            
-            </div>
+            <div className="text-center text-white px-8"></div>
           </div>
         </div>
 

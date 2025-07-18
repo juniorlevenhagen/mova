@@ -12,7 +12,7 @@ export function Footer() {
           <div className="lg:col-span-1">
             <div className="mb-6">
               <Image
-                src="/images/logo_white.wenp"
+                src="/images/logo_white.webp"
                 alt="Mova+ Logo"
                 width={120}
                 height={40}

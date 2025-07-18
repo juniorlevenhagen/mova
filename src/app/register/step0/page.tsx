@@ -22,17 +22,6 @@ export default function WelcomePage() {
           className="object-cover object-center"
           priority
         />
-        <div className="absolute inset-0 bg-black/30"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white px-8">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              Sua jornada começa aqui
-            </h1>
-            <p className="text-lg opacity-90">
-              Vamos descobrir qual é o seu objetivo!
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* Imagem Desktop - Lado esquerdo */}
@@ -53,14 +42,14 @@ export default function WelcomePage() {
       </div>
 
       {/* Conteúdo - Lado direito */}
-      <div className="absolute w-full h-full flex items-center justify-center">
+      <div className="absolute w-1/2 h-full flex items-center justify-center right-0 pr-8">
         <div className="w-full max-w-md text-center">
           <div className="space-y-6">
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg">
-              Sua jornada <span className="text-gray-800">começa aqui</span>
+            <h1 className="text-4xl font-bold text-gray-800 drop-shadow-lg">
+              Sua jornada começa aqui
             </h1>
-            <p className="text-xl text-white/90 drop-shadow-md">
-              Vamos descobrir qu<span className="text-gray-800">al é o seu objetivo!</span>
+            <p className="text-xl text-gray-600 drop-shadow-md">
+              Vamos descobrir qual é o seu objetivo!
             </p>
 
             <button

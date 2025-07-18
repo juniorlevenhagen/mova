@@ -35,8 +35,10 @@ export default function AuthLayout({
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center text-white px-8">
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">{title}</h1>
-              <p className="text-lg opacity-90">{subtitle}</p>
+              <h1 className="hidden md:block text-3xl font-bold mb-2">
+                {title}
+              </h1>
+              <p className="hidden md:block text-lg opacity-90">{subtitle}</p>
             </div>
           </div>
         </div>

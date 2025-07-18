@@ -50,10 +50,10 @@ export function FAQSection() {
 
   return (
     <section className="max-w-2xl mx-auto py-16 px-4">
-      <h2 className="text-3xl font-bold text-center mb-2">
+      <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">
         Perguntas frequentes
       </h2>
-      <p className="text-gray-500 text-center mb-8">
+      <p className="text-gray-600 text-center mb-8">
         Tudo que você precisa saber sobre o Mova+
       </p>
       <div className="divide-y divide-gray-200">

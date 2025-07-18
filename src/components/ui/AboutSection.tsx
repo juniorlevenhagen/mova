@@ -1,15 +1,44 @@
 "use client";
 
 import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
 
 export function AboutSection() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const observer = new window.IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="w-full bg-white py-16 md:py-24 px-4">
+    <section ref={sectionRef} className="w-full bg-white py-16 md:py-24 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Lado esquerdo - Conteúdo */}
           <div className="space-y-8">
-            <div>
+            <div
+              className={`transition-all duration-1000 ease-out ${
+                isVisible
+                  ? "opacity-100 transform translate-x-0"
+                  : "opacity-0 transform translate-x-[-100px]"
+              }`}
+            >
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-6 leading-tight">
                 Sobre o <span className="text-gray-600">Mova+</span>
               </h2>
@@ -36,7 +65,13 @@ export function AboutSection() {
           </div>
 
           {/* Lado direito - Imagem */}
-          <div className="relative">
+          <div
+            className={`relative transition-all duration-1000 ease-out delay-300 ${
+              isVisible
+                ? "opacity-100 transform translate-x-0"
+                : "opacity-0 transform translate-x-[100px]"
+            }`}
+          >
             <Image
               src="/images/about-woman-exercising.webp"
               alt="Mulher praticando exercícios"

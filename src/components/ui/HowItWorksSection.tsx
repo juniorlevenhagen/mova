@@ -11,7 +11,7 @@ const steps = [
   {
     number: "02",
     title: "Configure",
-    description: "Defina seus objetivos e configure seu perfil personalizado.",
+    description: "Defina seus objetivos e configure seu perfil.",
   },
   {
     number: "03",

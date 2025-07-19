@@ -153,7 +153,7 @@ export default function Step1Page() {
 
           <button
             type="submit"
-            className="w-full bg-gray-800 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-gray-900 transition-colors"
+            className="w-full bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold text-base md:text-lg hover:bg-gray-900 transition-colors"
           >
             Continuar Personalização
           </button>

@@ -48,23 +48,23 @@ export default function Step2Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 md:p-6 lg:p-8 relative">
       {/* Logo no canto superior esquerdo */}
-      <div className="absolute top-6 left-6 z-20">
+      <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
         <Image
           src="/images/logo_blue.webp"
           alt="Mova+ Logo"
           width={120}
           height={40}
-          className="h-6 w-auto drop-shadow-lg"
+          className="h-5 md:h-6 w-auto drop-shadow-lg"
         />
       </div>
 
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-4 md:p-6 lg:p-8 mt-16 md:mt-0">
         {/* Indicador de progresso */}
-        <div className="mb-6">
+        <div className="mb-4 md:mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800">
               Personalização do perfil
             </h2>
           </div>
@@ -72,7 +72,7 @@ export default function Step2Page() {
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium ${
                     step <= 2
                       ? "bg-gray-800 text-white"
                       : "bg-gray-200 text-gray-600"
@@ -82,7 +82,7 @@ export default function Step2Page() {
                 </div>
                 {step < 3 && (
                   <div
-                    className={`w-12 h-1 mx-2 ${
+                    className={`w-6 md:w-12 h-1 mx-2 ${
                       step <= 2 ? "bg-gray-800" : "bg-gray-200"
                     }`}
                   />
@@ -106,7 +106,7 @@ export default function Step2Page() {
               value={formData.objective}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
             >
               <option value="">Selecione seu objetivo</option>
               <option value="emagrecer">Emagrecer</option>
@@ -117,7 +117,7 @@ export default function Step2Page() {
             </select>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label
                 htmlFor="age"
@@ -132,7 +132,7 @@ export default function Step2Page() {
                 value={formData.age}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
                 placeholder="25"
               />
             </div>
@@ -150,7 +150,7 @@ export default function Step2Page() {
                 value={formData.height}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
                 placeholder="170"
               />
             </div>
@@ -168,7 +168,7 @@ export default function Step2Page() {
                 value={formData.weight}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
                 placeholder="70"
               />
             </div>
@@ -187,7 +187,7 @@ export default function Step2Page() {
               value={formData.gender}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
             >
               <option value="">Selecione o gênero</option>
               <option value="masculino">Masculino</option>
@@ -195,7 +195,7 @@ export default function Step2Page() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label
                 htmlFor="trainingFrequency"
@@ -209,7 +209,7 @@ export default function Step2Page() {
                 value={formData.trainingFrequency}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
               >
                 <option value="">Selecione a frequência</option>
                 <option value="2x_semana">2x por semana</option>
@@ -233,7 +233,7 @@ export default function Step2Page() {
                 value={formData.trainingLocation}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
               >
                 <option value="">Selecione o local</option>
                 <option value="casa">Em casa</option>
@@ -244,7 +244,7 @@ export default function Step2Page() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label
                 htmlFor="hasPain"
@@ -258,7 +258,7 @@ export default function Step2Page() {
                 value={formData.hasPain}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors resize-none text-sm md:text-base"
                 placeholder="Descreva suas limitações ou dores"
               />
             </div>
@@ -275,23 +275,23 @@ export default function Step2Page() {
                 value={formData.dietaryRestrictions}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors resize-none text-sm md:text-base"
                 placeholder="Descreva suas restrições alimentares"
               />
             </div>
           </div>
 
-          <div className="flex gap-3 pt-3">
+          <div className="flex flex-col sm:flex-row gap-3 pt-3">
             <button
               type="button"
               onClick={() => router.push("/register/step1")}
-              className="flex-1 bg-transparent text-gray-600 py-2 px-3 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300"
+              className="flex-1 bg-transparent text-gray-600 py-2 px-3 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
             >
               Voltar
             </button>
             <button
               type="submit"
-              className="flex-1 bg-gray-800 text-white py-2 px-3 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+              className="flex-1 bg-gray-800 text-white py-2 px-3 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base"
             >
               Continuar
             </button>

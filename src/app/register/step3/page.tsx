@@ -39,19 +39,19 @@ export default function Step3Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 md:p-6 lg:p-8 relative">
       {/* Logo no canto superior esquerdo */}
-      <div className="absolute top-6 left-6 z-20">
+      <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
         <Image
           src="/images/logo_blue.webp"
           alt="Mova+ Logo"
           width={120}
           height={40}
-          className="h-6 w-auto drop-shadow-lg"
+          className="h-5 md:h-6 w-auto drop-shadow-lg"
         />
       </div>
 
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-4 md:p-6 lg:p-8 mt-16 md:mt-0">
         {/* Indicador de progresso */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -357,19 +357,19 @@ export default function Step3Page() {
                 </label>
               </div>
 
-              <div className="flex gap-3 pt-3">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => router.push("/register/step2")}
-                  className="flex-1 bg-transparent text-gray-600 py-2 px-3 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300"
+                  className="flex-1 bg-transparent text-gray-600 py-2.5 px-4 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
                 >
                   Voltar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gray-800 text-white py-2 px-3 rounded-lg font-medium hover:bg-gray-900 transition-colors"
+                  className="flex-1 bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold hover:bg-gray-900 transition-colors text-sm md:text-base"
                 >
-                  Começar teste gratuito
+                  Começar Teste Grátis
                 </button>
               </div>
             </form>

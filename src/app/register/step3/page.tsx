@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { supabase } from "@/lib/supabase";
 
 export default function Step3Page() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     cardNumber: "",
     cardName: "",
@@ -14,19 +16,66 @@ export default function Step3Page() {
     acceptTerms: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      formData.cardNumber &&
-      formData.cardName &&
-      formData.expiryDate &&
-      formData.cvv &&
-      formData.acceptTerms
-    ) {
-      // Salvar dados no localStorage
-      localStorage.setItem("registerStep3", JSON.stringify(formData));
-      // TODO: Implementar processamento de pagamento
-      router.push("/dashboard");
+    setLoading(true);
+
+    try {
+      console.log("Iniciando criação de assinatura...");
+
+      // 1. Pegar dados do step1 do localStorage
+      const step1Data = JSON.parse(
+        localStorage.getItem("registerStep1") || "{}"
+      );
+      console.log("Step1 data:", step1Data);
+
+      // 2. Buscar o usuário pelo email
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", step1Data.email)
+        .single();
+
+      console.log("User data:", userData, "User error:", userError);
+
+      if (userError) throw userError;
+
+      // 3. Criar assinatura com período de teste
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 7); // 7 dias de teste
+
+      const subscriptionData = {
+        user_id: userData.id,
+        status: "trial",
+        trial_ends_at: trialEndsAt.toISOString(),
+      };
+
+      console.log("Subscription data:", subscriptionData);
+
+      const { error: subscriptionError } = await supabase
+        .from("subscriptions")
+        .insert(subscriptionData);
+
+      console.log("Subscription error:", subscriptionError);
+      console.log(
+        "Subscription error details:",
+        JSON.stringify(subscriptionError, null, 2)
+      );
+
+      if (subscriptionError) throw subscriptionError;
+
+      // 4. Limpar dados temporários
+      localStorage.removeItem("registerStep1");
+      localStorage.removeItem("registerStep2");
+      localStorage.removeItem("registerStep3");
+
+      // 5. Redirecionar para página de sucesso
+      router.push("/register/success");
+    } catch (error) {
+      console.error("Erro detalhado:", error);
+      alert("Erro ao criar assinatura. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -367,9 +416,10 @@ export default function Step3Page() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold hover:bg-gray-900 transition-colors text-sm md:text-base"
+                  disabled={loading}
+                  className="flex-1 bg-gray-800 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Começar Teste Grátis
+                  {loading ? "Criando assinatura..." : "Começar Teste Grátis"}
                 </button>
               </div>
             </form>

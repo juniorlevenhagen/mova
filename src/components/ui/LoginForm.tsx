@@ -1,30 +1,52 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
-export function LoginForm() {
+export default function LoginForm() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
 
-    // TODO: Implementar lógica de login
-    console.log("Login:", formData);
+    console.log("Tentando login com:", {
+      email: formData.email,
+      password: formData.password,
+    });
 
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      console.log("Resultado do login:", { error });
+
+      if (error) throw error;
+
+      // Redirecionar para dashboard após login bem-sucedido
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Erro no login:", error);
+      alert("Email ou senha incorretos. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
@@ -35,7 +57,7 @@ export function LoginForm() {
           htmlFor="email"
           className="block text-sm font-medium text-gray-700 mb-2"
         >
-          Email
+          E-mail
         </label>
         <input
           type="email"
@@ -69,13 +91,17 @@ export function LoginForm() {
       </div>
 
       <div className="flex items-center justify-between">
-        <label className="flex items-center">
+        <div className="flex items-center">
           <input
             type="checkbox"
+            id="rememberMe"
+            name="rememberMe"
+            checked={formData.rememberMe}
+            onChange={handleChange}
             className="rounded border-gray-300 text-gray-800 focus:ring-gray-800"
           />
           <span className="ml-2 text-sm text-gray-600">Lembrar de mim</span>
-        </label>
+        </div>
         <a href="#" className="text-sm text-gray-800 hover:underline">
           Esqueceu a senha?
         </a>
@@ -83,10 +109,10 @@ export function LoginForm() {
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={loading}
         className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Entrando..." : "Entrar"}
+        {loading ? "Entrando..." : "Entrar"}
       </button>
     </form>
   );

@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogoBlue } from "@/components/ui/LogoBlue";
+import { supabase } from "@/lib/supabase";
 
 export default function Step1Page() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -13,17 +15,42 @@ export default function Step1Page() {
     acceptTerms: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      formData.fullName &&
-      formData.email &&
-      formData.password &&
-      formData.acceptTerms
-    ) {
-      // Salvar dados no localStorage
+    setLoading(true);
+
+    try {
+      // 1. Criar usuário no Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+          },
+        },
+      });
+
+      if (authError) throw authError;
+
+      // 2. Salvar dados adicionais na tabela users
+      const { error: userError } = await supabase.from("users").insert({
+        id: authData.user?.id,
+        email: formData.email,
+        full_name: formData.fullName,
+      });
+
+      if (userError) throw userError;
+
+      // 3. Salvar dados temporários no localStorage para os próximos steps
       localStorage.setItem("registerStep1", JSON.stringify(formData));
+
       router.push("/register/step2");
+    } catch (error) {
+      console.error("Erro no cadastro:", error);
+      alert("Erro ao criar conta. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -153,9 +180,10 @@ export default function Step1Page() {
 
           <button
             type="submit"
-            className="w-full bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold text-base md:text-lg hover:bg-gray-900 transition-colors"
+            disabled={loading}
+            className="w-full bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold text-base md:text-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Continuar Personalização
+            {loading ? "Criando conta..." : "Continuar Personalização"}
           </button>
         </form>
       </div>

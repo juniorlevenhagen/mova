@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { supabase } from "@/lib/supabase";
 
 export default function Step2Page() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     objective: "",
     trainingFrequency: "",
@@ -18,20 +20,52 @@ export default function Step2Page() {
     dietaryRestrictions: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      formData.objective &&
-      formData.trainingFrequency &&
-      formData.trainingLocation &&
-      formData.age &&
-      formData.height &&
-      formData.weight &&
-      formData.gender
-    ) {
-      // Salvar dados no localStorage
+    setLoading(true);
+
+    try {
+      // 1. Pegar dados do step1 do localStorage
+      const step1Data = JSON.parse(
+        localStorage.getItem("registerStep1") || "{}"
+      );
+
+      // 2. Buscar o usuário pelo email
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", step1Data.email)
+        .single();
+
+      if (userError) throw userError;
+
+      // 3. Salvar perfil do usuário
+      const { error: profileError } = await supabase
+        .from("user_profiles")
+        .insert({
+          user_id: userData.id,
+          age: parseInt(formData.age),
+          height: parseInt(formData.height),
+          weight: parseInt(formData.weight),
+          gender: formData.gender,
+          objective: formData.objective,
+          training_frequency: formData.trainingFrequency,
+          training_location: formData.trainingLocation,
+          has_pain: formData.hasPain,
+          dietary_restrictions: formData.dietaryRestrictions,
+        });
+
+      if (profileError) throw profileError;
+
+      // 4. Salvar dados temporários para o step3
       localStorage.setItem("registerStep2", JSON.stringify(formData));
+
       router.push("/register/step3");
+    } catch (error) {
+      console.error("Erro ao salvar perfil:", error);
+      alert("Erro ao salvar perfil. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -291,9 +325,10 @@ export default function Step2Page() {
             </button>
             <button
               type="submit"
-              className="flex-1 bg-gray-800 text-white py-2 px-3 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base"
+              disabled={loading}
+              className="flex-1 bg-gray-800 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Continuar
+              {loading ? "Salvando..." : "Continuar"}
             </button>
           </div>
         </form>

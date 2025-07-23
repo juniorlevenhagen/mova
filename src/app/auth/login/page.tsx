@@ -17,7 +17,7 @@ export default function LoginPage() {
         <p className="text-gray-600">
           Não tem uma conta?{" "}
           <Link
-            href="/auth/cadastro"
+            href="/register/step0"
             className="text-gray-800 font-semibold hover:underline"
           >
             Cadastre-se

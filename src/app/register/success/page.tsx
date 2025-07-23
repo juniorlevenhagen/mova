@@ -33,7 +33,7 @@ export default function SuccessPage() {
             Conta criada com sucesso!
           </h1>
           <p className="text-gray-600 mb-6">
-            Seu período de teste gratuito de 7 dias foi ativado.
+            Seu período de teste gratuito de 7 dias foi ativado
           </p>
         </div>
 

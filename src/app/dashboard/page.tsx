@@ -4,9 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-// Forçar renderização dinâmica para evitar prerendering
+// Apenas force dynamic, remova revalidate
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();

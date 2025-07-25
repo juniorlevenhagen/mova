@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +15,19 @@ export default function Step3Page() {
     cvv: "",
     acceptTerms: false,
   });
+
+  const [canRender, setCanRender] = useState(false);
+
+  // Proteção da rota
+  useEffect(() => {
+    const step2Data = localStorage.getItem("registerStep2");
+    const step1Data = localStorage.getItem("registerStep1");
+    if (!step2Data || !step1Data) {
+      router.replace("/register/step0");
+    } else {
+      setCanRender(true);
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +99,14 @@ export default function Step3Page() {
       [name]: type === "checkbox" ? checked : value,
     });
   };
+
+  if (!canRender) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f1e8]">
+        <span className="text-gray-600">Carregando...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 md:p-6 lg:p-8 relative">

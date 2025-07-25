@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -19,6 +19,27 @@ export default function Step2Page() {
     hasPain: "",
     dietaryRestrictions: "",
   });
+  const [canRender, setCanRender] = useState(false);
+
+  // Proteção da rota
+  useEffect(() => {
+    const step0Data = localStorage.getItem("registerStep0");
+    const step1Data = localStorage.getItem("registerStep1");
+    if (!step0Data || !step1Data) {
+      router.replace("/register/step0");
+    } else {
+      setCanRender(true);
+    }
+  }, [router]);
+
+  if (!canRender) {
+    // Mostra apenas um loading ou nada enquanto verifica
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f1e8]">
+        <span className="text-gray-600">Carregando...</span>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

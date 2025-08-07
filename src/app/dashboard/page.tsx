@@ -11,6 +11,14 @@ import { AddEvolutionModal } from "./modals/AddEvolutionModal";
 import { useEvolution } from "@/hooks/useEvolution";
 import { usePlanGeneration } from "@/hooks/usePlanGeneration";
 
+interface EvolutionData {
+  peso: string;
+  treinos: string;
+  bemEstar: string;
+  observacoes: string;
+  arquivoAvaliacao?: File;
+}
+
 export const dynamic = "force-dynamic";
 
 export default function DashboardPage() {
@@ -41,7 +49,7 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const { isAdding, modalData, addEvolution, setModalData } = useEvolution();
+  const { isAdding, addEvolution } = useEvolution();
   const { isGenerating, generatePlan } = usePlanGeneration();
 
   const handleLogout = async () => {
@@ -55,7 +63,7 @@ export default function DashboardPage() {
     setShowModal(true);
   };
 
-  const handleModalSubmit = async (data: any) => {
+  const handleModalSubmit = async (data: EvolutionData) => {
     await addEvolution(data);
     setShowModal(false);
   };

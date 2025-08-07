@@ -5,6 +5,7 @@ interface EvolutionData {
   treinos: string;
   bemEstar: string;
   observacoes: string;
+  arquivoAvaliacao?: File;
 }
 
 export function useEvolution() {
@@ -21,6 +22,11 @@ export function useEvolution() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       console.log("Dados da evolução:", data);
+
+      if (data.arquivoAvaliacao) {
+        console.log("Arquivo de avaliação:", data.arquivoAvaliacao.name);
+        // Aqui você pode implementar o upload do arquivo para o servidor
+      }
     } catch (error) {
       console.error("Erro ao salvar evolução:", error);
     } finally {

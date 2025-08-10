@@ -16,11 +16,11 @@ export function TrialSection({ trial, trialPercent }: TrialSectionProps) {
       </h2>
       <div className="flex flex-col md:flex-row md:items-center md:gap-8 gap-2 mb-2">
         <span className="text-gray-700 text-base">
-          ⏱ Faltam <span className="font-bold">{trial.diasRestantes}</span> dias
+          Faltam <span className="font-bold">{trial.diasRestantes}</span> dias
           do seu teste gratuito.
         </span>
         <span className="text-gray-700 text-base">
-          🧠 Você pode gerar mais{" "}
+          Você pode gerar mais{" "}
           <span className="font-bold">{trial.requisicoesRestantes}</span> planos
           personalizados.
         </span>
@@ -31,7 +31,7 @@ export function TrialSection({ trial, trialPercent }: TrialSectionProps) {
           style={{ width: `${trialPercent}%` }}
         />
       </div>
-      <p className="text-sm text-gray-600 mt-2">
+      <p className="text-sm text-gray-600">
         Aproveite o máximo durante esse período!
       </p>
     </div>

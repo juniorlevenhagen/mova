@@ -4,9 +4,14 @@ import { useState, useRef } from "react";
 
 interface EvolutionData {
   peso: string;
+  percentualGordura: string;
+  massaMagra: string;
+  cintura: string;
   treinos: string;
   bemEstar: string;
   observacoes: string;
+  objetivo: string;
+  nivelAtividade: string;
   arquivoAvaliacao?: File;
 }
 
@@ -25,9 +30,14 @@ export function AddEvolutionModal({
 }: AddEvolutionModalProps) {
   const [modalData, setModalData] = useState({
     peso: "",
+    percentualGordura: "",
+    massaMagra: "",
+    cintura: "",
     treinos: "",
     bemEstar: "3",
     observacoes: "",
+    objetivo: "",
+    nivelAtividade: "",
   });
 
   const [uploadMode, setUploadMode] = useState<"manual" | "upload">("manual");
@@ -58,7 +68,6 @@ export function AddEvolutionModal({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tipo de arquivo
       const allowedTypes = [
         "application/pdf",
         "application/msword",
@@ -81,10 +90,8 @@ export function AddEvolutionModal({
       setUploadedFile(file);
       setUploadLoading(true);
 
-      // Simular processamento do arquivo
       setTimeout(() => {
         setUploadLoading(false);
-        // Aqui você poderia extrair dados do arquivo se necessário
       }, 2000);
     }
   };
@@ -99,9 +106,14 @@ export function AddEvolutionModal({
   const resetForm = () => {
     setModalData({
       peso: "",
+      percentualGordura: "",
+      massaMagra: "",
+      cintura: "",
       treinos: "",
       bemEstar: "3",
       observacoes: "",
+      objetivo: "",
+      nivelAtividade: "",
     });
     setUploadedFile(null);
     setUploadMode("manual");
@@ -119,12 +131,11 @@ export function AddEvolutionModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Adicionar Evolução
         </h3>
 
-        {/* Seletor de Modo */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Como deseja adicionar sua evolução?
@@ -139,7 +150,7 @@ export function AddEvolutionModal({
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              📝 Preenchimento Manual
+              Preenchimento Manual
             </button>
             <button
               type="button"
@@ -150,64 +161,156 @@ export function AddEvolutionModal({
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
-              📄 Upload de Avaliação
+              Upload de Avaliação
             </button>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {uploadMode === "manual" ? (
-            // Modo Manual
             <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Peso atual (kg)
-                </label>
-                <input
-                  type="number"
-                  name="peso"
-                  value={modalData.peso}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-                  placeholder="Ex: 75"
-                  required
-                />
+              {/* Composição Corporal */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Peso atual (kg)
+                  </label>
+                  <input
+                    type="number"
+                    name="peso"
+                    value={modalData.peso}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    placeholder="Ex: 75"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Percentual de gordura (%)
+                  </label>
+                  <input
+                    type="number"
+                    name="percentualGordura"
+                    value={modalData.percentualGordura}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    placeholder="Ex: 20"
+                    step="0.1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Massa magra (kg)
+                  </label>
+                  <input
+                    type="number"
+                    name="massaMagra"
+                    value={modalData.massaMagra}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    placeholder="Ex: 60"
+                    step="0.1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cintura (cm)
+                  </label>
+                  <input
+                    type="number"
+                    name="cintura"
+                    value={modalData.cintura}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    placeholder="Ex: 80"
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Treinos na semana
-                </label>
-                <input
-                  type="number"
-                  name="treinos"
-                  value={modalData.treinos}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-                  placeholder="Ex: 4"
-                  min="0"
-                  max="7"
-                  required
-                />
-              </div>
+              {/* Atividade e Objetivos */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Treinos na semana
+                  </label>
+                  <input
+                    type="number"
+                    name="treinos"
+                    value={modalData.treinos}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    placeholder="Ex: 4"
+                    min="0"
+                    max="7"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Como se sente (1-5)
-                </label>
-                <select
-                  name="bemEstar"
-                  value={modalData.bemEstar}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-                  required
-                >
-                  <option value="1">1 - Muito mal</option>
-                  <option value="2">2 - Mal</option>
-                  <option value="3">3 - Regular</option>
-                  <option value="4">4 - Bem</option>
-                  <option value="5">5 - Muito bem</option>
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Objetivo atual
+                  </label>
+                  <select
+                    name="objetivo"
+                    value={modalData.objetivo}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Selecione o objetivo</option>
+                    <option value="Hipertrofia">Hipertrofia</option>
+                    <option value="Emagrecimento">Emagrecimento</option>
+                    <option value="Força">Força</option>
+                    <option value="Resistência">Resistência</option>
+                    <option value="Definição">Definição</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nível de atividade
+                  </label>
+                  <select
+                    name="nivelAtividade"
+                    value={modalData.nivelAtividade}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Selecione o nível</option>
+                    <option value="Sedentário">Sedentário</option>
+                    <option value="Leve">Leve</option>
+                    <option value="Moderado">Moderado</option>
+                    <option value="Ativo">Ativo</option>
+                    <option value="Muito Ativo">Muito Ativo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Como se sente (1-5)
+                  </label>
+                  <select
+                    name="bemEstar"
+                    value={modalData.bemEstar}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    required
+                  >
+                    <option value="1">1 - Muito mal</option>
+                    <option value="2">2 - Mal</option>
+                    <option value="3">3 - Regular</option>
+                    <option value="4">4 - Bem</option>
+                    <option value="5">5 - Muito bem</option>
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -225,7 +328,6 @@ export function AddEvolutionModal({
               </div>
             </>
           ) : (
-            // Modo Upload
             <div className="space-y-4">
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <div className="mb-4">

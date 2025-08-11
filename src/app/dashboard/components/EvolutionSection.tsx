@@ -55,18 +55,18 @@ export function EvolutionSection({
   isAddingEvolution,
   userProfile,
 }: EvolutionSectionProps) {
-  // Dados do cadastro inicial (sempre baseados no perfil do usuário)
+  // Dados do cadastro inicial (FIXOS - não mudam nunca)
   const initialData = {
     date: "15/01/2024",
-    peso: userProfile?.peso || 0,
-    percentualGordura: 25, // Valor padrão
-    massaMagra: 60, // Valor padrão
-    cintura: 85, // Valor padrão
-    quadril: 95, // Valor padrão
-    braco: 32, // Valor padrão
-    objetivo: userProfile?.objetivo || "Não informado",
-    nivelAtividade: userProfile?.nivelAtividade || "Moderado",
-    bemEstar: 3, // Valor padrão
+    peso: userProfile?.peso || 0, // Usar o profile original, não userProfile
+    percentualGordura: 25, // Valor padrão fixo
+    massaMagra: 60, // Valor padrão fixo
+    cintura: 85, // Valor padrão fixo
+    quadril: 95, // Valor padrão fixo
+    braco: 32, // Valor padrão fixo
+    objetivo: userProfile?.objetivo || "Não informado", // Usar profile original
+    nivelAtividade: userProfile?.nivelAtividade || "Moderado", // Usar profile original
+    bemEstar: 3, // Valor padrão fixo
     observacoes: "Dados do cadastro inicial",
   };
 
@@ -74,9 +74,10 @@ export function EvolutionSection({
   const currentData =
     evolutions.length > 0
       ? {
-          peso: evolutions[0].peso,
-          percentualGordura: evolutions[0].percentual_gordura || 20,
-          massaMagra: evolutions[0].massa_magra || 60,
+          peso: evolutions[evolutions.length - 1].peso, // Última evolução (mais recente)
+          percentualGordura:
+            evolutions[evolutions.length - 1].percentual_gordura || 20,
+          massaMagra: evolutions[evolutions.length - 1].massa_magra || 60,
           treinosConcluidos: evolutions.length * 4, // Simulação baseada no número de evoluções
           caloriasQueimadas: evolutions.length * 500, // Simulação
           sequencia: evolutions.length,
@@ -89,6 +90,11 @@ export function EvolutionSection({
           caloriasQueimadas: 0,
           sequencia: 0,
         };
+
+  // Adicionar console.log para debug
+  console.log("Evoluções:", evolutions);
+  console.log("CurrentData peso:", currentData.peso);
+  console.log("InitialData peso:", initialData.peso);
 
   // Calcular variações
   const pesoVariacao = initialData.peso - currentData.peso;

@@ -163,11 +163,13 @@ export default function Step2Page() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
             >
               <option value="">Selecione seu objetivo</option>
-              <option value="emagrecer">Emagrecer</option>
-              <option value="ganhar_massa">Ganhar massa muscular</option>
-              <option value="definicao">Definição muscular</option>
-              <option value="saude">Melhorar a saúde</option>
-              <option value="resistencia">Aumentar resistência</option>
+              <option value="Emagrecer">Emagrecer</option>
+              <option value="Ganhar massa muscular">
+                Ganhar massa muscular
+              </option>
+              <option value="Definição muscular">Definição muscular</option>
+              <option value="Melhorar a saúde">Melhorar a saúde</option>
+              <option value="Aumentar resistência">Aumentar resistência</option>
             </select>
           </div>
 
@@ -266,12 +268,12 @@ export default function Step2Page() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
               >
                 <option value="">Selecione a frequência</option>
-                <option value="2x_semana">2x por semana</option>
-                <option value="3x_semana">3x por semana</option>
-                <option value="4x_semana">4x por semana</option>
-                <option value="5x_semana">5x por semana</option>
-                <option value="6x_semana">6x por semana</option>
-                <option value="diario">Todos os dias</option>
+                <option value="2x por semana">2x por semana</option>
+                <option value="3x por semana">3x por semana</option>
+                <option value="4x por semana">4x por semana</option>
+                <option value="5x por semana">5x por semana</option>
+                <option value="6x por semana">6x por semana</option>
+                <option value="Todos os dias">Todos os dias</option>
               </select>
             </div>
             <div>

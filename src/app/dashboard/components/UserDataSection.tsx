@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UserDataSectionProps {
   profile: {
@@ -21,6 +23,7 @@ export function UserDataSection({
   onGeneratePlan,
   isGeneratingPlan,
 }: UserDataSectionProps) {
+  const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
   const [hasEvaluation, setHasEvaluation] = useState(false);
   const [evaluationFileName, setEvaluationFileName] = useState("");
@@ -123,7 +126,7 @@ export function UserDataSection({
     setEditValue(currentValue);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingField && editValue.trim()) {
       setUserProfile((prev) => ({
         ...prev,
@@ -138,6 +141,50 @@ export function UserDataSection({
           [editingField]: editValue,
         })
       );
+
+      // Salvar no Supabase
+      try {
+        if (!user?.id) {
+          console.error("Usuário não autenticado.");
+          return;
+        }
+
+        // Mapear campos do frontend para campos do banco
+        const fieldMapping: { [key: string]: string } = {
+          peso: "weight",
+          frequenciaTreinos: "training_frequency",
+          objetivo: "objective",
+          idade: "age",
+          nivelAtividade: "nivel_atividade",
+        };
+
+        const dbField = fieldMapping[editingField] || editingField;
+
+        const { error } = await supabase
+          .from("user_profiles")
+          .update({
+            [dbField]: editValue,
+          })
+          .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Erro ao salvar alteração:", error);
+          // Reverter mudança local se falhar
+          setUserProfile((prev) => ({
+            ...prev,
+            [editingField]: profile[editingField as keyof typeof profile],
+          }));
+        } else {
+          console.log("Alteração salva com sucesso no banco de dados");
+        }
+      } catch (error) {
+        console.error("Erro inesperado ao salvar:", error);
+        // Reverter mudança local se falhar
+        setUserProfile((prev) => ({
+          ...prev,
+          [editingField]: profile[editingField as keyof typeof profile],
+        }));
+      }
 
       setEditingField(null);
       setEditValue("");

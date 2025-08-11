@@ -23,10 +23,9 @@ export default function Step2Page() {
 
   // Proteção da rota
   useEffect(() => {
-    const step0Data = localStorage.getItem("registerStep0");
     const step1Data = localStorage.getItem("registerStep1");
-    if (!step0Data || !step1Data) {
-      router.replace("/register/step0");
+    if (!step1Data) {
+      router.replace("/register/step1");
     } else {
       setCanRender(true);
     }

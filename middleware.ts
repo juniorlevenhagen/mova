@@ -42,7 +42,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Se está autenticado e está tentando acessar páginas de auth
+  // Permitir acesso às páginas de registro mesmo para usuários autenticados
+  if (req.nextUrl.pathname.startsWith("/register")) {
+    console.log("Permitindo acesso às páginas de registro");
+    return NextResponse.next();
+  }
+
+  // Se está autenticado e está tentando acessar páginas de auth (exceto registro)
   if (
     isAuthenticated &&
     (req.nextUrl.pathname.startsWith("/auth") || req.nextUrl.pathname === "/")

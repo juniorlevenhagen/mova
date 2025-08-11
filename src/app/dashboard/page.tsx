@@ -16,9 +16,14 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface EvolutionData {
   peso: string;
+  percentualGordura: string;
+  massaMagra: string;
+  cintura: string;
   treinos: string;
   bemEstar: string;
   observacoes: string;
+  objetivo: string;
+  nivelAtividade: string;
   arquivoAvaliacao?: File;
 }
 

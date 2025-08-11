@@ -159,6 +159,30 @@ export function EvolutionSection({
     return `${current}% (${sign}${formattedDiff}%)`;
   };
 
+  // Função para normalizar dados de referência
+  const normalizeReferenceData = (
+    referenceData: UserEvolution | typeof initialData
+  ) => {
+    if ("percentual_gordura" in referenceData) {
+      // É um UserEvolution
+      return {
+        peso: referenceData.peso,
+        percentualGordura: referenceData.percentual_gordura,
+        massaMagra: referenceData.massa_magra,
+        cintura: referenceData.cintura,
+      };
+    } else {
+      // É initialData
+      const initialDataRef = referenceData as typeof initialData;
+      return {
+        peso: initialDataRef.peso,
+        percentualGordura: initialDataRef.percentualGordura,
+        massaMagra: initialDataRef.massaMagra,
+        cintura: initialDataRef.cintura,
+      };
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mt-8">
       <div className="flex items-center justify-between mb-6">
@@ -569,118 +593,123 @@ export function EvolutionSection({
 
           {/* Evoluções adicionadas */}
           {evolutions.length > 0 ? (
-            evolutions.map((evolution, index) => (
-              <div
-                key={evolution.id}
-                className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg mb-4"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h4 className="font-semibold text-gray-800">
-                      Evolução #{index + 1}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      {new Date(evolution.date).toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
-                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    {index === 0
-                      ? calculateDifference(
-                          initialData.peso,
-                          evolution.peso,
-                          "kg"
-                        )
-                      : `${evolution.peso}kg`}
-                  </span>
-                </div>
+            evolutions.map((evolution, index) => {
+              const referenceData =
+                index === 0
+                  ? initialData // Evolução #1 compara com Cadastro Inicial
+                  : evolutions[index - 1]; // Outras evoluções comparam com a anterior
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Peso:</span>
-                    <span className="font-medium ml-1">
+              const normalizedRef = normalizeReferenceData(referenceData);
+
+              return (
+                <div
+                  key={evolution.id}
+                  className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg mb-4"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="font-semibold text-gray-800">
+                        Evolução #{index + 1}
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        {new Date(evolution.date).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                       {index === 0
                         ? calculateDifference(
-                            initialData.peso,
+                            normalizedRef.peso,
                             evolution.peso,
                             "kg"
                           )
-                        : `${evolution.peso}kg`}
+                        : calculateDifference(
+                            normalizedRef.peso,
+                            evolution.peso,
+                            "kg"
+                          )}
                     </span>
                   </div>
-                  {evolution.percentual_gordura && (
-                    <div>
-                      <span className="text-gray-600">% Gordura:</span>
-                      <span className="font-medium ml-1">
-                        {index === 0
-                          ? calculatePercentageDifference(
-                              initialData.percentualGordura,
-                              evolution.percentual_gordura
-                            )
-                          : `${evolution.percentual_gordura}%`}
-                      </span>
-                    </div>
-                  )}
-                  {evolution.massa_magra && (
-                    <div>
-                      <span className="text-gray-600">Massa Magra:</span>
-                      <span className="font-medium ml-1">
-                        {index === 0
-                          ? calculateDifference(
-                              initialData.massaMagra,
-                              evolution.massa_magra,
-                              "kg"
-                            )
-                          : `${evolution.massa_magra}kg`}
-                      </span>
-                    </div>
-                  )}
-                  {evolution.cintura && (
-                    <div>
-                      <span className="text-gray-600">Cintura:</span>
-                      <span className="font-medium ml-1">
-                        {index === 0
-                          ? calculateDifference(
-                              initialData.cintura,
-                              evolution.cintura,
-                              "cm"
-                            )
-                          : `${evolution.cintura}cm`}
-                      </span>
-                    </div>
-                  )}
-                  {evolution.objetivo && (
-                    <div>
-                      <span className="text-gray-600">Objetivo:</span>
-                      <span className="font-medium ml-1">
-                        {evolution.objetivo}
-                      </span>
-                    </div>
-                  )}
-                  {evolution.nivel_atividade && (
-                    <div>
-                      <span className="text-gray-600">Nível:</span>
-                      <span className="font-medium ml-1">
-                        {evolution.nivel_atividade}
-                      </span>
-                    </div>
-                  )}
-                  <div>
-                    <span className="text-gray-600">Bem-estar:</span>
-                    <span className="font-medium ml-1">
-                      {evolution.bem_estar}/5
-                    </span>
-                  </div>
-                </div>
 
-                {evolution.observacoes && (
-                  <div className="mt-3 p-3 bg-white rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      {evolution.observacoes}
-                    </p>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Peso:</span>
+                      <span className="font-medium ml-1">
+                        {calculateDifference(
+                          normalizedRef.peso,
+                          evolution.peso,
+                          "kg"
+                        )}
+                      </span>
+                    </div>
+                    {evolution.percentual_gordura && (
+                      <div>
+                        <span className="text-gray-600">% Gordura:</span>
+                        <span className="font-medium ml-1">
+                          {calculatePercentageDifference(
+                            normalizedRef.percentualGordura || 25,
+                            evolution.percentual_gordura
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {evolution.massa_magra && (
+                      <div>
+                        <span className="text-gray-600">Massa Magra:</span>
+                        <span className="font-medium ml-1">
+                          {calculateDifference(
+                            normalizedRef.massaMagra || 60,
+                            evolution.massa_magra,
+                            "kg"
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {evolution.cintura && (
+                      <div>
+                        <span className="text-gray-600">Cintura:</span>
+                        <span className="font-medium ml-1">
+                          {calculateDifference(
+                            normalizedRef.cintura || 85,
+                            evolution.cintura,
+                            "cm"
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {evolution.objetivo && (
+                      <div>
+                        <span className="text-gray-600">Objetivo:</span>
+                        <span className="font-medium ml-1">
+                          {evolution.objetivo}
+                        </span>
+                      </div>
+                    )}
+                    {evolution.nivel_atividade && (
+                      <div>
+                        <span className="text-gray-600">Nível:</span>
+                        <span className="font-medium ml-1">
+                          {evolution.nivel_atividade}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-gray-600">Bem-estar:</span>
+                      <span className="font-medium ml-1">
+                        {evolution.bem_estar}/5
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))
+
+                  {evolution.observacoes && (
+                    <div className="mt-3 p-3 bg-white rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        {evolution.observacoes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           ) : (
             <div className="text-center py-8 text-gray-500">
               <p>Nenhuma evolução registrada ainda.</p>

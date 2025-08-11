@@ -4,9 +4,14 @@ import { User } from "@supabase/supabase-js";
 
 interface EvolutionData {
   peso: string;
+  percentualGordura: string;
+  massaMagra: string;
+  cintura: string;
   treinos: string;
   bemEstar: string;
   observacoes: string;
+  objetivo: string;
+  nivelAtividade: string;
   arquivoAvaliacao?: File;
 }
 
@@ -90,6 +95,11 @@ export function useEvolution(user: User | null) {
 
       const peso = parseFloat(data.peso);
       const bemEstar = parseInt(data.bemEstar);
+      const percentualGordura = data.percentualGordura
+        ? parseFloat(data.percentualGordura)
+        : null;
+      const massaMagra = data.massaMagra ? parseFloat(data.massaMagra) : null;
+      const cintura = data.cintura ? parseInt(data.cintura) : null;
 
       if (isNaN(peso) || isNaN(bemEstar)) {
         setError("Dados inválidos");
@@ -100,10 +110,13 @@ export function useEvolution(user: User | null) {
         user_id: user.id,
         date: new Date().toISOString().split("T")[0],
         peso,
+        percentual_gordura: percentualGordura,
+        massa_magra: massaMagra,
+        cintura: cintura,
         bem_estar: bemEstar,
         observacoes: data.observacoes.trim(),
-        objetivo: "Emagrecimento",
-        nivel_atividade: "Moderado",
+        objetivo: data.objetivo || "Emagrecimento",
+        nivel_atividade: data.nivelAtividade || "Moderado",
       };
 
       console.log("Salvando evolução:", evolutionData);

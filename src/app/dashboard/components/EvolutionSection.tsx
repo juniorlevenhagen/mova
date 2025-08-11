@@ -133,6 +133,32 @@ export function EvolutionSection({
     return badges;
   };
 
+  // Função para calcular diferença e formatar
+  const calculateDifference = (
+    initial: number,
+    current: number,
+    unit: string
+  ) => {
+    const diff = current - initial;
+    if (diff === 0) return `${current}${unit}`;
+
+    const sign = diff > 0 ? "+" : "-";
+    const formattedDiff = Math.abs(diff);
+
+    return `${current}${unit} (${sign}${formattedDiff}${unit})`;
+  };
+
+  // Função para calcular diferença percentual
+  const calculatePercentageDifference = (initial: number, current: number) => {
+    const diff = current - initial;
+    if (diff === 0) return `${current}%`;
+
+    const sign = diff > 0 ? "+" : "-";
+    const formattedDiff = Math.abs(diff);
+
+    return `${current}% (${sign}${formattedDiff}%)`;
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mt-8">
       <div className="flex items-center justify-between mb-6">
@@ -558,20 +584,39 @@ export function EvolutionSection({
                     </p>
                   </div>
                   <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                    {evolution.peso}kg
+                    {index === 0
+                      ? calculateDifference(
+                          initialData.peso,
+                          evolution.peso,
+                          "kg"
+                        )
+                      : `${evolution.peso}kg`}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-600">Peso:</span>
-                    <span className="font-medium ml-1">{evolution.peso}kg</span>
+                    <span className="font-medium ml-1">
+                      {index === 0
+                        ? calculateDifference(
+                            initialData.peso,
+                            evolution.peso,
+                            "kg"
+                          )
+                        : `${evolution.peso}kg`}
+                    </span>
                   </div>
                   {evolution.percentual_gordura && (
                     <div>
                       <span className="text-gray-600">% Gordura:</span>
                       <span className="font-medium ml-1">
-                        {evolution.percentual_gordura}%
+                        {index === 0
+                          ? calculatePercentageDifference(
+                              initialData.percentualGordura,
+                              evolution.percentual_gordura
+                            )
+                          : `${evolution.percentual_gordura}%`}
                       </span>
                     </div>
                   )}
@@ -579,7 +624,13 @@ export function EvolutionSection({
                     <div>
                       <span className="text-gray-600">Massa Magra:</span>
                       <span className="font-medium ml-1">
-                        {evolution.massa_magra}kg
+                        {index === 0
+                          ? calculateDifference(
+                              initialData.massaMagra,
+                              evolution.massa_magra,
+                              "kg"
+                            )
+                          : `${evolution.massa_magra}kg`}
                       </span>
                     </div>
                   )}
@@ -587,7 +638,13 @@ export function EvolutionSection({
                     <div>
                       <span className="text-gray-600">Cintura:</span>
                       <span className="font-medium ml-1">
-                        {evolution.cintura}cm
+                        {index === 0
+                          ? calculateDifference(
+                              initialData.cintura,
+                              evolution.cintura,
+                              "cm"
+                            )
+                          : `${evolution.cintura}cm`}
                       </span>
                     </div>
                   )}

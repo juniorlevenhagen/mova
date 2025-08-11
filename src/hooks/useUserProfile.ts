@@ -8,7 +8,8 @@ interface UserProfile {
   age: number;
   birth_date: string; // Adicionar este campo
   height: number;
-  weight: number;
+  weight: number; // Peso atual
+  initial_weight: number; // Peso inicial
   gender: string;
   objective: string;
   training_frequency: string;

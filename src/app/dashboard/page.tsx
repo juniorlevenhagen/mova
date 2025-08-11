@@ -98,11 +98,12 @@ export default function DashboardPage() {
   // Dados do perfil (sempre reais, com fallbacks apenas para campos opcionais)
   const profileData = {
     altura: profile?.height || 0,
-    peso: profile?.weight || 0,
+    peso: profile?.weight || 0, // Peso atual
+    pesoInicial: profile?.initial_weight || 0, // Peso inicial
     sexo: profile?.gender || "Não informado",
     frequenciaTreinos: profile?.training_frequency || "Não informado",
     objetivo: profile?.objective || "Não informado",
-    birthDate: profile?.birth_date || null, // Adicionar data de nascimento
+    birthDate: profile?.birth_date || null,
     nivelAtividade: "Moderado", // Valor padrão fixo
   };
 

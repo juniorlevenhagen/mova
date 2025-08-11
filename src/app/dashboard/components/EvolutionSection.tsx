@@ -40,7 +40,8 @@ interface EvolutionSectionProps {
   isAddingEvolution: boolean;
   userProfile?: {
     altura: number;
-    peso: number;
+    peso: number; // Peso atual
+    pesoInicial: number; // Peso inicial
     sexo: string;
     frequenciaTreinos: string;
     objetivo: string;
@@ -58,14 +59,14 @@ export function EvolutionSection({
   // Dados do cadastro inicial (FIXOS - não mudam nunca)
   const initialData = {
     date: "15/01/2024",
-    peso: userProfile?.peso || 0, // Usar o profile original, não userProfile
+    peso: userProfile?.pesoInicial || 0, // Usar o peso inicial
     percentualGordura: 25, // Valor padrão fixo
     massaMagra: 60, // Valor padrão fixo
     cintura: 85, // Valor padrão fixo
     quadril: 95, // Valor padrão fixo
     braco: 32, // Valor padrão fixo
-    objetivo: userProfile?.objetivo || "Não informado", // Usar profile original
-    nivelAtividade: userProfile?.nivelAtividade || "Moderado", // Usar profile original
+    objetivo: userProfile?.objetivo || "Não informado",
+    nivelAtividade: userProfile?.nivelAtividade || "Moderado",
     bemEstar: 3, // Valor padrão fixo
     observacoes: "Dados do cadastro inicial",
   };

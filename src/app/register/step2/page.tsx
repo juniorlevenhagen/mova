@@ -75,10 +75,11 @@ export default function Step2Page() {
         .from("user_profiles")
         .insert({
           user_id: userData.id,
-          birth_date: formData.birthDate, // Novo campo
-          age: calculatedAge, // Mantém para compatibilidade
+          birth_date: formData.birthDate,
+          age: calculatedAge,
           height: parseInt(formData.height),
-          weight: parseInt(formData.weight),
+          weight: parseInt(formData.weight), // Peso atual
+          initial_weight: parseInt(formData.weight), // Peso inicial (mesmo valor)
           gender: formData.gender,
           objective: formData.objective,
           training_frequency: formData.trainingFrequency,

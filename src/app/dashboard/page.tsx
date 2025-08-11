@@ -90,27 +90,16 @@ export default function DashboardPage() {
     email: userData?.email || user.email || "",
   };
 
-  // Dados do perfil (reais ou fallback mockado)
-  const profileData = profile
-    ? {
-        altura: profile.height,
-        peso: profile.weight,
-        sexo: profile.gender,
-        frequenciaTreinos: profile.training_frequency,
-        objetivo: profile.objective,
-        idade: profile.age,
-        nivelAtividade: "Moderado", // Pode ser adicionado ao perfil depois
-      }
-    : {
-        // Dados mockados como fallback
-        altura: 178,
-        peso: 75,
-        sexo: "Masculino",
-        frequenciaTreinos: "4x por semana",
-        objetivo: "Hipertrofia",
-        idade: 28,
-        nivelAtividade: "Moderado",
-      };
+  // Dados do perfil (sempre reais, com fallbacks apenas para campos opcionais)
+  const profileData = {
+    altura: profile?.height || 0,
+    peso: profile?.weight || 0,
+    sexo: profile?.gender || "Não informado",
+    frequenciaTreinos: profile?.training_frequency || "Não informado",
+    objetivo: profile?.objective || "Não informado",
+    idade: profile?.age || 0,
+    nivelAtividade: "Moderado", // Valor padrão fixo
+  };
 
   // Dados de trial (ainda mockados - será implementado depois)
   const trial = {
@@ -187,6 +176,7 @@ export default function DashboardPage() {
             evolutions={evolutions}
             onAddEvolution={handleAddEvolucao}
             isAddingEvolution={isAdding}
+            userProfile={profileData}
           />
         </div>
 

@@ -38,46 +38,37 @@ interface EvolutionSectionProps {
   evolutions: UserEvolution[];
   onAddEvolution: () => void;
   isAddingEvolution: boolean;
+  userProfile?: {
+    altura: number;
+    peso: number;
+    sexo: string;
+    frequenciaTreinos: string;
+    objetivo: string;
+    idade?: number;
+    nivelAtividade: string;
+  };
 }
 
 export function EvolutionSection({
   evolutions,
   onAddEvolution,
   isAddingEvolution,
+  userProfile,
 }: EvolutionSectionProps) {
-  // Dados iniciais (primeira evolução ou dados mockados como fallback)
-  const initialData =
-    evolutions.length > 0
-      ? {
-          date: evolutions[evolutions.length - 1].date,
-          peso: evolutions[evolutions.length - 1].peso,
-          percentualGordura:
-            evolutions[evolutions.length - 1].percentual_gordura || 25,
-          massaMagra: evolutions[evolutions.length - 1].massa_magra || 60,
-          cintura: evolutions[evolutions.length - 1].cintura || 85,
-          quadril: evolutions[evolutions.length - 1].quadril || 95,
-          braco: evolutions[evolutions.length - 1].braco || 32,
-          objetivo:
-            evolutions[evolutions.length - 1].objetivo || "Emagrecimento",
-          nivelAtividade:
-            evolutions[evolutions.length - 1].nivel_atividade || "Sedentário",
-          bemEstar: evolutions[evolutions.length - 1].bem_estar,
-          observacoes: evolutions[evolutions.length - 1].observacoes,
-        }
-      : {
-          // Dados mockados como fallback
-          date: "15/01/2024",
-          peso: 80,
-          percentualGordura: 25,
-          massaMagra: 60,
-          cintura: 85,
-          quadril: 95,
-          braco: 32,
-          objetivo: "Emagrecimento",
-          nivelAtividade: "Sedentário",
-          bemEstar: 3,
-          observacoes: "Iniciando treinos",
-        };
+  // Dados do cadastro inicial (sempre baseados no perfil do usuário)
+  const initialData = {
+    date: "15/01/2024",
+    peso: userProfile?.peso || 0,
+    percentualGordura: 25, // Valor padrão
+    massaMagra: 60, // Valor padrão
+    cintura: 85, // Valor padrão
+    quadril: 95, // Valor padrão
+    braco: 32, // Valor padrão
+    objetivo: userProfile?.objetivo || "Não informado",
+    nivelAtividade: userProfile?.nivelAtividade || "Moderado",
+    bemEstar: 3, // Valor padrão
+    observacoes: "Dados do cadastro inicial",
+  };
 
   // Dados atuais (última evolução ou dados iniciais)
   const currentData =

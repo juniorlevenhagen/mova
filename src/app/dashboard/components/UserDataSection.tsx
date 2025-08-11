@@ -168,8 +168,9 @@ export function UserDataSection({
     });
   };
 
-  // Calcular IMC dinamicamente
+  // Calcular IMC dinamicamente (com proteção contra valores zero)
   const calcularIMC = (peso: number, altura: number) => {
+    if (peso <= 0 || altura <= 0) return "0.0";
     const alturaEmMetros = altura / 100;
     return (peso / (alturaEmMetros * alturaEmMetros)).toFixed(1);
   };
@@ -226,13 +227,14 @@ export function UserDataSection({
     userProfile.nivelAtividade || "Moderado"
   );
 
-  // Renderizar campo editável
+  // Renderizar campo editável com proteção para valores vazios
   const renderEditableField = (
     field: string,
     label: string,
     value: string,
     options?: string[]
   ) => {
+    const displayValue = value || "Não informado";
     const isEditing = editingField === field;
 
     return (
@@ -270,9 +272,15 @@ export function UserDataSection({
             </div>
           ) : (
             <>
-              <span className="block text-gray-800 font-bold">{value}</span>
+              <span
+                className={`block font-bold ${
+                  value ? "text-gray-800" : "text-gray-400 italic"
+                }`}
+              >
+                {displayValue}
+              </span>
               <button
-                onClick={() => startEditing(field, value)}
+                onClick={() => startEditing(field, value || "")}
                 className="text-gray-400 hover:text-blue-600 transition-colors"
               >
                 <svg

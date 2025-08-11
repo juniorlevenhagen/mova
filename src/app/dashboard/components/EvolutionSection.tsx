@@ -56,18 +56,18 @@ export function EvolutionSection({
   isAddingEvolution,
   userProfile,
 }: EvolutionSectionProps) {
-  // Dados do cadastro inicial (FIXOS - não mudam nunca)
+  // Dados do cadastro inicial (usando dados reais do perfil)
   const initialData = {
     date: "15/01/2024",
-    peso: userProfile?.pesoInicial || 0, // Usar o peso inicial
-    percentualGordura: 25, // Valor padrão fixo
-    massaMagra: 60, // Valor padrão fixo
-    cintura: 85, // Valor padrão fixo
-    quadril: 95, // Valor padrão fixo
-    braco: 32, // Valor padrão fixo
-    objetivo: userProfile?.objetivo || "Não informado",
-    nivelAtividade: userProfile?.nivelAtividade || "Moderado",
-    bemEstar: 3, // Valor padrão fixo
+    peso: userProfile?.pesoInicial || 0,
+    percentualGordura: null, // Não temos dados reais de % gordura no cadastro
+    massaMagra: null, // Não temos dados reais de massa magra no cadastro
+    cintura: null, // Não temos dados reais de cintura no cadastro
+    quadril: null, // Não temos dados reais de quadril no cadastro
+    braco: null, // Não temos dados reais de braço no cadastro
+    objetivo: userProfile?.objetivo || null,
+    nivelAtividade: userProfile?.nivelAtividade || null,
+    bemEstar: null, // Não temos dados reais de bem-estar no cadastro
     observacoes: "Dados do cadastro inicial",
   };
 
@@ -97,11 +97,25 @@ export function EvolutionSection({
   console.log("CurrentData peso:", currentData.peso);
   console.log("InitialData peso:", initialData.peso);
 
-  // Calcular variações
-  const pesoVariacao = initialData.peso - currentData.peso;
+  // Função para formatar valores ou mostrar "-"
+  const formatValue = (value: number | string | null, unit: string = "") => {
+    if (value === null || value === undefined || value === 0) {
+      return "-";
+    }
+    return `${value}${unit}`;
+  };
+
+  // Calcular variações (apenas se temos dados reais)
+  const pesoVariacao =
+    initialData.peso > 0 ? initialData.peso - currentData.peso : 0;
   const gorduraVariacao =
-    initialData.percentualGordura - currentData.percentualGordura;
-  const massaVariacao = currentData.massaMagra - initialData.massaMagra;
+    initialData.percentualGordura && currentData.percentualGordura
+      ? initialData.percentualGordura - currentData.percentualGordura
+      : 0;
+  const massaVariacao =
+    initialData.massaMagra && currentData.massaMagra
+      ? currentData.massaMagra - initialData.massaMagra
+      : 0;
 
   // Feedback motivacional baseado nos dados
   const getMotivationalMessage = () => {
@@ -208,6 +222,33 @@ export function EvolutionSection({
     }
   };
 
+  // Função para calcular IMC
+  const calculateIMC = (peso: number, altura: number) => {
+    if (peso <= 0 || altura <= 0) return null;
+    const alturaEmMetros = altura / 100; // Converter cm para metros
+    return Number((peso / (alturaEmMetros * alturaEmMetros)).toFixed(1));
+  };
+
+  // Função para obter classificação do IMC
+  const getIMCClassification = (imc: number) => {
+    if (imc < 18.5) return "Abaixo do peso";
+    if (imc < 25) return "Peso normal";
+    if (imc < 30) return "Sobrepeso";
+    if (imc < 35) return "Obesidade grau I";
+    if (imc < 40) return "Obesidade grau II";
+    return "Obesidade grau III";
+  };
+
+  // Calcular IMC atual
+  const imcAtual = calculateIMC(currentData.peso, userProfile?.altura || 0);
+
+  // Debug temporário
+  console.log("EvolutionSection Debug:", {
+    currentDataPeso: currentData.peso,
+    userProfileAltura: userProfile?.altura,
+    imcAtual: imcAtual,
+  });
+
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mt-8">
       <div className="flex items-center justify-between mb-6">
@@ -304,9 +345,13 @@ export function EvolutionSection({
           <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg text-center border border-orange-200">
             <h4 className="text-sm text-gray-600 mb-1">IMC</h4>
             <p className="text-2xl font-bold text-orange-800">
-              {((currentData.peso / Math.pow(1.78, 2)) * 100).toFixed(1)}
+              {imcAtual ? imcAtual.toFixed(1) : "-"}
             </p>
-            <p className="text-xs text-green-600">Peso normal</p>
+            <p className="text-xs text-green-600">
+              {imcAtual
+                ? getIMCClassification(imcAtual)
+                : "Altura não informada"}
+            </p>
           </div>
         </div>
       </div>
@@ -415,7 +460,9 @@ export function EvolutionSection({
                     },
                     {
                       name: "Gordura",
-                      value: currentData.peso - currentData.massaMagra,
+                      value: currentData.massaMagra
+                        ? currentData.peso - currentData.massaMagra
+                        : 0,
                       color: "#EF4444",
                     },
                   ]}
@@ -437,7 +484,9 @@ export function EvolutionSection({
                     },
                     {
                       name: "Gordura",
-                      value: currentData.peso - currentData.massaMagra,
+                      value: currentData.massaMagra
+                        ? currentData.peso - currentData.massaMagra
+                        : 0,
                       color: "#EF4444",
                     },
                   ].map((entry, index) => (
@@ -572,40 +621,44 @@ export function EvolutionSection({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
               <div>
                 <span className="text-gray-600">Peso:</span>
-                <span className="font-medium ml-1">{initialData.peso}kg</span>
+                <span className="font-medium ml-1">
+                  {formatValue(initialData.peso, "kg")}
+                </span>
               </div>
               <div>
                 <span className="text-gray-600">% Gordura:</span>
                 <span className="font-medium ml-1">
-                  {initialData.percentualGordura}%
+                  {formatValue(initialData.percentualGordura, "%")}
                 </span>
               </div>
               <div>
                 <span className="text-gray-600">Massa Magra:</span>
                 <span className="font-medium ml-1">
-                  {initialData.massaMagra}kg
+                  {formatValue(initialData.massaMagra, "kg")}
                 </span>
               </div>
               <div>
                 <span className="text-gray-600">Cintura:</span>
                 <span className="font-medium ml-1">
-                  {initialData.cintura}cm
+                  {formatValue(initialData.cintura, "cm")}
                 </span>
               </div>
               <div>
                 <span className="text-gray-600">Objetivo:</span>
-                <span className="font-medium ml-1">{initialData.objetivo}</span>
+                <span className="font-medium ml-1">
+                  {initialData.objetivo || "-"}
+                </span>
               </div>
               <div>
                 <span className="text-gray-600">Nível:</span>
                 <span className="font-medium ml-1">
-                  {initialData.nivelAtividade}
+                  {initialData.nivelAtividade || "-"}
                 </span>
               </div>
               <div>
                 <span className="text-gray-600">Bem-estar:</span>
                 <span className="font-medium ml-1">
-                  {initialData.bemEstar}/5
+                  {initialData.bemEstar ? `${initialData.bemEstar}/5` : "-"}
                 </span>
               </div>
             </div>

@@ -87,12 +87,6 @@ export function useEvolution(user: User | null) {
     setError(null);
 
     try {
-      // Validação dos dados
-      if (!data.peso || !data.bemEstar || !data.observacoes) {
-        setError("Todos os campos são obrigatórios");
-        return;
-      }
-
       const peso = parseFloat(data.peso);
       const bemEstar = parseInt(data.bemEstar);
       const percentualGordura = data.percentualGordura

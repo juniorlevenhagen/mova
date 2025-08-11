@@ -6,6 +6,7 @@ interface UserProfile {
   id: string;
   user_id: string;
   age: number;
+  birth_date: string; // Adicionar este campo
   height: number;
   weight: number;
   gender: string;

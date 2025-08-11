@@ -12,7 +12,7 @@ export default function Step2Page() {
     objective: "",
     trainingFrequency: "",
     trainingLocation: "",
-    age: "",
+    birthDate: "", // Mudou de age para birthDate
     height: "",
     weight: "",
     gender: "",
@@ -60,11 +60,23 @@ export default function Step2Page() {
       if (userError) throw userError;
 
       // 3. Salvar perfil do usuário
+      const birthDate = new Date(formData.birthDate);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+
+      const calculatedAge =
+        monthDiff < 0 ||
+        (monthDiff === 0 && today.getDate() < birthDate.getDate())
+          ? age - 1
+          : age;
+
       const { error: profileError } = await supabase
         .from("user_profiles")
         .insert({
           user_id: userData.id,
-          age: parseInt(formData.age),
+          birth_date: formData.birthDate, // Novo campo
+          age: calculatedAge, // Mantém para compatibilidade
           height: parseInt(formData.height),
           weight: parseInt(formData.weight),
           gender: formData.gender,
@@ -176,20 +188,20 @@ export default function Step2Page() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label
-                htmlFor="age"
+                htmlFor="birthDate"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Idade
+                Data de Nascimento
               </label>
               <input
-                type="number"
-                id="age"
-                name="age"
-                value={formData.age}
+                type="date"
+                id="birthDate"
+                name="birthDate"
+                value={formData.birthDate}
                 onChange={handleChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
-                placeholder="25"
+                max={new Date().toISOString().split("T")[0]} // Não permite datas futuras
               />
             </div>
             <div>

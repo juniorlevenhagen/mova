@@ -11,8 +11,8 @@ interface UserDataSectionProps {
     sexo: string;
     frequenciaTreinos: string;
     objetivo: string;
-    nivelAtividade?: string; // Add this
-    idade?: number; // Add this
+    nivelAtividade?: string;
+    birthDate?: string | null; // Permitir null
   };
   onGeneratePlan: () => void;
   isGeneratingPlan: boolean;
@@ -154,7 +154,6 @@ export function UserDataSection({
           peso: "weight",
           frequenciaTreinos: "training_frequency",
           objetivo: "objective",
-          idade: "age",
           nivelAtividade: "nivel_atividade",
         };
 
@@ -269,7 +268,7 @@ export function UserDataSection({
   const caloriaBasal = calcularCaloriaBasal(
     userProfile.peso,
     userProfile.altura,
-    userProfile.idade || 28, // idade mockada por enquanto
+    userProfile.birthDate ? calculateAge(userProfile.birthDate) : 28, // idade mockada por enquanto
     userProfile.sexo,
     userProfile.nivelAtividade || "Moderado"
   );
@@ -422,6 +421,16 @@ export function UserDataSection({
           </span>
         </div>
 
+        {/* Idade calculada automaticamente */}
+        <div>
+          <span className="block text-gray-500 text-sm">Idade</span>
+          <span className="block text-gray-800 font-bold">
+            {userProfile.birthDate
+              ? `${calculateAge(userProfile.birthDate)} anos`
+              : "Não informado"}
+          </span>
+        </div>
+
         {/* Campos editáveis */}
         {renderEditableField(
           "frequenciaTreinos",
@@ -466,12 +475,6 @@ export function UserDataSection({
             {caloriaBasal} kcal
           </span>
         </div>
-        {/* Idade editável */}
-        {renderEditableField(
-          "idade",
-          "Idade",
-          `${userProfile.idade || 28} anos`
-        )}
 
         {renderEditableField(
           "nivelAtividade",
@@ -646,3 +649,17 @@ export function UserDataSection({
     </div>
   );
 }
+
+// Função para calcular idade (mover para dentro do componente)
+const calculateAge = (birthDate: string) => {
+  const birth = new Date(birthDate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+
+  return age;
+};

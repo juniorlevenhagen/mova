@@ -102,7 +102,7 @@ export default function DashboardPage() {
     sexo: profile?.gender || "Não informado",
     frequenciaTreinos: profile?.training_frequency || "Não informado",
     objetivo: profile?.objective || "Não informado",
-    idade: profile?.age || 0,
+    birthDate: profile?.birth_date || null, // Adicionar data de nascimento
     nivelAtividade: "Moderado", // Valor padrão fixo
   };
 

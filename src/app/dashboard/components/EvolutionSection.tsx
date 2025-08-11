@@ -148,13 +148,31 @@ export function EvolutionSection({
     return `${current}${unit} (${sign}${formattedDiff}${unit})`;
   };
 
-  // Função para calcular diferença percentual
-  const calculatePercentageDifference = (initial: number, current: number) => {
+  // Função para calcular diferença percentual com cores para gordura
+  const calculatePercentageDifference = (
+    initial: number,
+    current: number,
+    isFat: boolean = false
+  ) => {
     const diff = current - initial;
     if (diff === 0) return `${current}%`;
 
-    const sign = diff > 0 ? "+" : "-";
+    const sign = diff > 0 ? "+" : "-"; // Corrigir: sempre mostrar o sinal
     const formattedDiff = Math.abs(diff);
+
+    if (isFat) {
+      // Para gordura: verde quando diminui (negativo), vermelho quando aumenta (positivo)
+      const colorClass = diff < 0 ? "text-green-600" : "text-red-600";
+      return (
+        <span>
+          {current}%{" "}
+          <span className={colorClass}>
+            ({sign}
+            {formattedDiff}%)
+          </span>
+        </span>
+      );
+    }
 
     return `${current}% (${sign}${formattedDiff}%)`;
   };
@@ -645,10 +663,17 @@ export function EvolutionSection({
                       <div>
                         <span className="text-gray-600">% Gordura:</span>
                         <span className="font-medium ml-1">
-                          {calculatePercentageDifference(
-                            normalizedRef.percentualGordura || 25,
-                            evolution.percentual_gordura
-                          )}
+                          {index === 0
+                            ? calculatePercentageDifference(
+                                normalizedRef.percentualGordura || 25,
+                                evolution.percentual_gordura,
+                                true // isFat = true para aplicar cores
+                              )
+                            : calculatePercentageDifference(
+                                normalizedRef.percentualGordura || 25,
+                                evolution.percentual_gordura,
+                                true // isFat = true para aplicar cores
+                              )}
                         </span>
                       </div>
                     )}

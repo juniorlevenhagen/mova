@@ -1,19 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LogoBlue } from "@/components/ui/LogoBlue";
 
 export default function SuccessPage() {
   const router = useRouter();
-
-  // Proteção da rota
-  useEffect(() => {
-    const step3Data = localStorage.getItem("registerStep3");
-    if (!step3Data) {
-      router.push("/register/step0");
-    }
-  }, [router]);
 
   return (
     <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4">

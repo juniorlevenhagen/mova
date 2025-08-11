@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { TrialSection } from "./components/TrialSection";
 import { UserDataSection } from "./components/UserDataSection";
@@ -24,34 +25,51 @@ interface EvolutionData {
 export const dynamic = "force-dynamic";
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const {
+    profile,
+    userData,
+    loading: profileLoading,
+    error,
+  } = useUserProfile(user);
   const router = useRouter();
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const { isAdding, addEvolution } = useEvolution();
+  const {
+    evolutions,
+    loading: evolutionLoading,
+    isAdding,
+    error: evolutionError,
+    addEvolution,
+  } = useEvolution(user);
   const { isGenerating, generatePlan } = usePlanGeneration();
 
   // Proteção mais robusta
   useEffect(() => {
-    if (!loading) {
+    if (!authLoading) {
       if (!user) {
-        console.log(" Usuário não autenticado, redirecionando...");
+        console.log("Usuário não autenticado, redirecionando...");
         router.replace("/auth/login");
       } else {
         console.log("Usuário autenticado:", user.email);
       }
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
 
-  // Mostrar loading enquanto verifica autenticação
-  if (loading) {
+  // Mostrar loading enquanto verifica autenticação e carrega dados
+  if (authLoading || profileLoading || evolutionLoading) {
     return (
       <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando autenticação...</p>
+          <p className="text-gray-600">
+            {authLoading
+              ? "Verificando autenticação..."
+              : profileLoading
+              ? "Carregando perfil..."
+              : "Carregando evoluções..."}
+          </p>
         </div>
       </div>
     );
@@ -62,21 +80,39 @@ export default function DashboardPage() {
     return null;
   }
 
-  // Dados mockados (substitua por dados reais do usuário)
-  const userData = {
+  // Dados do usuário (reais ou fallback)
+  const userDisplayData = {
     full_name:
-      user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário",
-    email: user.email || "",
+      userData?.full_name ||
+      user.user_metadata?.full_name ||
+      user.email?.split("@")[0] ||
+      "Usuário",
+    email: userData?.email || user.email || "",
   };
 
-  const profile = {
-    altura: 178,
-    peso: 75,
-    sexo: "Masculino",
-    frequenciaTreinos: "4x por semana",
-    objetivo: "Hipertrofia",
-  };
+  // Dados do perfil (reais ou fallback mockado)
+  const profileData = profile
+    ? {
+        altura: profile.height,
+        peso: profile.weight,
+        sexo: profile.gender,
+        frequenciaTreinos: profile.training_frequency,
+        objetivo: profile.objective,
+        idade: profile.age,
+        nivelAtividade: "Moderado", // Pode ser adicionado ao perfil depois
+      }
+    : {
+        // Dados mockados como fallback
+        altura: 178,
+        peso: 75,
+        sexo: "Masculino",
+        frequenciaTreinos: "4x por semana",
+        objetivo: "Hipertrofia",
+        idade: 28,
+        nivelAtividade: "Moderado",
+      };
 
+  // Dados de trial (ainda mockados - será implementado depois)
   const trial = {
     diasRestantes: 5,
     totalDias: 7,
@@ -107,8 +143,34 @@ export default function DashboardPage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-[#f5f1e8] p-4">
         <div className="max-w-3xl mx-auto space-y-8">
+          {/* Mostrar erros se houver */}
+          {(error || evolutionError) && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-800">
+                    {error || evolutionError}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <DashboardHeader
-            user={userData}
+            user={userDisplayData}
             onLogout={handleLogout}
             logoutLoading={logoutLoading}
           />
@@ -116,12 +178,13 @@ export default function DashboardPage() {
           <TrialSection trial={trial} trialPercent={trialPercent} />
 
           <UserDataSection
-            profile={profile}
+            profile={profileData}
             onGeneratePlan={generatePlan}
             isGeneratingPlan={isGenerating}
           />
 
           <EvolutionSection
+            evolutions={evolutions}
             onAddEvolution={handleAddEvolucao}
             isAddingEvolution={isAdding}
           />
@@ -133,48 +196,6 @@ export default function DashboardPage() {
           onSubmit={handleModalSubmit}
           isLoading={isAdding}
         />
-
-        {showDetailsModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Detalhes da Evolução
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Data:</span>
-                  <span className="font-medium">10/06/2024</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Peso:</span>
-                  <span className="font-medium">75kg</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Treinos na semana:</span>
-                  <span className="font-medium">4</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Bem-estar:</span>
-                  <span className="font-medium">4/5 - Muito bem</span>
-                </div>
-                <div className="border-t pt-3">
-                  <span className="text-gray-600 block mb-2">Observação:</span>
-                  <p className="text-gray-800 bg-gray-50 p-3 rounded">
-                    &ldquo;Treinos muito bons esta semana, sentindo mais força
-                    nos exercícios. Consegui aumentar a carga em alguns
-                    exercícios.&rdquo;
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="mt-6 w-full bg-gray-800 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </ProtectedRoute>
   );

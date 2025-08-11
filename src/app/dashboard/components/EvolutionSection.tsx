@@ -16,60 +16,88 @@ import {
   AreaChart,
 } from "recharts";
 
+interface UserEvolution {
+  id: string;
+  user_id: string;
+  date: string;
+  peso: number;
+  percentual_gordura?: number;
+  massa_magra?: number;
+  cintura?: number;
+  quadril?: number;
+  braco?: number;
+  objetivo?: string;
+  nivel_atividade?: string;
+  bem_estar: number;
+  observacoes: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface EvolutionSectionProps {
+  evolutions: UserEvolution[];
   onAddEvolution: () => void;
   isAddingEvolution: boolean;
 }
 
 export function EvolutionSection({
+  evolutions,
   onAddEvolution,
   isAddingEvolution,
 }: EvolutionSectionProps) {
-  // Dados do cadastro inicial (mockados por enquanto)
-  const initialData = {
-    date: "15/01/2024",
-    peso: 80,
-    percentualGordura: 25,
-    massaMagra: 60,
-    cintura: 85,
-    quadril: 95,
-    braco: 32,
-    objetivo: "Emagrecimento",
-    nivelAtividade: "Sedentário",
-    bemEstar: 3,
-    observacoes: "Iniciando treinos",
-  };
+  // Dados iniciais (primeira evolução ou dados mockados como fallback)
+  const initialData =
+    evolutions.length > 0
+      ? {
+          date: evolutions[evolutions.length - 1].date,
+          peso: evolutions[evolutions.length - 1].peso,
+          percentualGordura:
+            evolutions[evolutions.length - 1].percentual_gordura || 25,
+          massaMagra: evolutions[evolutions.length - 1].massa_magra || 60,
+          cintura: evolutions[evolutions.length - 1].cintura || 85,
+          quadril: evolutions[evolutions.length - 1].quadril || 95,
+          braco: evolutions[evolutions.length - 1].braco || 32,
+          objetivo:
+            evolutions[evolutions.length - 1].objetivo || "Emagrecimento",
+          nivelAtividade:
+            evolutions[evolutions.length - 1].nivel_atividade || "Sedentário",
+          bemEstar: evolutions[evolutions.length - 1].bem_estar,
+          observacoes: evolutions[evolutions.length - 1].observacoes,
+        }
+      : {
+          // Dados mockados como fallback
+          date: "15/01/2024",
+          peso: 80,
+          percentualGordura: 25,
+          massaMagra: 60,
+          cintura: 85,
+          quadril: 95,
+          braco: 32,
+          objetivo: "Emagrecimento",
+          nivelAtividade: "Sedentário",
+          bemEstar: 3,
+          observacoes: "Iniciando treinos",
+        };
 
-  // Dados de evolução (mockados por enquanto)
-  const evolutionData = [
-    {
-      date: "10/06/2024",
-      peso: 75,
-      percentualGordura: 20,
-      massaMagra: 60,
-      cintura: 80,
-      quadril: 92,
-      braco: 33,
-      treinos: "4x por semana",
-      objetivo: "Hipertrofia",
-      nivelAtividade: "Moderado",
-      bemEstar: 4,
-      caloriasQueimadas: 2500,
-      treinosConcluidos: 45,
-      observacoes:
-        "Treinos muito bons esta semana, sentindo mais força nos exercícios. Consegui aumentar a carga em alguns exercícios.",
-    },
-  ];
-
-  // Dados atuais para os cards de resumo
-  const currentData = {
-    peso: 75,
-    percentualGordura: 20,
-    massaMagra: 60,
-    treinosConcluidos: 45,
-    caloriasQueimadas: 2500,
-    sequencia: 12,
-  };
+  // Dados atuais (última evolução ou dados iniciais)
+  const currentData =
+    evolutions.length > 0
+      ? {
+          peso: evolutions[0].peso,
+          percentualGordura: evolutions[0].percentual_gordura || 20,
+          massaMagra: evolutions[0].massa_magra || 60,
+          treinosConcluidos: evolutions.length * 4, // Simulação baseada no número de evoluções
+          caloriasQueimadas: evolutions.length * 500, // Simulação
+          sequencia: evolutions.length,
+        }
+      : {
+          peso: initialData.peso,
+          percentualGordura: initialData.percentualGordura,
+          massaMagra: initialData.massaMagra,
+          treinosConcluidos: 0,
+          caloriasQueimadas: 0,
+          sequencia: 0,
+        };
 
   // Calcular variações
   const pesoVariacao = initialData.peso - currentData.peso;
@@ -523,74 +551,97 @@ export function EvolutionSection({
           </div>
 
           {/* Evoluções adicionadas */}
-          {evolutionData.map((evolution, index) => (
-            <div
-              key={index}
-              className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-green-800">{evolution.date}</h4>
-                <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                  Evolução
-                </span>
+          {evolutions.length > 0 ? (
+            evolutions.map((evolution, index) => (
+              <div
+                key={evolution.id}
+                className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg mb-4"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h4 className="font-semibold text-gray-800">
+                      Evolução #{index + 1}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {new Date(evolution.date).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                  <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                    {evolution.peso}kg
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Peso:</span>
+                    <span className="font-medium ml-1">{evolution.peso}kg</span>
+                  </div>
+                  {evolution.percentual_gordura && (
+                    <div>
+                      <span className="text-gray-600">% Gordura:</span>
+                      <span className="font-medium ml-1">
+                        {evolution.percentual_gordura}%
+                      </span>
+                    </div>
+                  )}
+                  {evolution.massa_magra && (
+                    <div>
+                      <span className="text-gray-600">Massa Magra:</span>
+                      <span className="font-medium ml-1">
+                        {evolution.massa_magra}kg
+                      </span>
+                    </div>
+                  )}
+                  {evolution.cintura && (
+                    <div>
+                      <span className="text-gray-600">Cintura:</span>
+                      <span className="font-medium ml-1">
+                        {evolution.cintura}cm
+                      </span>
+                    </div>
+                  )}
+                  {evolution.objetivo && (
+                    <div>
+                      <span className="text-gray-600">Objetivo:</span>
+                      <span className="font-medium ml-1">
+                        {evolution.objetivo}
+                      </span>
+                    </div>
+                  )}
+                  {evolution.nivel_atividade && (
+                    <div>
+                      <span className="text-gray-600">Nível:</span>
+                      <span className="font-medium ml-1">
+                        {evolution.nivel_atividade}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-gray-600">Bem-estar:</span>
+                    <span className="font-medium ml-1">
+                      {evolution.bem_estar}/5
+                    </span>
+                  </div>
+                </div>
+
+                {evolution.observacoes && (
+                  <div className="mt-3 p-3 bg-white rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      {evolution.observacoes}
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-600">Peso:</span>
-                  <span className="font-medium ml-1">{evolution.peso}kg</span>
-                  <span className="text-xs text-green-600 ml-1">(-5kg)</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">% Gordura:</span>
-                  <span className="font-medium ml-1">
-                    {evolution.percentualGordura}%
-                  </span>
-                  <span className="text-xs text-green-600 ml-1">(-5%)</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Massa Magra:</span>
-                  <span className="font-medium ml-1">
-                    {evolution.massaMagra}kg
-                  </span>
-                  <span className="text-xs text-green-600 ml-1">(+0kg)</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Cintura:</span>
-                  <span className="font-medium ml-1">
-                    {evolution.cintura}cm
-                  </span>
-                  <span className="text-xs text-green-600 ml-1">(-5cm)</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Treinos:</span>
-                  <span className="font-medium ml-1">{evolution.treinos}</span>
-                  <span className="text-xs text-green-600 ml-1">(+2x)</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Objetivo:</span>
-                  <span className="font-medium ml-1">{evolution.objetivo}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Nível:</span>
-                  <span className="font-medium ml-1">
-                    {evolution.nivelAtividade}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Bem-estar:</span>
-                  <span className="font-medium ml-1">
-                    {evolution.bemEstar}/5
-                  </span>
-                  <span className="text-xs text-green-600 ml-1">(+1)</span>
-                </div>
-              </div>
-              {evolution.observacoes && (
-                <p className="text-sm text-gray-700 mt-2 italic">
-                  &ldquo;{evolution.observacoes}&rdquo;
-                </p>
-              )}
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>Nenhuma evolução registrada ainda.</p>
+              <p className="text-sm">
+                Adicione sua primeira evolução para começar a acompanhar seu
+                progresso!
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 

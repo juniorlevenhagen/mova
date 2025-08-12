@@ -554,7 +554,7 @@ export function EvolutionSection({
                   outerRadius={70}
                   innerRadius={30}
                   dataKey="value"
-                  label={({ name, value }) => {
+                  label={({ name }) => {
                     if (name === "Gordura" && currentData.percentualGordura) {
                       return `${name} ${currentData.percentualGordura}%`;
                     }

@@ -473,7 +473,7 @@ export function EvolutionSection({
         <h3 className="text-md font-semibold text-gray-800 mb-3">
           Gráficos de Evolução
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Gráfico de Linha: Evolução do Peso e Cintura */}
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
@@ -537,13 +537,15 @@ export function EvolutionSection({
                   data={[
                     {
                       name: "Massa Magra",
-                      value: currentData.massaMagra,
+                      value: currentData.massaMagra || 0,
                       color: "#3B82F6",
                     },
                     {
                       name: "Gordura",
-                      value: currentData.percentualGordura,
-
+                      value: currentData.percentualGordura
+                        ? (currentData.peso * currentData.percentualGordura) /
+                          100
+                        : 0,
                       color: "#EF4444",
                     },
                   ]}
@@ -552,15 +554,25 @@ export function EvolutionSection({
                   outerRadius={70}
                   innerRadius={30}
                   dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`
-                  }
+                  label={({ name, value }) => {
+                    if (name === "Gordura" && currentData.percentualGordura) {
+                      return `${name} ${currentData.percentualGordura}%`;
+                    }
+                    if (name === "Massa Magra" && currentData.massaMagra) {
+                      const percentualMassaMagra = (
+                        (currentData.massaMagra / currentData.peso) *
+                        100
+                      ).toFixed(0);
+                      return `${name} ${percentualMassaMagra}%`;
+                    }
+                    return `${name} 0%`;
+                  }}
                   labelLine={false}
                 >
                   {[
                     {
                       name: "Massa Magra",
-                      value: currentData.massaMagra,
+                      value: currentData.massaMagra || 0,
                       color: "#3B82F6",
                     },
                     {
@@ -568,8 +580,6 @@ export function EvolutionSection({
                       value: currentData.percentualGordura
                         ? (currentData.peso * currentData.percentualGordura) /
                           100
-                        : currentData.massaMagra
-                        ? currentData.peso - currentData.massaMagra
                         : 0,
                       color: "#EF4444",
                     },
@@ -578,11 +588,23 @@ export function EvolutionSection({
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg">
+                          {payload.map((entry, index) => (
+                            <p
+                              key={index}
+                              className="text-sm"
+                              style={{ color: entry.color }}
+                            >
+                              {entry.name}: {entry.value?.toFixed(1)}kg
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
                 />
               </PieChart>

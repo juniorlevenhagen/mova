@@ -419,7 +419,8 @@ export function UserDataSection({
         <div>
           <span className="block text-gray-500 text-sm">Sexo</span>
           <span className="block text-gray-800 font-bold">
-            {userProfile.sexo}
+            {userProfile.sexo.charAt(0).toUpperCase() +
+              userProfile.sexo.slice(1)}
           </span>
         </div>
 
@@ -448,7 +449,7 @@ export function UserDataSection({
         )}
 
         {renderEditableField("objetivo", "Objetivo", userProfile.objetivo, [
-          "Hipertrofia",
+          "Ganho de Massa",
           "Emagrecimento",
           "Força",
           "Resistência",

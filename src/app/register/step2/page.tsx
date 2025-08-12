@@ -176,13 +176,11 @@ export default function Step2Page() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
             >
               <option value="">Selecione seu objetivo</option>
-              <option value="Emagrecer">Emagrecer</option>
-              <option value="Ganhar massa muscular">
-                Ganhar massa muscular
-              </option>
-              <option value="Definição muscular">Definição muscular</option>
-              <option value="Melhorar a saúde">Melhorar a saúde</option>
-              <option value="Aumentar resistência">Aumentar resistência</option>
+              <option value="Ganho de Massa">Ganho de Massa</option>
+              <option value="Emagrecimento">Emagrecimento</option>
+              <option value="Força">Força</option>
+              <option value="Resistência">Resistência</option>
+              <option value="Definição">Definição</option>
             </select>
           </div>
 

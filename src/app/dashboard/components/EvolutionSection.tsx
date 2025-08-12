@@ -115,11 +115,6 @@ export function EvolutionSection({
           sequencia: 0,
         };
 
-  // Adicionar console.log para debug
-  console.log("Evoluções:", evolutions);
-  console.log("CurrentData peso:", currentData.peso);
-  console.log("InitialData peso:", initialData.peso);
-
   // Função para formatar valores ou mostrar "-"
   const formatValue = (value: number | string | null, unit: string = "") => {
     if (value === null || value === undefined || value === 0) {
@@ -327,13 +322,6 @@ export function EvolutionSection({
 
   // Calcular IMC atual
   const imcAtual = calculateIMC(currentData.peso, userProfile?.altura || 0);
-
-  // Debug temporário
-  console.log("EvolutionSection Debug:", {
-    currentDataPeso: currentData.peso,
-    userProfileAltura: userProfile?.altura,
-    imcAtual: imcAtual,
-  });
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mt-8">
@@ -554,9 +542,8 @@ export function EvolutionSection({
                     },
                     {
                       name: "Gordura",
-                      value: currentData.massaMagra
-                        ? currentData.peso - currentData.massaMagra
-                        : 0,
+                      value: currentData.percentualGordura,
+
                       color: "#EF4444",
                     },
                   ]}
@@ -578,7 +565,10 @@ export function EvolutionSection({
                     },
                     {
                       name: "Gordura",
-                      value: currentData.massaMagra
+                      value: currentData.percentualGordura
+                        ? (currentData.peso * currentData.percentualGordura) /
+                          100
+                        : currentData.massaMagra
                         ? currentData.peso - currentData.massaMagra
                         : 0,
                       color: "#EF4444",

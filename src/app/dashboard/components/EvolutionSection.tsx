@@ -323,6 +323,43 @@ export function EvolutionSection({
   // Calcular IMC atual
   const imcAtual = calculateIMC(currentData.peso, userProfile?.altura || 0);
 
+  // Função para preparar dados do gráfico com dados reais
+  const prepareChartData = () => {
+    const chartData = [];
+
+    // Adicionar dados do cadastro inicial se existir
+    if (userProfile?.pesoInicial && userProfile.pesoInicial > 0) {
+      chartData.push({
+        data: "Início",
+        peso: userProfile.pesoInicial,
+        cintura: null, // Não temos cintura inicial
+        date: "Início",
+      });
+    }
+
+    // Adicionar dados das evoluções
+    evolutions.forEach((evolution, index) => {
+      const date = new Date(evolution.date);
+      const formattedDate = date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+      });
+
+      chartData.push({
+        data: formattedDate,
+        peso: evolution.peso,
+        cintura: evolution.cintura || null,
+        date: evolution.date,
+        evolutionIndex: index + 1,
+      });
+    });
+
+    return chartData;
+  };
+
+  // Obter dados do gráfico
+  const chartData = prepareChartData();
+
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mt-8">
       <div className="flex items-center justify-between mb-6">
@@ -481,18 +518,16 @@ export function EvolutionSection({
               Evolução do Peso e Cintura
             </h4>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart
-                data={[
-                  { data: "15/01", peso: 80, cintura: 85 },
-                  { data: "01/02", peso: 79, cintura: 84 },
-                  { data: "15/02", peso: 78, cintura: 83 },
-                  { data: "01/03", peso: 77, cintura: 82 },
-                  { data: "15/03", peso: 76, cintura: 81 },
-                  { data: "01/04", peso: 75, cintura: 80 },
-                ]}
-              >
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="data" stroke="#6b7280" fontSize={12} />
+                <XAxis
+                  dataKey="data"
+                  stroke="#6b7280"
+                  fontSize={12}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip
                   contentStyle={{
@@ -500,6 +535,11 @@ export function EvolutionSection({
                     border: "1px solid #e5e7eb",
                     borderRadius: "8px",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                  formatter={(value, name) => {
+                    if (name === "peso") return [`${value} kg`, "Peso"];
+                    if (name === "cintura") return [`${value} cm`, "Cintura"];
+                    return [value, name];
                   }}
                 />
                 <Legend />
@@ -511,6 +551,7 @@ export function EvolutionSection({
                   name="Peso (kg)"
                   dot={{ fill: "#3B82F6", strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6, stroke: "#3B82F6", strokeWidth: 2 }}
+                  connectNulls={false}
                 />
                 <Line
                   type="monotone"
@@ -520,9 +561,20 @@ export function EvolutionSection({
                   name="Cintura (cm)"
                   dot={{ fill: "#10B981", strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6, stroke: "#10B981", strokeWidth: 2 }}
+                  connectNulls={false}
                 />
               </LineChart>
             </ResponsiveContainer>
+
+            {/* Mensagem quando não há dados */}
+            {chartData.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum dado de evolução disponível.</p>
+                <p className="text-sm">
+                  Adicione sua primeira evolução para ver o gráfico!
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Gráfico de Pizza: Composição Corporal */}

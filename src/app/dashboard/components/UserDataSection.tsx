@@ -410,7 +410,7 @@ export function UserDataSection({
             </button>
           </div>
           <span className="block text-gray-800 font-bold">
-            {imcAtual.toFixed(1)}
+            {imcAtual.toFixed(2)}
           </span>
           <span className={`block text-xs ${classificacaoIMC.cor}`}>
             {classificacaoIMC.texto}

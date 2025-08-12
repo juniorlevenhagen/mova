@@ -56,12 +56,35 @@ export function EvolutionSection({
   isAddingEvolution,
   userProfile,
 }: EvolutionSectionProps) {
+  // Função para calcular massa magra estimada usando fórmula de Boer
+  const calcularMassaMagraEstimada = (
+    peso: number,
+    altura: number,
+    sexo: string
+  ) => {
+    if (peso <= 0 || altura <= 0) return null;
+
+    // Fórmula de Boer
+    if (sexo.toLowerCase() === "masculino" || sexo.toLowerCase() === "m") {
+      return Number((0.407 * peso + 0.267 * altura - 19.2).toFixed(1));
+    } else {
+      return Number((0.252 * peso + 0.473 * altura - 48.3).toFixed(1));
+    }
+  };
+
   // Dados do cadastro inicial (usando dados reais do perfil)
   const initialData = {
     date: "15/01/2024",
     peso: userProfile?.pesoInicial || 0,
     percentualGordura: null, // Não temos dados reais de % gordura no cadastro
-    massaMagra: null, // Não temos dados reais de massa magra no cadastro
+    massaMagra:
+      userProfile?.pesoInicial && userProfile?.altura && userProfile?.sexo
+        ? calcularMassaMagraEstimada(
+            userProfile.pesoInicial,
+            userProfile.altura,
+            userProfile.sexo
+          )
+        : null, // Estimativa usando fórmula de Boer
     cintura: null, // Não temos dados reais de cintura no cadastro
     quadril: null, // Não temos dados reais de quadril no cadastro
     braco: null, // Não temos dados reais de braço no cadastro
@@ -104,6 +127,69 @@ export function EvolutionSection({
     }
     return `${value}${unit}`;
   };
+
+  // Função para calcular último % gordura e diferença
+  const getUltimoPercentualGordura = () => {
+    // Filtrar evoluções que têm percentual_gordura
+    const evolucoesComGordura = evolutions.filter(
+      (evo) => evo.percentual_gordura && evo.percentual_gordura > 0
+    );
+
+    if (evolucoesComGordura.length === 0) {
+      return { valor: null, diferenca: null, texto: "-", cor: "text-gray-600" };
+    }
+
+    const ultimoValor =
+      evolucoesComGordura[evolucoesComGordura.length - 1]?.percentual_gordura;
+
+    if (!ultimoValor) {
+      return { valor: null, diferenca: null, texto: "-", cor: "text-gray-600" };
+    }
+
+    if (evolucoesComGordura.length === 1) {
+      // Primeira medição de gordura
+      return {
+        valor: ultimoValor,
+        diferenca: null,
+        texto: `${ultimoValor}%`,
+        cor: "text-green-600",
+      };
+    }
+
+    // Calcular diferença em relação à medição anterior
+    const valorAnterior =
+      evolucoesComGordura[evolucoesComGordura.length - 2]?.percentual_gordura;
+
+    if (!valorAnterior) {
+      return {
+        valor: ultimoValor,
+        diferenca: null,
+        texto: `${ultimoValor}%`,
+        cor: "text-green-600",
+      };
+    }
+
+    const diferenca = ultimoValor - valorAnterior;
+
+    const sign = diferenca > 0 ? "+" : "-";
+    const diferencaAbsoluta = Math.abs(diferenca);
+    const cor =
+      diferenca < 0
+        ? "text-green-600"
+        : diferenca > 0
+        ? "text-red-600"
+        : "text-gray-600";
+
+    return {
+      valor: ultimoValor,
+      diferenca: diferenca,
+      texto: `${ultimoValor}% (${sign}${diferencaAbsoluta}%)`,
+      cor: cor,
+    };
+  };
+
+  // Calcular dados de gordura uma única vez para evitar recálculos
+  const gorduraData = getUltimoPercentualGordura();
 
   // Calcular variações (apenas se temos dados reais)
   const pesoVariacao =
@@ -325,10 +411,18 @@ export function EvolutionSection({
           <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center border border-green-200">
             <h4 className="text-sm text-gray-600 mb-1">% Gordura</h4>
             <p className="text-2xl font-bold text-green-800">
-              {currentData.percentualGordura}%
+              {gorduraData.texto}
             </p>
-            <p className="text-xs text-green-600">
-              -{gorduraVariacao}% desde o início
+            <p className={`text-xs ${gorduraData.cor}`}>
+              {gorduraData.valor
+                ? gorduraData.diferenca === null
+                  ? "Primeira medição"
+                  : gorduraData.diferenca < 0
+                  ? "Redução na gordura"
+                  : gorduraData.diferenca > 0
+                  ? "Aumento na gordura"
+                  : "Sem mudança"
+                : "Não medido ainda"}
             </p>
           </div>
 
@@ -338,14 +432,14 @@ export function EvolutionSection({
               {currentData.massaMagra}kg
             </p>
             <p className="text-xs text-purple-600">
-              +{massaVariacao}kg desde o início
+              +{massaVariacao.toFixed(2)}kg desde o início
             </p>
           </div>
 
           <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-lg text-center border border-orange-200">
             <h4 className="text-sm text-gray-600 mb-1">IMC</h4>
             <p className="text-2xl font-bold text-orange-800">
-              {imcAtual ? imcAtual.toFixed(1) : "-"}
+              {imcAtual ? imcAtual.toFixed(2) : "-"}
             </p>
             <p className="text-xs text-green-600">
               {imcAtual

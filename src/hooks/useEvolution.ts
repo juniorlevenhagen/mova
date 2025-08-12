@@ -86,6 +86,9 @@ export function useEvolution(user: User | null) {
     setIsAdding(true);
     setError(null);
 
+    console.log("=== ADICIONANDO EVOLUÇÃO ===");
+    console.log("Dados recebidos do modal:", data);
+
     try {
       const peso = parseFloat(data.peso);
       const bemEstar = parseInt(data.bemEstar);
@@ -94,6 +97,12 @@ export function useEvolution(user: User | null) {
         : null;
       const massaMagra = data.massaMagra ? parseFloat(data.massaMagra) : null;
       const cintura = data.cintura ? parseInt(data.cintura) : null;
+
+      console.log("Dados processados:");
+      console.log("- peso:", peso, "tipo:", typeof peso);
+      console.log("- cintura:", cintura, "tipo:", typeof cintura);
+      console.log("- percentualGordura:", percentualGordura);
+      console.log("- massaMagra:", massaMagra);
 
       if (isNaN(peso) || isNaN(bemEstar)) {
         setError("Dados inválidos");
@@ -113,7 +122,7 @@ export function useEvolution(user: User | null) {
         nivel_atividade: data.nivelAtividade || "Moderado",
       };
 
-      console.log("Salvando evolução:", evolutionData);
+      console.log("Dados para salvar no banco:", evolutionData);
 
       const { data: newEvolution, error } = await supabase
         .from("user_evolutions")
@@ -127,10 +136,14 @@ export function useEvolution(user: User | null) {
         return;
       }
 
-      console.log("Evolução salva com sucesso:", newEvolution);
+      console.log("Evolução salva com sucesso no banco:", newEvolution);
 
       // Atualizar lista de evoluções (adicionar no final)
-      setEvolutions((prev) => [...prev, newEvolution]);
+      setEvolutions((prev) => {
+        const newList = [...prev, newEvolution];
+        console.log("Nova lista de evoluções:", newList);
+        return newList;
+      });
     } catch (error) {
       console.error("Erro inesperado ao salvar evolução:", error);
       setError("Erro inesperado ao salvar evolução");

@@ -327,32 +327,65 @@ export function EvolutionSection({
   const prepareChartData = () => {
     const chartData = [];
 
+    console.log("=== INÍCIO PREPARE CHART DATA ===");
+    console.log("Evoluções recebidas (raw):", evolutions);
+    console.log("UserProfile recebido:", userProfile);
+
     // Adicionar dados do cadastro inicial se existir
     if (userProfile?.pesoInicial && userProfile.pesoInicial > 0) {
       chartData.push({
         data: "Início",
-        peso: userProfile.pesoInicial,
+        peso: Number(userProfile.pesoInicial),
         cintura: null, // Não temos cintura inicial
         date: "Início",
+        id: "inicio",
+        uniqueKey: "inicio",
       });
+      console.log(
+        "Ponto inicial adicionado com peso:",
+        userProfile.pesoInicial
+      );
     }
 
     // Adicionar dados das evoluções
     evolutions.forEach((evolution, index) => {
+      console.log(`=== EVOLUÇÃO ${index + 1} ===`);
+      console.log("Evolution raw:", evolution);
+      console.log(
+        "Evolution.peso:",
+        evolution.peso,
+        "tipo:",
+        typeof evolution.peso
+      );
+      console.log(
+        "Evolution.cintura:",
+        evolution.cintura,
+        "tipo:",
+        typeof evolution.cintura
+      );
+
       const date = new Date(evolution.date);
       const formattedDate = date.toLocaleDateString("pt-BR", {
         day: "2-digit",
         month: "2-digit",
       });
 
-      chartData.push({
-        data: formattedDate,
-        peso: evolution.peso,
-        cintura: evolution.cintura || null,
+      const chartPoint = {
+        data: `${formattedDate} #${index + 1}`, // Identificador único
+        peso: Number(evolution.peso),
+        cintura: evolution.cintura ? Number(evolution.cintura) : null,
         date: evolution.date,
         evolutionIndex: index + 1,
-      });
+        id: `evolution-${index + 1}`,
+        uniqueKey: `evolution-${index + 1}`, // Chave única para o Recharts
+      };
+
+      console.log("ChartPoint criado:", chartPoint);
+      chartData.push(chartPoint);
     });
+
+    console.log("=== DADOS FINAIS DO GRÁFICO ===");
+    console.log("ChartData completo:", chartData);
 
     return chartData;
   };
@@ -521,7 +554,7 @@ export function EvolutionSection({
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
-                  dataKey="data"
+                  dataKey="uniqueKey" // Usar chave única em vez de data
                   stroke="#6b7280"
                   fontSize={12}
                   angle={-45}
@@ -530,16 +563,61 @@ export function EvolutionSection({
                 />
                 <YAxis stroke="#6b7280" fontSize={12} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                  }}
-                  formatter={(value, name) => {
-                    if (name === "peso") return [`${value} kg`, "Peso"];
-                    if (name === "cintura") return [`${value} cm`, "Cintura"];
-                    return [value, name];
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      // Debug: Log dos dados do tooltip
+                      console.log("Tooltip payload:", payload);
+                      console.log("Tooltip label:", label);
+
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                          <p className="font-medium text-gray-800 mb-2">
+                            {label === "inicio" ? "Cadastro Inicial" : label}
+                          </p>
+                          {payload.map((entry, index) => {
+                            const value = entry.value;
+                            const name = entry.name;
+
+                            // Debug: Log de cada entrada
+                            console.log(`Entry ${index}:`, {
+                              name,
+                              value,
+                              entry,
+                            });
+
+                            if (value === null || value === undefined) {
+                              return null; // Não mostrar valores nulos
+                            }
+
+                            let displayValue = "";
+
+                            if (name === "peso") {
+                              displayValue = `${Number(value).toFixed(1)} kg`;
+                            } else if (name === "cintura") {
+                              displayValue = `${Number(value).toFixed(0)} cm`;
+                            } else {
+                              displayValue = String(value);
+                            }
+
+                            return (
+                              <p
+                                key={index}
+                                className="text-sm"
+                                style={{ color: entry.color }}
+                              >
+                                {name === "peso"
+                                  ? "Peso"
+                                  : name === "cintura"
+                                  ? "Cintura"
+                                  : name}
+                                : {displayValue}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
                 />
                 <Legend />
@@ -640,19 +718,46 @@ export function EvolutionSection({
                   ))}
                 </Pie>
                 <Tooltip
-                  content={({ active, payload }) => {
+                  content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg">
-                          {payload.map((entry, index) => (
-                            <p
-                              key={index}
-                              className="text-sm"
-                              style={{ color: entry.color }}
-                            >
-                              {entry.name}: {entry.value?.toFixed(1)}kg
-                            </p>
-                          ))}
+                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                          <p className="font-medium text-gray-800 mb-2">
+                            {label === "Início" ? "Cadastro Inicial" : label}
+                          </p>
+                          {payload.map((entry, index) => {
+                            const value = entry.value;
+                            const name = entry.name;
+
+                            if (value === null || value === undefined) {
+                              return null; // Não mostrar valores nulos
+                            }
+
+                            let displayValue = "";
+
+                            if (name === "peso") {
+                              displayValue = `${Number(value).toFixed(1)} kg`;
+                            } else if (name === "cintura") {
+                              displayValue = `${Number(value).toFixed(0)} cm`;
+                            } else {
+                              displayValue = String(value);
+                            }
+
+                            return (
+                              <p
+                                key={index}
+                                className="text-sm"
+                                style={{ color: entry.color }}
+                              >
+                                {name === "peso"
+                                  ? "Peso"
+                                  : name === "cintura"
+                                  ? "Cintura"
+                                  : name}
+                                : {displayValue}
+                              </p>
+                            );
+                          })}
                         </div>
                       );
                     }

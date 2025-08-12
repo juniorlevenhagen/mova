@@ -131,14 +131,28 @@ export function EvolutionSection({
     );
 
     if (evolucoesComGordura.length === 0) {
-      return { valor: null, diferenca: null, texto: "-", cor: "text-gray-600" };
+      return {
+        valor: null,
+        diferenca: null,
+        texto: "-",
+        textoPrincipal: "-",
+        textoDiferenca: null,
+        cor: "text-gray-600",
+      };
     }
 
     const ultimoValor =
       evolucoesComGordura[evolucoesComGordura.length - 1]?.percentual_gordura;
 
     if (!ultimoValor) {
-      return { valor: null, diferenca: null, texto: "-", cor: "text-gray-600" };
+      return {
+        valor: null,
+        diferenca: null,
+        texto: "-",
+        textoPrincipal: "-",
+        textoDiferenca: null,
+        cor: "text-gray-600",
+      };
     }
 
     if (evolucoesComGordura.length === 1) {
@@ -147,6 +161,8 @@ export function EvolutionSection({
         valor: ultimoValor,
         diferenca: null,
         texto: `${ultimoValor}%`,
+        textoPrincipal: `${ultimoValor}%`,
+        textoDiferenca: null,
         cor: "text-green-600",
       };
     }
@@ -160,6 +176,8 @@ export function EvolutionSection({
         valor: ultimoValor,
         diferenca: null,
         texto: `${ultimoValor}%`,
+        textoPrincipal: `${ultimoValor}%`,
+        textoDiferenca: null,
         cor: "text-green-600",
       };
     }
@@ -179,6 +197,8 @@ export function EvolutionSection({
       valor: ultimoValor,
       diferenca: diferenca,
       texto: `${ultimoValor}% (${sign}${diferencaAbsoluta}%)`,
+      textoPrincipal: `${ultimoValor}%`,
+      textoDiferenca: `(${sign}${diferencaAbsoluta}%)`,
       cor: cor,
     };
   };
@@ -468,9 +488,16 @@ export function EvolutionSection({
 
           <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg text-center border border-green-200">
             <h4 className="text-sm text-gray-600 mb-1">% Gordura</h4>
-            <p className="text-2xl font-bold text-green-800">
-              {gorduraData.texto}
-            </p>
+            <div className="flex items-center justify-center gap-1">
+              <p className="text-2xl font-bold text-green-800">
+                {gorduraData.textoPrincipal}
+              </p>
+              {gorduraData.textoDiferenca && (
+                <span className={`text-sm font-medium ${gorduraData.cor}`}>
+                  {gorduraData.textoDiferenca}
+                </span>
+              )}
+            </div>
             <p className={`text-xs ${gorduraData.cor}`}>
               {gorduraData.valor
                 ? gorduraData.diferenca === null
@@ -487,10 +514,17 @@ export function EvolutionSection({
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg text-center border border-purple-200">
             <h4 className="text-sm text-gray-600 mb-1">Massa Magra</h4>
             <p className="text-2xl font-bold text-purple-800">
-              {currentData.massaMagra}kg
+              {currentData.massaMagra
+                ? Number(currentData.massaMagra).toFixed(1)
+                : "-"}
+              kg
             </p>
             <p className="text-xs text-purple-600">
-              +{massaVariacao.toFixed(2)}kg desde o início
+              {massaVariacao !== 0
+                ? `${massaVariacao > 0 ? "+" : ""}${Number(
+                    massaVariacao
+                  ).toFixed(1)}kg desde o início`
+                : "Sem mudança desde o início"}
             </p>
           </div>
 

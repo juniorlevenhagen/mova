@@ -17,6 +17,8 @@ import {
 } from "recharts";
 import { useState } from "react";
 import { MetaModal } from "../modals/MetaModal";
+import { useGoals } from "@/hooks/useGoals";
+import { useAuth } from "@/hooks/useAuth";
 
 // Adicionar interface MetaData com id
 interface MetaData {
@@ -74,10 +76,12 @@ export function EvolutionSection({
   isAddingEvolution,
   userProfile,
 }: EvolutionSectionProps) {
-  // Remover userMeta antigo
+  const { user } = useAuth(); // Adicionar hook para pegar o usuário
   const [showMetaModal, setShowMetaModal] = useState(false);
-  const [isSavingMeta, setIsSavingMeta] = useState(false);
-  const [userMetas, setUserMetas] = useState<MetaData[]>([]);
+  const { goals, isAdding: isAddingGoal, addGoal } = useGoals(user); // Remover goalsLoading que não é usado
+
+  // Remover userMeta antigo
+  // const [userMetas, setUserMetas] = useState<MetaData[]>([]); // This line is removed as per the edit hint
 
   // Mudar de uma meta para array de metas
   // const [userMetas, setUserMetas] = useState<MetaData[]>([]); // This line is removed as per the edit hint
@@ -459,23 +463,8 @@ export function EvolutionSection({
 
   // Função para lidar com o envio da meta
   const handleMetaSubmit = async (data: MetaData) => {
-    setIsSavingMeta(true);
-    console.log("Meta enviada:", data);
-
-    // Adicionar nova meta ao histórico
-    setUserMetas((prev) => [
-      ...prev,
-      {
-        ...data,
-        dataCriacao: new Date().toISOString(),
-        id: Date.now().toString(),
-      },
-    ]);
-
-    setTimeout(() => {
-      setIsSavingMeta(false);
-      setShowMetaModal(false);
-    }, 1000);
+    await addGoal(data);
+    setShowMetaModal(false);
   };
 
   // Função para preparar dados de progresso real
@@ -483,25 +472,25 @@ export function EvolutionSection({
     const progressData: ProgressDataPoint[] = [];
 
     // Se não há meta definida, retornar array vazio ou dados mínimos
-    if (userMetas.length === 0) {
+    if (goals.length === 0) {
       // Retornar apenas dados reais das evoluções, sem meta
       if (userProfile?.pesoInicial) {
         progressData.push({
           mes: "Início",
           atual: userProfile.pesoInicial,
-          meta: userProfile.pesoInicial, // Meta = peso inicial quando não há meta definida
+          meta: userProfile.pesoInicial,
         });
       }
 
       // Adicionar evoluções sem meta
-      evolutions.forEach((evolution) => {
+      evolutions.forEach((evolution, index) => {
         const date = new Date(evolution.date);
         const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
 
         progressData.push({
-          mes: monthName,
+          mes: `${monthName} #${index + 1}`, // Identificador único
           atual: evolution.peso,
-          meta: userProfile?.pesoInicial || evolution.peso, // Meta = peso inicial
+          meta: userProfile?.pesoInicial || evolution.peso,
         });
       });
 
@@ -513,7 +502,7 @@ export function EvolutionSection({
       progressData.push({
         mes: "Início",
         atual: userProfile.pesoInicial,
-        meta: userProfile.pesoInicial,
+        meta: goals[0].valor_meta, // Meta fixa = Peso Objetivo
       });
     }
 
@@ -522,22 +511,10 @@ export function EvolutionSection({
       const date = new Date(evolution.date);
       const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
 
-      // Usar apenas a primeira meta por enquanto
-      const meta = userMetas[0];
-      const pesoInicial = userProfile?.pesoInicial || userProfile?.peso || 0;
-      const pesoObjetivo = Number(meta.pesoObjetivo);
-      const prazoMeses = Number(meta.prazoMeses);
-
-      const progressoMensal = (pesoInicial - pesoObjetivo) / prazoMeses;
-      const metaParaMes = Math.max(
-        pesoInicial - progressoMensal * (index + 1),
-        pesoObjetivo
-      );
-
       progressData.push({
-        mes: monthName,
-        atual: evolution.peso,
-        meta: metaParaMes,
+        mes: `${monthName} #${index + 1}`,
+        atual: evolution.peso, // Peso real desta evolução
+        meta: goals[0].valor_meta, // Meta fixa = Peso Objetivo que você definiu
       });
     });
 
@@ -990,11 +967,11 @@ export function EvolutionSection({
                 onClick={() => setShowMetaModal(true)}
                 className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
               >
-                {userMetas.length > 0 ? "Adicionar Meta" : "Definir Meta"}
+                {goals.length > 0 ? "Adicionar Meta" : "Definir Meta"}
               </button>
             </div>
 
-            {userMetas.length === 0 ? (
+            {goals.length === 0 ? (
               // Mostrar mensagem quando não há meta
               <div className="text-center py-8 text-gray-500">
                 <p>Nenhuma meta definida ainda.</p>
@@ -1047,48 +1024,65 @@ export function EvolutionSection({
             )}
 
             {/* Mostrar resumo da meta se existir */}
-            {userMetas.length > 0 && (
+            {goals.length > 0 && (
               <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                 <p className="text-sm font-medium text-orange-800">
-                  Meta: {userProfile?.pesoInicial}kg →{" "}
-                  {userMetas[0].pesoObjetivo}kg em {userMetas[0].prazoMeses}{" "}
+                  Meta:{" "}
+                  {evolutions.length > 0
+                    ? evolutions[evolutions.length - 1].peso
+                    : userProfile?.pesoInicial}
+                  kg → {goals[0].valor_meta}kg em{" "}
+                  {(() => {
+                    const dataInicio = new Date(
+                      goals[0].data_inicio || new Date().toISOString()
+                    );
+                    const dataFim = new Date(
+                      goals[0].data_fim || new Date().toISOString()
+                    );
+                    return Math.round(
+                      (dataFim.getTime() - dataInicio.getTime()) /
+                        (1000 * 60 * 60 * 24 * 30.44)
+                    );
+                  })()}{" "}
                   meses
                 </p>
 
                 {/* Calcular e mostrar meta de perda/ganho */}
                 {(() => {
-                  const pesoInicial = userProfile?.pesoInicial || 0;
-                  const pesoObjetivo = Number(userMetas[0].pesoObjetivo);
-                  const prazoMeses = Number(userMetas[0].prazoMeses);
-                  const diferenca = pesoObjetivo - pesoInicial;
+                  const pesoAtual =
+                    evolutions.length > 0
+                      ? evolutions[evolutions.length - 1].peso
+                      : userProfile?.pesoInicial || 0;
+                  const pesoObjetivo = goals[0].valor_meta;
+                  const dataInicio = new Date(
+                    goals[0].data_inicio || new Date().toISOString()
+                  );
+                  const dataFim = new Date(
+                    goals[0].data_fim || new Date().toISOString()
+                  );
+                  const prazoMeses = Math.round(
+                    (dataFim.getTime() - dataInicio.getTime()) /
+                      (1000 * 60 * 60 * 24 * 30.44)
+                  );
+                  const diferenca = pesoObjetivo - pesoAtual;
                   const metaMensal = Math.abs(diferenca / prazoMeses);
 
-                  // Debug: Log dos valores
-                  console.log("Debug Meta:", {
-                    pesoInicial,
-                    pesoObjetivo,
-                    diferenca,
-                    metaMensal,
-                    isGanho: diferenca > 0,
-                    isPerda: diferenca < 0,
-                  });
-
                   if (diferenca < 0) {
-                    // Perda de peso
+                    // Perda de peso (objetivo < atual)
                     return (
                       <p className="text-xs text-orange-600">
                         Meta de perda: {metaMensal.toFixed(1)}kg/mês
                       </p>
                     );
                   } else if (diferenca > 0) {
-                    // Ganho de peso
+                    // Ganho de peso (objetivo > atual)
                     return (
                       <p className="text-xs text-orange-600">
                         Meta de ganho: {metaMensal.toFixed(1)}kg/mês
                       </p>
                     );
                   } else {
-                    // Manutenção
+                    // Manutenção (objetivo = atual)
                     return (
                       <p className="text-xs text-orange-600">
                         Meta de manutenção: manter peso atual
@@ -1098,7 +1092,19 @@ export function EvolutionSection({
                 })()}
 
                 <p className="text-xs text-orange-600">
-                  Progresso: {evolutions.length} de {userMetas[0].prazoMeses}{" "}
+                  Progresso: {evolutions.length} evoluções em{" "}
+                  {(() => {
+                    const dataInicio = new Date(
+                      goals[0].data_inicio || new Date().toISOString()
+                    );
+                    const dataFim = new Date(
+                      goals[0].data_fim || new Date().toISOString()
+                    );
+                    return Math.round(
+                      (dataFim.getTime() - dataInicio.getTime()) /
+                        (1000 * 60 * 60 * 24 * 30.44)
+                    );
+                  })()}{" "}
                   meses
                 </p>
               </div>
@@ -1332,12 +1338,12 @@ export function EvolutionSection({
         isOpen={showMetaModal}
         onClose={() => setShowMetaModal(false)}
         onSubmit={handleMetaSubmit}
-        isLoading={isSavingMeta}
+        isLoading={isAddingGoal}
         pesoAtual={currentData.peso}
       />
 
       {/* Prompt Contextual para Meta */}
-      {evolutions.length >= 3 && userMetas.length === 0 && (
+      {evolutions.length >= 3 && goals.length === 0 && (
         <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">

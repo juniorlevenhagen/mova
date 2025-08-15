@@ -78,6 +78,12 @@ export function EvolutionSection({
 }: EvolutionSectionProps) {
   const { user } = useAuth(); // Adicionar hook para pegar o usuário
   const [showMetaModal, setShowMetaModal] = useState(false);
+  const [progressFilter, setProgressFilter] = useState<"10" | "20" | "all">(
+    "10"
+  ); // Novo estado
+  const [evolutionFilter, setEvolutionFilter] = useState<"10" | "20" | "all">(
+    "10"
+  ); // Novo estado para gráficos de evolução
   const { goals, isAdding: isAddingGoal, addGoal } = useGoals(user); // Remover goalsLoading que não é usado
 
   // Remover userMeta antigo
@@ -395,8 +401,17 @@ export function EvolutionSection({
   const prepareChartData = () => {
     const chartData = [];
 
+    // Determinar quantas evoluções mostrar baseado no filtro
+    let evolutionsToShow = evolutions;
+    if (evolutionFilter === "10") {
+      evolutionsToShow = evolutions.slice(-10);
+    } else if (evolutionFilter === "20") {
+      evolutionsToShow = evolutions.slice(-20);
+    }
+
     console.log("=== INÍCIO PREPARE CHART DATA ===");
     console.log("Evoluções recebidas (raw):", evolutions);
+    console.log("Evoluções filtradas:", evolutionsToShow);
     console.log("UserProfile recebido:", userProfile);
 
     // Adicionar dados do cadastro inicial se existir
@@ -415,8 +430,8 @@ export function EvolutionSection({
       );
     }
 
-    // Adicionar dados das evoluções
-    evolutions.forEach((evolution, index) => {
+    // Adicionar dados das evoluções filtradas
+    evolutionsToShow.forEach((evolution, index) => {
       console.log(`=== EVOLUÇÃO ${index + 1} ===`);
       console.log("Evolution raw:", evolution);
       console.log(
@@ -471,6 +486,15 @@ export function EvolutionSection({
   const prepareProgressData = (): ProgressDataPoint[] => {
     const progressData: ProgressDataPoint[] = [];
 
+    // Determinar quantas evoluções mostrar baseado no filtro
+    let evolutionsToShow = evolutions;
+    if (progressFilter === "10") {
+      evolutionsToShow = evolutions.slice(-10);
+    } else if (progressFilter === "20") {
+      evolutionsToShow = evolutions.slice(-20);
+    }
+    // 'all' mostra todas as evoluções
+
     // Se não há meta definida, retornar array vazio ou dados mínimos
     if (goals.length === 0) {
       // Retornar apenas dados reais das evoluções, sem meta
@@ -483,12 +507,12 @@ export function EvolutionSection({
       }
 
       // Adicionar evoluções sem meta
-      evolutions.forEach((evolution, index) => {
+      evolutionsToShow.forEach((evolution, index) => {
         const date = new Date(evolution.date);
         const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
 
         progressData.push({
-          mes: `${monthName} #${index + 1}`, // Identificador único
+          mes: `${monthName} #${index + 1}`,
           atual: evolution.peso,
           meta: userProfile?.pesoInicial || evolution.peso,
         });
@@ -502,19 +526,19 @@ export function EvolutionSection({
       progressData.push({
         mes: "Início",
         atual: userProfile.pesoInicial,
-        meta: goals[0].valor_meta, // Meta fixa = Peso Objetivo
+        meta: goals[0].valor_meta,
       });
     }
 
     // Adicionar evoluções com meta
-    evolutions.forEach((evolution, index) => {
+    evolutionsToShow.forEach((evolution, index) => {
       const date = new Date(evolution.date);
       const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
 
       progressData.push({
         mes: `${monthName} #${index + 1}`,
-        atual: evolution.peso, // Peso real desta evolução
-        meta: goals[0].valor_meta, // Meta fixa = Peso Objetivo que você definiu
+        atual: evolution.peso,
+        meta: goals[0].valor_meta,
       });
     });
 
@@ -683,9 +707,54 @@ export function EvolutionSection({
 
       {/* Gráficos Interativos */}
       <div className="mb-6">
-        <h3 className="text-md font-semibold text-gray-800 mb-3">
-          Gráficos de Evolução
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-md font-semibold text-gray-800">
+            Gráficos de Evolução
+          </h3>
+
+          {/* Filtros de período para gráficos de evolução */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => setEvolutionFilter("10")}
+              className={`px-2 py-1 text-xs rounded ${
+                evolutionFilter === "10"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              Últimas 10
+            </button>
+            <button
+              onClick={() => setEvolutionFilter("20")}
+              className={`px-2 py-1 text-xs rounded ${
+                evolutionFilter === "20"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              Últimas 20
+            </button>
+            <button
+              onClick={() => setEvolutionFilter("all")}
+              className={`px-2 py-1 text-xs rounded ${
+                evolutionFilter === "all"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              Todas ({evolutions.length})
+            </button>
+          </div>
+        </div>
+
+        {/* Indicador de filtro ativo para gráficos de evolução */}
+        {evolutions.length > 10 && evolutionFilter !== "all" && (
+          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+            Mostrando as últimas {evolutionFilter === "10" ? "10" : "20"} de{" "}
+            {evolutions.length} evoluções para melhor visualização
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-6">
           {/* Gráfico de Linha: Evolução do Peso e Cintura */}
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
@@ -963,13 +1032,56 @@ export function EvolutionSection({
                 <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                 Progresso em Relação às Metas
               </h4>
-              <button
-                onClick={() => setShowMetaModal(true)}
-                className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
-              >
-                {goals.length > 0 ? "Adicionar Meta" : "Definir Meta"}
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Filtros de período */}
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setProgressFilter("10")}
+                    className={`px-2 py-1 text-xs rounded ${
+                      progressFilter === "10"
+                        ? "bg-orange-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    Últimas 10
+                  </button>
+                  <button
+                    onClick={() => setProgressFilter("20")}
+                    className={`px-2 py-1 text-xs rounded ${
+                      progressFilter === "20"
+                        ? "bg-orange-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    Últimas 20
+                  </button>
+                  <button
+                    onClick={() => setProgressFilter("all")}
+                    className={`px-2 py-1 text-xs rounded ${
+                      progressFilter === "all"
+                        ? "bg-orange-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    Todas ({evolutions.length})
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowMetaModal(true)}
+                  className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
+                >
+                  {goals.length > 0 ? "Adicionar Meta" : "Definir Meta"}
+                </button>
+              </div>
             </div>
+
+            {/* Indicador de filtro ativo */}
+            {evolutions.length > 10 && progressFilter !== "all" && (
+              <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                Mostrando as últimas {progressFilter === "10" ? "10" : "20"} de{" "}
+                {evolutions.length} evoluções para melhor visualização
+              </div>
+            )}
 
             {goals.length === 0 ? (
               // Mostrar mensagem quando não há meta

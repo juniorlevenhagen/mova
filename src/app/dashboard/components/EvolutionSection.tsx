@@ -15,6 +15,17 @@ import {
   Area,
   AreaChart,
 } from "recharts";
+import { useState } from "react";
+import { MetaModal } from "../modals/MetaModal";
+
+// Adicionar interface MetaData com id
+interface MetaData {
+  pesoObjetivo: string;
+  prazoMeses: string;
+  observacoes: string;
+  id?: string;
+  dataCriacao?: string;
+}
 
 interface UserEvolution {
   id: string;
@@ -50,12 +61,27 @@ interface EvolutionSectionProps {
   };
 }
 
+// Adicionar interface para dados do gráfico
+interface ProgressDataPoint {
+  mes: string;
+  atual: number;
+  meta: number;
+}
+
 export function EvolutionSection({
   evolutions,
   onAddEvolution,
   isAddingEvolution,
   userProfile,
 }: EvolutionSectionProps) {
+  // Remover userMeta antigo
+  const [showMetaModal, setShowMetaModal] = useState(false);
+  const [isSavingMeta, setIsSavingMeta] = useState(false);
+  const [userMetas, setUserMetas] = useState<MetaData[]>([]);
+
+  // Mudar de uma meta para array de metas
+  // const [userMetas, setUserMetas] = useState<MetaData[]>([]); // This line is removed as per the edit hint
+
   // Função para calcular massa magra estimada usando fórmula de Boer
   const calcularMassaMagraEstimada = (
     peso: number,
@@ -262,12 +288,30 @@ export function EvolutionSection({
     unit: string
   ) => {
     const diff = current - initial;
-    if (diff === 0) return `${current}${unit}`;
+    if (diff === 0) return `${Number(current).toFixed(1)}${unit}`;
 
     const sign = diff > 0 ? "+" : "-";
     const formattedDiff = Math.abs(diff);
 
-    return `${current}${unit} (${sign}${formattedDiff}${unit})`;
+    // Formatar com base na unidade
+    let formattedValue: string;
+    let formattedDiffValue: string;
+
+    if (unit === "kg") {
+      // Para peso e massa magra: 1 casa decimal
+      formattedValue = Number(current).toFixed(1);
+      formattedDiffValue = Number(formattedDiff).toFixed(1);
+    } else if (unit === "cm") {
+      // Para cintura: sem casas decimais
+      formattedValue = Number(current).toFixed(0);
+      formattedDiffValue = Number(formattedDiff).toFixed(0);
+    } else {
+      // Para outros: 1 casa decimal
+      formattedValue = Number(current).toFixed(1);
+      formattedDiffValue = Number(formattedDiff).toFixed(1);
+    }
+
+    return `${formattedValue}${unit} (${sign}${formattedDiffValue}${unit})`;
   };
 
   // Função para calcular diferença percentual com cores para gordura
@@ -412,6 +456,94 @@ export function EvolutionSection({
 
   // Obter dados do gráfico
   const chartData = prepareChartData();
+
+  // Função para lidar com o envio da meta
+  const handleMetaSubmit = async (data: MetaData) => {
+    setIsSavingMeta(true);
+    console.log("Meta enviada:", data);
+
+    // Adicionar nova meta ao histórico
+    setUserMetas((prev) => [
+      ...prev,
+      {
+        ...data,
+        dataCriacao: new Date().toISOString(),
+        id: Date.now().toString(),
+      },
+    ]);
+
+    setTimeout(() => {
+      setIsSavingMeta(false);
+      setShowMetaModal(false);
+    }, 1000);
+  };
+
+  // Função para preparar dados de progresso real
+  const prepareProgressData = (): ProgressDataPoint[] => {
+    const progressData: ProgressDataPoint[] = [];
+
+    // Se não há meta definida, retornar array vazio ou dados mínimos
+    if (userMetas.length === 0) {
+      // Retornar apenas dados reais das evoluções, sem meta
+      if (userProfile?.pesoInicial) {
+        progressData.push({
+          mes: "Início",
+          atual: userProfile.pesoInicial,
+          meta: userProfile.pesoInicial, // Meta = peso inicial quando não há meta definida
+        });
+      }
+
+      // Adicionar evoluções sem meta
+      evolutions.forEach((evolution) => {
+        const date = new Date(evolution.date);
+        const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
+
+        progressData.push({
+          mes: monthName,
+          atual: evolution.peso,
+          meta: userProfile?.pesoInicial || evolution.peso, // Meta = peso inicial
+        });
+      });
+
+      return progressData;
+    }
+
+    // Adicionar ponto inicial
+    if (userProfile?.pesoInicial) {
+      progressData.push({
+        mes: "Início",
+        atual: userProfile.pesoInicial,
+        meta: userProfile.pesoInicial,
+      });
+    }
+
+    // Adicionar evoluções com meta
+    evolutions.forEach((evolution, index) => {
+      const date = new Date(evolution.date);
+      const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
+
+      // Usar apenas a primeira meta por enquanto
+      const meta = userMetas[0];
+      const pesoInicial = userProfile?.pesoInicial || userProfile?.peso || 0;
+      const pesoObjetivo = Number(meta.pesoObjetivo);
+      const prazoMeses = Number(meta.prazoMeses);
+
+      const progressoMensal = (pesoInicial - pesoObjetivo) / prazoMeses;
+      const metaParaMes = Math.max(
+        pesoInicial - progressoMensal * (index + 1),
+        pesoObjetivo
+      );
+
+      progressData.push({
+        mes: monthName,
+        atual: evolution.peso,
+        meta: metaParaMes,
+      });
+    });
+
+    console.log("Dados de progresso:", progressData);
+    return progressData;
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mt-8">
@@ -849,52 +981,128 @@ export function EvolutionSection({
 
           {/* Gráfico de Área: Progresso em Relação à Meta */}
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              Progresso em Relação à Meta
-            </h4>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart
-                data={[
-                  { mes: "Jan", atual: 80, meta: 75 },
-                  { mes: "Fev", atual: 78, meta: 74 },
-                  { mes: "Mar", atual: 76, meta: 73 },
-                  { mes: "Abr", atual: 75, meta: 72 },
-                  { mes: "Mai", atual: 74, meta: 71 },
-                  { mes: "Jun", atual: 73, meta: 70 },
-                ]}
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                Progresso em Relação às Metas
+              </h4>
+              <button
+                onClick={() => setShowMetaModal(true)}
+                className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="mes" stroke="#6b7280" fontSize={12} />
-                <YAxis stroke="#6b7280" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                  }}
-                />
-                <Legend />
-                <Area
-                  type="monotone"
-                  dataKey="atual"
-                  stroke="#F59E0B"
-                  fill="#FEF3C7"
-                  strokeWidth={2}
-                  name="Peso Atual"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="meta"
-                  stroke="#10B981"
-                  fill="#D1FAE5"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  name="Meta"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+                {userMetas.length > 0 ? "Adicionar Meta" : "Definir Meta"}
+              </button>
+            </div>
+
+            {userMetas.length === 0 ? (
+              // Mostrar mensagem quando não há meta
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhuma meta definida ainda.</p>
+                <p className="text-sm">
+                  Defina uma meta para acompanhar seu progresso!
+                </p>
+              </div>
+            ) : (
+              // Mostrar gráfico quando há meta
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={prepareProgressData()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="mes" stroke="#6b7280" fontSize={12} />
+                  <YAxis stroke="#6b7280" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }}
+                    formatter={(value, name) => {
+                      if (name === "atual")
+                        return [`${Number(value).toFixed(1)} kg`, "Peso Atual"];
+                      if (name === "meta")
+                        return [`${Number(value).toFixed(1)} kg`, "Meta"];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="atual"
+                    stroke="#F59E0B"
+                    fill="#FEF3C7"
+                    strokeWidth={2}
+                    name="Peso Atual"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="meta"
+                    stroke="#10B981"
+                    fill="#D1FAE5"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="Meta"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* Mostrar resumo da meta se existir */}
+            {userMetas.length > 0 && (
+              <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm font-medium text-orange-800">
+                  Meta: {userProfile?.pesoInicial}kg →{" "}
+                  {userMetas[0].pesoObjetivo}kg em {userMetas[0].prazoMeses}{" "}
+                  meses
+                </p>
+
+                {/* Calcular e mostrar meta de perda/ganho */}
+                {(() => {
+                  const pesoInicial = userProfile?.pesoInicial || 0;
+                  const pesoObjetivo = Number(userMetas[0].pesoObjetivo);
+                  const prazoMeses = Number(userMetas[0].prazoMeses);
+                  const diferenca = pesoObjetivo - pesoInicial;
+                  const metaMensal = Math.abs(diferenca / prazoMeses);
+
+                  // Debug: Log dos valores
+                  console.log("Debug Meta:", {
+                    pesoInicial,
+                    pesoObjetivo,
+                    diferenca,
+                    metaMensal,
+                    isGanho: diferenca > 0,
+                    isPerda: diferenca < 0,
+                  });
+
+                  if (diferenca < 0) {
+                    // Perda de peso
+                    return (
+                      <p className="text-xs text-orange-600">
+                        Meta de perda: {metaMensal.toFixed(1)}kg/mês
+                      </p>
+                    );
+                  } else if (diferenca > 0) {
+                    // Ganho de peso
+                    return (
+                      <p className="text-xs text-orange-600">
+                        Meta de ganho: {metaMensal.toFixed(1)}kg/mês
+                      </p>
+                    );
+                  } else {
+                    // Manutenção
+                    return (
+                      <p className="text-xs text-orange-600">
+                        Meta de manutenção: manter peso atual
+                      </p>
+                    );
+                  }
+                })()}
+
+                <p className="text-xs text-orange-600">
+                  Progresso: {evolutions.length} de {userMetas[0].prazoMeses}{" "}
+                  meses
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1118,6 +1326,51 @@ export function EvolutionSection({
           "Adicionar Evolução"
         )}
       </button>
+
+      {/* Modal de Meta */}
+      <MetaModal
+        isOpen={showMetaModal}
+        onClose={() => setShowMetaModal(false)}
+        onSubmit={handleMetaSubmit}
+        isLoading={isSavingMeta}
+        pesoAtual={currentData.peso}
+      />
+
+      {/* Prompt Contextual para Meta */}
+      {evolutions.length >= 3 && userMetas.length === 0 && (
+        <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+              <svg
+                className="w-5 h-5 text-white"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                <path
+                  fillRule="evenodd"
+                  d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-yellow-800">
+                Que tal definir uma meta de peso?
+              </p>
+              <p className="text-sm text-yellow-600">
+                Isso ajudará você a acompanhar melhor seu progresso
+              </p>
+            </div>
+            <button
+              onClick={() => setShowMetaModal(true)}
+              className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
+            >
+              Definir Meta
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

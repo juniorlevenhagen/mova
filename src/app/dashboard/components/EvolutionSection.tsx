@@ -19,6 +19,19 @@ import { useState } from "react";
 import { MetaModal } from "../modals/MetaModal";
 import { useGoals } from "@/hooks/useGoals";
 import { useAuth } from "@/hooks/useAuth";
+import { useActivity } from "@/hooks/useActivity";
+import { AddActivityModal } from "../modals/AddActivityModal";
+
+// Adicionar interface para dados de atividade
+interface CreateActivityData {
+  date?: string;
+  horario?: string;
+  treinos_concluidos?: number | undefined;
+  calorias_queimadas?: number | undefined;
+  duracao_minutos?: number | undefined;
+  tipo_treino?: string;
+  observacoes?: string;
+}
 
 // Adicionar interface MetaData com id
 interface MetaData {
@@ -78,6 +91,7 @@ export function EvolutionSection({
 }: EvolutionSectionProps) {
   const { user } = useAuth(); // Adicionar hook para pegar o usuário
   const [showMetaModal, setShowMetaModal] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
   const [progressFilter, setProgressFilter] = useState<"10" | "20" | "all">(
     "10"
   ); // Novo estado
@@ -85,6 +99,13 @@ export function EvolutionSection({
     "10"
   ); // Novo estado para gráficos de evolução
   const { goals, isAdding: isAddingGoal, addGoal } = useGoals(user); // Remover goalsLoading que não é usado
+  const {
+    activities,
+    isAdding: isAddingActivity,
+    addActivity,
+    getStats,
+    getWeeklyData,
+  } = useActivity(user);
 
   // Remover userMeta antigo
   // const [userMetas, setUserMetas] = useState<MetaData[]>([]); // This line is removed as per the edit hint
@@ -130,17 +151,18 @@ export function EvolutionSection({
     observacoes: "Dados do cadastro inicial",
   };
 
-  // Dados atuais (última evolução ou dados iniciais)
+  // Atualizar currentData para usar dados reais de atividade
+  const activityStats = getStats();
   const currentData =
     evolutions.length > 0
       ? {
-          peso: evolutions[evolutions.length - 1].peso, // Última evolução (mais recente)
+          peso: evolutions[evolutions.length - 1].peso,
           percentualGordura:
             evolutions[evolutions.length - 1].percentual_gordura || 20,
           massaMagra: evolutions[evolutions.length - 1].massa_magra || 60,
-          treinosConcluidos: evolutions.length * 4, // Simulação baseada no número de evoluções
-          caloriasQueimadas: evolutions.length * 500, // Simulação
-          sequencia: evolutions.length,
+          treinosConcluidos: activityStats.totalTreinos,
+          caloriasQueimadas: activityStats.caloriasSemana,
+          sequencia: activityStats.sequenciaAtual,
         }
       : {
           peso: initialData.peso,
@@ -482,6 +504,11 @@ export function EvolutionSection({
     setShowMetaModal(false);
   };
 
+  // Função para lidar com adição de atividade
+  const handleActivitySubmit = async (data: CreateActivityData) => {
+    await addActivity(data);
+  };
+
   // Função para preparar dados de progresso real
   const prepareProgressData = (): ProgressDataPoint[] => {
     const progressData: ProgressDataPoint[] = [];
@@ -677,7 +704,15 @@ export function EvolutionSection({
 
       {/* Seção: Atividade */}
       <div className="mb-6">
-        <h3 className="text-md font-semibold text-gray-800 mb-3">Atividade</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-md font-semibold text-gray-800">Atividade</h3>
+          <button
+            onClick={() => setShowActivityModal(true)}
+            className="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Adicionar Atividade
+          </button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-lg text-center border border-indigo-200">
             <h4 className="text-sm text-gray-600 mb-1">Treinos Concluídos</h4>
@@ -987,16 +1022,7 @@ export function EvolutionSection({
               Treinos Concluídos por Semana
             </h4>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart
-                data={[
-                  { semana: "Sem 1", treinos: 4, meta: 5 },
-                  { semana: "Sem 2", treinos: 5, meta: 5 },
-                  { semana: "Sem 3", treinos: 3, meta: 5 },
-                  { semana: "Sem 4", treinos: 6, meta: 5 },
-                  { semana: "Sem 5", treinos: 4, meta: 5 },
-                  { semana: "Sem 6", treinos: 5, meta: 5 },
-                ]}
-              >
+              <BarChart data={getWeeklyData()}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="semana" stroke="#6b7280" fontSize={12} />
                 <YAxis stroke="#6b7280" fontSize={12} />
@@ -1430,6 +1456,59 @@ export function EvolutionSection({
         </div>
       </div>
 
+      {/* Histórico de Atividades */}
+      <div className="mb-6">
+        <h3 className="text-md font-semibold text-gray-800 mb-3">
+          Histórico de Atividades
+        </h3>
+
+        {activities.length > 0 ? (
+          <div className="space-y-3">
+            {activities.slice(0, 10).map((activity) => (
+              <div
+                key={activity.id}
+                className="bg-gray-50 p-4 rounded-lg border"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 className="font-medium text-gray-800">
+                      {activity.tipo_treino || "Atividade"}
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {new Date(activity.date).toLocaleDateString("pt-BR")} às{" "}
+                      {activity.horario}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-blue-600">
+                      {activity.treinos_concluidos} treino
+                      {activity.treinos_concluidos > 1 ? "s" : ""}
+                    </p>
+                    <p className="text-sm text-red-600">
+                      {activity.calorias_queimadas} kcal
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 text-sm text-gray-600">
+                  <span>Duração: {activity.duracao_minutos}min</span>
+                  {activity.observacoes && (
+                    <span className="italic">
+                      &ldquo;{activity.observacoes}&rdquo;
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <p>Nenhuma atividade registrada ainda.</p>
+            <p className="text-sm">Adicione sua primeira atividade!</p>
+          </div>
+        )}
+      </div>
+
       <button
         onClick={onAddEvolution}
         disabled={isAddingEvolution}
@@ -1444,6 +1523,14 @@ export function EvolutionSection({
           "Adicionar Evolução"
         )}
       </button>
+
+      {/* Modal de Atividade */}
+      <AddActivityModal
+        isOpen={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+        onSubmit={handleActivitySubmit}
+        isLoading={isAddingActivity}
+      />
 
       {/* Modal de Meta */}
       <MetaModal

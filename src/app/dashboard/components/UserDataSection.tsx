@@ -49,7 +49,7 @@ export function UserDataSection({
     }
   }, []);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const allowedTypes = [
@@ -73,15 +73,42 @@ export function UserDataSection({
 
       setIsUploading(true);
 
-      // Simular upload e substituição de arquivo antigo
-      setTimeout(() => {
-        setIsUploading(false);
+      try {
+        // Se for PDF, processar com a API
+        if (file.type === "application/pdf") {
+          console.log("Processando PDF com API...");
+
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const response = await fetch("/api/process-pdf", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log("Resposta da API:", result);
+
+            if (result.success) {
+              alert(
+                `Arquivo processado com sucesso!\nNome: ${result.fileInfo.name}\nTamanho: ${result.fileInfo.size} bytes\nÉ PDF: ${result.fileInfo.isPDF}`
+              );
+            } else {
+              alert(`Erro: ${result.error}`);
+            }
+          } else {
+            const error = await response.json();
+            alert(`Erro na API: ${error.error}`);
+          }
+        }
+
+        // Continuar com o comportamento normal
         setHasEvaluation(true);
         setEvaluationFileName(file.name);
         const currentDate = new Date().toISOString();
         setUploadDate(currentDate);
 
-        // Salvar no localStorage (substitui arquivo antigo)
         localStorage.setItem(
           "userEvaluation",
           JSON.stringify({
@@ -93,7 +120,12 @@ export function UserDataSection({
 
         console.log("Avaliação física carregada:", file.name);
         console.log("Arquivo antigo substituído com sucesso");
-      }, 2000);
+      } catch (error) {
+        console.error("Erro no processamento:", error);
+        alert("Erro ao processar arquivo. Tente novamente.");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 

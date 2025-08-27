@@ -65,7 +65,7 @@ export function AddEvolutionModal({
     setModalData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const allowedTypes = [
@@ -90,9 +90,46 @@ export function AddEvolutionModal({
       setUploadedFile(file);
       setUploadLoading(true);
 
-      setTimeout(() => {
+      try {
+        // Se for PDF, processar com OpenAI
+        if (file.type === "application/pdf") {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const response = await fetch("/api/process-pdf", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+
+            // Preencher automaticamente os campos com os dados extraídos
+            setModalData((prev) => ({
+              ...prev,
+              peso: result.extractedData.peso?.toString() || "",
+              percentualGordura:
+                result.extractedData.percentual_gordura?.toString() || "",
+              massaMagra: result.extractedData.massa_magra?.toString() || "",
+              cintura: result.extractedData.cintura?.toString() || "",
+              observacoes: result.extractedData.observacoes || "",
+            }));
+
+            // Mostrar mensagem de sucesso
+            alert(
+              "Dados extraídos com sucesso! Verifique e ajuste se necessário."
+            );
+          } else {
+            const error = await response.json();
+            alert(`Erro ao processar PDF: ${error.error}`);
+          }
+        }
+      } catch (error) {
+        console.error("Erro no processamento:", error);
+        alert("Erro ao processar arquivo. Tente novamente.");
+      } finally {
         setUploadLoading(false);
-      }, 2000);
+      }
     }
   };
 

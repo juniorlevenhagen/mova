@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface EvolutionData {
   peso: string;
@@ -93,11 +94,23 @@ export function AddEvolutionModal({
       try {
         // Se for PDF, processar com OpenAI
         if (file.type === "application/pdf") {
+          // Obter token de autorização
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (!session?.access_token) {
+            alert("Erro: Usuário não autenticado");
+            return;
+          }
+
           const formData = new FormData();
           formData.append("file", file);
 
           const response = await fetch("/api/process-pdf", {
             method: "POST",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
             body: formData,
           });
 

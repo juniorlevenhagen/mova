@@ -63,16 +63,36 @@ export function useUserProfile(user: User | null) {
         setUserData(userDataResult);
 
         // Buscar perfil do usuário
+        console.log("🔍 Buscando perfil para usuário:", user.id, user.email);
+
+        // Primeiro, verificar se existem perfis na tabela
+        const { data: allProfiles, error: countError } = await supabase
+          .from("user_profiles, users")
+          .select("user_id, id")
+          .limit(5);
+
+        console.log("📊 Perfis existentes na tabela:", allProfiles);
+        console.log("❓ Erro ao buscar perfis:", countError);
+
         const { data: profileResult, error: profileError } = await supabase
           .from("user_profiles")
           .select("*")
           .eq("user_id", user.id)
           .single();
 
+        console.log("🎯 Resultado da busca específica:", profileResult);
+        console.log("❌ Erro específico:", profileError);
+
         if (profileError) {
           if (profileError.code === "PGRST116") {
             // Perfil não encontrado - isso é normal para usuários novos
-            console.log("Perfil não encontrado, usuário pode ser novo");
+            console.log("❌ Perfil não encontrado para usuário:", user.email);
+            console.log("Isso pode acontecer se:");
+            console.log(
+              "- O registro não foi completado (parou antes do Step 2)"
+            );
+            console.log("- Houve erro durante a criação do perfil");
+            console.log("- Conta foi criada de forma não padrão");
             setProfile(null);
           } else {
             console.error("Erro ao buscar perfil:", profileError);
@@ -80,6 +100,7 @@ export function useUserProfile(user: User | null) {
             return;
           }
         } else {
+          console.log("✅ Perfil encontrado:", profileResult);
           setProfile(profileResult);
         }
       } catch (error) {
@@ -93,10 +114,75 @@ export function useUserProfile(user: User | null) {
     fetchUserData();
   }, [user]);
 
+  // Função para atualizar o perfil do usuário
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user || !profile) {
+      setError("Usuário ou perfil não encontrado");
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("user_profiles")
+        .update(updates)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Erro ao atualizar perfil:", error);
+        setError("Erro ao atualizar perfil");
+        return false;
+      }
+
+      // Atualizar o estado local
+      setProfile(data);
+      return true;
+    } catch (error) {
+      console.error("Erro inesperado ao atualizar perfil:", error);
+      setError("Erro inesperado ao atualizar perfil");
+      return false;
+    }
+  };
+
+  // Função para recarregar os dados do perfil
+  const refreshProfile = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const { data: profileResult, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profileError) {
+        if (profileError.code !== "PGRST116") {
+          console.error("Erro ao recarregar perfil:", profileError);
+          setError("Erro ao recarregar perfil");
+        }
+      } else {
+        console.log("✅ Perfil recarregado com sucesso!");
+        console.log("📋 Dados recarregados:", profileResult);
+        console.log("⚖️ Peso atualizado:", profileResult.weight);
+        setProfile(profileResult);
+        setError(null);
+      }
+    } catch (error) {
+      console.error("Erro inesperado ao recarregar perfil:", error);
+      setError("Erro inesperado ao recarregar perfil");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     profile,
     userData,
     loading,
     error,
+    updateProfile,
+    refreshProfile,
   };
 }

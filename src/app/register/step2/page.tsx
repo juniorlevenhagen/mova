@@ -77,9 +77,9 @@ export default function Step2Page() {
           user_id: userData.id,
           birth_date: formData.birthDate,
           age: calculatedAge,
-          height: parseInt(formData.height),
-          weight: parseInt(formData.weight), // Peso atual
-          initial_weight: parseInt(formData.weight), // Peso inicial (mesmo valor)
+          height: parseFloat(formData.height), // Altura com uma casa decimal
+          weight: parseFloat(formData.weight), // Peso atual com decimais
+          initial_weight: parseFloat(formData.weight), // Peso inicial (mesmo valor)
           gender: formData.gender,
           objective: formData.objective,
           training_frequency: formData.trainingFrequency,

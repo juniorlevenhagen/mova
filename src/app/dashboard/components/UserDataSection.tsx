@@ -16,12 +16,14 @@ interface UserDataSectionProps {
   };
   onGeneratePlan: () => void;
   isGeneratingPlan: boolean;
+  onProfileUpdate?: () => Promise<void>;
 }
 
 export function UserDataSection({
   profile,
   onGeneratePlan,
   isGeneratingPlan,
+  onProfileUpdate,
 }: UserDataSectionProps) {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -37,6 +39,12 @@ export function UserDataSection({
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [userProfile, setUserProfile] = useState(profile);
+
+  // Sincronizar estado local quando a prop profile mudar
+  useEffect(() => {
+    setUserProfile(profile);
+    console.log("📝 UserProfile atualizado no componente:", profile);
+  }, [profile]);
 
   // Verificar se já existe avaliação salva
   useEffect(() => {
@@ -78,11 +86,23 @@ export function UserDataSection({
         if (file.type === "application/pdf") {
           console.log("Processando PDF com API...");
 
+          // Obter token de autorização
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (!session?.access_token) {
+            alert("Erro: Usuário não autenticado");
+            return;
+          }
+
           const formData = new FormData();
           formData.append("file", file);
 
           const response = await fetch("/api/process-pdf", {
             method: "POST",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
             body: formData,
           });
 
@@ -92,8 +112,33 @@ export function UserDataSection({
 
             if (result.success) {
               alert(
-                `Arquivo processado com sucesso!\nNome: ${result.fileInfo.name}\nTamanho: ${result.fileInfo.size} bytes\nÉ PDF: ${result.fileInfo.isPDF}`
+                `PDF processado com sucesso!\n\nDados extraídos:\n• Peso: ${
+                  result.summary?.weight || "N/A"
+                } kg\n• Altura: ${result.summary?.height || "N/A"} cm\n• IMC: ${
+                  result.summary?.imc || "N/A"
+                }\n• Sexo: ${result.summary?.gender || "N/A"}\n\n${
+                  result.profileUpdated
+                    ? "Perfil atualizado automaticamente!"
+                    : ""
+                }`
               );
+
+              // Atualizar dados do perfil sem recarregar a página
+              if (result.profileUpdated && onProfileUpdate) {
+                console.log(
+                  "📝 PDF processado, perfil foi atualizado. Iniciando refresh..."
+                );
+                setTimeout(async () => {
+                  console.log("🔄 Chamando onProfileUpdate...");
+                  await onProfileUpdate();
+                  console.log("✅ onProfileUpdate concluído!");
+                }, 1500);
+              } else {
+                console.log("❌ Refresh não será executado:", {
+                  profileUpdated: result.profileUpdated,
+                  hasOnProfileUpdate: !!onProfileUpdate,
+                });
+              }
             } else {
               alert(`Erro: ${result.error}`);
             }

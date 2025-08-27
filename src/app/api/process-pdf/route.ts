@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import pdfParse from "pdf-parse";
 import OpenAI from "openai";
+import { supabase } from "@/lib/supabase";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -42,6 +43,27 @@ export async function POST(request: NextRequest) {
   console.log("Request:", request);
 
   try {
+    // Verificar se o usuário está autenticado
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Token de autorização não encontrado" },
+        { status: 401 }
+      );
+    }
+
+    // Obter o usuário atual
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Usuário não autenticado" },
+        { status: 401 }
+      );
+    }
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
@@ -81,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     console.log("Sucesso! Páginas:", pdfData.numpages);
     console.log("Tamanho do texto:", pdfData.text.length);
-    
+
     // const meusDados = ...
     // role: "user", content: JSON.stringify(meusDados)
 
@@ -152,10 +174,140 @@ export async function POST(request: NextRequest) {
 
     const summary = JSON.parse(completion.choices[0].message.content || "{}");
 
+    // Atualizar o perfil do usuário com os dados extraídos
+    try {
+      const profileUpdates: {
+        weight?: number;
+        height?: number;
+        gender?: string;
+      } = {};
+
+      if (summary.weight && typeof summary.weight === "number") {
+        // Manter precisão decimal para peso corporal (ex: 75.5 kg)
+        profileUpdates.weight = Number(summary.weight.toFixed(2));
+        console.log(
+          `🔍 Processando peso: PDF=${summary.weight} → Salvar=${profileUpdates.weight}`
+        );
+      }
+
+      if (summary.height && typeof summary.height === "number") {
+        // Manter uma casa decimal para altura (ex: 175.5 cm)
+        profileUpdates.height = Number(summary.height.toFixed(1));
+      }
+
+      if (summary.gender && typeof summary.gender === "string") {
+        profileUpdates.gender = summary.gender;
+      }
+
+      if (Object.keys(profileUpdates).length > 0) {
+        console.log("Atualizando perfil do usuário com:", profileUpdates);
+        console.log(`⚖️ Tentando salvar peso: ${profileUpdates.weight}`);
+
+        // Criar cliente Supabase com token do usuário para RLS
+        const authToken = authHeader.replace("Bearer ", "");
+        const { createClient } = await import("@supabase/supabase-js");
+        const supabaseUser = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            global: {
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          }
+        );
+
+        // Primeiro tentar atualizar o perfil existente
+        const { data: updatedProfile, error: updateError } = await supabaseUser
+          .from("user_profiles")
+          .update(profileUpdates)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          if (updateError.code === "PGRST116") {
+            // Perfil não existe, criar um novo
+            console.log("Perfil não encontrado, criando novo perfil...");
+
+            const newProfileData: {
+              user_id: string;
+              weight?: number;
+              height?: number;
+              gender?: string;
+              age: number;
+              birth_date: string;
+              objective: string;
+              training_frequency: string;
+              training_location: string;
+              has_pain: string;
+              dietary_restrictions: string;
+              initial_weight?: number;
+            } = {
+              user_id: user.id,
+              ...profileUpdates,
+              // Valores padrão para campos obrigatórios
+              age: 30, // Valor padrão, pode ser ajustado depois
+              birth_date: new Date().toISOString().split("T")[0],
+              objective: "Emagrecimento",
+              training_frequency: "3 vezes por semana",
+              training_location: "Academia",
+              has_pain: "Não",
+              dietary_restrictions: "Nenhuma",
+            };
+
+            if (!profileUpdates.weight) newProfileData.weight = 70.0;
+            if (!profileUpdates.height) newProfileData.height = 170.0;
+            if (!profileUpdates.gender) newProfileData.gender = "male";
+
+            // Garantir precisão decimal adequada
+            if (newProfileData.weight)
+              newProfileData.weight = Number(newProfileData.weight.toFixed(2));
+            if (newProfileData.height)
+              newProfileData.height = Number(newProfileData.height.toFixed(1));
+
+            // Definir peso inicial igual ao peso atual
+            newProfileData.initial_weight = newProfileData.weight;
+
+            const { data: newProfile, error: createError } = await supabaseUser
+              .from("user_profiles")
+              .insert(newProfileData)
+              .select()
+              .single();
+
+            if (createError) {
+              console.error("Erro ao criar perfil:", createError);
+            } else {
+              console.log("✅ Perfil criado com sucesso!");
+              console.log("👤 Novo perfil:", newProfile);
+              console.log("⚖️ Peso salvo:", newProfile.weight);
+            }
+          } else {
+            console.error("Erro ao atualizar perfil:", updateError);
+          }
+        } else {
+          console.log("✅ Perfil existente atualizado com sucesso!");
+          console.log("👤 Perfil atualizado:", updatedProfile);
+          console.log("⚖️ Novo peso salvo na base:", updatedProfile.weight);
+          console.log(
+            "🔍 Comparação: PDF tinha",
+            summary.weight,
+            "→ Base tem",
+            updatedProfile.weight
+          );
+        }
+      }
+    } catch (profileError) {
+      console.error("Erro inesperado ao atualizar perfil:", profileError);
+      // Não retornar erro, apenas log - o PDF foi processado com sucesso
+    }
+
     return NextResponse.json({
       success: true,
       message: "PDF processado com sucesso!",
       summary,
+      profileUpdated: true,
     });
   } catch (error: unknown) {
     console.error("=== ERRO DETALHADO ===");

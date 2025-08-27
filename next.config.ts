@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  experimental: {
-    // Desabilitar prerendering para páginas que dependem de autenticação
-    workerThreads: false,
+  webpack: (config) => {
+    config.resolve.alias.canvas = false;
+    config.resolve.alias.encoding = false;
+    return config;
   },
+  serverExternalPackages: ["pdf-parse"],
 };
 
 export default nextConfig;

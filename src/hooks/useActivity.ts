@@ -156,8 +156,7 @@ export function useActivity(user: User | null) {
 
     // Calcular sequência atual (dias consecutivos com treinos)
     let sequenciaAtual = 0;
-    const hojeStr = hoje.toISOString().split("T")[0];
-    let dataVerificacao = new Date(hoje);
+    const dataVerificacao = new Date(hoje);
 
     while (true) {
       const dataStr = dataVerificacao.toISOString().split("T")[0];

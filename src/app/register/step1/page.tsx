@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 export default function Step1Page() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     fullName: "",
@@ -22,16 +23,63 @@ export default function Step1Page() {
     setError(""); // Limpar erros anteriores
 
     try {
-      // 1. Criar usuário no Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName,
-          },
-        },
-      });
+      console.log("🚀 Iniciando processo de signup...");
+      console.log("📧 Email:", formData.email);
+      console.log("🔑 Password length:", formData.password.length);
+      console.log("👤 Full name:", formData.fullName);
+
+      // 1. Criar usuário no Supabase Auth (com retry logic)
+      let authData, authError;
+      let retryCount = 0;
+      const maxRetries = 3;
+
+      while (retryCount < maxRetries) {
+        try {
+          const result = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              data: {
+                full_name: formData.fullName,
+              },
+            },
+          });
+
+          authData = result.data;
+          authError = result.error;
+
+          // Se não houve erro de conectividade, sair do loop
+          if (!authError || !authError.message.includes("500")) {
+            break;
+          }
+
+          retryCount++;
+          if (retryCount < maxRetries) {
+            console.log(
+              `🔄 Tentativa ${retryCount + 1}/${maxRetries} em 2 segundos...`
+            );
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
+        } catch (networkError) {
+          console.error(
+            `❌ Erro de rede na tentativa ${retryCount + 1}:`,
+            networkError
+          );
+          retryCount++;
+          if (retryCount < maxRetries) {
+            console.log(
+              `🔄 Tentativa ${retryCount + 1}/${maxRetries} em 2 segundos...`
+            );
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          } else {
+            authError = {
+              message: "Erro de conectividade com o servidor. Tente novamente.",
+            };
+          }
+        }
+      }
+
+      console.log("📊 Auth response:", { data: authData, error: authError });
 
       if (authError) {
         // Tratar erros específicos do Supabase
@@ -45,13 +93,30 @@ export default function Step1Page() {
           setError("Por favor, insira um email válido.");
         } else if (authError.message.includes("Email rate limit exceeded")) {
           setError("Muitas tentativas. Aguarde um momento e tente novamente.");
+        } else if (
+          authError.message.includes("500") ||
+          authError.message.includes("Internal Server Error")
+        ) {
+          setError(
+            "⚠️ Servidor temporariamente indisponível. Tente novamente em alguns minutos."
+          );
+        } else if (authError.message.includes("conectividade")) {
+          setError(
+            "⚠️ Problema de conexão. Verifique sua internet e tente novamente."
+          );
         } else {
-          setError("Erro ao criar conta. Tente novamente.");
+          setError(`Erro ao criar conta: ${authError.message}`);
         }
         return;
       }
 
       // 2. Salvar dados adicionais na tabela users
+      console.log("🔍 Tentando salvar dados do usuário:", {
+        id: authData.user?.id,
+        email: formData.email,
+        full_name: formData.fullName,
+      });
+
       const { error: userError } = await supabase.from("users").insert({
         id: authData.user?.id,
         email: formData.email,
@@ -59,12 +124,36 @@ export default function Step1Page() {
       });
 
       if (userError) {
-        console.error("Erro ao salvar dados do usuário:", userError);
-        setError(
-          "Conta criada, mas houve um problema ao salvar seus dados. Tente fazer login."
-        );
+        console.error("❌ Erro detalhado ao salvar dados do usuário:", {
+          message: userError.message,
+          details: userError.details,
+          hint: userError.hint,
+          code: userError.code,
+        });
+
+        // Mensagens de erro mais específicas
+        if (
+          userError.message.includes("permission denied") ||
+          userError.message.includes("RLS")
+        ) {
+          setError(
+            "Erro de permissão no banco de dados. Entre em contato com o suporte."
+          );
+        } else if (userError.message.includes("does not exist")) {
+          setError(
+            "Tabela de usuários não encontrada. Entre em contato com o suporte."
+          );
+        } else if (userError.message.includes("duplicate key")) {
+          setError("Este usuário já existe. Tente fazer login.");
+        } else {
+          setError(
+            `Conta criada, mas houve um problema ao salvar seus dados: ${userError.message}`
+          );
+        }
         return;
       }
+
+      console.log("✅ Dados do usuário salvos com sucesso!");
 
       // 3. Salvar dados temporários no localStorage para os próximos steps
       localStorage.setItem("registerStep1", JSON.stringify(formData));
@@ -239,7 +328,18 @@ export default function Step1Page() {
             disabled={loading}
             className="w-full bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold text-base md:text-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Criando conta..." : "Continuar Personalização"}
+            {loading ? (
+              retrying ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
+                  Tentando novamente...
+                </>
+              ) : (
+                "Criando conta..."
+              )
+            ) : (
+              "Continuar Personalização"
+            )}
           </button>
         </form>
       </div>

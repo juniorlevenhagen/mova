@@ -68,6 +68,72 @@ export function PersonalizedPlanModal({
 
   if (!isOpen || !plan) return null;
 
+  // Debug: Log da estrutura do plano para diagnóstico
+  console.log("📋 Estrutura do plano recebido:", {
+    hasAnalysis: !!plan.analysis,
+    hasTrainingPlan: !!plan.trainingPlan,
+    hasNutritionPlan: !!plan.nutritionPlan,
+    hasGoals: !!plan.goals,
+    hasMotivation: !!plan.motivation,
+    planKeys: Object.keys(plan),
+    fullPlan: plan,
+  });
+
+  // Verificações de segurança para evitar erros
+  if (
+    !plan.analysis ||
+    !plan.trainingPlan ||
+    !plan.nutritionPlan ||
+    !plan.goals ||
+    !plan.motivation
+  ) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+          <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <svg
+                  className="h-6 w-6 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.93L13.732 4.242a2 2 0 00-3.464 0L3.34 16.07c-.77 1.263.192 2.93 1.732 2.93z"
+                  />
+                </svg>
+              </div>
+              <div className="mt-3 sm:mt-5">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Erro no Plano
+                </h3>
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">
+                    O plano gerado está incompleto. Tente gerar um novo plano.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 sm:mt-6">
+              <button
+                type="button"
+                className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
+                onClick={onClose}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const tabs = [
     { id: "analysis", label: "Análise" },
     { id: "training", label: "Treino" },
@@ -143,7 +209,7 @@ export function PersonalizedPlanModal({
                     Status Atual
                   </h4>
                   <p className={`${colors.status.info.text}`}>
-                    {plan.analysis.currentStatus}
+                    {plan.analysis?.currentStatus || "Status não disponível"}
                   </p>
                 </div>
 
@@ -157,18 +223,20 @@ export function PersonalizedPlanModal({
                       Pontos Fortes
                     </h4>
                     <ul className="space-y-2">
-                      {plan.analysis.strengths.map((strength, index) => (
-                        <li key={index} className="flex items-start">
-                          <span
-                            className={`${colors.status.success.accent} mr-2`}
-                          >
-                            •
-                          </span>
-                          <span className={`${colors.status.success.text}`}>
-                            {strength}
-                          </span>
-                        </li>
-                      ))}
+                      {(plan.analysis?.strengths || []).map(
+                        (strength, index) => (
+                          <li key={index} className="flex items-start">
+                            <span
+                              className={`${colors.status.success.accent} mr-2`}
+                            >
+                              •
+                            </span>
+                            <span className={`${colors.status.success.text}`}>
+                              {strength}
+                            </span>
+                          </li>
+                        )
+                      )}
                     </ul>
                   </div>
 
@@ -181,23 +249,25 @@ export function PersonalizedPlanModal({
                       Áreas de Melhoria
                     </h4>
                     <ul className="space-y-2">
-                      {plan.analysis.improvements.map((improvement, index) => (
-                        <li key={index} className="flex items-start">
-                          <span
-                            className={`${colors.status.warning.accent} mr-2`}
-                          >
-                            •
-                          </span>
-                          <span className={`${colors.status.warning.text}`}>
-                            {improvement}
-                          </span>
-                        </li>
-                      ))}
+                      {(plan.analysis?.improvements || []).map(
+                        (improvement, index) => (
+                          <li key={index} className="flex items-start">
+                            <span
+                              className={`${colors.status.warning.accent} mr-2`}
+                            >
+                              •
+                            </span>
+                            <span className={`${colors.status.warning.text}`}>
+                              {improvement}
+                            </span>
+                          </li>
+                        )
+                      )}
                     </ul>
                   </div>
                 </div>
 
-                {plan.analysis.specialConsiderations &&
+                {plan.analysis?.specialConsiderations &&
                   plan.analysis.specialConsiderations.length > 0 && (
                     <div
                       className={`${colors.status.warning.bg} ${colors.status.warning.border} border rounded-lg p-4`}
@@ -235,26 +305,33 @@ export function PersonalizedPlanModal({
                     Mensagem Personalizada
                   </h4>
                   <p className={`${colors.status.info.text}`}>
-                    {plan.motivation.personalMessage}
+                    {plan.motivation?.personalMessage ||
+                      "Mensagem não disponível"}
                   </p>
 
-                  <h5
-                    className={`${typography.heading.h4} ${colors.status.info.text} mt-4 mb-2`}
-                  >
-                    Dicas
-                  </h5>
-                  <ul className="space-y-1">
-                    {plan.motivation.tips.map((tip, index) => (
-                      <li key={index} className="flex items-start">
-                        <span className={`${colors.status.info.accent} mr-2`}>
-                          •
-                        </span>
-                        <span className={`${colors.status.info.text}`}>
-                          {tip}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  {plan.motivation?.tips && plan.motivation.tips.length > 0 && (
+                    <>
+                      <h5
+                        className={`${typography.heading.h4} ${colors.status.info.text} mt-4 mb-2`}
+                      >
+                        Dicas
+                      </h5>
+                      <ul className="space-y-1">
+                        {plan.motivation.tips.map((tip, index) => (
+                          <li key={index} className="flex items-start">
+                            <span
+                              className={`${colors.status.info.accent} mr-2`}
+                            >
+                              •
+                            </span>
+                            <span className={`${colors.status.info.text}`}>
+                              {tip}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -271,7 +348,8 @@ export function PersonalizedPlanModal({
                     Visão Geral do Treino
                   </h4>
                   <p className={`${colors.status.info.text}`}>
-                    {plan.trainingPlan.overview}
+                    {plan.trainingPlan?.overview ||
+                      "Visão geral não disponível"}
                   </p>
                 </div>
 
@@ -281,50 +359,54 @@ export function PersonalizedPlanModal({
                   >
                     Cronograma Semanal
                   </h4>
-                  {plan.trainingPlan.weeklySchedule.map((day, dayIndex) => (
-                    <div
-                      key={dayIndex}
-                      className="border border-gray-200 rounded-lg p-4"
-                    >
-                      <div className="flex items-center mb-3">
-                        <h5 className="font-semibold text-lg text-gray-900">
-                          {day.day}
-                        </h5>
-                        <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                          {day.type}
-                        </span>
-                      </div>
+                  {(plan.trainingPlan?.weeklySchedule || []).map(
+                    (day, dayIndex) => (
+                      <div
+                        key={dayIndex}
+                        className="border border-gray-200 rounded-lg p-4"
+                      >
+                        <div className="flex items-center mb-3">
+                          <h5 className="font-semibold text-lg text-gray-900">
+                            {day.day}
+                          </h5>
+                          <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            {day.type}
+                          </span>
+                        </div>
 
-                      <div className="space-y-3">
-                        {day.exercises.map((exercise, exerciseIndex) => (
-                          <div
-                            key={exerciseIndex}
-                            className="bg-gray-50 border border-gray-100 rounded p-3"
-                          >
-                            <div className="flex flex-wrap items-center gap-4">
-                              <h6 className="font-medium text-gray-900 flex-1">
-                                {exercise.name}
-                              </h6>
-                              <span className="text-sm text-gray-600">
-                                Séries: {exercise.sets}
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                Reps: {exercise.reps}
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                Descanso: {exercise.rest}
-                              </span>
-                            </div>
-                            {exercise.notes && (
-                              <p className="text-sm text-gray-600 mt-2">
-                                Nota: {exercise.notes}
-                              </p>
-                            )}
-                          </div>
-                        ))}
+                        <div className="space-y-3">
+                          {(day.exercises || []).map(
+                            (exercise, exerciseIndex) => (
+                              <div
+                                key={exerciseIndex}
+                                className="bg-gray-50 border border-gray-100 rounded p-3"
+                              >
+                                <div className="flex flex-wrap items-center gap-4">
+                                  <h6 className="font-medium text-gray-900 flex-1">
+                                    {exercise.name}
+                                  </h6>
+                                  <span className="text-sm text-gray-600">
+                                    Séries: {exercise.sets}
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    Reps: {exercise.reps}
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    Descanso: {exercise.rest}
+                                  </span>
+                                </div>
+                                {exercise.notes && (
+                                  <p className="text-sm text-gray-600 mt-2">
+                                    Nota: {exercise.notes}
+                                  </p>
+                                )}
+                              </div>
+                            )
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
 
                 <div
@@ -336,7 +418,8 @@ export function PersonalizedPlanModal({
                     Progressão
                   </h4>
                   <p className={`${colors.status.success.text}`}>
-                    {plan.trainingPlan.progression}
+                    {plan.trainingPlan?.progression ||
+                      "Progressão não disponível"}
                   </p>
                 </div>
               </div>
@@ -357,7 +440,7 @@ export function PersonalizedPlanModal({
                     <p
                       className={`text-2xl font-bold ${colors.status.success.text}`}
                     >
-                      {plan.nutritionPlan.dailyCalories} kcal
+                      {plan.nutritionPlan?.dailyCalories || 0} kcal
                     </p>
                   </div>
 
@@ -377,7 +460,7 @@ export function PersonalizedPlanModal({
                         <span
                           className={`font-medium ${colors.status.info.text}`}
                         >
-                          {plan.nutritionPlan.macros.protein}
+                          {plan.nutritionPlan?.macros?.protein || "N/A"}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -387,7 +470,7 @@ export function PersonalizedPlanModal({
                         <span
                           className={`font-medium ${colors.status.info.text}`}
                         >
-                          {plan.nutritionPlan.macros.carbs}
+                          {plan.nutritionPlan?.macros?.carbs || "N/A"}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -397,7 +480,7 @@ export function PersonalizedPlanModal({
                         <span
                           className={`font-medium ${colors.status.info.text}`}
                         >
-                          {plan.nutritionPlan.macros.fats}
+                          {plan.nutritionPlan?.macros?.fats || "N/A"}
                         </span>
                       </div>
                     </div>
@@ -411,7 +494,7 @@ export function PersonalizedPlanModal({
                     Plano Alimentar
                   </h4>
                   <div className="space-y-4">
-                    {plan.nutritionPlan.mealPlan.map((meal, index) => (
+                    {(plan.nutritionPlan?.mealPlan || []).map((meal, index) => (
                       <div
                         key={index}
                         className="border border-gray-200 rounded-lg p-4"
@@ -425,7 +508,7 @@ export function PersonalizedPlanModal({
                           </span>
                         </div>
                         <div className="space-y-2">
-                          {meal.options.map((option, optionIndex) => (
+                          {(meal.options || []).map((option, optionIndex) => (
                             <div key={optionIndex} className="flex items-start">
                               <span className="text-green-600 mr-2">•</span>
                               <span className="text-gray-800">{option}</span>
@@ -438,7 +521,7 @@ export function PersonalizedPlanModal({
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
-                  {plan.nutritionPlan.supplements &&
+                  {plan.nutritionPlan?.supplements &&
                     plan.nutritionPlan.supplements.length > 0 && (
                       <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                         <h4
@@ -470,7 +553,8 @@ export function PersonalizedPlanModal({
                       Hidratação
                     </h4>
                     <p className={`${colors.status.info.text}`}>
-                      {plan.nutritionPlan.hydration}
+                      {plan.nutritionPlan?.hydration ||
+                        "Recomendação de hidratação não disponível"}
                     </p>
                   </div>
                 </div>
@@ -488,7 +572,7 @@ export function PersonalizedPlanModal({
                       Metas Semanais
                     </h4>
                     <ul className="space-y-2">
-                      {plan.goals.weekly.map((goal, index) => (
+                      {(plan.goals?.weekly || []).map((goal, index) => (
                         <li key={index} className="flex items-start">
                           <span className="text-green-600 mr-2">•</span>
                           <span className="text-green-800">{goal}</span>
@@ -504,7 +588,7 @@ export function PersonalizedPlanModal({
                       Metas Mensais
                     </h4>
                     <ul className="space-y-2">
-                      {plan.goals.monthly.map((goal, index) => (
+                      {(plan.goals?.monthly || []).map((goal, index) => (
                         <li key={index} className="flex items-start">
                           <span className="text-blue-600 mr-2">•</span>
                           <span className="text-blue-800">{goal}</span>
@@ -523,7 +607,7 @@ export function PersonalizedPlanModal({
                     Indicadores de Progresso
                   </h4>
                   <ul className="space-y-2">
-                    {plan.goals.tracking.map((indicator, index) => (
+                    {(plan.goals?.tracking || []).map((indicator, index) => (
                       <li key={index} className="flex items-start">
                         <span className={`${colors.status.info.accent} mr-2`}>
                           •

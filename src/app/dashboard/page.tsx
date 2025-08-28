@@ -70,10 +70,23 @@ export default function DashboardPage() {
   // Função para gerar plano e abrir modal
   const handleGeneratePlan = async () => {
     try {
-      await generatePlan();
+      console.log("🎯 Iniciando geração de plano...");
+      console.log("📋 Plano atual no estado:", plan);
+      console.log("📊 Status do plano:", planStatus);
+
+      // Se já existe um plano no estado, apenas abrir o modal
+      if (plan && planStatus?.isExisting) {
+        console.log("✅ Abrindo modal com plano existente");
+        setShowPlanModal(true);
+        return;
+      }
+
+      const generatedPlan = await generatePlan();
+      console.log("✅ Plano gerado com sucesso:", generatedPlan);
       setShowPlanModal(true);
     } catch (error) {
-      console.error("Erro ao gerar plano:", error);
+      console.error("❌ Erro ao gerar plano:", error);
+      // Não abrir modal se houver erro
     }
   };
 

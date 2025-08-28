@@ -19,10 +19,7 @@ export default function LoginForm() {
     setLoading(true);
     setError(""); // Limpar erros anteriores
 
-    console.log("Tentando login com:", {
-      email: formData.email,
-      password: formData.password,
-    });
+    console.log("Tentando login com email:", formData.email);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({

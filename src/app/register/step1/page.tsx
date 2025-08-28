@@ -24,7 +24,6 @@ export default function Step1Page() {
     try {
       console.log("🚀 Iniciando processo de signup...");
       console.log("📧 Email:", formData.email);
-      console.log("🔑 Password length:", formData.password.length);
       console.log("👤 Full name:", formData.fullName);
 
       // 1. Criar usuário no Supabase Auth (com retry logic)
@@ -115,18 +114,22 @@ export default function Step1Page() {
         return;
       }
 
-      // 3. Salvar dados adicionais na tabela users
+      // 3. Salvar dados adicionais na tabela users usando função segura
       console.log("🔍 Tentando salvar dados do usuário:", {
         id: authData.user.id,
         email: formData.email,
         full_name: formData.fullName,
       });
 
-      const { error: userError } = await supabase.from("users").insert({
-        id: authData.user.id,
-        email: formData.email,
-        full_name: formData.fullName,
-      });
+      // Usar função RPC para inserção segura
+      const { data: insertResult, error: userError } = await supabase.rpc(
+        "insert_user_safe",
+        {
+          user_id: authData.user.id,
+          user_email: formData.email,
+          user_full_name: formData.fullName,
+        }
+      );
 
       if (userError) {
         console.error("❌ Erro detalhado ao salvar dados do usuário:", {
@@ -150,11 +153,37 @@ export default function Step1Page() {
           );
         } else if (userError.message.includes("duplicate key")) {
           setError("Este usuário já existe. Tente fazer login.");
+        } else if (
+          userError.message.includes("406") ||
+          userError.message.includes("Not Acceptable") ||
+          userError.message.includes("PGRST116")
+        ) {
+          setError(
+            "Erro de configuração do banco de dados. Tente novamente em alguns instantes."
+          );
+        } else if (
+          userError.message.includes("function") ||
+          userError.message.includes("insert_user_safe")
+        ) {
+          setError(
+            "Erro na configuração do sistema. Tente novamente ou entre em contato com o suporte."
+          );
         } else {
           setError(
             `Conta criada, mas houve um problema ao salvar seus dados: ${userError.message}`
           );
         }
+        return;
+      }
+
+      // Verificar se a função RPC retornou sucesso
+      if (insertResult && insertResult.length > 0 && !insertResult[0].success) {
+        console.error("❌ Função RPC retornou erro:", insertResult[0]);
+        setError(
+          `Erro ao salvar dados: ${
+            insertResult[0].error || "Erro desconhecido"
+          }`
+        );
         return;
       }
 

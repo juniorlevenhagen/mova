@@ -60,7 +60,7 @@ export default function DashboardPage() {
   const { isGenerating, plan, planStatus, isCheckingStatus, generatePlan } =
     usePlanGeneration();
 
-  const { trial, trialStatus, loading: trialLoading } = useTrial(user);
+  const { trialStatus, loading: trialLoading } = useTrial(user);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Função combinada para refresh após upload de PDF

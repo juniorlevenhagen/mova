@@ -93,17 +93,25 @@ export function UserDataSection({
       try {
         // Se for PDF, processar com a API
         if (file.type === "application/pdf") {
+          console.log("📄 Iniciando processamento de PDF...");
+
           // Obter token de autorização
           const {
             data: { session },
           } = await supabase.auth.getSession();
+
           if (!session?.access_token) {
-            console.error("Erro: Usuário não autenticado");
+            console.error("❌ Erro: Usuário não autenticado");
+            alert("Erro de autenticação. Faça login novamente.");
             return;
           }
 
+          console.log("✅ Token de autenticação obtido");
+
           const formData = new FormData();
           formData.append("file", file);
+
+          console.log("📤 Enviando arquivo para processamento...");
 
           const response = await fetch("/api/process-pdf", {
             method: "POST",
@@ -113,10 +121,15 @@ export function UserDataSection({
             body: formData,
           });
 
+          console.log("📨 Resposta recebida:", response.status);
+
           if (response.ok) {
             const result = await response.json();
+            console.log("✅ PDF processado com sucesso:", result);
 
             if (result.success) {
+              alert("🎉 Avaliação processada com sucesso!");
+
               // Atualizar dados do perfil sem recarregar a página
               if (result.profileUpdated && onProfileUpdate) {
                 setTimeout(async () => {
@@ -124,11 +137,29 @@ export function UserDataSection({
                 }, 1500);
               }
             } else {
-              console.error("Erro:", result.error);
+              console.error("❌ Erro no processamento:", result.error);
+              alert(`Erro: ${result.error}`);
             }
           } else {
-            const error = await response.json();
-            console.error("Erro na API:", error.error);
+            console.error("❌ Erro na API:", response.status);
+
+            // Ler o erro apenas uma vez
+            let errorMessage = "Erro desconhecido";
+            try {
+              const error = await response.json();
+              errorMessage = error.error || "Erro desconhecido";
+            } catch {
+              // Se não conseguir parsear como JSON, tentar ler como texto
+              try {
+                const errorText = await response.text();
+                errorMessage = errorText || "Erro desconhecido";
+              } catch {
+                errorMessage = `Erro ${response.status}: ${response.statusText}`;
+              }
+            }
+
+            console.error("❌ Detalhes do erro:", errorMessage);
+            alert(`Erro na API (${response.status}): ${errorMessage}`);
           }
         }
 
@@ -146,8 +177,15 @@ export function UserDataSection({
             uploadDate: currentDate,
           })
         );
+
+        console.log("💾 Dados salvos no localStorage");
       } catch (error) {
-        console.error("Erro no processamento:", error);
+        console.error("❌ Erro no processamento:", error);
+        alert(
+          `Erro no processamento: ${
+            error instanceof Error ? error.message : "Erro desconhecido"
+          }`
+        );
       } finally {
         setIsUploading(false);
       }

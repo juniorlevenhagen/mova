@@ -512,6 +512,11 @@ export function EvolutionSection({
       evolutionsToShow = validEvolutions.slice(-20);
     }
 
+    // Filtrar evoluções com peso válido
+    const validEvolutionsForChart = evolutionsToShow.filter(
+      (evolution) => evolution.peso && evolution.peso > 0
+    );
+
     // Adicionar dados do cadastro inicial se existir
     if (userProfile?.pesoInicial && userProfile.pesoInicial > 0) {
       chartData.push({
@@ -525,7 +530,7 @@ export function EvolutionSection({
     }
 
     // Adicionar dados das evoluções filtradas
-    evolutionsToShow.forEach((evolution, index) => {
+    validEvolutionsForChart.forEach((evolution, index) => {
       const date = new Date(evolution.date);
       const formattedDate = date.toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -547,6 +552,37 @@ export function EvolutionSection({
 
     return chartData;
   }, [validEvolutions, evolutionFilter, userProfile?.pesoInicial]);
+
+  // Memoizar dados do gráfico de pizza para performance
+  const pieChartData = useMemo(() => {
+    const massaMagra = currentData.massaMagra || 0;
+    const massaGorda = currentData.percentualGordura
+      ? (currentData.peso * currentData.percentualGordura) / 100
+      : 0;
+
+    return [
+      {
+        name: "Massa Magra",
+        value: massaMagra,
+        color: "#3B82F6",
+        percentage:
+          currentData.peso > 0
+            ? ((massaMagra / currentData.peso) * 100).toFixed(0)
+            : "0",
+      },
+      {
+        name: "Gordura",
+        value: massaGorda,
+        color: "#EF4444",
+        percentage: currentData.percentualGordura
+          ? currentData.percentualGordura.toFixed(0)
+          : "0",
+      },
+    ];
+  }, [currentData.massaMagra, currentData.percentualGordura, currentData.peso]);
+
+  // Memoizar dados semanais para performance
+  const weeklyData = useMemo(() => getWeeklyData(), [getWeeklyData]);
 
   // Função para lidar com o envio da meta
   const handleMetaSubmit = async (data: MetaData) => {
@@ -964,22 +1000,28 @@ export function EvolutionSection({
               Evolução do Peso e Cintura
             </h4>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
-                  dataKey="uniqueKey" // Usar chave única em vez de data
+                  dataKey="uniqueKey"
                   stroke="#6b7280"
-                  fontSize={12}
+                  fontSize={10}
                   angle={-45}
                   textAnchor="end"
                   height={60}
+                  tick={{ fontSize: 10 }}
                 />
-                <YAxis stroke="#6b7280" fontSize={12} />
+                <YAxis
+                  stroke="#6b7280"
+                  fontSize={10}
+                  domain={["dataMin - 2", "dataMax + 2"]}
+                />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
-                      // Debug: Log dos dados do tooltip
-
                       return (
                         <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
                           <p className="font-medium text-gray-800 mb-2">
@@ -989,14 +1031,11 @@ export function EvolutionSection({
                             const value = entry.value;
                             const name = entry.name;
 
-                            // Debug: Log de cada entrada
-
                             if (value === null || value === undefined) {
-                              return null; // Não mostrar valores nulos
+                              return null;
                             }
 
                             let displayValue = "";
-
                             if (name === "peso") {
                               displayValue = `${Number(value).toFixed(1)} kg`;
                             } else if (name === "cintura") {
@@ -1031,21 +1070,23 @@ export function EvolutionSection({
                   type="monotone"
                   dataKey="peso"
                   stroke="#3B82F6"
-                  strokeWidth={3}
+                  strokeWidth={2}
                   name="Peso (kg)"
-                  dot={{ fill: "#3B82F6", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: "#3B82F6", strokeWidth: 2 }}
+                  dot={{ fill: "#3B82F6", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#3B82F6", strokeWidth: 2 }}
                   connectNulls={false}
+                  isAnimationActive={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="cintura"
                   stroke="#10B981"
-                  strokeWidth={3}
+                  strokeWidth={2}
                   name="Cintura (cm)"
-                  dot={{ fill: "#10B981", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: "#10B981", strokeWidth: 2 }}
+                  dot={{ fill: "#10B981", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#10B981", strokeWidth: 2 }}
                   connectNulls={false}
+                  isAnimationActive={false}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -1070,84 +1111,43 @@ export function EvolutionSection({
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
-                  data={[
-                    {
-                      name: "Massa Magra",
-                      value: currentData.massaMagra || 0,
-                      color: "#3B82F6",
-                    },
-                    {
-                      name: "Gordura",
-                      value: currentData.percentualGordura
-                        ? (currentData.peso * currentData.percentualGordura) /
-                          100
-                        : 0,
-                      color: "#EF4444",
-                    },
-                  ]}
+                  data={pieChartData}
                   cx="50%"
                   cy="50%"
                   outerRadius={70}
                   innerRadius={30}
                   dataKey="value"
-                  label={({ name }) => {
-                    if (name === "Gordura" && currentData.percentualGordura) {
-                      return `${name} ${currentData.percentualGordura}%`;
-                    }
-                    if (name === "Massa Magra" && currentData.massaMagra) {
-                      const percentualMassaMagra = (
-                        (currentData.massaMagra / currentData.peso) *
-                        100
-                      ).toFixed(0);
-                      return `${name} ${percentualMassaMagra}%`;
-                    }
-                    return `${name} 0%`;
-                  }}
+                  label={({ name, percentage }) => `${name} ${percentage}%`}
                   labelLine={false}
+                  isAnimationActive={false}
                 >
-                  {[
-                    {
-                      name: "Massa Magra",
-                      value: currentData.massaMagra || 0,
-                      color: "#3B82F6",
-                    },
-                    {
-                      name: "Gordura",
-                      value: currentData.percentualGordura
-                        ? (currentData.peso * currentData.percentualGordura) /
-                          100
-                        : 0,
-                      color: "#EF4444",
-                    },
-                  ].map((entry, index) => (
+                  {pieChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip
-                  content={({ active, payload, label }) => {
+                  content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
                         <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
                           <p className="font-medium text-gray-800 mb-2">
-                            {label === "Início" ? "Cadastro Inicial" : label}
+                            Composição Corporal
                           </p>
                           {payload.map((entry, index) => {
                             const value = entry.value;
                             const name = entry.name;
 
-                            if (value === null || value === undefined) {
-                              return null; // Não mostrar valores nulos
+                            if (
+                              value === null ||
+                              value === undefined ||
+                              value === 0
+                            ) {
+                              return null;
                             }
 
-                            let displayValue = "";
-
-                            if (name === "peso") {
-                              displayValue = `${Number(value).toFixed(1)} kg`;
-                            } else if (name === "cintura") {
-                              displayValue = `${Number(value).toFixed(0)} cm`;
-                            } else {
-                              displayValue = String(value);
-                            }
+                            const displayValue = `${Number(value).toFixed(
+                              1
+                            )} kg`;
 
                             return (
                               <p
@@ -1155,12 +1155,7 @@ export function EvolutionSection({
                                 className="text-sm"
                                 style={{ color: entry.color }}
                               >
-                                {name === "peso"
-                                  ? "Peso"
-                                  : name === "cintura"
-                                  ? "Cintura"
-                                  : name}
-                                : {displayValue}
+                                {name}: {displayValue}
                               </p>
                             );
                           })}
@@ -1172,6 +1167,16 @@ export function EvolutionSection({
                 />
               </PieChart>
             </ResponsiveContainer>
+
+            {/* Mensagem quando não há dados de composição corporal */}
+            {pieChartData.every((item) => item.value === 0) && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum dado de composição corporal disponível.</p>
+                <p className="text-sm">
+                  Adicione evoluções com massa magra e percentual de gordura!
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Gráfico de Barras: Treinos Concluídos por Semana */}
@@ -1181,16 +1186,35 @@ export function EvolutionSection({
               Treinos Concluídos por Semana
             </h4>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={getWeeklyData()}>
+              <BarChart
+                data={weeklyData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="semana" stroke="#6b7280" fontSize={12} />
-                <YAxis stroke="#6b7280" fontSize={12} />
+                <XAxis
+                  dataKey="semana"
+                  stroke="#6b7280"
+                  fontSize={10}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  fontSize={10}
+                  domain={[0, "dataMax + 1"]}
+                />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "white",
                     border: "1px solid #e5e7eb",
                     borderRadius: "8px",
                     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  }}
+                  formatter={(value, name) => {
+                    if (name === "treinos")
+                      return [`${value} treinos`, "Treinos Realizados"];
+                    if (name === "meta")
+                      return [`${value} treinos`, "Meta Semanal"];
+                    return [value, name];
                   }}
                 />
                 <Legend />
@@ -1199,15 +1223,27 @@ export function EvolutionSection({
                   fill="#8B5CF6"
                   radius={[4, 4, 0, 0]}
                   name="Treinos Realizados"
+                  isAnimationActive={false}
                 />
                 <Bar
                   dataKey="meta"
                   fill="#E5E7EB"
                   radius={[4, 4, 0, 0]}
                   name="Meta Semanal"
+                  isAnimationActive={false}
                 />
               </BarChart>
             </ResponsiveContainer>
+
+            {/* Mensagem quando não há dados de atividade */}
+            {weeklyData.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum dado de atividade disponível.</p>
+                <p className="text-sm">
+                  Adicione atividades para ver seu progresso semanal!
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Gráfico de Área: Progresso em Relação à Meta */}

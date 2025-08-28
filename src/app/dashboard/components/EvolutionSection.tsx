@@ -572,10 +572,15 @@ export function EvolutionSection({
     }
     // 'all' mostra todas as evoluções
 
-    // Se não há meta definida, retornar array vazio ou dados mínimos
+    // Filtrar evoluções que têm peso válido
+    const validEvolutions = evolutionsToShow.filter(
+      (evolution) => evolution.peso && evolution.peso > 0
+    );
+
+    // Se não há meta definida
     if (goals.length === 0) {
-      // Retornar apenas dados reais das evoluções, sem meta
-      if (userProfile?.pesoInicial) {
+      // Adicionar ponto inicial se houver peso inicial
+      if (userProfile?.pesoInicial && userProfile.pesoInicial > 0) {
         progressData.push({
           mes: "Início",
           atual: userProfile.pesoInicial,
@@ -583,8 +588,8 @@ export function EvolutionSection({
         });
       }
 
-      // Adicionar evoluções sem meta
-      evolutionsToShow.forEach((evolution, index) => {
+      // Adicionar evoluções válidas
+      validEvolutions.forEach((evolution, index) => {
         const date = new Date(evolution.date);
         const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
 
@@ -598,24 +603,27 @@ export function EvolutionSection({
       return progressData;
     }
 
-    // Adicionar ponto inicial
-    if (userProfile?.pesoInicial) {
+    // Com meta definida
+    const metaValue = goals[0]?.valor_meta || 0;
+
+    // Adicionar ponto inicial se houver peso inicial
+    if (userProfile?.pesoInicial && userProfile.pesoInicial > 0) {
       progressData.push({
         mes: "Início",
         atual: userProfile.pesoInicial,
-        meta: goals[0].valor_meta,
+        meta: metaValue,
       });
     }
 
-    // Adicionar evoluções com meta
-    evolutionsToShow.forEach((evolution, index) => {
+    // Adicionar evoluções válidas com meta
+    validEvolutions.forEach((evolution, index) => {
       const date = new Date(evolution.date);
       const monthName = date.toLocaleDateString("pt-BR", { month: "short" });
 
       progressData.push({
         mes: `${monthName} #${index + 1}`,
         atual: evolution.peso,
-        meta: goals[0].valor_meta,
+        meta: metaValue,
       });
     });
 
@@ -1269,47 +1277,85 @@ export function EvolutionSection({
                 </p>
               </div>
             ) : (
-              // Mostrar gráfico quando há meta
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={prepareProgressData()}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis dataKey="mes" stroke="#6b7280" fontSize={12} />
-                  <YAxis stroke="#6b7280" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "white",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    }}
-                    formatter={(value, name) => {
-                      if (name === "atual")
-                        return [`${Number(value).toFixed(1)} kg`, "Peso Atual"];
-                      if (name === "meta")
-                        return [`${Number(value).toFixed(1)} kg`, "Meta"];
-                      return [value, name];
-                    }}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="atual"
-                    stroke="#F59E0B"
-                    fill="#FEF3C7"
-                    strokeWidth={2}
-                    name="Peso Atual"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="meta"
-                    stroke="#10B981"
-                    fill="#D1FAE5"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    name="Meta"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              // Verificar se há dados suficientes para o gráfico
+              (() => {
+                const progressData = prepareProgressData();
+                if (progressData.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Não há dados suficientes para mostrar o gráfico.</p>
+                      <p className="text-sm">
+                        Adicione evoluções com peso para visualizar seu
+                        progresso!
+                      </p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart
+                      data={progressData}
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis
+                        dataKey="mes"
+                        stroke="#6b7280"
+                        fontSize={12}
+                        tick={{ fontSize: 10 }}
+                      />
+                      <YAxis
+                        stroke="#6b7280"
+                        fontSize={12}
+                        domain={["dataMin - 2", "dataMax + 2"]}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "8px",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                        }}
+                        formatter={(value, name) => {
+                          if (value === null || value === undefined)
+                            return ["-", name];
+                          if (name === "atual")
+                            return [
+                              `${Number(value).toFixed(1)} kg`,
+                              "Peso Atual",
+                            ];
+                          if (name === "meta")
+                            return [`${Number(value).toFixed(1)} kg`, "Meta"];
+                          return [value, name];
+                        }}
+                      />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="atual"
+                        stroke="#F59E0B"
+                        fill="#FEF3C7"
+                        strokeWidth={2}
+                        name="Peso Atual"
+                        connectNulls={false}
+                        isAnimationActive={false}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="meta"
+                        stroke="#10B981"
+                        fill="#D1FAE5"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        name="Meta"
+                        connectNulls={false}
+                        isAnimationActive={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                );
+              })()
             )}
 
             {/* Mostrar resumo da meta se existir */}

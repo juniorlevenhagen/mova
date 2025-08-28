@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
         generatedDate.getTime() + 30 * 24 * 60 * 60 * 1000
       ); // +30 dias
       const daysUntilNext = Math.ceil(
-        (nextPlanDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        (nextPlanDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
       );
 
       // Só retorna se encontrou um plano válido

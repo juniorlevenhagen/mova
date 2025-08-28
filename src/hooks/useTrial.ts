@@ -15,6 +15,7 @@ interface UserTrial {
   created_at: string;
   updated_at: string;
   last_plan_generated_at: string | null;
+  days_between_plans: number;
   premium_plan_count: number;
   premium_plan_cycle_start: string | null;
   premium_max_plans_per_cycle: number;
@@ -28,6 +29,8 @@ interface TrialStatus {
   isPremium: boolean;
   hasUsedFreePlan?: boolean;
   message: string;
+  daysRemaining?: number;
+  plansGenerated?: number;
   // Para premium
   daysUntilNextCycle?: number;
   cycleDays?: number;
@@ -63,90 +66,171 @@ export function useTrial(user: User | null) {
       setLoading(true);
       setError(null);
 
-      // Buscar status usando função SIMPLIFICADA
-      const { data: status, error: statusError } = await supabase.rpc(
-        "get_trial_status_simple",
-        { user_uuid: user.id }
-      );
-
-      if (statusError) {
-        console.error("Erro ao buscar status do trial:", statusError);
-        throw statusError;
-      }
-
-      setTrialStatus(status);
-
-      // Buscar dados brutos do trial para compatibilidade
+      // Buscar dados do trial
       const { data: trialData, error: trialError } = await supabase
         .from("user_trials")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle(); // Usar maybeSingle() em vez de single()
 
-      if (trialError && trialError.code !== "PGRST116") {
+      if (trialError) {
         throw trialError;
       }
 
+      // Lógica para determinar status
+      let status: TrialStatus;
+
+      if (!trialData) {
+        // Usuário novo - pode gerar 1 plano grátis
+        status = {
+          isNewUser: true,
+          canGenerate: true,
+          plansRemaining: 1,
+          isPremium: false,
+          message: "Você pode gerar 1 plano grátis!",
+          daysRemaining: 7,
+          plansGenerated: 0,
+        };
+      } else {
+        // Usuário existente
+        const isPremium = trialData.upgraded_to_premium;
+        const plansGenerated = trialData.plans_generated || 0;
+
+        // Calcular dias restantes do trial
+        const trialEndDate = new Date(trialData.trial_end_date);
+        const now = new Date();
+        const daysRemaining = Math.max(
+          0,
+          Math.ceil(
+            (trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          )
+        );
+
+        if (isPremium) {
+          // Usuário premium - 2 planos por mês
+          const maxPlansPerMonth = trialData.premium_max_plans_per_cycle || 2;
+          const currentMonth = new Date().getMonth();
+          const currentYear = new Date().getFullYear();
+
+          // Verificar se é um novo mês (reset do contador)
+          const lastPlanDate = trialData.last_plan_generated_at
+            ? new Date(trialData.last_plan_generated_at)
+            : null;
+
+          const isNewMonth =
+            !lastPlanDate ||
+            lastPlanDate.getMonth() !== currentMonth ||
+            lastPlanDate.getFullYear() !== currentYear;
+
+          const plansRemaining = isNewMonth
+            ? maxPlansPerMonth
+            : Math.max(0, maxPlansPerMonth - plansGenerated);
+
+          status = {
+            isNewUser: false,
+            canGenerate: plansRemaining > 0,
+            plansRemaining,
+            isPremium: true,
+            message:
+              plansRemaining > 0
+                ? `Você pode gerar ${plansRemaining} plano${
+                    plansRemaining !== 1 ? "s" : ""
+                  } este mês!`
+                : "Limite mensal atingido. Novo mês em breve!",
+            daysRemaining,
+            plansGenerated,
+          };
+        } else {
+          // Usuário grátis - 1 plano total
+          const maxPlans = 1; // Usuários grátis só podem gerar 1 plano
+          const plansRemaining = Math.max(0, maxPlans - plansGenerated);
+
+          status = {
+            isNewUser: false,
+            canGenerate: plansRemaining > 0,
+            plansRemaining,
+            isPremium: false,
+            message:
+              plansRemaining > 0
+                ? "Você pode gerar 1 plano grátis!"
+                : "Plano grátis utilizado. Faça upgrade para continuar!",
+            daysRemaining,
+            plansGenerated,
+          };
+        }
+      }
+
+      setTrialStatus(status);
       setTrial(trialData || null);
     } catch (error: unknown) {
       console.error("Erro ao buscar trial:", error);
       setError("Erro ao carregar dados do trial");
+
+      // Fallback em caso de erro
+      setTrialStatus({
+        isNewUser: true,
+        canGenerate: true,
+        plansRemaining: 1,
+        isPremium: false,
+        message: "Você pode gerar 1 plano grátis!",
+        daysRemaining: 7,
+        plansGenerated: 0,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Criar novo trial (não utilizada)
-  /* const createTrial = async () => {
-    if (!user) return;
-
-    try {
-      console.log("Tentando criar trial para usuário:", user.id);
-
-      const { data, error } = await supabase
-        .from("user_trials")
-        .upsert(
-          {
-            user_id: user.id,
-          },
-          {
-            onConflict: "user_id",
-          }
-        )
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Erro detalhado ao criar trial:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
-        throw error;
-      }
-
-      console.log("Trial criado com sucesso:", data);
-      setTrial(data);
-    } catch (error: unknown) {
-      console.error("Erro ao criar trial:", error);
-      setError(
-        "Erro ao criar trial: " + (error instanceof Error ? error.message : "Erro desconhecido")
-      );
-    }
-  }; */
-
-  // Incrementar contador de planos gerados (nova lógica)
+  // Incrementar contador de planos gerados
   const incrementPlanUsage = async () => {
     if (!user) return false;
 
     try {
-      // Usar a função SIMPLIFICADA do banco
-      const { error } = await supabase.rpc("update_plan_generated_simple", {
-        user_uuid: user.id,
-      });
+      const now = new Date().toISOString();
 
-      if (error) throw error;
+      // Buscar trial atual
+      const { data: currentTrial, error: fetchError } = await supabase
+        .from("user_trials")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle(); // Usar maybeSingle() em vez de single()
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!currentTrial) {
+        // Criar novo trial para usuário
+        const { error: insertError } = await supabase
+          .from("user_trials")
+          .insert({
+            user_id: user.id,
+            plans_generated: 1,
+            last_plan_generated_at: now,
+            trial_start_date: now,
+            trial_end_date: new Date(
+              Date.now() + 7 * 24 * 60 * 60 * 1000
+            ).toISOString(), // 7 dias
+            is_active: true,
+            upgraded_to_premium: false,
+            max_plans_allowed: 1, // Usuários grátis só podem gerar 1 plano
+          });
+
+        if (insertError) throw insertError;
+      } else {
+        // Atualizar trial existente
+        const newPlansGenerated = (currentTrial.plans_generated || 0) + 1;
+
+        const { error: updateError } = await supabase
+          .from("user_trials")
+          .update({
+            plans_generated: newPlansGenerated,
+            last_plan_generated_at: now,
+          })
+          .eq("user_id", user.id);
+
+        if (updateError) throw updateError;
+      }
 
       // Recarregar dados
       await fetchTrial();
@@ -171,7 +255,7 @@ export function useTrial(user: User | null) {
         })
         .eq("user_id", user.id)
         .select()
-        .single();
+        .maybeSingle(); // Usar maybeSingle() em vez de single()
 
       if (error) throw error;
       setTrial(data);

@@ -178,6 +178,76 @@ export async function POST(request: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(5);
 
+    // 🔒 VERIFICAR STATUS DO TRIAL
+    const { data: trialData, error: trialError } = await supabaseUser
+      .from("user_trials")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle(); // Usar maybeSingle() em vez de single()
+
+    if (trialError) {
+      return NextResponse.json(
+        { error: "Erro ao verificar status do trial" },
+        { status: 500 }
+      );
+    }
+
+    // Lógica de verificação do trial
+    let canGenerate = true;
+    let trialMessage = "";
+
+    if (!trialData) {
+      // Usuário novo - pode gerar 1 plano grátis
+      canGenerate = true;
+      trialMessage = "Plano grátis";
+    } else {
+      const isPremium = trialData.upgraded_to_premium;
+      const plansGenerated = trialData.plans_generated || 0;
+
+      if (isPremium) {
+        // Usuário premium - 2 planos por mês
+        const maxPlansPerMonth = trialData.premium_max_plans_per_cycle || 2;
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        const lastPlanDate = trialData.last_plan_generated_at
+          ? new Date(trialData.last_plan_generated_at)
+          : null;
+
+        const isNewMonth =
+          !lastPlanDate ||
+          lastPlanDate.getMonth() !== currentMonth ||
+          lastPlanDate.getFullYear() !== currentYear;
+
+        const plansRemaining = isNewMonth
+          ? maxPlansPerMonth
+          : Math.max(0, maxPlansPerMonth - plansGenerated);
+
+        canGenerate = plansRemaining > 0;
+        trialMessage = `Premium: ${plansRemaining} de ${maxPlansPerMonth} planos restantes`;
+      } else {
+        // Usuário grátis - 1 plano total
+        const maxPlans = 1; // Usuários grátis só podem gerar 1 plano
+        const plansRemaining = Math.max(0, maxPlans - plansGenerated);
+
+        canGenerate = plansRemaining > 0;
+        trialMessage =
+          plansRemaining > 0 ? "Plano grátis" : "Plano grátis já utilizado";
+      }
+    }
+
+    if (!canGenerate) {
+      return NextResponse.json(
+        {
+          error: "TRIAL_LIMIT_REACHED",
+          message:
+            "Você atingiu o limite de planos. Faça upgrade para continuar gerando planos personalizados!",
+          trialMessage,
+        },
+        { status: 403 }
+      );
+    }
+
     // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO NO MÊS ATUAL
     const now = new Date();
 
@@ -512,6 +582,36 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
       console.warn("⚠️ Código do erro:", markerError.code);
       console.warn("⚠️ Detalhes do erro:", markerError.details);
     } else {
+    }
+
+    // 🔄 ATUALIZAR TRIAL APÓS GERAR PLANO COM SUCESSO
+    const now = new Date().toISOString();
+
+    if (!trialData) {
+      // Criar novo trial para usuário
+      await supabaseUser.from("user_trials").insert({
+        user_id: user.id,
+        plans_generated: 1,
+        last_plan_generated_at: now,
+        trial_start_date: now,
+        trial_end_date: new Date(
+          Date.now() + 7 * 24 * 60 * 60 * 1000
+        ).toISOString(), // 7 dias
+        is_active: true,
+        upgraded_to_premium: false,
+        max_plans_allowed: 1, // Usuários grátis só podem gerar 1 plano
+      });
+    } else {
+      // Atualizar trial existente
+      const newPlansGenerated = (trialData.plans_generated || 0) + 1;
+
+      await supabaseUser
+        .from("user_trials")
+        .update({
+          plans_generated: newPlansGenerated,
+          last_plan_generated_at: now,
+        })
+        .eq("user_id", user.id);
     }
 
     const generatedAt = new Date().toISOString();

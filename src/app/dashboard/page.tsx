@@ -11,8 +11,10 @@ import { UserDataSection } from "./components/UserDataSection";
 import { EvolutionSection } from "./components/EvolutionSection";
 import { AddEvolutionModal } from "./modals/AddEvolutionModal";
 import { PersonalizedPlanModal } from "./components/PersonalizedPlanModal";
+import { UpgradeModal } from "./components/UpgradeModal";
 import { useEvolution } from "@/hooks/useEvolution";
 import { usePlanGeneration } from "@/hooks/usePlanGeneration";
+import { useTrial } from "@/hooks/useTrial";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface EvolutionData {
@@ -58,6 +60,9 @@ export default function DashboardPage() {
   const { isGenerating, plan, planStatus, isCheckingStatus, generatePlan } =
     usePlanGeneration();
 
+  const { trial, trialStatus, loading: trialLoading } = useTrial(user);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   // Função combinada para refresh após upload de PDF
   const handlePdfUploadRefresh = async () => {
     // Refresh do perfil
@@ -95,7 +100,13 @@ export default function DashboardPage() {
   }, [user, authLoading, router]);
 
   // Mostrar loading enquanto verifica autenticação e carrega dados
-  if (authLoading || profileLoading || evolutionLoading || isCheckingStatus) {
+  if (
+    authLoading ||
+    profileLoading ||
+    evolutionLoading ||
+    isCheckingStatus ||
+    trialLoading
+  ) {
     return (
       <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center">
         <div className="text-center">
@@ -146,16 +157,18 @@ export default function DashboardPage() {
 
   // Log para debug - verificar se os dados estão chegando do hook
 
-  // Dados de trial (ainda mockados - será implementado depois)
-  const trial = {
-    diasRestantes: 5,
+  // Dados de trial (usando dados reais do hook)
+  const trialData = {
+    diasRestantes: trialStatus?.daysRemaining || 7,
     totalDias: 7,
-    requisicoesRestantes: 3,
-    totalRequisicoes: 5,
+    requisicoesRestantes: trialStatus?.plansRemaining || 1,
+    totalRequisicoes: trialStatus?.isPremium ? 2 : 1,
   };
 
-  const trialPercent =
-    ((trial.totalDias - trial.diasRestantes) / trial.totalDias) * 100;
+  const trialPercent = trialStatus?.isPremium
+    ? ((2 - (trialStatus?.plansRemaining || 0)) / 2) * 100
+    : ((trialData.totalDias - trialData.diasRestantes) / trialData.totalDias) *
+      100;
 
   const handleLogout = async () => {
     setLogoutLoading(true);
@@ -171,6 +184,16 @@ export default function DashboardPage() {
   const handleModalSubmit = async (data: EvolutionData) => {
     await addEvolution(data);
     setShowModal(false);
+  };
+
+  const handleUpgrade = () => {
+    setShowUpgradeModal(true);
+  };
+
+  const handleUpgradeConfirm = () => {
+    // TODO: Implementar integração com gateway de pagamento
+    alert("Funcionalidade de pagamento será implementada em breve!");
+    setShowUpgradeModal(false);
   };
 
   return (
@@ -241,7 +264,12 @@ export default function DashboardPage() {
             logoutLoading={logoutLoading}
           />
 
-          <TrialSection trial={trial} trialPercent={trialPercent} />
+          <TrialSection
+            trial={trialData}
+            trialPercent={trialPercent}
+            onUpgrade={handleUpgrade}
+            isPremium={trialStatus?.isPremium || false}
+          />
 
           <UserDataSection
             profile={profileData}
@@ -272,6 +300,12 @@ export default function DashboardPage() {
           isOpen={showPlanModal}
           onClose={() => setShowPlanModal(false)}
           plan={plan}
+        />
+
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={handleUpgradeConfirm}
         />
       </div>
     </ProtectedRoute>

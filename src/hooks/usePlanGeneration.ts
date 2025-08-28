@@ -159,6 +159,11 @@ export function usePlanGeneration() {
 
       if (!response.ok) {
         const errorData = await response.json();
+
+        if (errorData.error === "TRIAL_LIMIT_REACHED") {
+          throw new Error(errorData.message || "Limite de planos atingido");
+        }
+
         throw new Error(errorData.error || "Erro ao gerar plano");
       }
 

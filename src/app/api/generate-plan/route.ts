@@ -551,11 +551,19 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
       );
     }
 
+    const generatedAt = new Date().toISOString();
+    const nextPlanDate = new Date();
+    nextPlanDate.setDate(nextPlanDate.getDate() + 30);
+
     return NextResponse.json({
       success: true,
       message: "Plano personalizado gerado com sucesso!",
       plan,
       planId: planMarker?.[0]?.id || null,
+      isExisting: true,
+      generatedAt: generatedAt,
+      daysUntilNext: 30,
+      nextPlanAvailable: nextPlanDate.toISOString().split("T")[0],
     });
   } catch (error: any) {
     console.error("❌ Erro ao gerar plano:", error);

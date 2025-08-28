@@ -166,8 +166,9 @@ export function usePlanGeneration() {
 
       if (result.success) {
         setPlan(result.plan);
+        // ✅ Atualizar planStatus IMEDIATAMENTE com dados da API
         setPlanStatus({
-          isExisting: result.isExisting || false,
+          isExisting: result.isExisting || true, // Usar dados da API
           generatedAt: result.generatedAt,
           daysUntilNext: result.daysUntilNext,
           nextPlanAvailable: result.nextPlanAvailable,

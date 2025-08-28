@@ -249,11 +249,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO NO MÊS ATUAL
-    const now = new Date();
+    const currentDate = new Date();
 
     // CONTROLE: Verificar se já há plano gerado nos últimos 30 dias
 
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(
+      currentDate.getTime() - 30 * 24 * 60 * 60 * 1000
+    );
 
     const { data: monthlyPlanResults } = await supabaseUser
       .from("user_evolutions")
@@ -585,15 +587,15 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
     }
 
     // 🔄 ATUALIZAR TRIAL APÓS GERAR PLANO COM SUCESSO
-    const now = new Date().toISOString();
+    const trialUpdateTime = new Date().toISOString();
 
     if (!trialData) {
       // Criar novo trial para usuário
       await supabaseUser.from("user_trials").insert({
         user_id: user.id,
         plans_generated: 1,
-        last_plan_generated_at: now,
-        trial_start_date: now,
+        last_plan_generated_at: trialUpdateTime,
+        trial_start_date: trialUpdateTime,
         trial_end_date: new Date(
           Date.now() + 7 * 24 * 60 * 60 * 1000
         ).toISOString(), // 7 dias
@@ -609,7 +611,7 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
         .from("user_trials")
         .update({
           plans_generated: newPlansGenerated,
-          last_plan_generated_at: now,
+          last_plan_generated_at: trialUpdateTime,
         })
         .eq("user_id", user.id);
     }

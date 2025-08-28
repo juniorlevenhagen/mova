@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const envCheck = {
       OPENAI_API_KEY: process.env.OPENAI_API_KEY
@@ -32,4 +32,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

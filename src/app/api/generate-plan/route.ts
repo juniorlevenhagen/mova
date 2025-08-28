@@ -589,31 +589,50 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
     // 🔄 ATUALIZAR TRIAL APÓS GERAR PLANO COM SUCESSO
     const trialUpdateTime = new Date().toISOString();
 
+    console.log("🔄 Atualizando trial para usuário:", user.id);
+    console.log("📊 Trial atual:", trialData);
+
     if (!trialData) {
       // Criar novo trial para usuário
-      await supabaseUser.from("user_trials").insert({
-        user_id: user.id,
-        plans_generated: 1,
-        last_plan_generated_at: trialUpdateTime,
-        trial_start_date: trialUpdateTime,
-        trial_end_date: new Date(
-          Date.now() + 7 * 24 * 60 * 60 * 1000
-        ).toISOString(), // 7 dias
-        is_active: true,
-        upgraded_to_premium: false,
-        max_plans_allowed: 1, // Usuários grátis só podem gerar 1 plano
-      });
+      console.log("➕ Criando novo trial");
+      const { error: insertError } = await supabaseUser
+        .from("user_trials")
+        .insert({
+          user_id: user.id,
+          plans_generated: 1,
+          last_plan_generated_at: trialUpdateTime,
+          trial_start_date: trialUpdateTime,
+          trial_end_date: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString(), // 7 dias
+          is_active: true,
+          upgraded_to_premium: false,
+          max_plans_allowed: 1, // Usuários grátis só podem gerar 1 plano
+        });
+
+      if (insertError) {
+        console.error("❌ Erro ao criar trial:", insertError);
+      } else {
+        console.log("✅ Trial criado com sucesso");
+      }
     } else {
       // Atualizar trial existente
       const newPlansGenerated = (trialData.plans_generated || 0) + 1;
+      console.log("📈 Atualizando trial - planos gerados:", newPlansGenerated);
 
-      await supabaseUser
+      const { error: updateError } = await supabaseUser
         .from("user_trials")
         .update({
           plans_generated: newPlansGenerated,
           last_plan_generated_at: trialUpdateTime,
         })
         .eq("user_id", user.id);
+
+      if (updateError) {
+        console.error("❌ Erro ao atualizar trial:", updateError);
+      } else {
+        console.log("✅ Trial atualizado com sucesso");
+      }
     }
 
     const generatedAt = new Date().toISOString();

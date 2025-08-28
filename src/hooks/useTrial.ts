@@ -268,7 +268,22 @@ export function useTrial(user: User | null) {
 
   // Carregar trial quando usuário mudar
   useEffect(() => {
-    fetchTrial();
+    // Resetar dados quando o usuário mudar
+    setTrial(null);
+    setTrialStatus({
+      canGenerate: false,
+      plansRemaining: 0,
+      isPremium: false,
+      message: "Carregando...",
+    });
+    setError(null);
+
+    if (user) {
+      console.log("Carregando trial para usuário:", user.id);
+      fetchTrial();
+    } else {
+      setLoading(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

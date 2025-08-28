@@ -34,13 +34,17 @@ export function useUserProfile(user: User | null) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Resetar dados quando o usuário mudar
+    setProfile(null);
+    setUserData(null);
+    setError(null);
+
     if (!user) {
-      setProfile(null);
-      setUserData(null);
       setLoading(false);
-      setError(null);
       return;
     }
+
+    console.log("Carregando dados para usuário:", user.id);
 
     const fetchUserData = async () => {
       setLoading(true);

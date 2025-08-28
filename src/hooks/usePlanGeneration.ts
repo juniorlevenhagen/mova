@@ -96,7 +96,7 @@ export function usePlanGeneration() {
             if (planData.type === "monthly_plan" && planData.plan_data) {
               existingPlan = planData.plan_data;
             }
-          } catch (error) {
+          } catch {
             console.warn("Plano antigo sem dados estruturados");
           }
 
@@ -193,9 +193,9 @@ export function usePlanGeneration() {
       } else {
         throw new Error(result.error || "Erro desconhecido");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Erro ao gerar plano:", error);
-      setError(error.message);
+      setError(error instanceof Error ? error.message : "Erro desconhecido");
 
       // ✅ Só para loading se não foi parado antes (casos de erro real)
       setIsGenerating(false);

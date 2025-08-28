@@ -124,8 +124,8 @@ export function AddEvolutionModal({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800">
                 <strong>Update rápido:</strong> Preencha apenas os campos que
-                mudaram. Para avaliação completa com PDF, use o upload em "Seus
-                Dados".
+                mudaram. Para avaliação completa com PDF, use o upload em
+                &quot;Seus Dados&quot;.
               </p>
             </div>
 

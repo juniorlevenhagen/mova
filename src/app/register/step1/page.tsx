@@ -8,7 +8,6 @@ import { supabase } from "@/lib/supabase";
 export default function Step1Page() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [retrying, setRetrying] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     fullName: "",
@@ -110,15 +109,21 @@ export default function Step1Page() {
         return;
       }
 
-      // 2. Salvar dados adicionais na tabela users
+      // 2. Verificar se temos dados do usuário
+      if (!authData?.user?.id) {
+        setError("Erro ao obter dados do usuário após criação da conta.");
+        return;
+      }
+
+      // 3. Salvar dados adicionais na tabela users
       console.log("🔍 Tentando salvar dados do usuário:", {
-        id: authData.user?.id,
+        id: authData.user.id,
         email: formData.email,
         full_name: formData.fullName,
       });
 
       const { error: userError } = await supabase.from("users").insert({
-        id: authData.user?.id,
+        id: authData.user.id,
         email: formData.email,
         full_name: formData.fullName,
       });
@@ -155,7 +160,7 @@ export default function Step1Page() {
 
       console.log("✅ Dados do usuário salvos com sucesso!");
 
-      // 3. Salvar dados temporários no localStorage para os próximos steps
+      // 4. Salvar dados temporários no localStorage para os próximos steps
       localStorage.setItem("registerStep1", JSON.stringify(formData));
 
       router.push("/register/step2");
@@ -328,18 +333,7 @@ export default function Step1Page() {
             disabled={loading}
             className="w-full bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold text-base md:text-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              retrying ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white inline-block mr-2"></div>
-                  Tentando novamente...
-                </>
-              ) : (
-                "Criando conta..."
-              )
-            ) : (
-              "Continuar Personalização"
-            )}
+            {loading ? "Criando conta..." : "Continuar Personalização"}
           </button>
         </form>
       </div>

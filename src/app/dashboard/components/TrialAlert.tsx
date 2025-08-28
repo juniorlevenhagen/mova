@@ -76,7 +76,7 @@ export function TrialAlert({ trialStatus }: TrialAlertProps) {
     }
   };
 
-  const alert = getAlertType();
+  const alertConfig = getAlertType();
 
   const handleUpgrade = () => {
     // TODO: Implementar modal de upgrade ou redirecionamento
@@ -86,13 +86,13 @@ export function TrialAlert({ trialStatus }: TrialAlertProps) {
 
   return (
     <div
-      className={`${alert.bgColor} ${alert.borderColor} border rounded-lg p-4 mb-6`}
+      className={`${alertConfig.bgColor} ${alertConfig.borderColor} border rounded-lg p-4 mb-6`}
     >
       <div className="flex items-start">
         <div className="flex-shrink-0">
-          {alert.type === "error" || alert.type === "urgent" ? (
+          {alertConfig.type === "error" || alertConfig.type === "urgent" ? (
             <svg
-              className={`h-5 w-5 ${alert.iconColor}`}
+              className={`h-5 w-5 ${alertConfig.iconColor}`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -104,7 +104,7 @@ export function TrialAlert({ trialStatus }: TrialAlertProps) {
             </svg>
           ) : (
             <svg
-              className={`h-5 w-5 ${alert.iconColor}`}
+              className={`h-5 w-5 ${alertConfig.iconColor}`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >
@@ -117,24 +117,24 @@ export function TrialAlert({ trialStatus }: TrialAlertProps) {
           )}
         </div>
         <div className="ml-3 flex-1">
-          <h3 className={`text-sm font-medium ${alert.textColor}`}>
-            {alert.title}
+          <h3 className={`text-sm font-medium ${alertConfig.textColor}`}>
+            {alertConfig.title}
           </h3>
-          <div className={`mt-1 text-sm ${alert.textColor}`}>
-            <p>{alert.message}</p>
+          <div className={`mt-1 text-sm ${alertConfig.textColor}`}>
+            <p>{alertConfig.message}</p>
           </div>
           <div className="mt-3">
             <button
               onClick={handleUpgrade}
-              className={`text-sm font-medium ${alert.textColor} hover:underline focus:outline-none focus:underline`}
+              className={`text-sm font-medium ${alertConfig.textColor} hover:underline focus:outline-none focus:underline`}
             >
-              {alert.actionText} →
+              {alertConfig.actionText} →
             </button>
           </div>
         </div>
         <div className="ml-4 flex-shrink-0">
           <button
-            className={`inline-flex ${alert.textColor} hover:bg-${alert.type}-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${alert.type}-500 rounded-md p-1.5`}
+            className={`inline-flex ${alertConfig.textColor} hover:bg-${alertConfig.type}-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${alertConfig.type}-500 rounded-md p-1.5`}
             onClick={() => {
               // TODO: Implementar dismiss temporário
               console.log("Alert dismissed");

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const supabaseUser = supabase;
-    const { data: monthlyPlanResults, error: searchError } = await supabaseUser
+    const { data: monthlyPlanResults } = await supabaseUser
       .from("user_evolutions")
       .select("*")
       .eq("user_id", user.id)
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         if (planData.type === "monthly_plan" && planData.plan_data) {
           existingPlan = planData.plan_data;
         }
-      } catch (error) {
+      } catch {
         console.warn(
           "⚠️ Marcador antigo detectado - não contém dados do plano"
         );
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Evoluções do usuário (últimas 10)
-    const { data: evolutions, error: evolutionsError } = await supabaseUser
+    const { data: evolutions } = await supabaseUser
       .from("user_evolutions")
       .select("*")
       .eq("user_id", user.id)
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
       .limit(10);
 
     // Atividades recentes (últimas 20)
-    const { data: activities, error: activitiesError } = await supabaseUser
+    const { data: activities } = await supabaseUser
       .from("user_activities")
       .select("*")
       .eq("user_id", user.id)
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       .limit(20);
 
     // Metas do usuário
-    const { data: goals, error: goalsError } = await supabaseUser
+    const { data: goals } = await supabaseUser
       .from("user_goals")
       .select("*")
       .eq("user_id", user.id)
@@ -180,23 +180,12 @@ export async function POST(request: NextRequest) {
 
     // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO NO MÊS ATUAL
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const startOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
-    const endOfMonth = new Date(
-      currentYear,
-      currentMonth + 1,
-      0,
-      23,
-      59,
-      59
-    ).toISOString();
 
     // CONTROLE: Verificar se já há plano gerado nos últimos 30 dias
 
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const { data: monthlyPlanResults, error: searchError } = await supabaseUser
+    const { data: monthlyPlanResults } = await supabaseUser
       .from("user_evolutions")
       .select("*")
       .eq("user_id", user.id)
@@ -213,7 +202,6 @@ export async function POST(request: NextRequest) {
     console.log("🔍 Resultado da busca:", {
       found: !!monthlyPlanCheck,
       count: monthlyPlanResults?.length || 0,
-      error: searchError?.message,
       lastPlanDate: monthlyPlanCheck?.date || "nenhum",
     });
 
@@ -230,7 +218,7 @@ export async function POST(request: NextRequest) {
           existingPlan = planData.plan_data;
           console.log("📋 Plano existente recuperado com sucesso!");
         }
-      } catch (error) {
+      } catch {
         console.warn(
           "⚠️ Marcador antigo detectado - não contém dados do plano"
         );

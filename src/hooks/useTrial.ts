@@ -88,7 +88,7 @@ export function useTrial(user: User | null) {
       }
 
       setTrial(trialData || null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao buscar trial:", error);
       setError("Erro ao carregar dados do trial");
     } finally {
@@ -96,8 +96,8 @@ export function useTrial(user: User | null) {
     }
   };
 
-  // Criar novo trial
-  const createTrial = async () => {
+  // Criar novo trial (não utilizada)
+  /* const createTrial = async () => {
     if (!user) return;
 
     try {
@@ -128,13 +128,13 @@ export function useTrial(user: User | null) {
 
       console.log("Trial criado com sucesso:", data);
       setTrial(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao criar trial:", error);
       setError(
-        "Erro ao criar trial: " + (error.message || "Erro desconhecido")
+        "Erro ao criar trial: " + (error instanceof Error ? error.message : "Erro desconhecido")
       );
     }
-  };
+  }; */
 
   // Incrementar contador de planos gerados (nova lógica)
   const incrementPlanUsage = async () => {
@@ -151,7 +151,7 @@ export function useTrial(user: User | null) {
       // Recarregar dados
       await fetchTrial();
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao incrementar uso do plano:", error);
       return false;
     }
@@ -176,7 +176,7 @@ export function useTrial(user: User | null) {
       if (error) throw error;
       setTrial(data);
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao fazer upgrade:", error);
       return false;
     }
@@ -185,6 +185,7 @@ export function useTrial(user: User | null) {
   // Carregar trial quando usuário mudar
   useEffect(() => {
     fetchTrial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   return {

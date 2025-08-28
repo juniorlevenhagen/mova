@@ -180,7 +180,11 @@ export function PersonalizedPlanModal({
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() =>
+                    setActiveTab(
+                      tab.id as "analysis" | "training" | "nutrition" | "goals"
+                    )
+                  }
                   className={`${components.button.base} ${
                     components.button.sizes.sm
                   } ${

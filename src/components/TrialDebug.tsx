@@ -45,7 +45,7 @@ export function TrialDebug({ trialStatus }: TrialDebugProps) {
           <strong>plansRemaining:</strong> {trialStatus.plansRemaining}
         </div>
         <div>
-          <strong>message:</strong> "{trialStatus.message}"
+          <strong>message:</strong> &quot;{trialStatus.message}&quot;
         </div>
         {trialStatus.daysUntilNextCycle && (
           <div>

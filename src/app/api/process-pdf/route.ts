@@ -4,9 +4,14 @@ import pdfParse from "pdf-parse";
 import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Função para criar cliente OpenAI apenas quando necessário
+function createOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY environment variable is not configured");
+  }
+  return new OpenAI({ apiKey });
+}
 
 // Tipagens corretas
 interface PDFInfo {
@@ -136,6 +141,7 @@ export async function POST(request: NextRequest) {
     // const meusDados = ...
     // role: "user", content: JSON.stringify(meusDados)
 
+    const openai = createOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [

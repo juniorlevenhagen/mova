@@ -3,9 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Função para criar cliente OpenAI apenas quando necessário
+function createOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY environment variable is not configured");
+  }
+  return new OpenAI({ apiKey });
+}
 
 // GET: Verificar se já existe um plano
 export async function GET(request: NextRequest) {
@@ -323,6 +328,7 @@ export async function POST(request: NextRequest) {
     };
 
     // 3. Gerar plano com OpenAI
+    const openai = createOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [

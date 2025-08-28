@@ -1,3 +1,5 @@
+import { typography, components, colors } from "@/lib/design-tokens";
+
 interface DashboardHeaderProps {
   user: {
     full_name: string;
@@ -13,14 +15,19 @@ export function DashboardHeader({
   logoutLoading,
 }: DashboardHeaderProps) {
   return (
-    <div className="flex justify-between items-center mb-2">
-      <h1 className="text-2xl font-bold text-gray-800">
-        Olá, {user.full_name}! Seja bem-vindo ao Mova+.
-      </h1>
+    <div className="flex justify-between items-center mb-8">
+      <div>
+        <h1 className={`${typography.heading.h1} ${colors.text.primary} mb-2`}>
+          Olá, {user.full_name}!
+        </h1>
+        <p className={`${typography.body.normal} ${colors.text.secondary}`}>
+          Seja bem-vindo ao seu painel Mova+
+        </p>
+      </div>
       <button
         onClick={onLogout}
         disabled={logoutLoading}
-        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {logoutLoading ? "Saindo..." : "Sair"}
       </button>

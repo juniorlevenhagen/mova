@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { typography, components, colors } from "@/lib/design-tokens";
 
 interface EvolutionData {
   peso: string;
   percentualGordura: string;
   massaMagra: string;
   cintura: string;
+  quadril: string;
+  braco: string;
+  coxa: string;
   treinos: string;
   bemEstar: string;
   observacoes: string;
@@ -33,6 +37,9 @@ export function AddEvolutionModal({
     percentualGordura: "",
     massaMagra: "",
     cintura: "",
+    quadril: "",
+    braco: "",
+    coxa: "",
     treinos: "",
     bemEstar: "3",
     observacoes: "",
@@ -65,6 +72,9 @@ export function AddEvolutionModal({
       percentualGordura: "",
       massaMagra: "",
       cintura: "",
+      quadril: "",
+      braco: "",
+      coxa: "",
       treinos: "",
       bemEstar: "3",
       observacoes: "",
@@ -88,8 +98,8 @@ export function AddEvolutionModal({
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">
-                ✏️ Adicionar Evolução Manual
+              <h3 className={`${typography.heading.h3} ${colors.text.primary}`}>
+                Adicionar Evolução Manual
               </h3>
               <button
                 onClick={handleClose}
@@ -113,7 +123,7 @@ export function AddEvolutionModal({
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-800">
-                💡 <strong>Update rápido:</strong> Preencha apenas os campos que
+                <strong>Update rápido:</strong> Preencha apenas os campos que
                 mudaram. Para avaliação completa com PDF, use o upload em "Seus
                 Dados".
               </p>
@@ -122,10 +132,12 @@ export function AddEvolutionModal({
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Dados Físicos */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-3">
-                  📊 Dados Físicos (Opcionais)
+                <h4
+                  className={`${typography.heading.h4} ${colors.text.primary} mb-3`}
+                >
+                  Dados Físicos (Opcionais)
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
                     <label
                       htmlFor="peso"
@@ -200,13 +212,69 @@ export function AddEvolutionModal({
                       className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+
+                  <div>
+                    <label
+                      htmlFor="quadril"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Quadril (cm)
+                    </label>
+                    <input
+                      type="number"
+                      id="quadril"
+                      name="quadril"
+                      value={modalData.quadril}
+                      onChange={handleInputChange}
+                      placeholder="ex: 98"
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="braco"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Braço (cm)
+                    </label>
+                    <input
+                      type="number"
+                      id="braco"
+                      name="braco"
+                      value={modalData.braco}
+                      onChange={handleInputChange}
+                      placeholder="ex: 32"
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="coxa"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Coxa (cm)
+                    </label>
+                    <input
+                      type="number"
+                      id="coxa"
+                      name="coxa"
+                      value={modalData.coxa}
+                      onChange={handleInputChange}
+                      placeholder="ex: 58"
+                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Dados Subjetivos */}
               <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-3">
-                  🎯 Atividade & Bem-estar
+                <h4
+                  className={`${typography.heading.h4} ${colors.text.primary} mb-3`}
+                >
+                  Atividade & Bem-estar
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -330,16 +398,16 @@ export function AddEvolutionModal({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  className={`${components.button.base} ${components.button.sizes.md} bg-gray-200 text-gray-700 hover:bg-gray-300`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  className={`${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50`}
                 >
-                  {isLoading ? "Salvando..." : "💾 Salvar Evolução"}
+                  {isLoading ? "Salvando..." : "Salvar Evolução"}
                 </button>
               </div>
             </form>

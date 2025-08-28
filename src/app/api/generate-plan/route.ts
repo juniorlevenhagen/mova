@@ -7,6 +7,93 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// GET: Verificar se já existe um plano
+export async function GET(request: NextRequest) {
+  try {
+    // Verificar autenticação
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Token de autorização não encontrado" },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    // Buscar plano existente nos últimos 30 dias
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const supabaseUser = supabase;
+    const { data: monthlyPlanResults, error: searchError } = await supabaseUser
+      .from("user_evolutions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("objetivo", "Plano personalizado gerado")
+      .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
+      .order("date", { ascending: false })
+      .limit(1);
+
+    const monthlyPlanCheck =
+      monthlyPlanResults && monthlyPlanResults.length > 0
+        ? monthlyPlanResults[0]
+        : null;
+
+    if (monthlyPlanCheck) {
+      // Tentar extrair plano das observações
+      let existingPlan = null;
+      try {
+        const planData = JSON.parse(monthlyPlanCheck.observacoes);
+        if (planData.type === "monthly_plan" && planData.plan_data) {
+          existingPlan = planData.plan_data;
+        }
+      } catch (error) {
+        console.warn(
+          "⚠️ Marcador antigo detectado - não contém dados do plano"
+        );
+      }
+
+      const planGeneratedAt = new Date(monthlyPlanCheck.date);
+      const nextPlanDate = new Date(planGeneratedAt);
+      nextPlanDate.setDate(nextPlanDate.getDate() + 30);
+
+      const daysUntilNext = Math.ceil(
+        (nextPlanDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      );
+
+      return NextResponse.json({
+        planStatus: {
+          isExisting: true,
+          generatedAt: monthlyPlanCheck.date,
+          daysUntilNext,
+          nextPlanAvailable: nextPlanDate.toISOString().split("T")[0],
+        },
+        plan: existingPlan,
+      });
+    } else {
+      return NextResponse.json({
+        planStatus: {
+          isExisting: false,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("❌ Erro ao verificar plano:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticação
@@ -52,7 +139,6 @@ export async function POST(request: NextRequest) {
     );
 
     // 1. Buscar dados completos do usuário
-    console.log("📊 Coletando dados do usuário...");
 
     // Perfil do usuário
     const { data: profile, error: profileError } = await supabaseUser
@@ -92,13 +178,6 @@ export async function POST(request: NextRequest) {
       .order("created_at", { ascending: false })
       .limit(5);
 
-    console.log("📋 Dados coletados:", {
-      profile: !!profile,
-      evolutions: evolutions?.length || 0,
-      activities: activities?.length || 0,
-      goals: goals?.length || 0,
-    });
-
     // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO NO MÊS ATUAL
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -113,18 +192,9 @@ export async function POST(request: NextRequest) {
       59
     ).toISOString();
 
-    console.log("🔍 Verificando plano existente para:", {
-      startOfMonth,
-      endOfMonth,
-    });
-
     // CONTROLE: Verificar se já há plano gerado nos últimos 30 dias
-    console.log("🔍 Buscando plano gerado nos últimos 30 dias...");
 
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    console.log(
-      `📅 Buscando desde: ${thirtyDaysAgo.toLocaleDateString("pt-BR")}`
-    );
 
     const { data: monthlyPlanResults, error: searchError } = await supabaseUser
       .from("user_evolutions")
@@ -263,8 +333,6 @@ export async function POST(request: NextRequest) {
           ? (profile.weight - profile.initial_weight).toFixed(1)
           : null,
     };
-
-    console.log("🤖 Enviando dados para OpenAI...");
 
     // 3. Gerar plano com OpenAI
     const completion = await openai.chat.completions.create({
@@ -423,7 +491,7 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
     let plan;
     try {
       const rawContent = completion.choices[0].message.content || "{}";
-      console.log("📝 Tamanho da resposta OpenAI:", rawContent.length);
+
       plan = JSON.parse(rawContent);
     } catch (jsonError: any) {
       console.error("❌ Erro ao parsear JSON da OpenAI:", jsonError.message);
@@ -444,7 +512,6 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
         if (jsonStart >= 0 && jsonEnd > jsonStart) {
           const cleanJson = content.substring(jsonStart, jsonEnd);
           plan = JSON.parse(cleanJson);
-          console.log("✅ JSON extraído e parseado com sucesso!");
         } else {
           throw new Error("Não foi possível extrair JSON válido");
         }
@@ -456,10 +523,8 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
         );
       }
     }
-    console.log("✅ Plano gerado com sucesso!");
 
     // 4. Criar marcador de controle mensal simples
-    console.log("💾 Criando marcador de controle mensal...");
 
     const markerData = {
       user_id: user.id,
@@ -472,8 +537,6 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
       }),
       bem_estar: 5,
     };
-
-    console.log("📋 Dados do marcador:", markerData);
 
     const { data: planMarker, error: markerError } = await supabaseUser
       .from("user_evolutions")

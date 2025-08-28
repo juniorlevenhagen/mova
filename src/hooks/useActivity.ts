@@ -55,7 +55,6 @@ export function useActivity(user: User | null) {
         return;
       }
 
-      console.log("Atividades carregadas:", data);
       setActivities(data || []);
     } catch (err) {
       console.error("Erro inesperado ao buscar atividades:", err);

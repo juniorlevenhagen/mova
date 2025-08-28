@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface PersonalizedPlan {
@@ -59,14 +59,88 @@ export function usePlanGeneration() {
     daysUntilNext?: number;
     nextPlanAvailable?: string;
   } | null>(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+
+  // Verificar automaticamente se já existe um plano ao carregar
+  useEffect(() => {
+    const checkExistingPlan = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+          setIsCheckingStatus(false);
+          return;
+        }
+
+        // Buscar diretamente no Supabase em vez de usar API
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+        const { data: planResults } = await supabase
+          .from("user_evolutions")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .eq("objetivo", "Plano personalizado gerado")
+          .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
+          .order("date", { ascending: false })
+          .limit(1);
+
+        if (planResults && planResults.length > 0) {
+          const planEntry = planResults[0];
+
+          // Tentar extrair plano das observações
+          let existingPlan = null;
+          try {
+            const planData = JSON.parse(planEntry.observacoes);
+            if (planData.type === "monthly_plan" && planData.plan_data) {
+              existingPlan = planData.plan_data;
+            }
+          } catch (error) {
+            console.warn("Plano antigo sem dados estruturados");
+          }
+
+          const planGeneratedAt = new Date(planEntry.date);
+          const nextPlanDate = new Date(planGeneratedAt);
+          nextPlanDate.setDate(nextPlanDate.getDate() + 30);
+
+          const daysUntilNext = Math.ceil(
+            (nextPlanDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          );
+
+          setPlanStatus({
+            isExisting: true,
+            generatedAt: planEntry.date,
+            daysUntilNext,
+            nextPlanAvailable: nextPlanDate.toISOString().split("T")[0],
+          });
+
+          if (existingPlan) {
+            setPlan(existingPlan);
+          }
+        } else {
+          setPlanStatus({
+            isExisting: false,
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao verificar plano existente:", error);
+        setPlanStatus({
+          isExisting: false,
+        });
+      } finally {
+        setIsCheckingStatus(false);
+      }
+    };
+
+    checkExistingPlan();
+  }, []);
 
   const generatePlan = async () => {
     setIsGenerating(true);
     setError(null);
 
     try {
-      console.log("🎯 Iniciando geração de plano personalizado...");
-
       // Obter token de autorização
       const {
         data: { session },
@@ -102,23 +176,6 @@ export function usePlanGeneration() {
         // ✅ Parar loading IMEDIATAMENTE após atualizar estado
         setIsGenerating(false);
 
-        console.log("✅ Plano carregado com sucesso!");
-        console.log("🔄 Estado atualizado: isGenerating=false, planStatus=", {
-          isExisting: result.isExisting || false,
-          generatedAt: result.generatedAt,
-        });
-
-        // Log da operação (sem alert)
-        if (result.isExisting) {
-          console.log(
-            `📋 Plano do mês recuperado! Gerado em: ${new Date(
-              result.generatedAt
-            ).toLocaleDateString("pt-BR")}`
-          );
-        } else {
-          console.log("🎉 Novo plano personalizado gerado com sucesso!");
-        }
-
         return result.plan;
       } else if (result.error === "MONTHLY_LIMIT_REACHED") {
         // Limite mensal atingido
@@ -132,10 +189,6 @@ export function usePlanGeneration() {
         // ✅ Parar loading IMEDIATAMENTE após atualizar estado
         setIsGenerating(false);
 
-        console.log(
-          `🔒 Limite de 30 dias atingido! Próximo plano em: ${result.daysUntilNext} dias`
-        );
-
         throw new Error(result.message);
       } else {
         throw new Error(result.error || "Erro desconhecido");
@@ -147,8 +200,6 @@ export function usePlanGeneration() {
       // ✅ Só para loading se não foi parado antes (casos de erro real)
       setIsGenerating(false);
 
-      // Log do erro (sem alert)
-      console.log(`❌ Erro ao gerar plano: ${error.message}`);
       throw error;
     }
   };
@@ -164,6 +215,7 @@ export function usePlanGeneration() {
     plan,
     error,
     planStatus,
+    isCheckingStatus,
     generatePlan,
     clearPlan,
   };

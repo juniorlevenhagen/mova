@@ -7,6 +7,9 @@ interface EvolutionData {
   percentualGordura: string;
   massaMagra: string;
   cintura: string;
+  quadril: string;
+  braco: string;
+  coxa: string;
   treinos: string;
   bemEstar: string;
   observacoes: string;
@@ -66,7 +69,6 @@ export function useEvolution(user: User | null) {
       }
 
       setEvolutions(data || []);
-      console.log("Evoluções carregadas:", data);
     } catch (error) {
       console.error("Erro inesperado ao buscar evoluções:", error);
       setError("Erro inesperado ao carregar evoluções");
@@ -86,9 +88,6 @@ export function useEvolution(user: User | null) {
     setIsAdding(true);
     setError(null);
 
-    console.log("=== ADICIONANDO EVOLUÇÃO ===");
-    console.log("Dados recebidos do modal:", data);
-
     try {
       const peso = parseFloat(data.peso);
       const bemEstar = parseInt(data.bemEstar);
@@ -97,12 +96,9 @@ export function useEvolution(user: User | null) {
         : null;
       const massaMagra = data.massaMagra ? parseFloat(data.massaMagra) : null;
       const cintura = data.cintura ? parseInt(data.cintura) : null;
-
-      console.log("Dados processados:");
-      console.log("- peso:", peso, "tipo:", typeof peso);
-      console.log("- cintura:", cintura, "tipo:", typeof cintura);
-      console.log("- percentualGordura:", percentualGordura);
-      console.log("- massaMagra:", massaMagra);
+      const quadril = data.quadril ? parseInt(data.quadril) : null;
+      const braco = data.braco ? parseInt(data.braco) : null;
+      const coxa = data.coxa ? parseInt(data.coxa) : null;
 
       if (isNaN(peso) || isNaN(bemEstar)) {
         setError("Dados inválidos");
@@ -116,13 +112,14 @@ export function useEvolution(user: User | null) {
         percentual_gordura: percentualGordura,
         massa_magra: massaMagra,
         cintura: cintura,
+        quadril: quadril,
+        braco: braco,
+        coxa: coxa,
         bem_estar: bemEstar,
         observacoes: data.observacoes.trim(),
         objetivo: data.objetivo || "Emagrecimento",
         nivel_atividade: data.nivelAtividade || "Moderado",
       };
-
-      console.log("Dados para salvar no banco:", evolutionData);
 
       const { data: newEvolution, error } = await supabase
         .from("user_evolutions")
@@ -136,12 +133,10 @@ export function useEvolution(user: User | null) {
         return;
       }
 
-      console.log("Evolução salva com sucesso no banco:", newEvolution);
-
       // Atualizar lista de evoluções (adicionar no final)
       setEvolutions((prev) => {
         const newList = [...prev, newEvolution];
-        console.log("Nova lista de evoluções:", newList);
+
         return newList;
       });
     } catch (error) {

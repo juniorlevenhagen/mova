@@ -44,8 +44,6 @@ async function createEvolutionEntry(
   profile: any
 ) {
   try {
-    console.log("📈 Criando entrada automática na evolução...");
-
     const evolutionData = {
       user_id: userId,
       date: new Date().toISOString().split("T")[0], // Data atual
@@ -68,9 +66,7 @@ async function createEvolutionEntry(
       ).substring(0, 200)}...`,
     };
 
-    console.log("📊 Dados que serão inseridos na evolução:", evolutionData);
-
-    const { data: newEvolution, error: evolutionError } = await supabaseUser
+    const { error: evolutionError } = await supabaseUser
       .from("user_evolutions")
       .insert(evolutionData)
       .select()
@@ -81,9 +77,6 @@ async function createEvolutionEntry(
       console.error("❌ Código do erro:", evolutionError.code);
       console.error("❌ Detalhes do erro:", evolutionError.details);
       console.error("❌ Mensagem do erro:", evolutionError.message);
-    } else {
-      console.log("✅ Evolução criada automaticamente!");
-      console.log("📈 Nova evolução:", newEvolution);
     }
   } catch (error) {
     console.error("❌ Erro inesperado ao criar evolução:", error);
@@ -91,12 +84,6 @@ async function createEvolutionEntry(
 }
 
 export async function POST(request: NextRequest) {
-  console.log("=== TESTE COM IMPORTAÇÃO DIRETA ===");
-  console.log("pdf-parse type:", typeof pdfParse);
-  console.log("pdf-parse:", pdfParse);
-
-  console.log("Request:", request);
-
   try {
     // Verificar se o usuário está autenticado
     const authHeader = request.headers.get("Authorization");
@@ -122,9 +109,6 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
-    console.log("File:", file);
-    console.log("FormData:", formData);
-
     if (!file) {
       return NextResponse.json(
         { error: "Nenhum arquivo fornecido" },
@@ -132,18 +116,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("File obtido:", file.name, file.size, file.type);
-
     // Converter para buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    console.log("Buffer criado, tamanho:", buffer.length);
-    console.log("Buffer válido:", Buffer.isBuffer(buffer));
-
     // Verificar header
     const header = buffer.toString("ascii", 0, 4);
-    console.log("Header:", header);
 
     if (header !== "%PDF") {
       return NextResponse.json(
@@ -153,11 +131,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Chamar pdf-parse
-    console.log("Chamando pdf-parse...");
     const pdfData: PDFData = await pdfParse(buffer);
-
-    console.log("Sucesso! Páginas:", pdfData.numpages);
-    console.log("Tamanho do texto:", pdfData.text.length);
 
     // const meusDados = ...
     // role: "user", content: JSON.stringify(meusDados)
@@ -295,11 +269,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(
-      "Completion:",
-      JSON.parse(completion.choices[0].message.content || "{}")
-    );
-
     const summary = JSON.parse(completion.choices[0].message.content || "{}");
 
     // Atualizar o perfil do usuário com os dados extraídos
@@ -313,9 +282,6 @@ export async function POST(request: NextRequest) {
       if (summary.weight && typeof summary.weight === "number") {
         // Manter precisão decimal para peso corporal (ex: 75.5 kg)
         profileUpdates.weight = Number(summary.weight.toFixed(2));
-        console.log(
-          `🔍 Processando peso: PDF=${summary.weight} → Salvar=${profileUpdates.weight}`
-        );
       }
 
       if (summary.height && typeof summary.height === "number") {
@@ -334,9 +300,6 @@ export async function POST(request: NextRequest) {
       }
 
       if (Object.keys(profileUpdates).length > 0) {
-        console.log("Atualizando perfil do usuário com:", profileUpdates);
-        console.log(`⚖️ Tentando salvar peso: ${profileUpdates.weight}`);
-
         // Criar cliente Supabase com token do usuário para RLS
         const authToken = authHeader.replace("Bearer ", "");
         const { createClient } = await import("@supabase/supabase-js");
@@ -363,7 +326,6 @@ export async function POST(request: NextRequest) {
         if (updateError) {
           if (updateError.code === "PGRST116") {
             // Perfil não existe, criar um novo
-            console.log("Perfil não encontrado, criando novo perfil...");
 
             const newProfileData: {
               user_id: string;
@@ -413,10 +375,6 @@ export async function POST(request: NextRequest) {
             if (createError) {
               console.error("Erro ao criar perfil:", createError);
             } else {
-              console.log("✅ Perfil criado com sucesso!");
-              console.log("👤 Novo perfil:", newProfile);
-              console.log("⚖️ Peso salvo:", newProfile.weight);
-
               // 🎯 NOVO: Criar entrada automática na evolução para perfil novo
               await createEvolutionEntry(
                 supabaseUser,
@@ -429,16 +387,6 @@ export async function POST(request: NextRequest) {
             console.error("Erro ao atualizar perfil:", updateError);
           }
         } else {
-          console.log("✅ Perfil existente atualizado com sucesso!");
-          console.log("👤 Perfil atualizado:", updatedProfile);
-          console.log("⚖️ Novo peso salvo na base:", updatedProfile.weight);
-          console.log(
-            "🔍 Comparação: PDF tinha",
-            summary.weight,
-            "→ Base tem",
-            updatedProfile.weight
-          );
-
           // 🎯 NOVO: Criar entrada automática na evolução
           await createEvolutionEntry(
             supabaseUser,

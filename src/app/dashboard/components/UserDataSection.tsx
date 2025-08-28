@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { typography, components, colors } from "@/lib/design-tokens";
 
 interface UserDataSectionProps {
   profile: {
@@ -23,6 +24,7 @@ interface UserDataSectionProps {
     daysUntilNext?: number;
     nextPlanAvailable?: string;
   } | null;
+  isCheckingPlanStatus?: boolean;
 }
 
 export function UserDataSection({
@@ -31,6 +33,7 @@ export function UserDataSection({
   isGeneratingPlan,
   onProfileUpdate,
   planStatus,
+  isCheckingPlanStatus = false,
 }: UserDataSectionProps) {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -50,7 +53,6 @@ export function UserDataSection({
   // Sincronizar estado local quando a prop profile mudar
   useEffect(() => {
     setUserProfile(profile);
-    console.log("📝 UserProfile atualizado no componente:", profile);
   }, [profile]);
 
   // Verificar se já existe avaliação salva
@@ -91,8 +93,6 @@ export function UserDataSection({
       try {
         // Se for PDF, processar com a API
         if (file.type === "application/pdf") {
-          console.log("Processando PDF com API...");
-
           // Obter token de autorização
           const {
             data: { session },
@@ -115,41 +115,13 @@ export function UserDataSection({
 
           if (response.ok) {
             const result = await response.json();
-            console.log("Resposta da API:", result);
 
             if (result.success) {
-              // Converter sexo para português no display
-              const genderMap: { [key: string]: string } = {
-                male: "Masculino",
-                female: "Feminino",
-              };
-              const genderDisplay = result.summary?.gender
-                ? genderMap[result.summary.gender] || result.summary.gender
-                : "N/A";
-
-              console.log("✅ PDF processado com sucesso! Dados extraídos:", {
-                peso: result.summary?.weight,
-                altura: result.summary?.height,
-                imc: result.summary?.imc,
-                sexo: genderDisplay,
-                profileUpdated: result.profileUpdated,
-              });
-
               // Atualizar dados do perfil sem recarregar a página
               if (result.profileUpdated && onProfileUpdate) {
-                console.log(
-                  "📝 PDF processado, perfil foi atualizado. Iniciando refresh..."
-                );
                 setTimeout(async () => {
-                  console.log("🔄 Chamando onProfileUpdate...");
                   await onProfileUpdate();
-                  console.log("✅ onProfileUpdate concluído!");
                 }, 1500);
-              } else {
-                console.log("❌ Refresh não será executado:", {
-                  profileUpdated: result.profileUpdated,
-                  hasOnProfileUpdate: !!onProfileUpdate,
-                });
               }
             } else {
               console.error("Erro:", result.error);
@@ -174,9 +146,6 @@ export function UserDataSection({
             uploadDate: currentDate,
           })
         );
-
-        console.log("Avaliação física carregada:", file.name);
-        console.log("Arquivo antigo substituído com sucesso");
       } catch (error) {
         console.error("Erro no processamento:", error);
       } finally {
@@ -261,8 +230,6 @@ export function UserDataSection({
             ...prev,
             [editingField]: profile[editingField as keyof typeof profile],
           }));
-        } else {
-          console.log("Alteração salva com sucesso no banco de dados");
         }
       } catch (error) {
         console.error("Erro inesperado ao salvar:", error);
@@ -439,8 +406,8 @@ export function UserDataSection({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">
+    <div className={`${components.card.base} ${components.card.padding}`}>
+      <h2 className={`${typography.heading.h3} ${colors.text.primary} mb-6`}>
         Seus Dados Atuais
       </h2>
 
@@ -581,7 +548,7 @@ export function UserDataSection({
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-semibold text-green-900 mb-1">
-                🎯 Plano Personalizado Ativo
+                Plano Personalizado Ativo
               </h4>
               <p className="text-sm text-green-700">
                 Gerado em:{" "}
@@ -610,25 +577,32 @@ export function UserDataSection({
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button
           onClick={handleGeneratePlan}
-          disabled={isGeneratingPlan}
-          className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          disabled={isGeneratingPlan || isCheckingPlanStatus}
+          className={`flex-1 ${components.button.base} ${components.button.sizes.lg} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
         >
           {isGeneratingPlan ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               Gerando Plano...
             </>
+          ) : isCheckingPlanStatus ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Verificando...
+            </>
           ) : planStatus?.isExisting ? (
-            "📋 Ver Plano Atual (Treino + Dieta)"
+            "Ver Plano Atual (Treino + Dieta)"
           ) : (
-            "🎯 Gerar Plano Personalizado (Treino + Dieta)"
+            "Gerar Plano Personalizado (Treino + Dieta)"
           )}
         </button>
 
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
-          className={`py-3 px-6 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+          className={`${components.button.base} ${
+            components.button.sizes.lg
+          } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
             hasEvaluation
               ? "bg-green-600 text-white hover:bg-green-700"
               : "bg-gray-600 text-white hover:bg-gray-700"
@@ -666,19 +640,19 @@ export function UserDataSection({
             <div className="flex gap-3">
               <button
                 onClick={() => setShowConfirmationModal(false)}
-                className="flex-1 py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-gray-200 text-gray-800 hover:bg-gray-300`}
               >
                 Cancelar
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex-1 py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-green-600 text-white hover:bg-green-700`}
               >
                 Adicionar Avaliação
               </button>
               <button
                 onClick={confirmGeneratePlan}
-                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900`}
               >
                 Gerar Sem Avaliação
               </button>
@@ -717,7 +691,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowIMCModal(false)}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900`}
             >
               Entendi
             </button>
@@ -756,7 +730,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowCaloriaModal(false)}
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900`}
             >
               Entendi
             </button>

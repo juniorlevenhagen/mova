@@ -53,7 +53,6 @@ export function useGoals(user: User | null) {
         return;
       }
 
-      console.log("Metas carregadas:", data);
       setGoals(data || []);
     } catch (err) {
       console.error("Erro inesperado ao buscar metas:", err);

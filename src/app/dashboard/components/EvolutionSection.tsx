@@ -15,12 +15,13 @@ import {
   Area,
   AreaChart,
 } from "recharts";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MetaModal } from "../modals/MetaModal";
 import { useGoals } from "@/hooks/useGoals";
 import { useAuth } from "@/hooks/useAuth";
 import { useActivity } from "@/hooks/useActivity";
 import { AddActivityModal } from "../modals/AddActivityModal";
+import { typography, components, colors } from "@/lib/design-tokens";
 
 // Adicionar interface para dados de atividade
 interface CreateActivityData {
@@ -157,34 +158,64 @@ export function EvolutionSection({
   // Atualizar currentData para usar dados reais de atividade
   const activityStats = getStats();
 
-  // Buscar a última evolução válida (não pode ser entrada de plano)
-  const lastValidEvolution =
-    evolutions.length > 0
-      ? evolutions
-          .filter((evo) => evo.objetivo !== "Plano personalizado gerado")
-          .slice(-1)[0] || evolutions[evolutions.length - 1]
-      : null;
+  // Memoizar evoluções filtradas para performance
+  const validEvolutions = useMemo(
+    () =>
+      evolutions.filter((evo) => evo.objetivo !== "Plano personalizado gerado"),
+    [evolutions]
+  );
 
-  console.log("🔍 Última evolução válida:", lastValidEvolution);
+  // Buscar a última evolução válida (não pode ser entrada de plano)
+  const lastValidEvolution = useMemo(
+    () => (validEvolutions.length > 0 ? validEvolutions.slice(-1)[0] : null),
+    [validEvolutions]
+  );
+
+  // Função para buscar o último valor conhecido de um campo específico
+  const getLastKnownValue = (field: keyof UserEvolution): number | null => {
+    // Buscar de trás para frente nas evoluções até encontrar um valor
+    for (let i = validEvolutions.length - 1; i >= 0; i--) {
+      const evolution = validEvolutions[i];
+      const value = evolution[field];
+      if (value !== null && value !== undefined && typeof value === "number") {
+        return value as number;
+      }
+    }
+    return null;
+  };
 
   const currentData = lastValidEvolution
     ? {
         peso: lastValidEvolution.peso || initialData.peso,
         percentualGordura:
           lastValidEvolution.percentual_gordura ||
+          getLastKnownValue("percentual_gordura") ||
           initialData.percentualGordura,
-        massaMagra: lastValidEvolution.massa_magra || initialData.massaMagra,
+        massaMagra:
+          lastValidEvolution.massa_magra ||
+          getLastKnownValue("massa_magra") ||
+          initialData.massaMagra,
         massaGorda: (() => {
           const peso = lastValidEvolution.peso || initialData.peso;
           const percentual =
             lastValidEvolution.percentual_gordura ||
+            getLastKnownValue("percentual_gordura") ||
             initialData.percentualGordura;
           return peso && percentual ? (peso * percentual) / 100 : null;
         })(),
-        cintura: lastValidEvolution.cintura || initialData.cintura,
-        quadril: lastValidEvolution.quadril || initialData.quadril,
-        braco: lastValidEvolution.braco || initialData.braco,
-        coxa: lastValidEvolution.coxa || null,
+        cintura:
+          lastValidEvolution.cintura ||
+          getLastKnownValue("cintura") ||
+          initialData.cintura,
+        quadril:
+          lastValidEvolution.quadril ||
+          getLastKnownValue("quadril") ||
+          initialData.quadril,
+        braco:
+          lastValidEvolution.braco ||
+          getLastKnownValue("braco") ||
+          initialData.braco,
+        coxa: lastValidEvolution.coxa || getLastKnownValue("coxa") || null,
         treinosConcluidos: activityStats.totalTreinos,
         caloriasQueimadas: activityStats.caloriasSemana,
         sequencia: activityStats.sequenciaAtual,
@@ -206,11 +237,8 @@ export function EvolutionSection({
         sequencia: 0,
       };
 
-  console.log("📊 CurrentData calculado:", currentData);
-
   // Se está carregando, usar dados mais estáveis
   if (loading) {
-    console.log("⏳ EvolutionSection em loading - usando dados iniciais");
   }
 
   // Função para formatar valores ou mostrar "-"
@@ -315,6 +343,19 @@ export function EvolutionSection({
     initialData.massaMagra && currentData.massaMagra
       ? currentData.massaMagra - initialData.massaMagra
       : 0;
+
+  // Calcular variação da massa gorda
+  const calcularMassaGordaInicial = () => {
+    return initialData.peso && initialData.percentualGordura
+      ? (initialData.peso * initialData.percentualGordura) / 100
+      : null;
+  };
+
+  const massaGordaInicial = calcularMassaGordaInicial();
+  const massaGordaVariacao =
+    massaGordaInicial && currentData.massaGorda
+      ? currentData.massaGorda - massaGordaInicial
+      : null;
 
   // Feedback motivacional baseado nos dados
   const getMotivationalMessage = () => {
@@ -459,22 +500,17 @@ export function EvolutionSection({
   // Calcular IMC atual
   const imcAtual = calculateIMC(currentData.peso, userProfile?.altura || 0);
 
-  // Função para preparar dados do gráfico com dados reais
-  const prepareChartData = () => {
+  // Memoizar dados do gráfico para performance
+  const chartData = useMemo(() => {
     const chartData = [];
 
     // Determinar quantas evoluções mostrar baseado no filtro
-    let evolutionsToShow = evolutions;
+    let evolutionsToShow = validEvolutions;
     if (evolutionFilter === "10") {
-      evolutionsToShow = evolutions.slice(-10);
+      evolutionsToShow = validEvolutions.slice(-10);
     } else if (evolutionFilter === "20") {
-      evolutionsToShow = evolutions.slice(-20);
+      evolutionsToShow = validEvolutions.slice(-20);
     }
-
-    console.log("=== INÍCIO PREPARE CHART DATA ===");
-    console.log("Evoluções recebidas (raw):", evolutions);
-    console.log("Evoluções filtradas:", evolutionsToShow);
-    console.log("UserProfile recebido:", userProfile);
 
     // Adicionar dados do cadastro inicial se existir
     if (userProfile?.pesoInicial && userProfile.pesoInicial > 0) {
@@ -486,29 +522,10 @@ export function EvolutionSection({
         id: "inicio",
         uniqueKey: "inicio",
       });
-      console.log(
-        "Ponto inicial adicionado com peso:",
-        userProfile.pesoInicial
-      );
     }
 
     // Adicionar dados das evoluções filtradas
     evolutionsToShow.forEach((evolution, index) => {
-      console.log(`=== EVOLUÇÃO ${index + 1} ===`);
-      console.log("Evolution raw:", evolution);
-      console.log(
-        "Evolution.peso:",
-        evolution.peso,
-        "tipo:",
-        typeof evolution.peso
-      );
-      console.log(
-        "Evolution.cintura:",
-        evolution.cintura,
-        "tipo:",
-        typeof evolution.cintura
-      );
-
       const date = new Date(evolution.date);
       const formattedDate = date.toLocaleDateString("pt-BR", {
         day: "2-digit",
@@ -525,18 +542,11 @@ export function EvolutionSection({
         uniqueKey: `evolution-${index + 1}`, // Chave única para o Recharts
       };
 
-      console.log("ChartPoint criado:", chartPoint);
       chartData.push(chartPoint);
     });
 
-    console.log("=== DADOS FINAIS DO GRÁFICO ===");
-    console.log("ChartData completo:", chartData);
-
     return chartData;
-  };
-
-  // Obter dados do gráfico
-  const chartData = prepareChartData();
+  }, [validEvolutions, evolutionFilter, userProfile?.pesoInicial]);
 
   // Função para lidar com o envio da meta
   const handleMetaSubmit = async (data: MetaData) => {
@@ -609,21 +619,26 @@ export function EvolutionSection({
       });
     });
 
-    console.log("Dados de progresso:", progressData);
     return progressData;
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 mt-8">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-800">Sua Evolução</h2>
+    <div className={`${components.card.base} ${components.card.padding} mt-8`}>
+      <div className="flex items-center justify-between mb-8">
+        <h2 className={`${typography.heading.h2} ${colors.text.primary}`}>
+          Sua Evolução
+        </h2>
 
         {/* Filtros de período */}
         <div className="flex gap-2">
-          <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg">
+          <button
+            className={`${components.button.base} ${components.button.sizes.sm} bg-gray-800 text-white`}
+          >
             Semanal
           </button>
-          <button className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+          <button
+            className={`${components.button.base} ${components.button.sizes.sm} bg-gray-200 text-gray-700 hover:bg-gray-300`}
+          >
             Mensal
           </button>
         </div>
@@ -744,8 +759,7 @@ export function EvolutionSection({
 
       {/* Seção: Massa Gorda */}
       <div className="mb-6">
-        <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="text-red-500">⚖️</span>
+        <h3 className={`${typography.heading.h4} ${colors.text.primary} mb-4`}>
           Massa Gorda
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -770,17 +784,41 @@ export function EvolutionSection({
           <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg text-center border border-red-200">
             <h4 className="text-sm text-gray-600 mb-1">Evolução</h4>
             <p className="text-2xl font-bold text-red-800">
-              {/* TODO: Calcular diferença massa gorda */}-
+              {massaGordaVariacao !== null ? (
+                <>
+                  {massaGordaVariacao > 0 ? "+" : ""}
+                  {Number(massaGordaVariacao).toFixed(1)}kg
+                </>
+              ) : (
+                "-"
+              )}
             </p>
-            <p className="text-xs text-red-600">Comparado ao início</p>
+            <p
+              className={`text-xs ${
+                massaGordaVariacao !== null
+                  ? massaGordaVariacao < 0
+                    ? "text-green-600"
+                    : massaGordaVariacao > 0
+                    ? "text-red-600"
+                    : "text-gray-600"
+                  : "text-red-600"
+              }`}
+            >
+              {massaGordaVariacao !== null
+                ? massaGordaVariacao < 0
+                  ? "Redução na gordura"
+                  : massaGordaVariacao > 0
+                  ? "Aumento na gordura"
+                  : "Sem mudança"
+                : "Comparado ao início"}
+            </p>
           </div>
         </div>
       </div>
 
       {/* Seção: Medidas Corporais */}
       <div className="mb-6">
-        <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="text-blue-500">📏</span>
+        <h3 className={`${typography.heading.h4} ${colors.text.primary} mb-4`}>
           Medidas Corporais
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -933,8 +971,6 @@ export function EvolutionSection({
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       // Debug: Log dos dados do tooltip
-                      console.log("Tooltip payload:", payload);
-                      console.log("Tooltip label:", label);
 
                       return (
                         <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
@@ -946,11 +982,6 @@ export function EvolutionSection({
                             const name = entry.name;
 
                             // Debug: Log de cada entrada
-                            console.log(`Entry ${index}:`, {
-                              name,
-                              value,
-                              entry,
-                            });
 
                             if (value === null || value === undefined) {
                               return null; // Não mostrar valores nulos
@@ -1439,12 +1470,12 @@ export function EvolutionSection({
           </div>
 
           {/* Evoluções adicionadas */}
-          {evolutions.length > 0 ? (
-            evolutions.map((evolution, index) => {
+          {validEvolutions.length > 0 ? (
+            validEvolutions.map((evolution, index, filteredEvolutions) => {
               const referenceData =
                 index === 0
                   ? initialData // Evolução #1 compara com Cadastro Inicial
-                  : evolutions[index - 1]; // Outras evoluções comparam com a anterior
+                  : filteredEvolutions[index - 1]; // Outras evoluções comparam com a anterior filtrada
 
               const normalizedRef = normalizeReferenceData(referenceData);
 
@@ -1632,7 +1663,7 @@ export function EvolutionSection({
       <button
         onClick={onAddEvolution}
         disabled={isAddingEvolution}
-        className="mt-4 bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className={`mt-6 ${components.button.base} ${components.button.sizes.lg} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
       >
         {isAddingEvolution ? (
           <>

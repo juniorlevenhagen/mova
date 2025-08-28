@@ -63,16 +63,8 @@ export function useUserProfile(user: User | null) {
         setUserData(userDataResult);
 
         // Buscar perfil do usuário
-        console.log("🔍 Buscando perfil para usuário:", user.id, user.email);
 
-        // Primeiro, verificar se existem perfis na tabela
-        const { data: allProfiles, error: countError } = await supabase
-          .from("user_profiles, users")
-          .select("user_id, id")
-          .limit(5);
-
-        console.log("📊 Perfis existentes na tabela:", allProfiles);
-        console.log("❓ Erro ao buscar perfis:", countError);
+        // Buscar perfil específico do usuário
 
         const { data: profileResult, error: profileError } = await supabase
           .from("user_profiles")
@@ -80,19 +72,10 @@ export function useUserProfile(user: User | null) {
           .eq("user_id", user.id)
           .single();
 
-        console.log("🎯 Resultado da busca específica:", profileResult);
-        console.log("❌ Erro específico:", profileError);
-
         if (profileError) {
           if (profileError.code === "PGRST116") {
             // Perfil não encontrado - isso é normal para usuários novos
-            console.log("❌ Perfil não encontrado para usuário:", user.email);
-            console.log("Isso pode acontecer se:");
-            console.log(
-              "- O registro não foi completado (parou antes do Step 2)"
-            );
-            console.log("- Houve erro durante a criação do perfil");
-            console.log("- Conta foi criada de forma não padrão");
+
             setProfile(null);
           } else {
             console.error("Erro ao buscar perfil:", profileError);
@@ -100,7 +83,6 @@ export function useUserProfile(user: User | null) {
             return;
           }
         } else {
-          console.log("✅ Perfil encontrado:", profileResult);
           setProfile(profileResult);
         }
       } catch (error) {
@@ -163,9 +145,6 @@ export function useUserProfile(user: User | null) {
           setError("Erro ao recarregar perfil");
         }
       } else {
-        console.log("✅ Perfil recarregado com sucesso!");
-        console.log("📋 Dados recarregados:", profileResult);
-        console.log("⚖️ Peso atualizado:", profileResult.weight);
         setProfile(profileResult);
         setError(null);
       }

@@ -20,6 +20,9 @@ interface EvolutionData {
   percentualGordura: string;
   massaMagra: string;
   cintura: string;
+  quadril: string;
+  braco: string;
+  coxa: string;
   treinos: string;
   bemEstar: string;
   observacoes: string;
@@ -52,21 +55,16 @@ export default function DashboardPage() {
     addEvolution,
     refetch: refreshEvolutions,
   } = useEvolution(user);
-  const { isGenerating, plan, planStatus, generatePlan } = usePlanGeneration();
+  const { isGenerating, plan, planStatus, isCheckingStatus, generatePlan } =
+    usePlanGeneration();
 
   // Função combinada para refresh após upload de PDF
   const handlePdfUploadRefresh = async () => {
-    console.log("🔄 Iniciando refresh completo após upload PDF...");
-
     // Refresh do perfil
     await refreshProfile();
-    console.log("✅ Perfil refreshed");
 
     // Refresh das evoluções
     await refreshEvolutions();
-    console.log("✅ Evoluções refreshed");
-
-    console.log("🎉 Refresh completo finalizado!");
   };
 
   // Função para gerar plano e abrir modal
@@ -83,16 +81,14 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
-        console.log("Usuário não autenticado, redirecionando...");
         router.replace("/auth/login");
       } else {
-        console.log("Usuário autenticado:", user.email);
       }
     }
   }, [user, authLoading, router]);
 
   // Mostrar loading enquanto verifica autenticação e carrega dados
-  if (authLoading || profileLoading || evolutionLoading) {
+  if (authLoading || profileLoading || evolutionLoading || isCheckingStatus) {
     return (
       <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center">
         <div className="text-center">
@@ -102,7 +98,9 @@ export default function DashboardPage() {
               ? "Verificando autenticação..."
               : profileLoading
               ? "Carregando perfil..."
-              : "Carregando evoluções..."}
+              : evolutionLoading
+              ? "Carregando evoluções..."
+              : "Verificando planos..."}
           </p>
         </div>
       </div>
@@ -140,8 +138,6 @@ export default function DashboardPage() {
   };
 
   // Log para debug - verificar se os dados estão chegando do hook
-  console.log("🏠 Dashboard - Dados do profile:", profile);
-  console.log("📊 Dashboard - ProfileData processado:", profileData);
 
   // Dados de trial (ainda mockados - será implementado depois)
   const trial = {
@@ -246,6 +242,7 @@ export default function DashboardPage() {
             isGeneratingPlan={isGenerating}
             onProfileUpdate={handlePdfUploadRefresh}
             planStatus={planStatus}
+            isCheckingPlanStatus={isCheckingStatus}
           />
 
           <EvolutionSection

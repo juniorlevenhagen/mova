@@ -68,16 +68,7 @@ export function PersonalizedPlanModal({
 
   if (!isOpen || !plan) return null;
 
-  // Debug: Log da estrutura do plano para diagnóstico
-  console.log("📋 Estrutura do plano recebido:", {
-    hasAnalysis: !!plan.analysis,
-    hasTrainingPlan: !!plan.trainingPlan,
-    hasNutritionPlan: !!plan.nutritionPlan,
-    hasGoals: !!plan.goals,
-    hasMotivation: !!plan.motivation,
-    planKeys: Object.keys(plan),
-    fullPlan: plan,
-  });
+  // Debug: Log da estrutura do plano para diagnóstico (removido para produção)
 
   // Verificações de segurança para evitar erros
   if (

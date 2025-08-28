@@ -6,13 +6,11 @@ import { supabase } from "@/lib/supabase";
 
 // Função para criar cliente OpenAI apenas quando necessário
 function createOpenAIClient() {
-  console.log("🔑 Verificando OPENAI_API_KEY...");
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     console.error("❌ OPENAI_API_KEY não configurada");
     throw new Error("OPENAI_API_KEY environment variable is not configured");
   }
-  console.log("✅ OPENAI_API_KEY encontrada");
   return new OpenAI({ apiKey });
 }
 
@@ -93,36 +91,16 @@ async function createEvolutionEntry(
 
 export async function POST(request: NextRequest) {
   try {
-    console.log("🚀 Iniciando processamento de PDF...");
-    console.log("🔧 Variáveis de ambiente:");
-    console.log(
-      "- NEXT_PUBLIC_SUPABASE_URL:",
-      process.env.NEXT_PUBLIC_SUPABASE_URL ? "Configurada" : "Não configurada"
-    );
-    console.log(
-      "- NEXT_PUBLIC_SUPABASE_ANON_KEY:",
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        ? "Configurada"
-        : "Não configurada"
-    );
-    console.log(
-      "- OPENAI_API_KEY:",
-      process.env.OPENAI_API_KEY ? "Configurada" : "Não configurada"
-    );
-
     // Verificar se as dependências estão carregadas
-    console.log("📦 Verificando dependências...");
     try {
-      await import('pdf-parse');
-      console.log("✅ pdf-parse disponível");
+      await import("pdf-parse");
     } catch (error) {
       console.error("❌ Erro ao carregar pdf-parse:", error);
       throw new Error("Dependência pdf-parse não disponível");
     }
 
     try {
-      await import('openai');
-      console.log("✅ OpenAI disponível");
+      await import("openai");
     } catch (error) {
       console.error("❌ Erro ao carregar OpenAI:", error);
       throw new Error("Dependência OpenAI não disponível");
@@ -138,8 +116,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("✅ Token de autorização encontrado");
-
     // Obter o usuário atual
     const {
       data: { user },
@@ -154,14 +130,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("✅ Usuário autenticado:", user.id);
-
-    console.log("📋 Obtendo formData...");
     const formData = await request.formData();
-    console.log("✅ FormData obtido");
-    
     const file = formData.get("file") as File;
-    console.log("📄 Arquivo extraído do formData:", file ? "Sim" : "Não");
 
     if (!file) {
       console.error("❌ Nenhum arquivo fornecido");
@@ -171,18 +141,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("📄 Arquivo recebido:", file.name, "Tamanho:", file.size);
-
     // Converter para buffer
-    console.log("🔄 Convertendo arquivo para buffer...");
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    console.log("✅ Buffer criado, tamanho:", buffer.length);
 
     // Verificar header
-    console.log("🔍 Verificando header do PDF...");
     const header = buffer.toString("ascii", 0, 4);
-    console.log("📄 Header detectado:", header);
 
     if (header !== "%PDF") {
       console.error("❌ Arquivo não é um PDF válido. Header:", header);
@@ -192,17 +156,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("✅ PDF válido detectado");
-
     // Chamar pdf-parse
-    console.log("📖 Extraindo texto do PDF...");
     let pdfData: PDFData;
     try {
       pdfData = await pdfParse(buffer);
-      console.log("✅ PDF parseado com sucesso");
     } catch (pdfError) {
       console.error("❌ Erro ao fazer parse do PDF:", pdfError);
-      throw new Error(`Erro ao processar PDF: ${pdfError instanceof Error ? pdfError.message : 'Erro desconhecido'}`);
+      throw new Error(
+        `Erro ao processar PDF: ${
+          pdfError instanceof Error ? pdfError.message : "Erro desconhecido"
+        }`
+      );
     }
     console.log(
       "✅ Texto extraído. Páginas:",
@@ -349,9 +313,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log("✅ Resposta da OpenAI recebida");
     const summary = JSON.parse(completion.choices[0].message.content || "{}");
-    console.log("📊 Dados extraídos:", summary);
 
     // Atualizar o perfil do usuário com os dados extraídos
     try {

@@ -93,8 +93,6 @@ export function UserDataSection({
       try {
         // Se for PDF, processar com a API
         if (file.type === "application/pdf") {
-          console.log("📄 Iniciando processamento de PDF...");
-
           // Obter token de autorização
           const {
             data: { session },
@@ -106,12 +104,8 @@ export function UserDataSection({
             return;
           }
 
-          console.log("✅ Token de autenticação obtido");
-
           const formData = new FormData();
           formData.append("file", file);
-
-          console.log("📤 Enviando arquivo para processamento...");
 
           const response = await fetch("/api/process-pdf", {
             method: "POST",
@@ -121,11 +115,8 @@ export function UserDataSection({
             body: formData,
           });
 
-          console.log("📨 Resposta recebida:", response.status);
-
           if (response.ok) {
             const result = await response.json();
-            console.log("✅ PDF processado com sucesso:", result);
 
             if (result.success) {
               alert("🎉 Avaliação processada com sucesso!");
@@ -177,8 +168,6 @@ export function UserDataSection({
             uploadDate: currentDate,
           })
         );
-
-        console.log("💾 Dados salvos no localStorage");
       } catch (error) {
         console.error("❌ Erro no processamento:", error);
         alert(

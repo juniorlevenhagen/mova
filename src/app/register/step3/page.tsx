@@ -34,13 +34,10 @@ export default function Step3Page() {
     setLoading(true);
 
     try {
-      console.log("Iniciando criação de assinatura...");
-
       // 1. Pegar dados do step1 do localStorage
       const step1Data = JSON.parse(
         localStorage.getItem("registerStep1") || "{}"
       );
-      console.log("Step1 data:", step1Data);
 
       // 2. Buscar o usuário pelo email
       const { data: userData, error: userError } = await supabase
@@ -48,8 +45,6 @@ export default function Step3Page() {
         .select("id")
         .eq("email", step1Data.email)
         .single();
-
-      console.log("User data:", userData, "User error:", userError);
 
       if (userError) throw userError;
 
@@ -63,17 +58,9 @@ export default function Step3Page() {
         trial_ends_at: trialEndsAt.toISOString(),
       };
 
-      console.log("Subscription data:", subscriptionData);
-
       const { error: subscriptionError } = await supabase
         .from("subscriptions")
         .insert(subscriptionData);
-
-      console.log("Subscription error:", subscriptionError);
-      console.log(
-        "Subscription error details:",
-        JSON.stringify(subscriptionError, null, 2)
-      );
 
       if (subscriptionError) throw subscriptionError;
 

@@ -123,11 +123,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(
-      "🎯 Iniciando geração de plano personalizado para:",
-      user.email
-    );
-
     // Criar cliente Supabase com token do usuário
     const authToken = authHeader.replace("Bearer ", "");
     const { createClient } = await import("@supabase/supabase-js");
@@ -204,40 +199,23 @@ export async function POST(request: NextRequest) {
         ? monthlyPlanResults[0]
         : null;
 
-    console.log("🔍 Resultado da busca:", {
-      found: !!monthlyPlanCheck,
-      count: monthlyPlanResults?.length || 0,
-      lastPlanDate: monthlyPlanCheck?.date || "nenhum",
-    });
-
     if (monthlyPlanCheck) {
-      console.log(
-        "✅ Plano já foi gerado nos últimos 30 dias - retornando plano existente"
-      );
-
       // Tentar extrair plano das observações
       let existingPlan = null;
       try {
         const planData = JSON.parse(monthlyPlanCheck.observacoes);
         if (planData.type === "monthly_plan" && planData.plan_data) {
           existingPlan = planData.plan_data;
-          console.log("📋 Plano existente recuperado com sucesso!");
         }
       } catch {
         console.warn(
           "⚠️ Marcador antigo detectado - não contém dados do plano"
         );
-        console.log(
-          "🔄 Permitindo regeneração para salvar o plano corretamente"
-        );
-
         // Marcador antigo - deletar para permitir novo
         await supabaseUser
           .from("user_evolutions")
           .delete()
           .eq("id", monthlyPlanCheck.id);
-
-        console.log("🗑️ Marcador antigo removido, continuando com geração...");
         // Continua para a geração normal
       }
 
@@ -258,15 +236,6 @@ export async function POST(request: NextRequest) {
         (nextPlanDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      console.log(
-        `📅 Plano gerado em: ${generatedDate.toLocaleDateString("pt-BR")}`
-      );
-      console.log(
-        `📅 Próximo plano em: ${nextPlanDate.toLocaleDateString(
-          "pt-BR"
-        )} (${daysUntilNext} dias)`
-      );
-
       // Só retorna se encontrou um plano válido
       if (existingPlan) {
         // Retorna o plano existente
@@ -285,8 +254,6 @@ export async function POST(request: NextRequest) {
       // Se chegou aqui, é porque o marcador antigo foi removido
       // Continua para gerar novo plano
     }
-
-    console.log("🆕 Nenhum plano encontrado no mês atual, gerando novo...");
 
     // 2. Preparar dados para OpenAI
     const userData = {
@@ -545,10 +512,6 @@ Seja específico, prático e motivacional. Use dados reais do usuário.`,
       console.warn("⚠️ Código do erro:", markerError.code);
       console.warn("⚠️ Detalhes do erro:", markerError.details);
     } else {
-      console.log(
-        "💾 Marcador de controle mensal criado:",
-        planMarker?.[0]?.id
-      );
     }
 
     const generatedAt = new Date().toISOString();

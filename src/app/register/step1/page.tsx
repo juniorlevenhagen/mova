@@ -22,10 +22,6 @@ export default function Step1Page() {
     setError(""); // Limpar erros anteriores
 
     try {
-      console.log("🚀 Iniciando processo de signup...");
-      console.log("📧 Email:", formData.email);
-      console.log("👤 Full name:", formData.fullName);
-
       // 1. Criar usuário no Supabase Auth (com retry logic)
       let authData, authError;
       let retryCount = 0;
@@ -77,8 +73,6 @@ export default function Step1Page() {
         }
       }
 
-      console.log("📊 Auth response:", { data: authData, error: authError });
-
       if (authError) {
         // Tratar erros específicos do Supabase
         if (authError.message.includes("User already registered")) {
@@ -115,11 +109,6 @@ export default function Step1Page() {
       }
 
       // 3. Salvar dados adicionais na tabela users usando função segura
-      console.log("🔍 Tentando salvar dados do usuário:", {
-        id: authData.user.id,
-        email: formData.email,
-        full_name: formData.fullName,
-      });
 
       // Usar função RPC para inserção segura
       const { data: insertResult, error: userError } = await supabase.rpc(
@@ -186,8 +175,6 @@ export default function Step1Page() {
         );
         return;
       }
-
-      console.log("✅ Dados do usuário salvos com sucesso!");
 
       // 4. Salvar dados temporários no localStorage para os próximos steps
       localStorage.setItem("registerStep1", JSON.stringify(formData));

@@ -303,7 +303,8 @@ export default function DashboardPage() {
                   <strong>Debug:</strong> Usuário ID: {user.id}
                 </p>
                 <p className="text-xs text-yellow-600 mt-1">
-                  Se estiver vendo dados incorretos, clique em "Limpar Cache"
+                  Se estiver vendo dados incorretos, clique em &quot;Limpar
+                  Cache&quot;
                 </p>
               </div>
               <button

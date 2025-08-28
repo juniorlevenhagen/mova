@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import pdfParse from "pdf-parse";
 import OpenAI from "openai";
@@ -33,6 +34,60 @@ interface PDFData {
   metadata: PDFMetadata | null;
   version: string;
   text: string;
+}
+
+// Função para criar entrada automática na evolução
+async function createEvolutionEntry(
+  supabaseUser: any,
+  userId: string,
+  summary: any,
+  profile: any
+) {
+  try {
+    console.log("📈 Criando entrada automática na evolução...");
+
+    const evolutionData = {
+      user_id: userId,
+      date: new Date().toISOString().split("T")[0], // Data atual
+      peso: Number((summary.weight || profile.weight || 0).toFixed(2)),
+      percentual_gordura: summary.percentageOfBodyFat
+        ? Number(summary.percentageOfBodyFat.toFixed(1))
+        : null,
+      massa_magra: summary.muscleMass
+        ? Number(summary.muscleMass.toFixed(1))
+        : null,
+      cintura: summary.waist ? Number(summary.waist.toFixed(0)) : null,
+      quadril: summary.hip ? Number(summary.hip.toFixed(0)) : null,
+      braco: summary.arm ? Number(summary.arm.toFixed(0)) : null,
+      coxa: summary.thigh ? Number(summary.thigh.toFixed(0)) : null,
+      objetivo: summary.goal || "Manter forma física",
+      nivel_atividade: summary.trainingFrequency || "Moderado",
+      bem_estar: 4, // Valor padrão positivo após avaliação
+      observacoes: `Dados extraídos automaticamente de avaliação física. ${(
+        summary.summary || ""
+      ).substring(0, 200)}...`,
+    };
+
+    console.log("📊 Dados que serão inseridos na evolução:", evolutionData);
+
+    const { data: newEvolution, error: evolutionError } = await supabaseUser
+      .from("user_evolutions")
+      .insert(evolutionData)
+      .select()
+      .single();
+
+    if (evolutionError) {
+      console.error("❌ Erro ao criar evolução:", evolutionError);
+      console.error("❌ Código do erro:", evolutionError.code);
+      console.error("❌ Detalhes do erro:", evolutionError.details);
+      console.error("❌ Mensagem do erro:", evolutionError.message);
+    } else {
+      console.log("✅ Evolução criada automaticamente!");
+      console.log("📈 Nova evolução:", newEvolution);
+    }
+  } catch (error) {
+    console.error("❌ Erro inesperado ao criar evolução:", error);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -135,6 +190,22 @@ export async function POST(request: NextRequest) {
                 type: "number",
                 description: "Peso da pessoa",
               },
+
+              percentageOfBodyFat: {
+                type: "number",
+                description: "Percentual de gordura da pessoa",
+              },
+
+              muscleMass: {
+                type: "number",
+                description: "Massa magra da pessoa",
+              },
+
+              fatMass: {
+                type: "number",
+                description: "Massa de gordura da pessoa",
+              },
+
               imc: {
                 type: "number",
                 description: "IMC da pessoa",
@@ -142,15 +213,72 @@ export async function POST(request: NextRequest) {
               gender: {
                 type: "string",
                 enum: ["male", "female"],
-                description: "Sexo da pessoa",
+                description:
+                  "Sexo da pessoa (use: male para masculino, female para feminino)",
               },
               basalCalories: {
                 type: "number",
                 description: "Calorias basais da pessoa",
               },
+              waist: {
+                type: "number",
+                description: "Cintura da pessoa",
+              },
+              hip: {
+                type: "number",
+                description: "Quadril da pessoa",
+              },
+              arm: {
+                type: "number",
+                description: "Braço da pessoa",
+              },
+              thigh: {
+                type: "number",
+                description: "Coxa da pessoa",
+              },
+              calf: {
+                type: "number",
+                description: "Panturrilha da pessoa",
+              },
+              biceps: {
+                type: "number",
+                description: "Bíceps da pessoa",
+              },
+              triceps: {
+                type: "number",
+                description: "Tríceps da pessoa",
+              },
+              forearm: {
+                type: "number",
+                description: "Antebraço da pessoa",
+              },
+              neck: {
+                type: "number",
+                description: "Pescoço da pessoa",
+              },
               summary: {
                 type: "string",
                 description: "Resumo do conteúdo do PDF",
+              },
+              goal: {
+                type: "string",
+                description: "Objetivo da pessoa",
+              },
+              trainingFrequency: {
+                type: "string",
+                description: "Frequência de treino da pessoa",
+              },
+              trainingLocation: {
+                type: "string",
+                description: "Local de treino da pessoa",
+              },
+              hasPain: {
+                type: "string",
+                description: "Se a pessoa tem dor",
+              },
+              dietaryRestrictions: {
+                type: "string",
+                description: "Restrições alimentares da pessoa",
               },
             },
             required: [
@@ -196,7 +324,13 @@ export async function POST(request: NextRequest) {
       }
 
       if (summary.gender && typeof summary.gender === "string") {
-        profileUpdates.gender = summary.gender;
+        // Converter de inglês para português
+        const genderMap: { [key: string]: string } = {
+          male: "masculino",
+          female: "feminino",
+        };
+        profileUpdates.gender =
+          genderMap[summary.gender.toLowerCase()] || summary.gender;
       }
 
       if (Object.keys(profileUpdates).length > 0) {
@@ -282,6 +416,14 @@ export async function POST(request: NextRequest) {
               console.log("✅ Perfil criado com sucesso!");
               console.log("👤 Novo perfil:", newProfile);
               console.log("⚖️ Peso salvo:", newProfile.weight);
+
+              // 🎯 NOVO: Criar entrada automática na evolução para perfil novo
+              await createEvolutionEntry(
+                supabaseUser,
+                user.id,
+                summary,
+                newProfile
+              );
             }
           } else {
             console.error("Erro ao atualizar perfil:", updateError);
@@ -295,6 +437,14 @@ export async function POST(request: NextRequest) {
             summary.weight,
             "→ Base tem",
             updatedProfile.weight
+          );
+
+          // 🎯 NOVO: Criar entrada automática na evolução
+          await createEvolutionEntry(
+            supabaseUser,
+            user.id,
+            summary,
+            updatedProfile
           );
         }
       }

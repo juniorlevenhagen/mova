@@ -10,6 +10,7 @@ import { TrialSection } from "./components/TrialSection";
 import { UserDataSection } from "./components/UserDataSection";
 import { EvolutionSection } from "./components/EvolutionSection";
 import { AddEvolutionModal } from "./modals/AddEvolutionModal";
+import { PersonalizedPlanModal } from "./components/PersonalizedPlanModal";
 import { useEvolution } from "@/hooks/useEvolution";
 import { usePlanGeneration } from "@/hooks/usePlanGeneration";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -41,6 +42,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
 
   const {
     evolutions,
@@ -48,8 +50,34 @@ export default function DashboardPage() {
     isAdding,
     error: evolutionError,
     addEvolution,
+    refetch: refreshEvolutions,
   } = useEvolution(user);
-  const { isGenerating, generatePlan } = usePlanGeneration();
+  const { isGenerating, plan, planStatus, generatePlan } = usePlanGeneration();
+
+  // Função combinada para refresh após upload de PDF
+  const handlePdfUploadRefresh = async () => {
+    console.log("🔄 Iniciando refresh completo após upload PDF...");
+
+    // Refresh do perfil
+    await refreshProfile();
+    console.log("✅ Perfil refreshed");
+
+    // Refresh das evoluções
+    await refreshEvolutions();
+    console.log("✅ Evoluções refreshed");
+
+    console.log("🎉 Refresh completo finalizado!");
+  };
+
+  // Função para gerar plano e abrir modal
+  const handleGeneratePlan = async () => {
+    try {
+      await generatePlan();
+      setShowPlanModal(true);
+    } catch (error) {
+      console.error("Erro ao gerar plano:", error);
+    }
+  };
 
   // Proteção mais robusta
   useEffect(() => {
@@ -214,9 +242,10 @@ export default function DashboardPage() {
 
           <UserDataSection
             profile={profileData}
-            onGeneratePlan={generatePlan}
+            onGeneratePlan={handleGeneratePlan}
             isGeneratingPlan={isGenerating}
-            onProfileUpdate={refreshProfile}
+            onProfileUpdate={handlePdfUploadRefresh}
+            planStatus={planStatus}
           />
 
           <EvolutionSection
@@ -224,6 +253,7 @@ export default function DashboardPage() {
             onAddEvolution={handleAddEvolucao}
             isAddingEvolution={isAdding}
             userProfile={profileData}
+            loading={evolutionLoading}
           />
         </div>
 
@@ -232,6 +262,12 @@ export default function DashboardPage() {
           onClose={() => setShowModal(false)}
           onSubmit={handleModalSubmit}
           isLoading={isAdding}
+        />
+
+        <PersonalizedPlanModal
+          isOpen={showPlanModal}
+          onClose={() => setShowPlanModal(false)}
+          plan={plan}
         />
       </div>
     </ProtectedRoute>

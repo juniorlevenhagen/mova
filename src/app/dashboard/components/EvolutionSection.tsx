@@ -52,6 +52,7 @@ interface UserEvolution {
   cintura?: number;
   quadril?: number;
   braco?: number;
+  coxa?: number;
   objetivo?: string;
   nivel_atividade?: string;
   bem_estar: number;
@@ -64,6 +65,7 @@ interface EvolutionSectionProps {
   evolutions: UserEvolution[];
   onAddEvolution: () => void;
   isAddingEvolution: boolean;
+  loading?: boolean;
   userProfile?: {
     altura: number;
     peso: number; // Peso atual
@@ -87,6 +89,7 @@ export function EvolutionSection({
   evolutions,
   onAddEvolution,
   isAddingEvolution,
+  loading = false,
   userProfile,
 }: EvolutionSectionProps) {
   const { user } = useAuth(); // Adicionar hook para pegar o usuário
@@ -153,25 +156,62 @@ export function EvolutionSection({
 
   // Atualizar currentData para usar dados reais de atividade
   const activityStats = getStats();
-  const currentData =
+
+  // Buscar a última evolução válida (não pode ser entrada de plano)
+  const lastValidEvolution =
     evolutions.length > 0
-      ? {
-          peso: evolutions[evolutions.length - 1].peso,
-          percentualGordura:
-            evolutions[evolutions.length - 1].percentual_gordura || 20,
-          massaMagra: evolutions[evolutions.length - 1].massa_magra || 60,
-          treinosConcluidos: activityStats.totalTreinos,
-          caloriasQueimadas: activityStats.caloriasSemana,
-          sequencia: activityStats.sequenciaAtual,
-        }
-      : {
-          peso: initialData.peso,
-          percentualGordura: initialData.percentualGordura,
-          massaMagra: initialData.massaMagra,
-          treinosConcluidos: 0,
-          caloriasQueimadas: 0,
-          sequencia: 0,
-        };
+      ? evolutions
+          .filter((evo) => evo.objetivo !== "Plano personalizado gerado")
+          .slice(-1)[0] || evolutions[evolutions.length - 1]
+      : null;
+
+  console.log("🔍 Última evolução válida:", lastValidEvolution);
+
+  const currentData = lastValidEvolution
+    ? {
+        peso: lastValidEvolution.peso || initialData.peso,
+        percentualGordura:
+          lastValidEvolution.percentual_gordura ||
+          initialData.percentualGordura,
+        massaMagra: lastValidEvolution.massa_magra || initialData.massaMagra,
+        massaGorda: (() => {
+          const peso = lastValidEvolution.peso || initialData.peso;
+          const percentual =
+            lastValidEvolution.percentual_gordura ||
+            initialData.percentualGordura;
+          return peso && percentual ? (peso * percentual) / 100 : null;
+        })(),
+        cintura: lastValidEvolution.cintura || initialData.cintura,
+        quadril: lastValidEvolution.quadril || initialData.quadril,
+        braco: lastValidEvolution.braco || initialData.braco,
+        coxa: lastValidEvolution.coxa || null,
+        treinosConcluidos: activityStats.totalTreinos,
+        caloriasQueimadas: activityStats.caloriasSemana,
+        sequencia: activityStats.sequenciaAtual,
+      }
+    : {
+        peso: initialData.peso,
+        percentualGordura: initialData.percentualGordura,
+        massaMagra: initialData.massaMagra,
+        massaGorda:
+          initialData.peso && initialData.percentualGordura
+            ? (initialData.peso * initialData.percentualGordura) / 100
+            : null,
+        cintura: initialData.cintura,
+        quadril: initialData.quadril,
+        braco: initialData.braco,
+        coxa: null,
+        treinosConcluidos: 0,
+        caloriasQueimadas: 0,
+        sequencia: 0,
+      };
+
+  console.log("📊 CurrentData calculado:", currentData);
+
+  // Se está carregando, usar dados mais estáveis
+  if (loading) {
+    console.log("⏳ EvolutionSection em loading - usando dados iniciais");
+  }
 
   // Função para formatar valores ou mostrar "-"
   const formatValue = (value: number | string | null, unit: string = "") => {
@@ -698,6 +738,86 @@ export function EvolutionSection({
                 ? getIMCClassification(imcAtual)
                 : "Altura não informada"}
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Seção: Massa Gorda */}
+      <div className="mb-6">
+        <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <span className="text-red-500">⚖️</span>
+          Massa Gorda
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg text-center border border-red-200">
+            <h4 className="text-sm text-gray-600 mb-1">Massa Gorda (kg)</h4>
+            <p className="text-2xl font-bold text-red-800">
+              {currentData.massaGorda
+                ? Number(currentData.massaGorda).toFixed(1)
+                : "-"}
+              kg
+            </p>
+            <p className="text-xs text-red-600">
+              {currentData.massaGorda && currentData.peso
+                ? `${(
+                    (currentData.massaGorda / currentData.peso) *
+                    100
+                  ).toFixed(1)}% do peso total`
+                : "Não calculado"}
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg text-center border border-red-200">
+            <h4 className="text-sm text-gray-600 mb-1">Evolução</h4>
+            <p className="text-2xl font-bold text-red-800">
+              {/* TODO: Calcular diferença massa gorda */}-
+            </p>
+            <p className="text-xs text-red-600">Comparado ao início</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Seção: Medidas Corporais */}
+      <div className="mb-6">
+        <h3 className="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          <span className="text-blue-500">📏</span>
+          Medidas Corporais
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg text-center border border-yellow-200">
+            <h4 className="text-sm text-gray-600 mb-1">Cintura</h4>
+            <p className="text-2xl font-bold text-yellow-800">
+              {currentData.cintura || "-"}
+              {currentData.cintura ? "cm" : ""}
+            </p>
+            <p className="text-xs text-yellow-600">Medida atual</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-lg text-center border border-pink-200">
+            <h4 className="text-sm text-gray-600 mb-1">Quadril</h4>
+            <p className="text-2xl font-bold text-pink-800">
+              {currentData.quadril || "-"}
+              {currentData.quadril ? "cm" : ""}
+            </p>
+            <p className="text-xs text-pink-600">Medida atual</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-lg text-center border border-indigo-200">
+            <h4 className="text-sm text-gray-600 mb-1">Braço</h4>
+            <p className="text-2xl font-bold text-indigo-800">
+              {currentData.braco || "-"}
+              {currentData.braco ? "cm" : ""}
+            </p>
+            <p className="text-xs text-indigo-600">Medida atual</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 rounded-lg text-center border border-teal-200">
+            <h4 className="text-sm text-gray-600 mb-1">Coxa</h4>
+            <p className="text-2xl font-bold text-teal-800">
+              {currentData.coxa || "-"}
+              {currentData.coxa ? "cm" : ""}
+            </p>
+            <p className="text-xs text-teal-600">Medida atual</p>
           </div>
         </div>
       </div>

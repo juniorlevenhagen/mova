@@ -17,6 +17,12 @@ interface UserDataSectionProps {
   onGeneratePlan: () => void;
   isGeneratingPlan: boolean;
   onProfileUpdate?: () => Promise<void>;
+  planStatus?: {
+    isExisting: boolean;
+    generatedAt?: string;
+    daysUntilNext?: number;
+    nextPlanAvailable?: string;
+  } | null;
 }
 
 export function UserDataSection({
@@ -24,6 +30,7 @@ export function UserDataSection({
   onGeneratePlan,
   isGeneratingPlan,
   onProfileUpdate,
+  planStatus,
 }: UserDataSectionProps) {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -70,12 +77,12 @@ export function UserDataSection({
       const maxSize = 10 * 1024 * 1024; // 10MB
 
       if (!allowedTypes.includes(file.type)) {
-        alert("Tipo de arquivo não suportado. Use PDF, DOC, DOCX, JPG ou PNG.");
+        console.error("Tipo de arquivo não suportado:", file.type);
         return;
       }
 
       if (file.size > maxSize) {
-        alert("Arquivo muito grande. Máximo 10MB.");
+        console.error("Arquivo muito grande:", file.size);
         return;
       }
 
@@ -91,7 +98,7 @@ export function UserDataSection({
             data: { session },
           } = await supabase.auth.getSession();
           if (!session?.access_token) {
-            alert("Erro: Usuário não autenticado");
+            console.error("Erro: Usuário não autenticado");
             return;
           }
 
@@ -111,17 +118,22 @@ export function UserDataSection({
             console.log("Resposta da API:", result);
 
             if (result.success) {
-              alert(
-                `PDF processado com sucesso!\n\nDados extraídos:\n• Peso: ${
-                  result.summary?.weight || "N/A"
-                } kg\n• Altura: ${result.summary?.height || "N/A"} cm\n• IMC: ${
-                  result.summary?.imc || "N/A"
-                }\n• Sexo: ${result.summary?.gender || "N/A"}\n\n${
-                  result.profileUpdated
-                    ? "Perfil atualizado automaticamente!"
-                    : ""
-                }`
-              );
+              // Converter sexo para português no display
+              const genderMap: { [key: string]: string } = {
+                male: "Masculino",
+                female: "Feminino",
+              };
+              const genderDisplay = result.summary?.gender
+                ? genderMap[result.summary.gender] || result.summary.gender
+                : "N/A";
+
+              console.log("✅ PDF processado com sucesso! Dados extraídos:", {
+                peso: result.summary?.weight,
+                altura: result.summary?.height,
+                imc: result.summary?.imc,
+                sexo: genderDisplay,
+                profileUpdated: result.profileUpdated,
+              });
 
               // Atualizar dados do perfil sem recarregar a página
               if (result.profileUpdated && onProfileUpdate) {
@@ -140,11 +152,11 @@ export function UserDataSection({
                 });
               }
             } else {
-              alert(`Erro: ${result.error}`);
+              console.error("Erro:", result.error);
             }
           } else {
             const error = await response.json();
-            alert(`Erro na API: ${error.error}`);
+            console.error("Erro na API:", error.error);
           }
         }
 
@@ -167,7 +179,6 @@ export function UserDataSection({
         console.log("Arquivo antigo substituído com sucesso");
       } catch (error) {
         console.error("Erro no processamento:", error);
-        alert("Erro ao processar arquivo. Tente novamente.");
       } finally {
         setIsUploading(false);
       }
@@ -564,6 +575,38 @@ export function UserDataSection({
         )}
       </div>
 
+      {/* Status do Plano Personalizado */}
+      {planStatus && planStatus.isExisting && (
+        <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-green-900 mb-1">
+                🎯 Plano Personalizado Ativo
+              </h4>
+              <p className="text-sm text-green-700">
+                Gerado em:{" "}
+                {new Date(planStatus.generatedAt!).toLocaleDateString("pt-BR")}
+              </p>
+              <p className="text-sm text-green-600">
+                Próximo plano disponível em:{" "}
+                <span className="font-semibold">
+                  {planStatus.daysUntilNext} dias
+                </span>
+              </p>
+            </div>
+            <div className="text-green-600">
+              <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-4 mt-8">
         <button
           onClick={handleGeneratePlan}
@@ -575,8 +618,10 @@ export function UserDataSection({
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               Gerando Plano...
             </>
+          ) : planStatus?.isExisting ? (
+            "📋 Ver Plano Atual (Treino + Dieta)"
           ) : (
-            "Gerar Plano Personalizado (Treino + Dieta)"
+            "🎯 Gerar Plano Personalizado (Treino + Dieta)"
           )}
         </button>
 

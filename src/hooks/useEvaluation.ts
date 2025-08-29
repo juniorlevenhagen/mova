@@ -139,7 +139,8 @@ export function useEvaluation(user: User | null) {
         return false;
       }
     },
-    [user?.id, user]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.id]
   );
 
   // Remover avaliação

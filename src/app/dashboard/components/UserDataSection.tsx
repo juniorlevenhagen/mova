@@ -93,7 +93,6 @@ export function UserDataSection({
 
           if (!session?.access_token) {
             console.error("❌ Erro: Usuário não autenticado");
-            alert("Erro de autenticação. Faça login novamente.");
             return;
           }
 
@@ -112,15 +111,12 @@ export function UserDataSection({
             const result = await response.json();
 
             if (result.success) {
-              alert("🎉 Avaliação processada com sucesso!");
-
               // Atualizar dados do perfil apenas se realmente necessário
               if (result.profileUpdated && onProfileUpdate) {
                 await onProfileUpdate();
               }
             } else {
               console.error("❌ Erro no processamento:", result.error);
-              alert(`Erro: ${result.error}`);
             }
           } else {
             console.error("❌ Erro na API:", response.status);
@@ -141,7 +137,6 @@ export function UserDataSection({
             }
 
             console.error("❌ Detalhes do erro:", errorMessage);
-            alert(`Erro na API (${response.status}): ${errorMessage}`);
           }
         }
 
@@ -153,16 +148,10 @@ export function UserDataSection({
         });
 
         if (!success) {
-          alert("Erro ao salvar avaliação. Tente novamente.");
           return;
         }
       } catch (error) {
         console.error("❌ Erro no processamento:", error);
-        alert(
-          `Erro no processamento: ${
-            error instanceof Error ? error.message : "Erro desconhecido"
-          }`
-        );
       } finally {
         setIsUploading(false);
       }
@@ -173,7 +162,6 @@ export function UserDataSection({
   const handleRemoveFile = useCallback(async () => {
     const success = await removeEvaluation();
     if (!success) {
-      alert("Erro ao remover avaliação. Tente novamente.");
       return;
     }
 

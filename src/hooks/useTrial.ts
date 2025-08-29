@@ -278,14 +278,16 @@ export function useTrial(user: User | null) {
     });
     setError(null);
 
-    if (user) {
-      console.log("Carregando trial para usuário:", user.id);
+    if (user?.id) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Carregando trial para usuário:", user.id);
+      }
       fetchTrial();
     } else {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user?.id]); // Usar apenas o ID do usuário como dependência
 
   return {
     trial,

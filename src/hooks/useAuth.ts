@@ -35,7 +35,9 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state change:", event, session?.user?.id);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Auth state change:", event, session?.user?.id);
+      }
 
       if (event === "SIGNED_OUT") {
         // Limpar dados do localStorage quando fizer logout

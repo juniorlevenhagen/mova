@@ -27,7 +27,7 @@ export function useEvaluation(user: User | null) {
 
   // Buscar avaliação ativa do usuário
   const fetchEvaluation = useCallback(async () => {
-    if (!user) {
+    if (!user?.id) {
       setEvaluation(null);
       setLoading(false);
       setError(null);
@@ -67,68 +67,80 @@ export function useEvaluation(user: User | null) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // Usar apenas o ID do usuário como dependência
 
   // Carregar avaliação quando o usuário mudar
   useEffect(() => {
-    fetchEvaluation();
-  }, [fetchEvaluation]);
-
-  // Salvar nova avaliação
-  const saveEvaluation = async (fileData: EvaluationData) => {
-    if (!user) {
-      setError("Usuário não autenticado");
-      return false;
+    if (user?.id) {
+      fetchEvaluation();
     }
+  }, [user?.id, fetchEvaluation]); // Incluir fetchEvaluation como dependência
 
-    setError(null);
-
-    try {
-      // Primeiro, desativar avaliações anteriores
-      await supabase
-        .from("user_evaluations")
-        .update({ is_active: false })
-        .eq("user_id", user.id)
-        .eq("is_active", true);
-
-      // Inserir nova avaliação
-      const { data, error } = await supabase
-        .from("user_evaluations")
-        .insert({
-          user_id: user.id,
-          file_name: fileData.fileName,
-          file_size: fileData.fileSize,
-          file_type: fileData.fileType,
-          is_active: true,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Erro ao salvar avaliação:", error);
-        setError("Erro ao salvar avaliação: " + error.message);
+  // Salvar nova avaliação (otimizado para evitar re-renderizações)
+  const saveEvaluation = useCallback(
+    async (fileData: EvaluationData) => {
+      if (!user) {
+        setError("Usuário não autenticado");
         return false;
       }
 
-      setEvaluation(data);
+      setError(null);
 
-      // Também salvar no localStorage como fallback
-      localStorage.setItem(
-        "userEvaluation",
-        JSON.stringify({
-          fileName: fileData.fileName,
-          fileSize: fileData.fileSize,
-          uploadDate: new Date().toISOString(),
-        })
-      );
+      try {
+        // Primeiro, desativar avaliações anteriores
+        await supabase
+          .from("user_evaluations")
+          .update({ is_active: false })
+          .eq("user_id", user.id)
+          .eq("is_active", true);
 
-      return true;
-    } catch (error) {
-      console.error("Erro inesperado ao salvar avaliação:", error);
-      setError("Erro inesperado ao salvar avaliação");
-      return false;
-    }
-  };
+        // Inserir nova avaliação
+        const { data, error } = await supabase
+          .from("user_evaluations")
+          .insert({
+            user_id: user.id,
+            file_name: fileData.fileName,
+            file_size: fileData.fileSize,
+            file_type: fileData.fileType,
+            is_active: true,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Erro ao salvar avaliação:", error);
+          setError("Erro ao salvar avaliação: " + error.message);
+          return false;
+        }
+
+        // Atualizar estado de forma otimizada
+        setEvaluation((prev) => {
+          // Só atualizar se realmente mudou
+          if (!prev || prev.id !== data.id) {
+            return data;
+          }
+          return prev;
+        });
+
+        // Também salvar no localStorage como fallback
+        localStorage.setItem(
+          "userEvaluation",
+          JSON.stringify({
+            fileName: fileData.fileName,
+            fileSize: fileData.fileSize,
+            uploadDate: new Date().toISOString(),
+          })
+        );
+
+        return true;
+      } catch (error) {
+        console.error("Erro inesperado ao salvar avaliação:", error);
+        setError("Erro inesperado ao salvar avaliação");
+        return false;
+      }
+    },
+    [user?.id, user]
+  );
 
   // Remover avaliação
   const removeEvaluation = async () => {

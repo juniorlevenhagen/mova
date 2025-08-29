@@ -173,21 +173,22 @@ export default function DashboardPage() {
     totalRequisicoes: trialStatus?.isPremium ? 2 : 1,
   };
 
-  // Debug: Log dos dados do trial
-  console.log("Trial Status:", {
-    plansRemaining: trialStatus?.plansRemaining,
-    isPremium: trialStatus?.isPremium,
-    canGenerate: trialStatus?.canGenerate,
-    message: trialStatus?.message,
-  });
+  // Debug: Log dos dados do trial (apenas em desenvolvimento)
+  if (process.env.NODE_ENV === "development") {
+    console.log("Trial Status:", {
+      plansRemaining: trialStatus?.plansRemaining,
+      isPremium: trialStatus?.isPremium,
+      canGenerate: trialStatus?.canGenerate,
+      message: trialStatus?.message,
+    });
 
-  // Debug: Log dos dados passados para o TrialSection
-  console.log("Trial Data para TrialSection:", {
-    diasRestantes: trialData.diasRestantes,
-    requisicoesRestantes: trialData.requisicoesRestantes,
-    totalRequisicoes: trialData.totalRequisicoes,
-    hasUsedFreePlan: trialData.requisicoesRestantes === 0,
-  });
+    console.log("Trial Data para TrialSection:", {
+      diasRestantes: trialData.diasRestantes,
+      requisicoesRestantes: trialData.requisicoesRestantes,
+      totalRequisicoes: trialData.totalRequisicoes,
+      hasUsedFreePlan: trialData.requisicoesRestantes === 0,
+    });
+  }
 
   const trialPercent = trialStatus?.isPremium
     ? ((2 - (trialStatus?.plansRemaining || 0)) / 2) * 100
@@ -218,13 +219,6 @@ export default function DashboardPage() {
     // TODO: Implementar integração com gateway de pagamento
     alert("Funcionalidade de pagamento será implementada em breve!");
     setShowUpgradeModal(false);
-  };
-
-  // Função de debug para limpar cache
-  const handleClearCache = () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.reload();
   };
 
   return (
@@ -294,27 +288,6 @@ export default function DashboardPage() {
             onLogout={handleLogout}
             logoutLoading={logoutLoading}
           />
-
-          {/* Botão de debug temporário */}
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-yellow-800">
-                  <strong>Debug:</strong> Usuário ID: {user.id}
-                </p>
-                <p className="text-xs text-yellow-600 mt-1">
-                  Se estiver vendo dados incorretos, clique em &quot;Limpar
-                  Cache&quot;
-                </p>
-              </div>
-              <button
-                onClick={handleClearCache}
-                className="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600"
-              >
-                Limpar Cache
-              </button>
-            </div>
-          </div>
 
           <TrialSection
             trial={trialData}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useEvaluation } from "@/hooks/useEvaluation";
@@ -56,9 +56,12 @@ export function UserDataSection({
     setUserProfile(profile);
   }, [profile]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  // Função de upload otimizada para evitar re-renderizações
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
       const allowedTypes = [
         "application/pdf",
         "application/msword",
@@ -111,11 +114,9 @@ export function UserDataSection({
             if (result.success) {
               alert("🎉 Avaliação processada com sucesso!");
 
-              // Atualizar dados do perfil sem recarregar a página
+              // Atualizar dados do perfil apenas se realmente necessário
               if (result.profileUpdated && onProfileUpdate) {
-                setTimeout(async () => {
-                  await onProfileUpdate();
-                }, 1500);
+                await onProfileUpdate();
               }
             } else {
               console.error("❌ Erro no processamento:", result.error);
@@ -165,10 +166,11 @@ export function UserDataSection({
       } finally {
         setIsUploading(false);
       }
-    }
-  };
+    },
+    [saveEvaluation, onProfileUpdate]
+  );
 
-  const handleRemoveFile = async () => {
+  const handleRemoveFile = useCallback(async () => {
     const success = await removeEvaluation();
     if (!success) {
       alert("Erro ao remover avaliação. Tente novamente.");
@@ -178,20 +180,20 @@ export function UserDataSection({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }, [removeEvaluation]);
 
-  const handleGeneratePlan = () => {
+  const handleGeneratePlan = useCallback(() => {
     if (!evaluation) {
       setShowConfirmationModal(true);
     } else {
       onGeneratePlan();
     }
-  };
+  }, [evaluation, onGeneratePlan]);
 
-  const confirmGeneratePlan = () => {
+  const confirmGeneratePlan = useCallback(() => {
     setShowConfirmationModal(false);
     onGeneratePlan();
-  };
+  }, [onGeneratePlan]);
 
   // Funções para edição inline
   const startEditing = (field: string, currentValue: string) => {
@@ -301,47 +303,68 @@ export function UserDataSection({
     return { texto: "Obesidade Grave", cor: "text-red-600" };
   };
 
-  const imcAtual = parseFloat(
-    calcularIMC(userProfile.peso, userProfile.altura)
+  // Memoizar valores calculados para evitar recálculos desnecessários
+  const imcAtual = useMemo(
+    () => parseFloat(calcularIMC(userProfile.peso, userProfile.altura)),
+    [userProfile.peso, userProfile.altura]
   );
-  const classificacaoIMC = getClassificacaoIMC(imcAtual);
+
+  const classificacaoIMC = useMemo(
+    () => getClassificacaoIMC(imcAtual),
+    [imcAtual]
+  );
 
   // Calcular Caloria Basal Estimada
-  const calcularCaloriaBasal = (
-    peso: number,
-    altura: number,
-    idade: number,
-    sexo: string,
-    nivelAtividade: string
-  ) => {
-    // Fórmula de Harris-Benedict
-    let tmb;
-    if (sexo === "Masculino") {
-      tmb = 88.362 + 13.397 * peso + 4.799 * altura - 5.677 * idade;
-    } else {
-      tmb = 447.593 + 9.247 * peso + 3.098 * altura - 4.33 * idade;
-    }
+  const calcularCaloriaBasal = useCallback(
+    (
+      peso: number,
+      altura: number,
+      idade: number,
+      sexo: string,
+      nivelAtividade: string
+    ) => {
+      // Fórmula de Harris-Benedict
+      let tmb;
+      if (sexo === "Masculino") {
+        tmb = 88.362 + 13.397 * peso + 4.799 * altura - 5.677 * idade;
+      } else {
+        tmb = 447.593 + 9.247 * peso + 3.098 * altura - 4.33 * idade;
+      }
 
-    // Fatores de atividade
-    const fatoresAtividade = {
-      Sedentário: 1.2,
-      Leve: 1.375,
-      Moderado: 1.55,
-      Ativo: 1.725,
-      "Muito Ativo": 1.9,
-    };
+      // Fatores de atividade
+      const fatoresAtividade = {
+        Sedentário: 1.2,
+        Leve: 1.375,
+        Moderado: 1.55,
+        Ativo: 1.725,
+        "Muito Ativo": 1.9,
+      };
 
-    const fator =
-      fatoresAtividade[nivelAtividade as keyof typeof fatoresAtividade] || 1.2;
-    return Math.round(tmb * fator);
-  };
+      const fator =
+        fatoresAtividade[nivelAtividade as keyof typeof fatoresAtividade] ||
+        1.2;
+      return Math.round(tmb * fator);
+    },
+    []
+  );
 
-  const caloriaBasal = calcularCaloriaBasal(
-    userProfile.peso,
-    userProfile.altura,
-    userProfile.birthDate ? calculateAge(userProfile.birthDate) : 28, // idade mockada por enquanto
-    userProfile.sexo,
-    userProfile.nivelAtividade || "Moderado"
+  const caloriaBasal = useMemo(
+    () =>
+      calcularCaloriaBasal(
+        userProfile.peso,
+        userProfile.altura,
+        userProfile.birthDate ? calculateAge(userProfile.birthDate) : 28,
+        userProfile.sexo,
+        userProfile.nivelAtividade || "Moderado"
+      ),
+    [
+      userProfile.peso,
+      userProfile.altura,
+      userProfile.birthDate,
+      userProfile.sexo,
+      userProfile.nivelAtividade,
+      calcularCaloriaBasal,
+    ]
   );
 
   // Renderizar campo editável com proteção para valores vazios

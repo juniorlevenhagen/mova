@@ -330,6 +330,8 @@ export async function POST(request: NextRequest) {
     // 2. Preparar dados para OpenAI
     const userData = {
       // Dados básicos
+      name:
+        user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário",
       age: profile.age,
       gender: profile.gender,
       height: profile.height,

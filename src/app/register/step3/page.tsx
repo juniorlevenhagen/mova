@@ -8,14 +8,6 @@ import { supabase } from "@/lib/supabase";
 export default function Step3Page() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    cardNumber: "",
-    cardName: "",
-    expiryDate: "",
-    cvv: "",
-    acceptTerms: false,
-  });
-
   const [canRender, setCanRender] = useState(false);
 
   // Proteção da rota
@@ -29,62 +21,44 @@ export default function Step3Page() {
     }
   }, [router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
+  const handleStartTrial = async () => {
     try {
-      // 1. Pegar dados do step1 do localStorage
-      const step1Data = JSON.parse(
-        localStorage.getItem("registerStep1") || "{}"
-      );
+      setLoading(true);
 
-      // 2. Buscar o usuário pelo email
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("email", step1Data.email)
-        .single();
+      // Dados de pagamento serão coletados pelo Stripe Checkout
 
-      if (userError) throw userError;
+      // Obter sessão atual do Supabase
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      // 3. Criar assinatura com período de teste
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 7); // 7 dias de teste
+      if (!session?.access_token) {
+        throw new Error("Usuário não autenticado");
+      }
 
-      const subscriptionData = {
-        user_id: userData.id,
-        status: "trial",
-        trial_ends_at: trialEndsAt.toISOString(),
-      };
+      // Criar sessão de checkout
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      const { error: subscriptionError } = await supabase
-        .from("subscriptions")
-        .insert(subscriptionData);
+      if (!response.ok) {
+        throw new Error("Erro ao criar sessão de checkout");
+      }
 
-      if (subscriptionError) throw subscriptionError;
+      const { url } = await response.json();
 
-      // 4. Limpar dados temporários
-      localStorage.removeItem("registerStep1");
-      localStorage.removeItem("registerStep2");
-      localStorage.removeItem("registerStep3");
-
-      // 5. Redirecionar para página de sucesso
-      router.push("/register/success");
+      // Redirecionar para Stripe Checkout
+      window.location.href = url;
     } catch (error) {
-      console.error("Erro detalhado:", error);
-      alert("Erro ao criar assinatura. Tente novamente.");
+      console.error("Erro ao iniciar checkout:", error);
+      alert("Erro ao processar pagamento. Tente novamente.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
   };
 
   if (!canRender) {
@@ -292,7 +266,7 @@ export default function Step3Page() {
             </div>
           </div>
 
-          {/* Formulário de pagamento */}
+          {/* Área de pagamento */}
           <div className="space-y-4">
             <h4 className="text-base font-semibold text-gray-800">
               Informações de pagamento
@@ -306,131 +280,50 @@ export default function Step3Page() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label
-                  htmlFor="cardNumber"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Número do cartão
-                </label>
-                <input
-                  type="text"
-                  id="cardNumber"
-                  name="cardNumber"
-                  value={formData.cardNumber}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={19}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="cardName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Nome no cartão
-                </label>
-                <input
-                  type="text"
-                  id="cardName"
-                  name="cardName"
-                  value={formData.cardName}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-                  placeholder="Nome como está no cartão"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label
-                    htmlFor="expiryDate"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="text-center space-y-3">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    Validade
-                  </label>
-                  <input
-                    type="text"
-                    id="expiryDate"
-                    name="expiryDate"
-                    value={formData.expiryDate}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-                    placeholder="MM/AA"
-                    maxLength={5}
-                  />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
                 </div>
                 <div>
-                  <label
-                    htmlFor="cvv"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    CVV
-                  </label>
-                  <input
-                    type="text"
-                    id="cvv"
-                    name="cvv"
-                    value={formData.cvv}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors"
-                    placeholder="123"
-                    maxLength={4}
-                  />
+                  <h5 className="font-semibold text-gray-800">
+                    Pagamento Seguro
+                  </h5>
+                  <p className="text-sm text-gray-600">
+                    Processado pela Stripe com criptografia de ponta
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="acceptTerms"
-                  name="acceptTerms"
-                  checked={formData.acceptTerms}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 rounded border-gray-300 text-gray-800 focus:ring-gray-800"
-                />
-                <label
-                  htmlFor="acceptTerms"
-                  className="ml-2 text-xs text-gray-600"
-                >
-                  Aceito os{" "}
-                  <a href="#" className="text-gray-800 hover:underline">
-                    termos de uso
-                  </a>{" "}
-                  e{" "}
-                  <a href="#" className="text-gray-800 hover:underline">
-                    política de privacidade
-                  </a>
-                  . Entendo que terei 7 dias de teste gratuito e após esse
-                  período será cobrado R$ 29,90 mensais.
-                </label>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => router.push("/register/step2")}
-                  className="flex-1 bg-transparent text-gray-600 py-2.5 px-4 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
-                >
-                  Voltar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-gray-800 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? "Criando assinatura..." : "Começar Teste Grátis"}
-                </button>
-              </div>
-            </form>
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <button
+                type="button"
+                onClick={() => router.push("/register/step2")}
+                className="flex-1 bg-transparent text-gray-600 py-2.5 px-4 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={handleStartTrial}
+                disabled={loading}
+                className="flex-1 bg-gray-800 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Redirecionando..." : "Começar Teste Grátis"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

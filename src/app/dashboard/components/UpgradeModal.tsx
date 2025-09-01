@@ -1,16 +1,54 @@
 "use client";
 
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpgrade: () => void;
 }
 
-export function UpgradeModal({
-  isOpen,
-  onClose,
-  onUpgrade,
-}: UpgradeModalProps) {
+export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
+  const [loading, setLoading] = useState(false);
+
+  const handleUpgrade = async () => {
+    try {
+      setLoading(true);
+
+      // Obter token de autenticação
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      // Criar sessão de checkout
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao criar sessão de checkout");
+      }
+
+      const { url } = await response.json();
+
+      // Redirecionar para Stripe Checkout
+      window.location.href = url;
+    } catch (error) {
+      console.error("Erro ao iniciar checkout:", error);
+      alert("Erro ao processar pagamento. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -135,10 +173,11 @@ export function UpgradeModal({
             Cancelar
           </button>
           <button
-            onClick={onUpgrade}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            onClick={handleUpgrade}
+            disabled={loading}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Fazer Upgrade
+            {loading ? "Redirecionando..." : "Fazer Upgrade"}
           </button>
         </div>
       </div>

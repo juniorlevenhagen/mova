@@ -21,7 +21,7 @@ export default function SuccessPage() {
 
         const autoLogin = async () => {
           try {
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { error } = await supabase.auth.signInWithPassword({
               email,
               password,
             });

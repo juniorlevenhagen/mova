@@ -44,6 +44,7 @@ interface PDFData {
 
 // Função para criar entrada automática na evolução
 async function createEvolutionEntry(
+
   supabaseUser: any,
   userId: string,
   summary: any,

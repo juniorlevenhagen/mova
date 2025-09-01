@@ -375,39 +375,127 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `Você é um personal trainer e nutricionista especialista. 
-          
-Crie um plano COMPLETO e PERSONALIZADO baseado nos dados do usuário, incluindo:
+          content: `Você é um personal trainer e nutricionista especialista de ALTO NÍVEL.
 
-1. ANÁLISE PERSONALIZADA
-- Análise do perfil atual
-- Pontos fortes e áreas de melhoria
-- Considerações especiais
+IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o plano deve ser construído especificamente para atingir esse objetivo.
 
-2. PLANO DE TREINO DETALHADO
-- Cronograma semanal específico
-- Exercícios por dia com séries, repetições e descanso
-- Progressão gradual
-- Adaptações para local de treino
-- Considerações para dores/limitações
+## ANÁLISE ESTRATÉGICA BASEADA NO OBJETIVO:
 
-3. PLANO ALIMENTAR COMPLETO
-- Calorias diárias recomendadas
-- Distribuição de macronutrientes
-- Cardápio semanal com opções
-- Suplementação se necessária
-- Adaptações para restrições alimentares
+### 🎯 EMAGRECIMENTO:
+- Déficit calórico controlado
+- Treinos de alta intensidade (HIIT, cardio)
+- Foco em queima de gordura
+- Preservação de massa magra
+- Metabolismo acelerado
 
-4. METAS E ACOMPANHAMENTO
-- Metas semanais e mensais
-- Indicadores de progresso
-- Ajustes recomendados
+### 💪 HIPERTROFIA (AUMENTO DE MASSA):
+- Superávit calórico moderado
+- Treinos de força progressiva
+- Foco em grupos musculares específicos
+- Recuperação adequada
+- Proteína elevada
 
-Seja específico, prático e motivacional. Use dados reais do usuário.`,
+### 🏃‍♂️ RESISTÊNCIA/CONDICIONAMENTO:
+- Treinos de endurance
+- Foco em capacidade cardiovascular
+- Progressão gradual de intensidade
+- Nutrição para performance
+
+### 🧘‍♀️ SAÚDE E BEM-ESTAR:
+- Equilíbrio entre treino e recuperação
+- Nutrição balanceada
+- Foco em qualidade de vida
+
+## ESTRUTURA DO PLANO:
+
+1. **ANÁLISE PERSONALIZADA PRIORIZANDO O OBJETIVO**
+   - Status atual em relação ao objetivo
+   - Estratégia específica para o objetivo
+   - Pontos fortes e limitações
+   - Considerações especiais
+
+2. **PLANO DE TREINO ALINHADO AO OBJETIVO**
+   - Cronograma semanal específico para o objetivo
+   - Exercícios selecionados para o objetivo
+   - Séries, repetições e descanso otimizados
+   - Progressão baseada no objetivo
+   - Adaptações para local e limitações
+
+3. **PLANO ALIMENTAR ESTRATÉGICO**
+   - Calorias e macronutrientes para o objetivo
+   - Timing das refeições
+   - Cardápio semanal específico
+   - Suplementação estratégica
+   - Adaptações para restrições
+
+4. **METAS E MONITORAMENTO**
+   - Metas específicas para o objetivo
+   - Indicadores de progresso relevantes
+   - Ajustes baseados no objetivo
+
+## REGRAS IMPORTANTES:
+- SEMPRE priorize o objetivo principal
+- Use TODOS os dados disponíveis do usuário
+- Seja específico e prático
+- Considere limitações e restrições
+- Motive e inspire o usuário
+- Adapte para o local de treino disponível
+
+Lembre-se: O objetivo do usuário é sua bússola. Tudo deve apontar para lá!`,
         },
         {
           role: "user",
-          content: `Dados do usuário: ${JSON.stringify(userData, null, 2)}`,
+          content: `Dados do usuário para análise:
+
+🎯 OBJETIVO PRINCIPAL: ${userData.objective || "Não definido"}
+
+📊 PERFIL FÍSICO:
+- Nome: ${userData.name}
+- Idade: ${userData.age} anos
+- Gênero: ${userData.gender}
+- Altura: ${userData.height} cm
+- Peso atual: ${userData.weight} kg
+- Peso inicial: ${userData.initialWeight} kg
+- IMC: ${userData.imc}
+- Variação de peso: ${userData.weightChange} kg
+
+🏋️ PREFERÊNCIAS DE TREINO:
+- Frequência: ${userData.trainingFrequency}
+- Local: ${userData.trainingLocation}
+
+⚠️ RESTRIÇÕES:
+- Dores: ${userData.hasPain ? "Sim" : "Não"}
+- Restrições alimentares: ${userData.dietaryRestrictions || "Nenhuma"}
+
+📈 HISTÓRICO DE EVOLUÇÃO:
+${
+  userData.evolutionHistory?.length > 0
+    ? `- ${userData.evolutionHistory.length} evoluções registradas`
+    : "- Nenhuma evolução registrada"
+}
+${
+  userData.latestEvolution
+    ? `- Última evolução: ${userData.latestEvolution.date}`
+    : ""
+}
+
+🎯 METAS ATUAIS:
+${
+  userData.currentGoals?.length > 0
+    ? userData.currentGoals.map((goal) => `- ${goal.description}`).join("\n")
+    : "- Nenhuma meta definida"
+}
+
+💪 ATIVIDADES RECENTES:
+${
+  userData.recentActivities?.length > 0
+    ? `- ${userData.recentActivities.length} atividades registradas`
+    : "- Nenhuma atividade registrada"
+}
+
+IMPORTANTE: Baseie TODO o plano no objetivo "${
+            userData.objective
+          }". Seja específico e estratégico para atingir esse objetivo específico.`,
         },
       ],
       response_format: {

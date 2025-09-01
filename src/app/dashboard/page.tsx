@@ -215,12 +215,6 @@ export default function DashboardPage() {
     setShowUpgradeModal(true);
   };
 
-  const handleUpgradeConfirm = () => {
-    // TODO: Implementar integração com gateway de pagamento
-    alert("Funcionalidade de pagamento será implementada em breve!");
-    setShowUpgradeModal(false);
-  };
-
   return (
     <ProtectedRoute>
       {/* Aviso para completar registro */}
@@ -330,7 +324,6 @@ export default function DashboardPage() {
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          onUpgrade={handleUpgradeConfirm}
         />
       </div>
     </ProtectedRoute>

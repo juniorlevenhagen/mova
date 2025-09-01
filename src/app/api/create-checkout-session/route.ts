@@ -2,12 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { supabase } from "@/lib/supabase";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil",
-});
+const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27.basil",
+    })
+  : null;
 
 export async function POST(request: NextRequest) {
   try {
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Stripe não configurado" },
+        { status: 500 }
+      );
+    }
+
     console.log("🔍 Iniciando criação de sessão de checkout...");
 
     // Verificar autenticação

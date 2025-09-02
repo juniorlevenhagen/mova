@@ -103,7 +103,7 @@ export function useActivity(user: User | null) {
         .from("user_activities")
         .insert(activityData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Erro ao salvar atividade:", error);

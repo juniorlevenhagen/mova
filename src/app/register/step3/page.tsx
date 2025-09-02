@@ -17,15 +17,17 @@ export default function Step3Page() {
       try {
         const step2Data = localStorage.getItem("registerStep2");
         const step1Data = localStorage.getItem("registerStep1");
-        
+
         if (!step2Data || !step1Data) {
           router.replace("/register/step0");
           return;
         }
 
         // Verificar se usuário já tem trial ativo ou já usou trial
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session?.access_token) {
           // Verificar status do trial
           const response = await fetch("/api/check-trial-status", {
@@ -37,7 +39,7 @@ export default function Step3Page() {
 
           if (response.ok) {
             const trialStatus = await response.json();
-            
+
             // Se já tem trial ativo ou já usou trial, redirecionar para dashboard
             if (trialStatus.hasActiveTrial || trialStatus.hasUsedTrial) {
               router.replace("/dashboard");
@@ -60,42 +62,17 @@ export default function Step3Page() {
   }, [router]);
 
   const handleStartTrial = async () => {
+    setLoading(true); // ✅ Ativa loading
+
     try {
-      setLoading(true);
+      // Simular delay para mostrar o loading
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Dados de pagamento serão coletados pelo Stripe Checkout
-
-      // Obter sessão atual do Supabase
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      // Criar sessão de checkout
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao criar sessão de checkout");
-      }
-
-      const { url } = await response.json();
-
-      // Redirecionar para Stripe Checkout
-      window.location.href = url;
+      router.push("/dashboard");
     } catch (error) {
-      console.error("Erro ao iniciar checkout:", error);
-      alert("Erro ao processar pagamento. Tente novamente.");
+      console.error("Erro:", error);
     } finally {
-      setLoading(false);
+      setLoading(false); // ✅ Desativa loading
     }
   };
 

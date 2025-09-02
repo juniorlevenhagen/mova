@@ -55,9 +55,14 @@ export default function Step2Page() {
         .from("users")
         .select("id")
         .eq("email", step1Data.email)
-        .single();
+        .maybeSingle();
 
       if (userError) throw userError;
+
+      // Adicionar verificação de null
+      if (!userData) {
+        throw new Error("Usuário não encontrado");
+      }
 
       // 3. Salvar perfil do usuário
       const birthDate = new Date(formData.birthDate);

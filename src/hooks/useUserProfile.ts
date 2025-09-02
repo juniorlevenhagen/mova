@@ -56,7 +56,7 @@ export function useUserProfile(user: User | null) {
           .from("users")
           .select("id, email, full_name, created_at")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (userError) {
           console.error("Erro ao buscar dados do usuário:", userError);
@@ -74,7 +74,7 @@ export function useUserProfile(user: User | null) {
           .from("user_profiles")
           .select("*")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           if (profileError.code === "PGRST116") {
@@ -113,7 +113,7 @@ export function useUserProfile(user: User | null) {
         .update(updates)
         .eq("user_id", user.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Erro ao atualizar perfil:", error);
@@ -141,7 +141,7 @@ export function useUserProfile(user: User | null) {
         .from("user_profiles")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         if (profileError.code !== "PGRST116") {

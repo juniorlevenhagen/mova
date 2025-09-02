@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       .from("user_profiles")
       .select("email, full_name")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     console.log("🔍 Criando sessão de checkout para usuário:", user.id);
     console.log("🔍 Email do usuário:", userProfile?.email || user.email);

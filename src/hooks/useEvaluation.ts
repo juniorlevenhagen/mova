@@ -45,7 +45,7 @@ export function useEvaluation(user: User | null) {
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === "PGRST116") {
@@ -105,7 +105,7 @@ export function useEvaluation(user: User | null) {
             is_active: true,
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) {
           console.error("Erro ao salvar avaliação:", error);

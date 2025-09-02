@@ -107,7 +107,7 @@ export function useGoals(user: User | null) {
         .from("user_goals")
         .insert(goalData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("Erro ao salvar meta:", error);

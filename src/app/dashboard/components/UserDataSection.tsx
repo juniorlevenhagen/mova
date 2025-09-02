@@ -171,12 +171,19 @@ export function UserDataSection({
   }, [removeEvaluation]);
 
   const handleGeneratePlan = useCallback(() => {
-    if (!evaluation) {
-      setShowConfirmationModal(true);
-    } else {
-      onGeneratePlan();
+    // ✅ PRIMEIRO: Verificar se já existe plano
+    if (planStatus?.isExisting) {
+      onGeneratePlan(); // Abre modal do plano existente
+      return;
     }
-  }, [evaluation, onGeneratePlan]);
+
+    // ✅ SEGUNDO: Se não tem plano, verificar avaliação
+    if (!evaluation) {
+      setShowConfirmationModal(true); // Mostra modal de avaliação
+    } else {
+      onGeneratePlan(); // Gera novo plano
+    }
+  }, [evaluation, onGeneratePlan, planStatus?.isExisting]);
 
   const confirmGeneratePlan = useCallback(() => {
     setShowConfirmationModal(false);

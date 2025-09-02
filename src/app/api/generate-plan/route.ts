@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       return NextResponse.json(
@@ -421,17 +421,24 @@ IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o 
    - Progressão baseada no objetivo
    - Adaptações para local e limitações
 
-3. **PLANO ALIMENTAR ESTRATÉGICO**
-   - Calorias e macronutrientes para o objetivo
-   - Timing das refeições
-   - Cardápio semanal específico
-   - Suplementação estratégica
-   - Adaptações para restrições
+3. **PLANO ALIMENTAR ESTRATÉGICO DETALHADO**
+   - Calorias diárias calculadas para o objetivo
+   - Macronutrientes específicos (proteínas, carbos, gorduras)
+   - Quantidades EXATAS para cada alimento (ex: "100g de frango", "1 xícara de arroz")
+   - Calorias por porção de cada alimento
+   - Timing das refeições otimizado
+   - Cardápio semanal com porções calculadas
+   - Suplementação estratégica baseada no objetivo
+   - Adaptações para restrições alimentares
+   - Hidratação personalizada
 
-4. **METAS E MONITORAMENTO**
-   - Metas específicas para o objetivo
-   - Indicadores de progresso relevantes
-   - Ajustes baseados no objetivo
+## REGRAS NUTRICIONAIS ESPECÍFICAS:
+- SEMPRE especifique quantidades EXATAS (gramas, xícaras, unidades)
+- Calcule calorias por porção de cada alimento
+- Distribua macronutrientes de acordo com o objetivo
+- Seja específico com horários das refeições
+- Considere restrições alimentares do usuário
+- Adapte porções para o objetivo (emagrecimento = porções menores, hipertrofia = porções maiores)
 
 ## REGRAS IMPORTANTES:
 - SEMPRE priorize o objetivo principal
@@ -570,7 +577,18 @@ IMPORTANTE: Baseie TODO o plano no objetivo "${
                       type: "object",
                       properties: {
                         meal: { type: "string" },
-                        options: { type: "array", items: { type: "string" } },
+                        options: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              food: { type: "string" },
+                              quantity: { type: "string" }, // ✅ ESSENCIAL
+                              calories: { type: "number" }, // ✅ ESSENCIAL
+                            },
+                            required: ["food", "quantity"], // ✅ OBRIGATÓRIO
+                          },
+                        },
                         timing: { type: "string" },
                       },
                       required: ["meal", "options", "timing"],

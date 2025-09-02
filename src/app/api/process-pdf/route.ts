@@ -44,7 +44,6 @@ interface PDFData {
 
 // Função para criar entrada automática na evolução
 async function createEvolutionEntry(
-
   supabaseUser: any,
   userId: string,
   summary: any,
@@ -77,7 +76,7 @@ async function createEvolutionEntry(
       .from("user_evolutions")
       .insert(evolutionData)
       .select()
-      .single();
+      .maybeSingle();
 
     if (evolutionError) {
       console.error("❌ Erro ao criar evolução:", evolutionError);
@@ -366,7 +365,7 @@ export async function POST(request: NextRequest) {
           .update(profileUpdates)
           .eq("user_id", user.id)
           .select()
-          .single();
+          .maybeSingle();
 
         if (updateError) {
           if (updateError.code === "PGRST116") {
@@ -415,7 +414,7 @@ export async function POST(request: NextRequest) {
               .from("user_profiles")
               .insert(newProfileData)
               .select()
-              .single();
+              .maybeSingle();
 
             if (createError) {
               console.error("Erro ao criar perfil:", createError);

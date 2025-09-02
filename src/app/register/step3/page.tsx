@@ -9,16 +9,54 @@ export default function Step3Page() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [canRender, setCanRender] = useState(false);
+  const [checkingTrial, setCheckingTrial] = useState(true);
 
-  // Proteção da rota
+  // Proteção da rota e verificação de trial
   useEffect(() => {
-    const step2Data = localStorage.getItem("registerStep2");
-    const step1Data = localStorage.getItem("registerStep1");
-    if (!step2Data || !step1Data) {
-      router.replace("/register/step0");
-    } else {
-      setCanRender(true);
-    }
+    const checkUserStatus = async () => {
+      try {
+        const step2Data = localStorage.getItem("registerStep2");
+        const step1Data = localStorage.getItem("registerStep1");
+        
+        if (!step2Data || !step1Data) {
+          router.replace("/register/step0");
+          return;
+        }
+
+        // Verificar se usuário já tem trial ativo ou já usou trial
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.access_token) {
+          // Verificar status do trial
+          const response = await fetch("/api/check-trial-status", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (response.ok) {
+            const trialStatus = await response.json();
+            
+            // Se já tem trial ativo ou já usou trial, redirecionar para dashboard
+            if (trialStatus.hasActiveTrial || trialStatus.hasUsedTrial) {
+              router.replace("/dashboard");
+              return;
+            }
+          }
+        }
+
+        setCanRender(true);
+      } catch (error) {
+        console.error("Erro ao verificar status:", error);
+        // Em caso de erro, permitir renderização (fallback)
+        setCanRender(true);
+      } finally {
+        setCheckingTrial(false);
+      }
+    };
+
+    checkUserStatus();
   }, [router]);
 
   const handleStartTrial = async () => {
@@ -60,6 +98,18 @@ export default function Step3Page() {
       setLoading(false);
     }
   };
+
+  // Mostrar loading enquanto verifica trial
+  if (checkingTrial) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f1e8]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <span className="text-gray-600">Verificando seu status...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!canRender) {
     return (

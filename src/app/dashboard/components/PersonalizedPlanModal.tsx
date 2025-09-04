@@ -34,7 +34,11 @@ interface PersonalizedPlan {
     };
     mealPlan: Array<{
       meal: string;
-      options: string[];
+      options: Array<{
+        food: string;
+        quantity: string;
+        calories: number;
+      }>;
       timing: string;
     }>;
     supplements?: string[];
@@ -506,7 +510,8 @@ export function PersonalizedPlanModal({
                           {(meal.options || []).map((option, optionIndex) => (
                             <div key={optionIndex} className="flex items-start">
                               <span className="text-green-600 mr-2">•</span>
-                              <span className="text-gray-800">{option}</span>
+                              {option.food} - {option.quantity} (
+                              {option.calories} kcal)
                             </div>
                           ))}
                         </div>

@@ -76,7 +76,7 @@ export function useEvolution(user: User | null) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]); // ✅ Usar user?.id para consistência
 
   // Adicionar nova evolução
   const addEvolution = async (data: EvolutionData) => {
@@ -149,8 +149,10 @@ export function useEvolution(user: User | null) {
 
   // Buscar evoluções quando o usuário mudar
   useEffect(() => {
-    fetchEvolutions();
-  }, [fetchEvolutions]);
+    if (user?.id) {
+      fetchEvolutions();
+    }
+  }, [user?.id]); // ✅ Usar apenas user?.id para evitar loops
 
   return {
     evolutions,

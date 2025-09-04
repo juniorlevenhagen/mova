@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { DashboardHeader } from "./components/DashboardHeader";
-import { TrialSection } from "./components/TrialSection";
 import { UserDataSection } from "./components/UserDataSection";
 import { EvolutionSection } from "./components/EvolutionSection";
 import { AddEvolutionModal } from "./modals/AddEvolutionModal";
@@ -66,6 +65,48 @@ export default function DashboardPage() {
     refetch: refetchTrial,
   } = useTrial(user);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // ✅ Removido trialData não utilizado para evitar erro de linter
+
+  // ✅ Log simplificado para reduzir duplicatas
+  useEffect(() => {
+    if (
+      process.env.NODE_ENV === "development" &&
+      trialStatus?.message !== "Carregando..."
+    ) {
+      console.log("Trial Status:", {
+        plansRemaining: trialStatus?.plansRemaining,
+        isPremium: trialStatus?.isPremium,
+        canGenerate: trialStatus?.canGenerate,
+        message: trialStatus?.message,
+      });
+    }
+  }, [
+    trialStatus?.message,
+    trialStatus?.canGenerate,
+    trialStatus?.isPremium,
+    trialStatus?.plansRemaining,
+  ]); // ✅ Dependências necessárias
+
+  // ✅ MOVER AQUI: Todos os useCallback devem vir antes dos returns
+  const handleLogout = useCallback(async () => {
+    setLogoutLoading(true);
+    await supabase.auth.signOut();
+    router.push("/");
+    setLogoutLoading(false);
+  }, [router]);
+
+  const handleAddEvolucao = useCallback(() => {
+    setShowModal(true);
+  }, []);
+
+  const handleModalSubmit = useCallback(
+    async (data: EvolutionData) => {
+      await addEvolution(data);
+      setShowModal(false);
+    },
+    [addEvolution]
+  );
 
   // Função combinada para refresh após upload de PDF
   const handlePdfUploadRefresh = async () => {
@@ -165,55 +206,7 @@ export default function DashboardPage() {
 
   // Log para debug - verificar se os dados estão chegando do hook
 
-  // Dados de trial (usando dados reais do hook)
-  const trialData = {
-    diasRestantes: trialStatus?.daysRemaining || 7,
-    totalDias: 7,
-    requisicoesRestantes: trialStatus?.plansRemaining ?? 1, // Usar ?? para não sobrescrever 0
-    totalRequisicoes: trialStatus?.isPremium ? 2 : 1,
-  };
-
-  // Debug: Log dos dados do trial (apenas em desenvolvimento)
-  if (process.env.NODE_ENV === "development") {
-    console.log("Trial Status:", {
-      plansRemaining: trialStatus?.plansRemaining,
-      isPremium: trialStatus?.isPremium,
-      canGenerate: trialStatus?.canGenerate,
-      message: trialStatus?.message,
-    });
-
-    console.log("Trial Data para TrialSection:", {
-      diasRestantes: trialData.diasRestantes,
-      requisicoesRestantes: trialData.requisicoesRestantes,
-      totalRequisicoes: trialData.totalRequisicoes,
-      hasUsedFreePlan: trialData.requisicoesRestantes === 0,
-    });
-  }
-
-  const trialPercent = trialStatus?.isPremium
-    ? ((2 - (trialStatus?.plansRemaining || 0)) / 2) * 100
-    : ((trialData.totalDias - trialData.diasRestantes) / trialData.totalDias) *
-      100;
-
-  const handleLogout = async () => {
-    setLogoutLoading(true);
-    await supabase.auth.signOut();
-    router.push("/");
-    setLogoutLoading(false);
-  };
-
-  const handleAddEvolucao = () => {
-    setShowModal(true);
-  };
-
-  const handleModalSubmit = async (data: EvolutionData) => {
-    await addEvolution(data);
-    setShowModal(false);
-  };
-
-  const handleUpgrade = () => {
-    setShowUpgradeModal(true);
-  };
+  // ✅ Código de debug comentado (trialData removido)
 
   return (
     <ProtectedRoute>
@@ -281,13 +274,6 @@ export default function DashboardPage() {
             user={userDisplayData}
             onLogout={handleLogout}
             logoutLoading={logoutLoading}
-          />
-
-          <TrialSection
-            trial={trialData}
-            trialPercent={trialPercent}
-            onUpgrade={handleUpgrade}
-            isPremium={trialStatus?.isPremium || false}
           />
 
           <UserDataSection

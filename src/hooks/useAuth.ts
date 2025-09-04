@@ -7,6 +7,8 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Verificar sessão atual
     const getSession = async () => {
       try {
@@ -17,15 +19,15 @@ export function useAuth() {
 
         if (error) {
           console.error("Erro ao verificar sessão:", error);
-          setUser(null);
-        } else {
+          if (isMounted) setUser(null);
+        } else if (isMounted) {
           setUser(session?.user ?? null);
         }
       } catch (error) {
         console.error("Erro inesperado ao verificar sessão:", error);
-        setUser(null);
+        if (isMounted) setUser(null);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -35,18 +37,32 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (process.env.NODE_ENV === 'development') {
+      if (!isMounted) return;
+
+      const currentUserId = user?.id; // Capturar valor atual
+
+      // ✅ Evitar logs duplicados do mesmo evento
+      if (event === "INITIAL_SESSION" && currentUserId === session?.user?.id) {
+        return; // Não atualizar se for o mesmo usuário
+      }
+
+      // ✅ Evitar logs excessivos do INITIAL_SESSION
+      if (event === "INITIAL_SESSION" && !session?.user?.id) {
+        return; // Não logar INITIAL_SESSION sem usuário
+      }
+
+      if (process.env.NODE_ENV === "development") {
         console.log("Auth state change:", event, session?.user?.id);
       }
 
       if (event === "SIGNED_OUT") {
-        // Limpar dados do localStorage quando fizer logout
         localStorage.removeItem("lastActivity");
-        // Limpar outros dados que possam estar em cache
         sessionStorage.clear();
+        setUser(null);
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        setUser(session?.user ?? null);
       }
 
-      setUser(session?.user ?? null);
       setLoading(false);
     });
 
@@ -67,8 +83,8 @@ export function useAuth() {
       localStorage.setItem("lastActivity", Date.now().toString());
     };
 
-    // Verificar a cada minuto
-    const interval = setInterval(checkSessionTimeout, 60000);
+    // Verificar a cada 5 minutos para reduzir logs
+    const interval = setInterval(checkSessionTimeout, 300000);
 
     // Atualizar atividade em eventos do usuário
     ["mousedown", "mousemove", "keypress", "scroll", "touchstart"].forEach(
@@ -78,6 +94,7 @@ export function useAuth() {
     );
 
     return () => {
+      isMounted = false;
       clearInterval(interval);
       ["mousedown", "mousemove", "keypress", "scroll", "touchstart"].forEach(
         (event) => {
@@ -86,7 +103,7 @@ export function useAuth() {
       );
       subscription.unsubscribe();
     };
-  }, []);
+  });
 
   return { user, loading };
 }

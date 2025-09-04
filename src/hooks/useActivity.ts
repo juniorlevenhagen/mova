@@ -66,8 +66,10 @@ export function useActivity(user: User | null) {
 
   // Carregar atividades quando o usuário mudar
   useEffect(() => {
-    fetchActivities();
-  }, [fetchActivities]);
+    if (user?.id) {
+      fetchActivities();
+    }
+  }, [user?.id]); // ✅ Usar apenas user?.id para evitar loops
 
   // Adicionar nova atividade
   const addActivity = async (data: CreateActivityData) => {

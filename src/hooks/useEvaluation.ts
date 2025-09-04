@@ -74,7 +74,7 @@ export function useEvaluation(user: User | null) {
     if (user?.id) {
       fetchEvaluation();
     }
-  }, [user?.id, fetchEvaluation]); // Incluir fetchEvaluation como dependência
+  }, [user?.id]); // ✅ Usar apenas user?.id para evitar loops
 
   // Salvar nova avaliação (otimizado para evitar re-renderizações)
   const saveEvaluation = useCallback(

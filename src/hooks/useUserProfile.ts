@@ -44,7 +44,10 @@ export function useUserProfile(user: User | null) {
       return;
     }
 
-    console.log("Carregando dados para usuário:", user.id);
+    // ✅ Evitar logs duplicados - só logar se não temos dados ou usuário mudou
+    if (process.env.NODE_ENV === "development") {
+      console.log("Carregando dados para usuário:", user.id);
+    }
 
     const fetchUserData = async () => {
       setLoading(true);
@@ -98,7 +101,7 @@ export function useUserProfile(user: User | null) {
     };
 
     fetchUserData();
-  }, [user]);
+  }, [user?.id]); // ✅ Usar apenas user?.id para evitar re-execuções desnecessárias
 
   // Função para atualizar o perfil do usuário
   const updateProfile = async (updates: Partial<UserProfile>) => {

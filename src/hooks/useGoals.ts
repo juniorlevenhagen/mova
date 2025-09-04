@@ -64,8 +64,10 @@ export function useGoals(user: User | null) {
 
   // Carregar metas quando o usuário mudar
   useEffect(() => {
-    fetchGoals();
-  }, [fetchGoals]);
+    if (user?.id) {
+      fetchGoals();
+    }
+  }, [user?.id]); // ✅ Usar apenas user?.id para evitar loops
 
   // Adicionar nova meta
   const addGoal = async (data: GoalData) => {

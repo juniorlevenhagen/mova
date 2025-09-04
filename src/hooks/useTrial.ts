@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 
@@ -48,7 +48,7 @@ export function useTrial(user: User | null) {
   const [error, setError] = useState<string | null>(null);
 
   // Buscar dados do trial
-  const fetchTrial = async () => {
+  const fetchTrial = useCallback(async () => {
     if (!user) {
       setTrial(null);
       setTrialStatus({
@@ -71,7 +71,7 @@ export function useTrial(user: User | null) {
         .from("user_trials")
         .select("*")
         .eq("user_id", user.id)
-        .maybeSingle(); // Usar maybeSingle() em vez de single()
+        .maybeSingle();
 
       if (trialError) {
         throw trialError;
@@ -179,7 +179,7 @@ export function useTrial(user: User | null) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // Incrementar contador de planos gerados
   const incrementPlanUsage = async () => {
@@ -268,26 +268,24 @@ export function useTrial(user: User | null) {
 
   // Carregar trial quando usuário mudar
   useEffect(() => {
-    // Resetar dados quando o usuário mudar
-    setTrial(null);
-    setTrialStatus({
-      canGenerate: false,
-      plansRemaining: 0,
-      isPremium: false,
-      message: "Carregando...",
-    });
-    setError(null);
+    // ✅ Evitar re-execução desnecessária
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
 
-    if (user?.id) {
-      if (process.env.NODE_ENV === 'development') {
+    // ✅ Só buscar se não temos dados ou se é usuário diferente
+    if (!trial || trial.user_id !== user.id) {
+      // ✅ Evitar logs duplicados - só logar uma vez por usuário
+      if (
+        process.env.NODE_ENV === "development" &&
+        (!trial || trial.user_id !== user.id)
+      ) {
         console.log("Carregando trial para usuário:", user.id);
       }
       fetchTrial();
-    } else {
-      setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Usar apenas o ID do usuário como dependência
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     trial,

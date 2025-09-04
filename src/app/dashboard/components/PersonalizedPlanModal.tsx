@@ -315,10 +315,10 @@ export function PersonalizedPlanModal({
                       >
                         <div className="flex items-center mb-3">
                           <h5 className="font-semibold text-lg text-gray-900">
-                            {day.day}
+                            {day?.day || "Dia não especificado"}
                           </h5>
                           <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                            {day.type}
+                            {day?.type || "Tipo não especificado"}
                           </span>
                         </div>
 
@@ -331,16 +331,17 @@ export function PersonalizedPlanModal({
                               >
                                 <div className="flex flex-wrap items-center gap-4">
                                   <h6 className="font-medium text-gray-900 flex-1">
-                                    {exercise.name}
+                                    {exercise?.name ||
+                                      "Exercício não especificado"}
                                   </h6>
                                   <span className="text-sm text-gray-600">
-                                    Séries: {exercise.sets}
+                                    Séries: {exercise?.sets || "N/A"}
                                   </span>
                                   <span className="text-sm text-gray-600">
-                                    Reps: {exercise.reps}
+                                    Reps: {exercise?.reps || "N/A"}
                                   </span>
                                   <span className="text-sm text-gray-600">
-                                    Descanso: {exercise.rest}
+                                    Descanso: {exercise?.rest || "N/A"}
                                   </span>
                                 </div>
                                 {exercise.notes && (
@@ -449,18 +450,22 @@ export function PersonalizedPlanModal({
                       >
                         <div className="flex items-center justify-between mb-3">
                           <h5 className="font-semibold text-gray-900">
-                            {meal.meal}
+                            {meal?.meal || "Refeição não especificada"}
                           </h5>
                           <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                            {meal.timing}
+                            {meal?.timing || "Horário não especificado"}
                           </span>
                         </div>
                         <div className="space-y-2">
                           {(meal.options || []).map((option, optionIndex) => (
                             <div key={optionIndex} className="flex items-start">
                               <span className="text-green-600 mr-2">•</span>
-                              {option.food} - {option.quantity} (
-                              {option.calories} kcal)
+                              <span className="text-gray-900">
+                                {option?.food || "Alimento não especificado"} -{" "}
+                                {option?.quantity ||
+                                  "Quantidade não especificada"}{" "}
+                                ({option?.calories || 0} kcal)
+                              </span>
                             </div>
                           ))}
                         </div>

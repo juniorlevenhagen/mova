@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [premiumOverride, setPremiumOverride] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
 
   const {
@@ -135,6 +136,7 @@ export default function DashboardPage() {
           if (result.success && result.isPremium) {
             setUpgradeSuccess(true);
             setShowUpgradeModal(false);
+            setPremiumOverride(true);
 
             // Refresh do trial status após confirmar premium
             setTimeout(() => {
@@ -156,22 +158,43 @@ export default function DashboardPage() {
       };
 
       verifyPayment();
-    } else if (upgradeParam === "success") {
-      // Fallback sem session_id
-      setUpgradeSuccess(true);
-      setShowUpgradeModal(false);
+    } else if (upgradeParam === "success" && user) {
+      // Fallback sem session_id: tentar ativar premium via /api/verify-payment
+      const runFallback = async () => {
+        try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (!session?.access_token) return;
 
-      setTimeout(() => {
-        refetchTrial();
-      }, 1000);
+          const response = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({}),
+          });
 
-      setTimeout(() => {
-        setUpgradeSuccess(false);
-      }, 5000);
+          const res = await response.json();
+          if (res.success && res.isPremium) {
+            setUpgradeSuccess(true);
+            setShowUpgradeModal(false);
+            setPremiumOverride(true);
+            setTimeout(() => {
+              refetchTrial();
+            }, 500);
+            setTimeout(() => setUpgradeSuccess(false), 5000);
+          }
+        } catch (e) {
+          console.error("❌ Fallback verify-payment falhou:", e);
+        } finally {
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, "", newUrl);
+        }
+      };
 
-      // Limpar URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, "", newUrl);
+      runFallback();
     }
   }, [refetchTrial, user]);
 
@@ -256,32 +279,21 @@ export default function DashboardPage() {
   // Log para debug - verificar se os dados estão chegando do hook
 
   // Dados de trial (usando dados reais do hook)
+  const isPremiumUI = premiumOverride || (trialStatus?.isPremium ?? false);
   const trialData = {
     diasRestantes: trialStatus?.daysRemaining || 7,
     totalDias: 7,
-    requisicoesRestantes: trialStatus?.plansRemaining ?? 1, // Usar ?? para não sobrescrever 0
-    totalRequisicoes: trialStatus?.isPremium ? 2 : 1,
+    requisicoesRestantes: isPremiumUI
+      ? typeof trialStatus?.plansRemaining === "number"
+        ? trialStatus.plansRemaining
+        : 2
+      : typeof trialStatus?.plansRemaining === "number"
+      ? trialStatus.plansRemaining
+      : 1,
+    totalRequisicoes: isPremiumUI ? 2 : 1,
   };
 
-  // Debug: Log dos dados do trial (apenas em desenvolvimento)
-  if (process.env.NODE_ENV === "development") {
-    console.log("🔍 Trial Status DETALHADO:", {
-      plansRemaining: trialStatus?.plansRemaining,
-      isPremium: trialStatus?.isPremium,
-      canGenerate: trialStatus?.canGenerate,
-      message: trialStatus?.message,
-      daysUntilNextCycle: trialStatus?.daysUntilNextCycle,
-      full_status: trialStatus,
-    });
-
-    console.log("🔍 Trial Data para TrialSection:", {
-      diasRestantes: trialData.diasRestantes,
-      requisicoesRestantes: trialData.requisicoesRestantes,
-      totalRequisicoes: trialData.totalRequisicoes,
-      hasUsedFreePlan: trialData.requisicoesRestantes === 0,
-      isPremium: trialStatus?.isPremium,
-    });
-  }
+  // Debug removido - sistema funcionando
 
   // Removido trialPercent pois não está sendo usado no componente
 
@@ -445,7 +457,7 @@ export default function DashboardPage() {
           <TrialSection
             trial={trialData}
             onUpgrade={handleUpgrade}
-            isPremium={trialStatus?.isPremium || false}
+            isPremium={isPremiumUI}
           />
 
           <UserDataSection
@@ -482,7 +494,7 @@ export default function DashboardPage() {
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          isPremium={trialStatus?.isPremium || false}
+          isPremium={isPremiumUI}
         />
       </div>
     </ProtectedRoute>

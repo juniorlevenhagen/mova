@@ -37,6 +37,11 @@ interface TrialStatus {
 }
 
 export function useTrial(user: User | null) {
+  console.log("🚀 HOOK useTrial INICIADO!", {
+    user: user?.id,
+    userExists: !!user,
+  });
+
   const [trial, setTrial] = useState<UserTrial | null>(null);
   const [trialStatus, setTrialStatus] = useState<TrialStatus>({
     canGenerate: false,
@@ -49,7 +54,13 @@ export function useTrial(user: User | null) {
 
   // Buscar dados do trial
   const fetchTrial = async () => {
+    console.log("🔄 fetchTrial CHAMADO!", {
+      user: user?.id,
+      userExists: !!user,
+    });
+
     if (!user) {
+      console.log("❌ Usuário não existe - setando status padrão");
       setTrial(null);
       setTrialStatus({
         isNewUser: true,
@@ -63,15 +74,19 @@ export function useTrial(user: User | null) {
     }
 
     try {
+      console.log("🚀 DENTRO do try - iniciando busca no banco");
       setLoading(true);
       setError(null);
 
+      console.log("📊 Fazendo query no Supabase para:", user.id);
       // Buscar dados do trial
       const { data: trialData, error: trialError } = await supabase
         .from("user_trials")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle(); // Usar maybeSingle() em vez de single()
+
+      console.log("📈 Resultado da query:", { trialData, trialError });
 
       if (trialError) {
         throw trialError;
@@ -108,6 +123,11 @@ export function useTrial(user: User | null) {
 
         if (isPremium) {
           // ✅ Usuário premium - 2 planos por período de 30 dias (não por mês do calendário)
+          console.log("🎯 USUÁRIO PREMIUM DETECTADO!", {
+            userId: user.id,
+            upgraded_to_premium: trialData.upgraded_to_premium,
+            isPremium,
+          });
           const maxPlansPerCycle = trialData.premium_max_plans_per_cycle || 2;
           const cycleStartDate = trialData.premium_plan_cycle_start
             ? new Date(trialData.premium_plan_cycle_start)
@@ -154,8 +174,20 @@ export function useTrial(user: User | null) {
             daysUntilNextCycle: daysUntilRenewal,
             cycleDays: cycleLength,
           };
+
+          console.log("✅ STATUS PREMIUM CRIADO:", {
+            isPremium: status.isPremium,
+            plansRemaining: status.plansRemaining,
+            message: status.message,
+            status,
+          });
         } else {
           // Usuário grátis - 1 plano total
+          console.log("🆓 USUÁRIO GRÁTIS DETECTADO!", {
+            userId: user.id,
+            upgraded_to_premium: trialData.upgraded_to_premium,
+            isPremium,
+          });
           const maxPlans = 1; // Usuários grátis só podem gerar 1 plano
           const plansRemaining = Math.max(0, maxPlans - plansGenerated);
 
@@ -174,10 +206,17 @@ export function useTrial(user: User | null) {
         }
       }
 
+      console.log("🔄 SETANDO TRIAL STATUS FINAL:", {
+        "status.isPremium": status.isPremium,
+        "status completo": status,
+      });
+
       setTrialStatus(status);
       setTrial(trialData || null);
     } catch (error: unknown) {
-      console.error("Erro ao buscar trial:", error);
+      console.error("❌❌❌ ERRO CAPTURADO em fetchTrial:", error);
+      console.error("❌ Tipo do erro:", typeof error);
+      console.error("❌ Error completo:", JSON.stringify(error, null, 2));
       setError("Erro ao carregar dados do trial");
 
       // Fallback em caso de erro
@@ -308,6 +347,11 @@ export function useTrial(user: User | null) {
 
   // Carregar trial quando usuário mudar
   useEffect(() => {
+    console.log("🔥 useEffect EXECUTADO!", {
+      userId: user?.id,
+      userExists: !!user,
+    });
+
     // Resetar dados quando o usuário mudar
     setTrial(null);
     setTrialStatus({
@@ -319,11 +363,19 @@ export function useTrial(user: User | null) {
     setError(null);
 
     if (user?.id) {
+      console.log("✅ Usuário existe - chamando fetchTrial");
       if (process.env.NODE_ENV === "development") {
         console.log("Carregando trial para usuário:", user.id);
       }
-      fetchTrial();
+
+      // Adicionar try/catch ao fetchTrial
+      fetchTrial().catch((error) => {
+        console.error("❌ ERRO em fetchTrial:", error);
+        setError("Erro ao carregar dados do trial");
+        setLoading(false);
+      });
     } else {
+      console.log("❌ Usuário não existe - setLoading false");
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

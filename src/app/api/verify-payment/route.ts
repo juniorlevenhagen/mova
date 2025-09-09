@@ -128,15 +128,12 @@ export async function POST(request: NextRequest) {
     }
 
     // 🔁 Fallback: sem sessionId, verificar assinatura ativa (DB/Stripe)
-    console.log("🔍 FALLBACK: Verificando assinatura para:", user.id);
-    const { data: subscription, error: subError } = await supabase
+    const { data: subscription } = await supabase
       .from("subscriptions")
       .select("status")
       .eq("user_id", user.id)
       .in("status", ["active", "trialing"])
       .maybeSingle();
-
-    console.log("📊 Resultado subscriptions:", { subscription, subError });
     let premiumActive = !!subscription;
 
     if (!premiumActive && user.email) {
@@ -155,16 +152,14 @@ export async function POST(request: NextRequest) {
           premiumActive = (subs.data?.length || 0) > 0;
         }
       } catch (lookupErr) {
-        console.warn("⚠️ Fallback Stripe lookup falhou:", lookupErr);
+        console.warn("Fallback Stripe lookup falhou:", lookupErr);
       }
     }
 
     // 🚨 FORÇAR PREMIUM PARA TESTE (manter até resolver checkout)
-    console.log("🚨 TESTE: Forçando premiumActive = true");
     premiumActive = true;
 
     if (!premiumActive) {
-      console.log("❌ FALLBACK: Nenhuma assinatura ativa encontrada");
       return NextResponse.json({
         success: false,
         isPremium: false,
@@ -172,21 +167,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log("✅ FALLBACK: Premium ativo detectado - atualizando banco...");
-
     // Ativar premium via fallback
     const now = new Date().toISOString();
-    console.log("🔍 FALLBACK: Buscando trial existente...");
-    const { data: existingTrial, error: fetchError } = await supabaseUser
+    const { data: existingTrial } = await supabaseUser
       .from("user_trials")
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    console.log("📊 FALLBACK: Trial existente:", { existingTrial, fetchError });
-
     if (existingTrial) {
-      console.log("🔄 FALLBACK: Atualizando trial existente...");
       const { error: updateError } = await supabaseUser
         .from("user_trials")
         .update({
@@ -202,16 +191,14 @@ export async function POST(request: NextRequest) {
         })
         .eq("user_id", user.id);
 
-      console.log("📈 FALLBACK: Resultado update:", { updateError });
       if (updateError) {
-        console.error("❌ FALLBACK: Erro ao atualizar trial:", updateError);
+        console.error("Erro ao atualizar trial:", updateError);
         return NextResponse.json(
           { error: "Erro ao atualizar status premium" },
           { status: 500 }
         );
       }
     } else {
-      console.log("➕ FALLBACK: Criando novo trial...");
       const { error: insertError } = await supabaseUser
         .from("user_trials")
         .insert({
@@ -231,9 +218,8 @@ export async function POST(request: NextRequest) {
           premium_cycle_days: 30,
         });
 
-      console.log("📈 FALLBACK: Resultado insert:", { insertError });
       if (insertError) {
-        console.error("❌ FALLBACK: Erro ao criar trial:", insertError);
+        console.error("Erro ao criar trial:", insertError);
         return NextResponse.json(
           { error: "Erro ao criar trial premium" },
           { status: 500 }

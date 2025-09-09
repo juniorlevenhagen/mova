@@ -229,7 +229,37 @@ export async function POST(request: NextRequest) {
           maxPlansPerCycle - currentCycleCount
         );
 
+        // ✅ Verificar se ainda tem planos no ciclo
         canGenerate = plansRemaining > 0;
+
+        // ✅ Controle de intervalo de 24h entre planos premium
+        if (
+          canGenerate &&
+          currentCycleCount > 0 &&
+          trialData.last_plan_generated_at
+        ) {
+          const lastPlanTime = new Date(trialData.last_plan_generated_at);
+          const now = new Date();
+          const hoursSinceLastPlan =
+            (now.getTime() - lastPlanTime.getTime()) / (1000 * 60 * 60);
+          const MIN_INTERVAL_HOURS = 24;
+
+          if (hoursSinceLastPlan < MIN_INTERVAL_HOURS) {
+            const hoursRemaining = Math.ceil(
+              MIN_INTERVAL_HOURS - hoursSinceLastPlan
+            );
+            return NextResponse.json(
+              {
+                error: "COOLDOWN_ACTIVE",
+                message: `Aguarde ${hoursRemaining} horas para gerar o próximo plano. Isso garante que você aproveite melhor cada estratégia personalizada!`,
+                hoursRemaining,
+                trialMessage: `Premium: Próximo plano em ${hoursRemaining} horas`,
+              },
+              { status: 429 }
+            );
+          }
+        }
+
         trialMessage = `Premium: ${plansRemaining} de ${maxPlansPerCycle} planos restantes neste ciclo`;
       } else {
         // Usuário grátis - 1 plano total

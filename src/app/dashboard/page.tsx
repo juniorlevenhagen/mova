@@ -423,6 +423,7 @@ export default function DashboardPage() {
             onProfileUpdate={handlePdfUploadRefresh}
             planStatus={planStatus}
             isCheckingPlanStatus={isCheckingStatus}
+            isPremium={isPremiumUI}
           />
 
           <EvolutionSection

@@ -26,6 +26,7 @@ interface UserDataSectionProps {
     nextPlanAvailable?: string;
   } | null;
   isCheckingPlanStatus?: boolean;
+  isPremium?: boolean; // Nova prop para identificar usuários premium
 }
 
 export function UserDataSection({
@@ -35,6 +36,7 @@ export function UserDataSection({
   onProfileUpdate,
   planStatus,
   isCheckingPlanStatus = false,
+  isPremium = false,
 }: UserDataSectionProps) {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -805,23 +807,25 @@ export function UserDataSection({
                       "pt-BR"
                     )}
                   </p>
-                  <p className="text-xs text-blue-600 flex items-center gap-1">
-                    <svg
-                      className="w-3 h-3"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Próximo plano disponível em:{" "}
-                    <span className="font-semibold">
-                      {planStatus.daysUntilNext} dias
-                    </span>
-                  </p>
+                  {!isPremium && (
+                    <p className="text-xs text-blue-600 flex items-center gap-1">
+                      <svg
+                        className="w-3 h-3"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Próximo plano disponível em:{" "}
+                      <span className="font-semibold">
+                        {planStatus.daysUntilNext} dias
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
 

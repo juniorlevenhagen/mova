@@ -166,6 +166,14 @@ export function usePlanGeneration() {
           throw new Error(errorData.message || "Limite de planos atingido");
         }
 
+        if (errorData.error === "COOLDOWN_ACTIVE") {
+          const hours = errorData.hoursRemaining || 24;
+          throw new Error(
+            errorData.message ||
+              `Aguarde ${hours} horas para gerar o próximo plano.`
+          );
+        }
+
         throw new Error(errorData.error || "Erro ao gerar plano");
       }
 

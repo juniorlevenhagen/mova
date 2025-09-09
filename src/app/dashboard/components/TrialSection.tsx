@@ -5,14 +5,12 @@ interface TrialSectionProps {
     requisicoesRestantes: number;
     totalRequisicoes: number;
   };
-  trialPercent: number;
   onUpgrade?: () => void;
   isPremium?: boolean;
 }
 
 export function TrialSection({
   trial,
-  trialPercent: _,
   onUpgrade,
   isPremium = false,
 }: TrialSectionProps) {

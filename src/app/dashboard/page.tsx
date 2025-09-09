@@ -286,10 +286,7 @@ export default function DashboardPage() {
     });
   }
 
-  const trialPercent = trialStatus?.isPremium
-    ? ((2 - (trialStatus?.plansRemaining || 0)) / 2) * 100
-    : ((trialData.totalDias - trialData.diasRestantes) / trialData.totalDias) *
-      100;
+  // Removido trialPercent pois não está sendo usado no componente
 
   const handleLogout = async () => {
     setLogoutLoading(true);
@@ -450,7 +447,6 @@ export default function DashboardPage() {
 
           <TrialSection
             trial={trialData}
-            trialPercent={trialPercent}
             onUpgrade={handleUpgrade}
             isPremium={trialStatus?.isPremium || false}
           />

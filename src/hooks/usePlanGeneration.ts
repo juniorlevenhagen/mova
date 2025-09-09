@@ -11,6 +11,8 @@ export function usePlanGeneration() {
     generatedAt?: string;
     daysUntilNext?: number;
     nextPlanAvailable?: string;
+    isPremiumCooldown?: boolean; // Nova propriedade para cooldown premium
+    hoursUntilNext?: number; // Horas até próximo plano (premium)
   } | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
@@ -77,10 +79,32 @@ export function usePlanGeneration() {
             const canGenerateMore = currentCycleCount < maxPlansPerCycle;
 
             if (canGenerateMore) {
-              // Premium pode gerar mais planos - não bloquear
-              setPlanStatus({
-                isExisting: false,
-              });
+              // ✅ Premium pode gerar mais planos - mostrar cooldown de 24h
+              const lastPlanTime = new Date(planEntry.generated_at);
+              const hoursSinceLastPlan =
+                (now.getTime() - lastPlanTime.getTime()) / (1000 * 60 * 60);
+              const MIN_INTERVAL_HOURS = 24;
+
+              if (hoursSinceLastPlan < MIN_INTERVAL_HOURS) {
+                // Ainda em cooldown - mostrar quando próximo estará disponível
+                const hoursUntilNext = Math.ceil(
+                  MIN_INTERVAL_HOURS - hoursSinceLastPlan
+                );
+                setPlanStatus({
+                  isExisting: true,
+                  generatedAt: planEntry.generated_at,
+                  isPremiumCooldown: true,
+                  hoursUntilNext,
+                  nextPlanAvailable: new Date(
+                    lastPlanTime.getTime() + MIN_INTERVAL_HOURS * 60 * 60 * 1000
+                  ).toISOString(),
+                });
+              } else {
+                // Cooldown passou - pode gerar novo plano
+                setPlanStatus({
+                  isExisting: false,
+                });
+              }
             } else {
               // Premium atingiu limite - calcular próximo ciclo
               const nextCycleDate = new Date(cycleStartDate);

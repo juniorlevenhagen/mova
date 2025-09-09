@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,17 +75,76 @@ export default function DashboardPage() {
   } = useTrial(user);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Função combinada para refresh após upload de PDF
-  const handlePdfUploadRefresh = async () => {
+  // ✅ Dados do usuário memoizados para evitar re-renderizações
+  const userDisplayData = useMemo(
+    () => ({
+      full_name:
+        userData?.full_name ||
+        user?.user_metadata?.full_name ||
+        user?.email?.split("@")[0] ||
+        "Usuário",
+      email: userData?.email || user?.email || "",
+    }),
+    [
+      userData?.full_name,
+      userData?.email,
+      user?.user_metadata?.full_name,
+      user?.email,
+    ]
+  );
+
+  // ✅ Dados do perfil memoizados
+  const profileData = useMemo(
+    () => ({
+      altura: profile?.height || 0,
+      peso: profile?.weight || 0, // Peso atual
+      pesoInicial: profile?.initial_weight || 0, // Peso inicial
+      sexo: profile?.gender || "Não informado",
+      frequenciaTreinos: profile?.training_frequency || "Não informado",
+      objetivo: profile?.objective || "Não informado",
+      birthDate: profile?.birth_date || null,
+      nivelAtividade: "Moderado", // Valor padrão fixo
+    }),
+    [
+      profile?.height,
+      profile?.weight,
+      profile?.initial_weight,
+      profile?.gender,
+      profile?.training_frequency,
+      profile?.objective,
+      profile?.birth_date,
+    ]
+  );
+
+  // ✅ Dados de trial memoizados
+  const isPremiumUI = premiumOverride || (trialStatus?.isPremium ?? false);
+  const trialData = useMemo(
+    () => ({
+      diasRestantes: trialStatus?.daysRemaining || 7,
+      totalDias: 7,
+      requisicoesRestantes: isPremiumUI
+        ? typeof trialStatus?.plansRemaining === "number"
+          ? trialStatus.plansRemaining
+          : 2
+        : typeof trialStatus?.plansRemaining === "number"
+        ? trialStatus.plansRemaining
+        : 1,
+      totalRequisicoes: isPremiumUI ? 2 : 1,
+    }),
+    [isPremiumUI, trialStatus?.daysRemaining, trialStatus?.plansRemaining]
+  );
+
+  // ✅ Função combinada para refresh após upload de PDF (otimizada)
+  const handlePdfUploadRefresh = useCallback(async () => {
     // Refresh do perfil
     await refreshProfile();
 
     // Refresh das evoluções
     await refreshEvolutions();
-  };
+  }, [refreshProfile, refreshEvolutions]);
 
-  // Função para gerar plano e abrir modal
-  const handleGeneratePlan = async () => {
+  // ✅ Função para gerar plano e abrir modal (otimizada)
+  const handleGeneratePlan = useCallback(async () => {
     setPlanError(null); // Limpar erros anteriores
 
     // Se já existe um plano no estado, apenas abrir o modal
@@ -102,7 +161,12 @@ export default function DashboardPage() {
       setShowPlanModal(true);
     }
     // ✅ Se houver erro, será tratado pelo useEffect que monitora planGenerationError
-  };
+  }, [plan, planStatus?.isExisting, generatePlan, refetchTrial]);
+
+  // ✅ Handler de upgrade otimizado
+  const handleUpgrade = useCallback(() => {
+    setShowUpgradeModal(true);
+  }, []);
 
   // ✅ Detectar retorno do Stripe e verificar pagamento (ANTES dos early returns)
   useEffect(() => {
@@ -110,81 +174,50 @@ export default function DashboardPage() {
     const upgradeParam = urlParams.get("upgrade");
     const sessionId = urlParams.get("session_id");
 
-    if (upgradeParam === "success" && sessionId && user) {
+    // ✅ Limpar URL imediatamente para evitar loops e re-renderizações
+    if (upgradeParam === "success") {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+
+    if (upgradeParam === "success" && user) {
       const verifyPayment = async () => {
         try {
-          // Obter token de autenticação
           const {
             data: { session },
           } = await supabase.auth.getSession();
 
           if (!session?.access_token) return;
 
-          // Verificar pagamento no Stripe
           const response = await fetch("/api/verify-payment", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${session.access_token}`,
             },
-            body: JSON.stringify({ sessionId }),
+            body: JSON.stringify(sessionId ? { sessionId } : {}),
           });
 
           const result = await response.json();
 
           if (result.success && result.isPremium) {
+            // ✅ Batch state updates para reduzir re-renderizações
             setShowUpgradeModal(false);
             setPremiumOverride(true);
 
-            // Refresh do trial status após confirmar premium (apenas uma vez)
-            refetchTrial();
+            // ✅ Delay mínimo para garantir que o estado seja aplicado
+            setTimeout(() => {
+              refetchTrial();
+            }, 50);
           }
         } catch (error) {
           console.error("❌ Erro ao verificar pagamento:", error);
         }
-
-        // Limpar URL sempre
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, "", newUrl);
       };
 
       verifyPayment();
-    } else if (upgradeParam === "success" && user) {
-      // Fallback sem session_id: tentar ativar premium via /api/verify-payment
-      const runFallback = async () => {
-        try {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (!session?.access_token) return;
-
-          const response = await fetch("/api/verify-payment", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({}),
-          });
-
-          const res = await response.json();
-          if (res.success && res.isPremium) {
-            setShowUpgradeModal(false);
-            setPremiumOverride(true);
-            // Refresh apenas uma vez
-            refetchTrial();
-          }
-        } catch (e) {
-          console.error("❌ Fallback verify-payment falhou:", e);
-        } finally {
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, "", newUrl);
-        }
-      };
-
-      runFallback();
     }
-  }, [refetchTrial, user]);
+  }, [user, refetchTrial]); // ✅ Incluir user completo nas dependências
 
   // ✅ Monitorar erros do hook de geração de planos
   useEffect(() => {
@@ -239,47 +272,8 @@ export default function DashboardPage() {
     return null;
   }
 
-  // Dados do usuário (reais ou fallback)
-  const userDisplayData = {
-    full_name:
-      userData?.full_name ||
-      user.user_metadata?.full_name ||
-      user.email?.split("@")[0] ||
-      "Usuário",
-    email: userData?.email || user.email || "",
-  };
-
   // Verificar se precisa completar o registro
   const needsProfileCompletion = !profile;
-
-  // Dados do perfil (sempre reais, com fallbacks apenas para campos opcionais)
-  const profileData = {
-    altura: profile?.height || 0,
-    peso: profile?.weight || 0, // Peso atual
-    pesoInicial: profile?.initial_weight || 0, // Peso inicial
-    sexo: profile?.gender || "Não informado",
-    frequenciaTreinos: profile?.training_frequency || "Não informado",
-    objetivo: profile?.objective || "Não informado",
-    birthDate: profile?.birth_date || null,
-    nivelAtividade: "Moderado", // Valor padrão fixo
-  };
-
-  // Log para debug - verificar se os dados estão chegando do hook
-
-  // Dados de trial (usando dados reais do hook)
-  const isPremiumUI = premiumOverride || (trialStatus?.isPremium ?? false);
-  const trialData = {
-    diasRestantes: trialStatus?.daysRemaining || 7,
-    totalDias: 7,
-    requisicoesRestantes: isPremiumUI
-      ? typeof trialStatus?.plansRemaining === "number"
-        ? trialStatus.plansRemaining
-        : 2
-      : typeof trialStatus?.plansRemaining === "number"
-      ? trialStatus.plansRemaining
-      : 1,
-    totalRequisicoes: isPremiumUI ? 2 : 1,
-  };
 
   // Debug removido - sistema funcionando
 
@@ -299,10 +293,6 @@ export default function DashboardPage() {
   const handleModalSubmit = async (data: EvolutionData) => {
     await addEvolution(data);
     setShowModal(false);
-  };
-
-  const handleUpgrade = () => {
-    setShowUpgradeModal(true);
   };
 
   return (

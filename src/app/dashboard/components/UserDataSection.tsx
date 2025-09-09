@@ -24,6 +24,8 @@ interface UserDataSectionProps {
     generatedAt?: string;
     daysUntilNext?: number;
     nextPlanAvailable?: string;
+    isPremiumCooldown?: boolean; // Nova propriedade para cooldown premium
+    hoursUntilNext?: number; // Horas até próximo plano (premium)
   } | null;
   isCheckingPlanStatus?: boolean;
   isPremium?: boolean; // Nova prop para identificar usuários premium
@@ -795,19 +797,26 @@ export function UserDataSection({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-sm font-semibold text-blue-900">
-                      Plano Personalizado Ativo
+                      {isPremium && planStatus.isPremiumCooldown
+                        ? "Plano Premium - Próximo Disponível"
+                        : "Plano Personalizado Ativo"}
                     </h4>
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      ✓ Ativo
+                      {isPremium && planStatus.isPremiumCooldown
+                        ? "⏰ Cooldown"
+                        : "✓ Ativo"}
                     </span>
                   </div>
                   <p className="text-sm text-blue-700 font-medium mb-1">
-                    Gerado em:{" "}
-                    {new Date(planStatus.generatedAt!).toLocaleDateString(
-                      "pt-BR"
-                    )}
+                    {isPremium && planStatus.isPremiumCooldown
+                      ? `Último plano gerado em: ${new Date(
+                          planStatus.generatedAt!
+                        ).toLocaleDateString("pt-BR")}`
+                      : `Gerado em: ${new Date(
+                          planStatus.generatedAt!
+                        ).toLocaleDateString("pt-BR")}`}
                   </p>
-                  {!isPremium && (
+                  {isPremium && planStatus.isPremiumCooldown ? (
                     <p className="text-xs text-blue-600 flex items-center gap-1">
                       <svg
                         className="w-3 h-3"
@@ -822,9 +831,31 @@ export function UserDataSection({
                       </svg>
                       Próximo plano disponível em:{" "}
                       <span className="font-semibold">
-                        {planStatus.daysUntilNext} dias
+                        {planStatus.hoursUntilNext === 1
+                          ? "1 hora"
+                          : `${planStatus.hoursUntilNext} horas`}
                       </span>
                     </p>
+                  ) : (
+                    !isPremium && (
+                      <p className="text-xs text-blue-600 flex items-center gap-1">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Próximo plano disponível em:{" "}
+                        <span className="font-semibold">
+                          {planStatus.daysUntilNext} dias
+                        </span>
+                      </p>
+                    )
                   )}
                 </div>
               </div>

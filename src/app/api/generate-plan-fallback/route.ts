@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
       const isPremium = trialData.upgraded_to_premium;
       const now = new Date().toISOString();
 
-      const updateData: Record<string, any> = {
+      const updateData: Record<string, number | string> = {
         last_plan_generated_at: now,
       };
 

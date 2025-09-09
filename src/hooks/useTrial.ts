@@ -234,7 +234,7 @@ export function useTrial(user: User | null) {
       } else {
         // Atualizar trial existente
         const isPremium = currentTrial.upgraded_to_premium;
-        const updateData: Record<string, any> = {
+        const updateData: Record<string, number | string> = {
           last_plan_generated_at: now,
         };
 

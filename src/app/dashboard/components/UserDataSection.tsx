@@ -111,10 +111,15 @@ export function UserDataSection({
             const result = await response.json();
 
             if (result.success) {
-              // Atualizar dados do perfil apenas se realmente necessário
-              if (result.profileUpdated && onProfileUpdate) {
-                await onProfileUpdate();
+              console.log("✅ PDF processado com sucesso!");
+
+              // ✅ Só fazemos refresh mínimo se dados importantes mudaram
+              if (result.evolutionCreated && onProfileUpdate) {
+                // Refresh apenas das evoluções de forma assíncrona (não bloqueia UI)
+                setTimeout(() => onProfileUpdate(), 100);
               }
+
+              console.log("✅ Dashboard atualizado instantaneamente!");
             } else {
               console.error("❌ Erro no processamento:", result.error);
             }
@@ -147,7 +152,12 @@ export function UserDataSection({
           fileType: file.type,
         });
 
-        if (!success) {
+        if (success) {
+          console.log("✅ Avaliação salva com sucesso!");
+
+          // ✅ Não fazemos refresh - o hook useEvaluation já atualizou o estado otimisticamente
+          // A interface já mostra o estado correto instantaneamente
+        } else {
           return;
         }
       } catch (error) {

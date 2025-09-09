@@ -450,6 +450,7 @@ export async function POST(request: NextRequest) {
       message: "PDF processado com sucesso!",
       summary,
       profileUpdated: true,
+      evolutionCreated: true,
     });
   } catch (error: unknown) {
     console.error("=== ERRO DETALHADO ===");

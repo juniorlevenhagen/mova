@@ -270,9 +270,6 @@ export default function DashboardPage() {
       isPremium: trialStatus?.isPremium,
       canGenerate: trialStatus?.canGenerate,
       message: trialStatus?.message,
-      upgraded_to_premium: trialStatus?.upgraded_to_premium,
-      premium_plan_count: trialStatus?.premium_plan_count,
-      premium_max_plans_per_cycle: trialStatus?.premium_max_plans_per_cycle,
       daysUntilNextCycle: trialStatus?.daysUntilNextCycle,
       full_status: trialStatus,
     });

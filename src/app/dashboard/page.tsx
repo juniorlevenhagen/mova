@@ -136,10 +136,8 @@ export default function DashboardPage() {
             setShowUpgradeModal(false);
             setPremiumOverride(true);
 
-            // Refresh do trial status após confirmar premium
-            setTimeout(() => {
-              refetchTrial();
-            }, 500);
+            // Refresh do trial status após confirmar premium (apenas uma vez)
+            refetchTrial();
           }
         } catch (error) {
           console.error("❌ Erro ao verificar pagamento:", error);
@@ -173,9 +171,8 @@ export default function DashboardPage() {
           if (res.success && res.isPremium) {
             setShowUpgradeModal(false);
             setPremiumOverride(true);
-            setTimeout(() => {
-              refetchTrial();
-            }, 500);
+            // Refresh apenas uma vez
+            refetchTrial();
           }
         } catch (e) {
           console.error("❌ Fallback verify-payment falhou:", e);

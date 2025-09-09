@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 
@@ -47,8 +47,13 @@ export function useTrial(user: User | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Buscar dados do trial
-  const fetchTrial = async () => {
+  // Ref para evitar múltiplas chamadas simultâneas
+  const fetchingRef = useRef(false);
+
+  // Buscar dados do trial com useCallback
+  const fetchTrial = useCallback(async () => {
+    if (fetchingRef.current) return; // Prevenir chamadas simultâneas
+    fetchingRef.current = true;
     if (!user) {
       setTrial(null);
       setTrialStatus({
@@ -59,23 +64,20 @@ export function useTrial(user: User | null) {
         message: "Você pode gerar 1 plano grátis!",
       });
       setLoading(false);
+      fetchingRef.current = false;
       return;
     }
 
     try {
-      console.log("🚀 DENTRO do try - iniciando busca no banco");
       setLoading(true);
       setError(null);
 
-      console.log("📊 Fazendo query no Supabase para:", user.id);
       // Buscar dados do trial
       const { data: trialData, error: trialError } = await supabase
         .from("user_trials")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle(); // Usar maybeSingle() em vez de single()
-
-      console.log("📈 Resultado da query:", { trialData, trialError });
 
       if (trialError) {
         throw trialError;
@@ -196,8 +198,9 @@ export function useTrial(user: User | null) {
       });
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
-  };
+  }, [user]);
 
   // Incrementar contador de planos gerados
   const incrementPlanUsage = async () => {
@@ -327,12 +330,12 @@ export function useTrial(user: User | null) {
         console.error("Erro em fetchTrial:", error);
         setError("Erro ao carregar dados do trial");
         setLoading(false);
+        fetchingRef.current = false;
       });
     } else {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Usar apenas o ID do usuário como dependência
+  }, [user?.id, fetchTrial]); // Incluir fetchTrial como dependência
 
   return {
     trial,

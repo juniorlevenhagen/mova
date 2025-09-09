@@ -776,7 +776,7 @@ IMPORTANTE: Baseie TODO o plano no objetivo "${
     } else {
       // Atualizar trial existente
       const isPremium = trialData.upgraded_to_premium;
-      let updateData: any = {
+      const updateData: Record<string, any> = {
         last_plan_generated_at: trialUpdateTime,
       };
 

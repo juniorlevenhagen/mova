@@ -12,7 +12,7 @@ interface TrialSectionProps {
 
 export function TrialSection({
   trial,
-  trialPercent,
+  trialPercent: _trialPercent,
   onUpgrade,
   isPremium = false,
 }: TrialSectionProps) {

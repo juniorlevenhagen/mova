@@ -282,7 +282,7 @@ export async function POST(request: NextRequest) {
       const isPremium = trialData.upgraded_to_premium;
       const now = new Date().toISOString();
 
-      let updateData: any = {
+      const updateData: Record<string, any> = {
         last_plan_generated_at: now,
       };
 
@@ -313,10 +313,12 @@ export async function POST(request: NextRequest) {
         .split("T")[0],
       note: "Plano gerado com sistema de backup - funcionalidade completa",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ FALLBACK: Erro:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Erro desconhecido";
     return NextResponse.json(
-      { error: "Erro interno: " + error.message },
+      { error: "Erro interno: " + errorMessage },
       { status: 500 }
     );
   }

@@ -48,7 +48,6 @@ export default function DashboardPage() {
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
-  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
   const [premiumOverride, setPremiumOverride] = useState(false);
   const [planError, setPlanError] = useState<string | null>(null);
 
@@ -134,7 +133,6 @@ export default function DashboardPage() {
           const result = await response.json();
 
           if (result.success && result.isPremium) {
-            setUpgradeSuccess(true);
             setShowUpgradeModal(false);
             setPremiumOverride(true);
 
@@ -142,11 +140,6 @@ export default function DashboardPage() {
             setTimeout(() => {
               refetchTrial();
             }, 500);
-
-            // Esconder mensagem após 5 segundos
-            setTimeout(() => {
-              setUpgradeSuccess(false);
-            }, 5000);
           }
         } catch (error) {
           console.error("❌ Erro ao verificar pagamento:", error);
@@ -178,13 +171,11 @@ export default function DashboardPage() {
 
           const res = await response.json();
           if (res.success && res.isPremium) {
-            setUpgradeSuccess(true);
             setShowUpgradeModal(false);
             setPremiumOverride(true);
             setTimeout(() => {
               refetchTrial();
             }, 500);
-            setTimeout(() => setUpgradeSuccess(false), 5000);
           }
         } catch (e) {
           console.error("❌ Fallback verify-payment falhou:", e);

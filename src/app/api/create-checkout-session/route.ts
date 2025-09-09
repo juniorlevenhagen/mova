@@ -90,12 +90,12 @@ export async function POST(request: NextRequest) {
         process.env.NODE_ENV === "production"
           ? "https://movamais.fit"
           : "http://localhost:3000"
-      }/register/success?session_id={CHECKOUT_SESSION_ID}`,
+      }/dashboard?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${
         process.env.NODE_ENV === "production"
           ? "https://movamais.fit"
           : "http://localhost:3000"
-      }/register/step3?canceled=true`,
+      }/dashboard?upgrade=canceled`,
       customer_email: userProfile?.email || user.email,
       metadata: {
         user_id: user.id,

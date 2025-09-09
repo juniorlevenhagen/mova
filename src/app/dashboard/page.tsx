@@ -48,6 +48,8 @@ export default function DashboardPage() {
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
 
   const {
     evolutions,
@@ -57,8 +59,14 @@ export default function DashboardPage() {
     addEvolution,
     refetch: refreshEvolutions,
   } = useEvolution(user);
-  const { isGenerating, plan, planStatus, isCheckingStatus, generatePlan } =
-    usePlanGeneration();
+  const {
+    isGenerating,
+    plan,
+    planStatus,
+    isCheckingStatus,
+    generatePlan,
+    error: planGenerationError,
+  } = usePlanGeneration();
 
   const {
     trialStatus,
@@ -78,24 +86,106 @@ export default function DashboardPage() {
 
   // Função para gerar plano e abrir modal
   const handleGeneratePlan = async () => {
-    try {
-      // Se já existe um plano no estado, apenas abrir o modal
-      if (plan && planStatus?.isExisting) {
-        setShowPlanModal(true);
-        return;
-      }
+    setPlanError(null); // Limpar erros anteriores
 
-      await generatePlan();
-
-      // ✅ Recarregar dados do trial após gerar plano
-      await refetchTrial();
-
+    // Se já existe um plano no estado, apenas abrir o modal
+    if (plan && planStatus?.isExisting) {
       setShowPlanModal(true);
-    } catch (error) {
-      console.error("❌ Erro ao gerar plano:", error);
-      // Não abrir modal se houver erro
+      return;
     }
+
+    const result = await generatePlan();
+
+    // ✅ Sucesso - recarregar dados do trial e abrir modal
+    if (result) {
+      await refetchTrial();
+      setShowPlanModal(true);
+    }
+    // ✅ Se houver erro, será tratado pelo useEffect que monitora planGenerationError
   };
+
+  // ✅ Detectar retorno do Stripe e verificar pagamento (ANTES dos early returns)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const upgradeParam = urlParams.get("upgrade");
+    const sessionId = urlParams.get("session_id");
+
+    if (upgradeParam === "success" && sessionId && user) {
+      const verifyPayment = async () => {
+        try {
+          // Obter token de autenticação
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          if (!session?.access_token) return;
+
+          // Verificar pagamento no Stripe
+          const response = await fetch("/api/verify-payment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ sessionId }),
+          });
+
+          const result = await response.json();
+
+          if (result.success && result.isPremium) {
+            setUpgradeSuccess(true);
+            setShowUpgradeModal(false);
+
+            // Refresh do trial status após confirmar premium
+            setTimeout(() => {
+              refetchTrial();
+            }, 500);
+
+            // Esconder mensagem após 5 segundos
+            setTimeout(() => {
+              setUpgradeSuccess(false);
+            }, 5000);
+          }
+        } catch (error) {
+          console.error("❌ Erro ao verificar pagamento:", error);
+        }
+
+        // Limpar URL sempre
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      };
+
+      verifyPayment();
+    } else if (upgradeParam === "success") {
+      // Fallback sem session_id
+      setUpgradeSuccess(true);
+      setShowUpgradeModal(false);
+
+      setTimeout(() => {
+        refetchTrial();
+      }, 1000);
+
+      setTimeout(() => {
+        setUpgradeSuccess(false);
+      }, 5000);
+
+      // Limpar URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [refetchTrial, user]);
+
+  // ✅ Monitorar erros do hook de geração de planos
+  useEffect(() => {
+    if (planGenerationError) {
+      setPlanError(planGenerationError);
+
+      // Esconder erro após 8 segundos
+      setTimeout(() => {
+        setPlanError(null);
+      }, 8000);
+    }
+  }, [planGenerationError]);
 
   // Proteção mais robusta
   useEffect(() => {
@@ -175,18 +265,24 @@ export default function DashboardPage() {
 
   // Debug: Log dos dados do trial (apenas em desenvolvimento)
   if (process.env.NODE_ENV === "development") {
-    console.log("Trial Status:", {
+    console.log("🔍 Trial Status DETALHADO:", {
       plansRemaining: trialStatus?.plansRemaining,
       isPremium: trialStatus?.isPremium,
       canGenerate: trialStatus?.canGenerate,
       message: trialStatus?.message,
+      upgraded_to_premium: trialStatus?.upgraded_to_premium,
+      premium_plan_count: trialStatus?.premium_plan_count,
+      premium_max_plans_per_cycle: trialStatus?.premium_max_plans_per_cycle,
+      daysUntilNextCycle: trialStatus?.daysUntilNextCycle,
+      full_status: trialStatus,
     });
 
-    console.log("Trial Data para TrialSection:", {
+    console.log("🔍 Trial Data para TrialSection:", {
       diasRestantes: trialData.diasRestantes,
       requisicoesRestantes: trialData.requisicoesRestantes,
       totalRequisicoes: trialData.totalRequisicoes,
       hasUsedFreePlan: trialData.requisicoesRestantes === 0,
+      isPremium: trialStatus?.isPremium,
     });
   }
 
@@ -251,6 +347,75 @@ export default function DashboardPage() {
       )}
       <div className="min-h-screen bg-[#f5f1e8] p-4">
         <div className="max-w-3xl mx-auto space-y-8">
+          {/* ✅ Alerta de upgrade bem-sucedido */}
+          {upgradeSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-green-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-green-800 font-medium">
+                    🎉 Upgrade para Premium realizado com sucesso!
+                  </h3>
+                  <p className="text-green-700 text-sm">
+                    Agora você pode gerar 2 planos personalizados por mês. Seu
+                    acesso premium está ativo!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ Alerta de erro ao gerar plano */}
+          {planError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  <svg
+                    className="h-5 w-5 text-red-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-red-800 font-medium">
+                    Limite de Planos Atingido
+                  </h3>
+                  <p className="text-red-700 text-sm">{planError}</p>
+                  {planError.includes("Faça upgrade") && (
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
+                      className="mt-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Fazer Upgrade Agora
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mostrar erros se houver */}
           {(error || evolutionError) && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -324,6 +489,7 @@ export default function DashboardPage() {
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
+          isPremium={trialStatus?.isPremium || false}
         />
       </div>
     </ProtectedRoute>

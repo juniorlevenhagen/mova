@@ -71,20 +71,60 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   try {
-    // Atualizar trial para premium
-    const { error } = await supabase
-      .from("user_trials")
-      .update({
-        upgraded_to_premium: true,
-        upgraded_at: new Date().toISOString(),
-        is_active: false,
-      })
-      .eq("user_id", userId);
+    const now = new Date().toISOString();
 
-    if (error) {
-      console.error("❌ Erro ao atualizar trial:", error);
+    // Buscar trial existente ou criar um novo
+    const { data: existingTrial } = await supabase
+      .from("user_trials")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingTrial) {
+      // Atualizar trial existente para premium
+      const { error } = await supabase
+        .from("user_trials")
+        .update({
+          upgraded_to_premium: true,
+          upgraded_at: now,
+          is_active: false,
+          // ✅ Iniciar contador premium zerado (usuário poderá gerar 2 planos)
+          premium_plan_count: 0,
+          premium_plan_cycle_start: now,
+          premium_max_plans_per_cycle: 2,
+          premium_cycle_days: 30,
+        })
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error("❌ Erro ao atualizar trial:", error);
+      } else {
+        console.log("✅ Trial atualizado para premium para usuário:", userId);
+      }
     } else {
-      console.log("✅ Trial atualizado para premium para usuário:", userId);
+      // Criar novo trial premium
+      const { error } = await supabase.from("user_trials").insert({
+        user_id: userId,
+        trial_start_date: now,
+        trial_end_date: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+        plans_generated: 0,
+        max_plans_allowed: 2,
+        is_active: false,
+        upgraded_to_premium: true,
+        upgraded_at: now,
+        premium_plan_count: 0,
+        premium_plan_cycle_start: now,
+        premium_max_plans_per_cycle: 2,
+        premium_cycle_days: 30,
+      });
+
+      if (error) {
+        console.error("❌ Erro ao criar trial premium:", error);
+      } else {
+        console.log("✅ Trial premium criado para usuário:", userId);
+      }
     }
   } catch (error) {
     console.error("❌ Erro ao processar checkout completed:", error);

@@ -6,9 +6,14 @@ import { supabase } from "@/lib/supabase";
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isPremium?: boolean;
 }
 
-export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
+export function UpgradeModal({
+  isOpen,
+  onClose,
+  isPremium = false,
+}: UpgradeModalProps) {
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async () => {
@@ -51,6 +56,64 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
 
   if (!isOpen) return null;
 
+  // ✅ Modal diferente para usuários premium
+  if (isPremium) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+              <svg
+                className="h-6 w-6 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Plano Premium Ativo
+            </h3>
+
+            <p className="text-gray-600 mb-6">
+              Você já é um usuário premium! Aproveite todos os benefícios do seu
+              plano.
+            </p>
+
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="text-left">
+                <h4 className="font-medium text-green-900 mb-2">
+                  Seus benefícios ativos:
+                </h4>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• 2 planos personalizados por mês</li>
+                  <li>• Acompanhamento avançado de evolução</li>
+                  <li>• Suporte prioritário</li>
+                  <li>• Acesso a novas funcionalidades</li>
+                </ul>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Modal original para usuários não premium
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">

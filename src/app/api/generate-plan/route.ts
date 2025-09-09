@@ -205,26 +205,32 @@ export async function POST(request: NextRequest) {
       const plansGenerated = trialData.plans_generated || 0;
 
       if (isPremium) {
-        // Usuário premium - 2 planos por mês
-        const maxPlansPerMonth = trialData.premium_max_plans_per_cycle || 2;
-        const currentMonth = new Date().getMonth();
-        const currentYear = new Date().getFullYear();
+        // ✅ Usuário premium - 2 planos por ciclo de 30 dias
+        const maxPlansPerCycle = trialData.premium_max_plans_per_cycle || 2;
+        const cycleStartDate = trialData.premium_plan_cycle_start
+          ? new Date(trialData.premium_plan_cycle_start)
+          : new Date(trialData.upgraded_at || trialData.created_at);
 
-        const lastPlanDate = trialData.last_plan_generated_at
-          ? new Date(trialData.last_plan_generated_at)
-          : null;
+        const now = new Date();
+        const daysSinceStart = Math.floor(
+          (now.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
 
-        const isNewMonth =
-          !lastPlanDate ||
-          lastPlanDate.getMonth() !== currentMonth ||
-          lastPlanDate.getFullYear() !== currentYear;
+        // Verificar se precisa resetar o ciclo (30 dias)
+        const cycleLength = trialData.premium_cycle_days || 30;
+        const isNewCycle = daysSinceStart >= cycleLength;
 
-        const plansRemaining = isNewMonth
-          ? maxPlansPerMonth
-          : Math.max(0, maxPlansPerMonth - plansGenerated);
+        // Calcular planos restantes no ciclo atual
+        const currentCycleCount = isNewCycle
+          ? 0
+          : trialData.premium_plan_count || 0;
+        const plansRemaining = Math.max(
+          0,
+          maxPlansPerCycle - currentCycleCount
+        );
 
         canGenerate = plansRemaining > 0;
-        trialMessage = `Premium: ${plansRemaining} de ${maxPlansPerMonth} planos restantes`;
+        trialMessage = `Premium: ${plansRemaining} de ${maxPlansPerCycle} planos restantes neste ciclo`;
       } else {
         // Usuário grátis - 1 plano total
         const maxPlans = 1; // Usuários grátis só podem gerar 1 plano
@@ -248,83 +254,95 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO NO MÊS ATUAL
-    const currentDate = new Date();
+    // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO (apenas para usuários grátis)
+    const isPremium = trialData?.upgraded_to_premium || false;
+    console.log("🎯 Verificando status premium:", isPremium);
 
-    // CONTROLE: Verificar se já há plano gerado nos últimos 30 dias
+    if (!isPremium) {
+      console.log("🔄 Usuário grátis - verificando user_evolutions");
+      const currentDate = new Date();
 
-    const thirtyDaysAgo = new Date(
-      currentDate.getTime() - 30 * 24 * 60 * 60 * 1000
-    );
+      // CONTROLE: Verificar se já há plano gerado nos últimos 30 dias
 
-    const { data: monthlyPlanResults } = await supabaseUser
-      .from("user_evolutions")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("objetivo", "Plano personalizado gerado")
-      .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
-      .order("date", { ascending: false })
-      .limit(1);
-
-    const monthlyPlanCheck =
-      monthlyPlanResults && monthlyPlanResults.length > 0
-        ? monthlyPlanResults[0]
-        : null;
-
-    if (monthlyPlanCheck) {
-      // Tentar extrair plano das observações
-      let existingPlan = null;
-      try {
-        const planData = JSON.parse(monthlyPlanCheck.observacoes);
-        if (planData.type === "monthly_plan" && planData.plan_data) {
-          existingPlan = planData.plan_data;
-        }
-      } catch {
-        console.warn(
-          "⚠️ Marcador antigo detectado - não contém dados do plano"
-        );
-        // Marcador antigo - deletar para permitir novo
-        await supabaseUser
-          .from("user_evolutions")
-          .delete()
-          .eq("id", monthlyPlanCheck.id);
-        // Continua para a geração normal
-      }
-
-      // Calcular dias restantes para próximo plano (30 dias após geração)
-      let generatedDate;
-      try {
-        const planData = JSON.parse(monthlyPlanCheck.observacoes);
-        generatedDate = new Date(planData.generated_at);
-      } catch {
-        // Fallback para data do marcador se não conseguir extrair
-        generatedDate = new Date(monthlyPlanCheck.date + "T00:00:00");
-      }
-
-      const nextPlanDate = new Date(
-        generatedDate.getTime() + 30 * 24 * 60 * 60 * 1000
-      ); // +30 dias
-      const daysUntilNext = Math.ceil(
-        (nextPlanDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+      const thirtyDaysAgo = new Date(
+        currentDate.getTime() - 30 * 24 * 60 * 60 * 1000
       );
 
-      // Só retorna se encontrou um plano válido
-      if (existingPlan) {
-        // Retorna o plano existente
-        return NextResponse.json({
-          success: true,
-          message: "Plano do mês atual recuperado!",
-          plan: existingPlan,
-          planId: monthlyPlanCheck.id,
-          isExisting: true,
-          generatedAt: monthlyPlanCheck.date,
-          daysUntilNext,
-          nextPlanAvailable: nextPlanDate.toISOString().split("T")[0],
-        });
-      }
+      const { data: monthlyPlanResults } = await supabaseUser
+        .from("user_evolutions")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("objetivo", "Plano personalizado gerado")
+        .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
+        .order("date", { ascending: false })
+        .limit(1);
 
-      // Se chegou aqui, é porque o marcador antigo foi removido
-      // Continua para gerar novo plano
+      const monthlyPlanCheck =
+        monthlyPlanResults && monthlyPlanResults.length > 0
+          ? monthlyPlanResults[0]
+          : null;
+
+      if (monthlyPlanCheck) {
+        // Tentar extrair plano das observações
+        let existingPlan = null;
+        try {
+          const planData = JSON.parse(monthlyPlanCheck.observacoes);
+          if (planData.type === "monthly_plan" && planData.plan_data) {
+            existingPlan = planData.plan_data;
+          }
+        } catch {
+          console.warn(
+            "⚠️ Marcador antigo detectado - não contém dados do plano"
+          );
+          // Marcador antigo - deletar para permitir novo
+          await supabaseUser
+            .from("user_evolutions")
+            .delete()
+            .eq("id", monthlyPlanCheck.id);
+          // Continua para a geração normal
+        }
+
+        if (existingPlan) {
+          // Calcular dias restantes para próximo plano (30 dias após geração)
+          let generatedDate;
+          try {
+            const planData = JSON.parse(monthlyPlanCheck.observacoes);
+            generatedDate = new Date(planData.generated_at);
+          } catch {
+            // Fallback para data do marcador se não conseguir extrair
+            generatedDate = new Date(monthlyPlanCheck.date + "T00:00:00");
+          }
+
+          const nextPlanDate = new Date(
+            generatedDate.getTime() + 30 * 24 * 60 * 60 * 1000
+          ); // +30 dias
+          const daysUntilNext = Math.ceil(
+            (nextPlanDate.getTime() - currentDate.getTime()) /
+              (1000 * 60 * 60 * 24)
+          );
+
+          console.log(
+            "🔄 Retornando plano grátis existente da user_evolutions"
+          );
+          return NextResponse.json({
+            success: true,
+            message: "Plano do mês atual recuperado!",
+            plan: existingPlan,
+            planId: monthlyPlanCheck.id,
+            isExisting: true,
+            generatedAt: monthlyPlanCheck.date,
+            daysUntilNext,
+            nextPlanAvailable: nextPlanDate.toISOString().split("T")[0],
+          });
+        }
+
+        // Se chegou aqui, é porque o marcador antigo foi removido
+        // Continua para gerar novo plano
+      }
+    } else {
+      console.log(
+        "🎯 Usuário premium - pulando verificação de user_evolutions"
+      );
     }
 
     // 2. Preparar dados para OpenAI
@@ -665,6 +683,38 @@ IMPORTANTE: Baseie TODO o plano no objetivo "${
       }
     }
 
+    console.log(
+      "🎯 CHECKPOINT 1: Plano gerado com sucesso, preparando para salvar..."
+    );
+    console.log("🎯 Plan object:", plan ? "✅ Existe" : "❌ Null/Undefined");
+    console.log("🎯 User ID:", user.id);
+
+    // ✅ Salvar o plano na tabela user_plans
+    const generatedAt = new Date().toISOString();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 90); // Plano expira em 90 dias
+
+    console.log("💾 Salvando plano na tabela user_plans...");
+    const { data: savedPlan, error: planSaveError } = await supabaseUser
+      .from("user_plans")
+      .insert({
+        user_id: user.id,
+        plan_data: plan,
+        plan_type: "complete",
+        generated_at: generatedAt,
+        expires_at: expiresAt.toISOString(),
+        is_active: true,
+      })
+      .select()
+      .maybeSingle();
+
+    if (planSaveError) {
+      console.error("❌ Erro ao salvar plano:", planSaveError);
+      // Não falhar aqui - o plano foi gerado com sucesso
+    } else {
+      console.log("✅ Plano salvo com sucesso na user_plans:", savedPlan?.id);
+    }
+
     // 4. Criar marcador de controle mensal simples
 
     const markerData = {
@@ -725,15 +775,49 @@ IMPORTANTE: Baseie TODO o plano no objetivo "${
       }
     } else {
       // Atualizar trial existente
-      const newPlansGenerated = (trialData.plans_generated || 0) + 1;
-      console.log("📈 Atualizando trial - planos gerados:", newPlansGenerated);
+      const isPremium = trialData.upgraded_to_premium;
+      let updateData: any = {
+        last_plan_generated_at: trialUpdateTime,
+      };
+
+      if (isPremium) {
+        // ✅ Lógica premium - verificar se precisa resetar ciclo
+        const cycleStartDate = trialData.premium_plan_cycle_start
+          ? new Date(trialData.premium_plan_cycle_start)
+          : new Date(trialData.upgraded_at || trialData.created_at);
+
+        const daysSinceStart = Math.floor(
+          (new Date(trialUpdateTime).getTime() - cycleStartDate.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+        const cycleLength = trialData.premium_cycle_days || 30;
+
+        if (daysSinceStart >= cycleLength) {
+          // Resetar ciclo premium
+          updateData.premium_plan_count = 1;
+          updateData.premium_plan_cycle_start = trialUpdateTime;
+          console.log("🔄 Resetando ciclo premium");
+        } else {
+          // Incrementar contador do ciclo atual
+          updateData.premium_plan_count =
+            (trialData.premium_plan_count || 0) + 1;
+          console.log(
+            "📈 Incrementando contador premium:",
+            updateData.premium_plan_count
+          );
+        }
+      } else {
+        // Lógica grátis - apenas incrementar
+        updateData.plans_generated = (trialData.plans_generated || 0) + 1;
+        console.log(
+          "📈 Incrementando planos grátis:",
+          updateData.plans_generated
+        );
+      }
 
       const { error: updateError } = await supabaseUser
         .from("user_trials")
-        .update({
-          plans_generated: newPlansGenerated,
-          last_plan_generated_at: trialUpdateTime,
-        })
+        .update(updateData)
         .eq("user_id", user.id);
 
       if (updateError) {
@@ -743,15 +827,18 @@ IMPORTANTE: Baseie TODO o plano no objetivo "${
       }
     }
 
-    const generatedAt = new Date().toISOString();
     const nextPlanDate = new Date();
     nextPlanDate.setDate(nextPlanDate.getDate() + 30);
+
+    console.log("🎯 CHECKPOINT FINAL: Retornando resposta...");
+    console.log("🎯 savedPlan?.id:", savedPlan?.id);
+    console.log("🎯 planMarker:", planMarker?.[0]?.id);
 
     return NextResponse.json({
       success: true,
       message: "Plano personalizado gerado com sucesso!",
       plan,
-      planId: planMarker?.[0]?.id || null,
+      planId: savedPlan?.id || planMarker?.[0]?.id || null,
       isExisting: true,
       generatedAt: generatedAt,
       daysUntilNext: 30,

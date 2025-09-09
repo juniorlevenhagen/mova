@@ -107,24 +107,36 @@ export function useTrial(user: User | null) {
         );
 
         if (isPremium) {
-          // Usuário premium - 2 planos por mês
-          const maxPlansPerMonth = trialData.premium_max_plans_per_cycle || 2;
-          const currentMonth = new Date().getMonth();
-          const currentYear = new Date().getFullYear();
+          // ✅ Usuário premium - 2 planos por período de 30 dias (não por mês do calendário)
+          const maxPlansPerCycle = trialData.premium_max_plans_per_cycle || 2;
+          const cycleStartDate = trialData.premium_plan_cycle_start
+            ? new Date(trialData.premium_plan_cycle_start)
+            : new Date(trialData.upgraded_at || trialData.created_at);
 
-          // Verificar se é um novo mês (reset do contador)
-          const lastPlanDate = trialData.last_plan_generated_at
-            ? new Date(trialData.last_plan_generated_at)
-            : null;
+          const now = new Date();
+          const daysSinceStart = Math.floor(
+            (now.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
 
-          const isNewMonth =
-            !lastPlanDate ||
-            lastPlanDate.getMonth() !== currentMonth ||
-            lastPlanDate.getFullYear() !== currentYear;
+          // Verificar se precisa resetar o ciclo (30 dias)
+          const cycleLength = trialData.premium_cycle_days || 30;
+          const isNewCycle = daysSinceStart >= cycleLength;
 
-          const plansRemaining = isNewMonth
-            ? maxPlansPerMonth
-            : Math.max(0, maxPlansPerMonth - plansGenerated);
+          // Calcular planos restantes no ciclo atual
+          const currentCycleCount = isNewCycle
+            ? 0
+            : trialData.premium_plan_count || 0;
+          const plansRemaining = Math.max(
+            0,
+            maxPlansPerCycle - currentCycleCount
+          );
+
+          // Calcular próxima renovação
+          const nextRenewalDate = new Date(cycleStartDate);
+          nextRenewalDate.setDate(nextRenewalDate.getDate() + cycleLength);
+          const daysUntilRenewal = Math.ceil(
+            (nextRenewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          );
 
           status = {
             isNewUser: false,
@@ -135,10 +147,12 @@ export function useTrial(user: User | null) {
               plansRemaining > 0
                 ? `Você pode gerar ${plansRemaining} plano${
                     plansRemaining !== 1 ? "s" : ""
-                  } este mês!`
-                : "Limite mensal atingido. Novo mês em breve!",
-            daysRemaining,
-            plansGenerated,
+                  } neste ciclo!`
+                : `Limite do ciclo atingido. Renovação em ${daysUntilRenewal} dias.`,
+            daysRemaining: daysUntilRenewal,
+            plansGenerated: currentCycleCount,
+            daysUntilNextCycle: daysUntilRenewal,
+            cycleDays: cycleLength,
           };
         } else {
           // Usuário grátis - 1 plano total
@@ -219,14 +233,40 @@ export function useTrial(user: User | null) {
         if (insertError) throw insertError;
       } else {
         // Atualizar trial existente
-        const newPlansGenerated = (currentTrial.plans_generated || 0) + 1;
+        const isPremium = currentTrial.upgraded_to_premium;
+        let updateData: any = {
+          last_plan_generated_at: now,
+        };
+
+        if (isPremium) {
+          // ✅ Lógica premium - verificar se precisa resetar ciclo
+          const cycleStartDate = currentTrial.premium_plan_cycle_start
+            ? new Date(currentTrial.premium_plan_cycle_start)
+            : new Date(currentTrial.upgraded_at || currentTrial.created_at);
+
+          const daysSinceStart = Math.floor(
+            (new Date(now).getTime() - cycleStartDate.getTime()) /
+              (1000 * 60 * 60 * 24)
+          );
+          const cycleLength = currentTrial.premium_cycle_days || 30;
+
+          if (daysSinceStart >= cycleLength) {
+            // Resetar ciclo premium
+            updateData.premium_plan_count = 1;
+            updateData.premium_plan_cycle_start = now;
+          } else {
+            // Incrementar contador do ciclo atual
+            updateData.premium_plan_count =
+              (currentTrial.premium_plan_count || 0) + 1;
+          }
+        } else {
+          // Lógica grátis - apenas incrementar
+          updateData.plans_generated = (currentTrial.plans_generated || 0) + 1;
+        }
 
         const { error: updateError } = await supabase
           .from("user_trials")
-          .update({
-            plans_generated: newPlansGenerated,
-            last_plan_generated_at: now,
-          })
+          .update(updateData)
           .eq("user_id", user.id);
 
         if (updateError) throw updateError;
@@ -279,7 +319,7 @@ export function useTrial(user: User | null) {
     setError(null);
 
     if (user?.id) {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === "development") {
         console.log("Carregando trial para usuário:", user.id);
       }
       fetchTrial();

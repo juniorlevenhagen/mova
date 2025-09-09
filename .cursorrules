@@ -1,0 +1,29 @@
+# Configurações do Cursor para Análise de Logs e Outputs
+
+## Análise de Logs
+
+- Sempre analise logs de erro, warning e info
+- Identifique padrões em logs repetitivos
+- Sugira soluções para erros comuns
+- Analise stack traces e traceback
+
+## Análise de Outputs
+
+- Revise outputs de console.log, console.error, console.warn
+- Analise resultados de APIs e funções
+- Identifique outputs inesperados ou anômalos
+- Sugira melhorias na formatação de logs
+
+## Contexto do Projeto
+
+- Este é um projeto Next.js com TypeScript
+- Usa Supabase para backend
+- Integração com Stripe para pagamentos
+- Sistema de planos personalizados
+
+## Regras de Análise
+
+- Sempre forneça contexto sobre o que está sendo analisado
+- Sugira soluções práticas e implementáveis
+- Considere o impacto nas funcionalidades existentes
+- Mantenha consistência com os padrões do projeto

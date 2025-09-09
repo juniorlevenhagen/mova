@@ -21,7 +21,7 @@ export function TrialSection({
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 mb-4">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">
-        {isPremium ? "Seu Plano Premium" : "Seu Período de Teste"}
+        {isPremium ? "Seu Plano Premium" : "Seu Plano Gratuito"}
       </h2>
 
       {isPremium ? (
@@ -48,10 +48,10 @@ export function TrialSection({
           </div>
         </div>
       ) : (
-        // Usuário em Trial
+        // Usuário Gratuito
         <div className="space-y-4">
           {hasUsedFreePlan ? (
-            // Usou o plano grátis
+            // ✅ Usou o plano grátis - botão de upgrade ativo
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0">
@@ -74,8 +74,8 @@ export function TrialSection({
                     Plano Grátis Utilizado
                   </h3>
                   <p className="text-orange-700 text-sm mb-3">
-                    Você já utilizou seu plano personalizado gratuito. Faça
-                    upgrade para gerar 2 planos por mês!
+                    Você já utilizou seu plano personalizado gratuito. Com o
+                    Premium você pode gerar 2 planos a cada 30 dias!
                   </p>
                   <button
                     onClick={onUpgrade}
@@ -87,41 +87,21 @@ export function TrialSection({
               </div>
             </div>
           ) : (
-            // Ainda tem plano grátis
+            // ✅ Ainda tem plano grátis disponível
             <div className="space-y-3">
-              <div className="flex flex-col md:flex-row md:items-center md:gap-8 gap-2">
-                <span className="text-gray-700 text-base">
-                  Faltam{" "}
-                  <span className="font-bold text-blue-600">
-                    {trial.diasRestantes}
-                  </span>{" "}
-                  dias do seu teste gratuito.
-                </span>
-                <span className="text-gray-700 text-base">
-                  Você pode gerar mais{" "}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <span className="text-blue-800 text-base font-medium">
+                  Você pode gerar{" "}
                   <span className="font-bold text-green-600">
                     {trial.requisicoesRestantes}
                   </span>{" "}
-                  plano
-                  {trial.requisicoesRestantes !== 1 ? "s" : ""} personalizado
-                  {trial.requisicoesRestantes !== 1 ? "s" : ""}.
+                  plano personalizado gratuito!
                 </span>
               </div>
 
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className="bg-green-500 h-3 rounded-full transition-all"
-                  style={{ width: `${trialPercent}%` }}
-                />
-              </div>
-
-              <p className="text-sm text-gray-600">
-                Aproveite o máximo durante esse período!
-              </p>
-
               <div className="pt-2 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-2">
-                  Após usar seu plano grátis, faça upgrade para continuar:
+                  Quer gerar mais planos? Conheça o Premium:
                 </p>
                 <button
                   onClick={onUpgrade}

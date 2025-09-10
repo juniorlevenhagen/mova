@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 
@@ -337,13 +337,25 @@ export function useTrial(user: User | null) {
     }
   }, [user?.id, fetchTrial]); // Incluir fetchTrial como dependência
 
-  return {
-    trial,
-    trialStatus,
-    loading,
-    error,
-    incrementPlanUsage,
-    upgradeToPremium,
-    refetch: fetchTrial,
-  };
+  // ✅ Memoizar o retorno para evitar re-renderizações desnecessárias
+  return useMemo(
+    () => ({
+      trial,
+      trialStatus,
+      loading,
+      error,
+      incrementPlanUsage,
+      upgradeToPremium,
+      refetch: fetchTrial,
+    }),
+    [
+      trial,
+      trialStatus,
+      loading,
+      error,
+      incrementPlanUsage,
+      upgradeToPremium,
+      fetchTrial,
+    ]
+  );
 }

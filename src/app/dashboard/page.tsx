@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  startTransition,
+} from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -85,12 +91,7 @@ export default function DashboardPage() {
         "Usuário",
       email: userData?.email || user?.email || "",
     }),
-    [
-      userData?.full_name,
-      userData?.email,
-      user?.user_metadata?.full_name,
-      user?.email,
-    ]
+    [userData, user]
   );
 
   // ✅ Dados do perfil memoizados
@@ -105,15 +106,7 @@ export default function DashboardPage() {
       birthDate: profile?.birth_date || null,
       nivelAtividade: "Moderado", // Valor padrão fixo
     }),
-    [
-      profile?.height,
-      profile?.weight,
-      profile?.initial_weight,
-      profile?.gender,
-      profile?.training_frequency,
-      profile?.objective,
-      profile?.birth_date,
-    ]
+    [profile]
   );
 
   // ✅ Dados de trial memoizados
@@ -202,8 +195,10 @@ export default function DashboardPage() {
 
           if (result.success && result.isPremium) {
             // ✅ Batch state updates para reduzir re-renderizações
-            setShowUpgradeModal(false);
-            setPremiumOverride(true);
+            startTransition(() => {
+              setShowUpgradeModal(false);
+              setPremiumOverride(true);
+            });
 
             // ✅ Delay mínimo para garantir que o estado seja aplicado
             setTimeout(() => {

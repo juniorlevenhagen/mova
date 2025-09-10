@@ -334,7 +334,7 @@ export default function DashboardPage() {
             <div className="ml-3">
               <p className="text-sm text-yellow-700">
                 <strong>Complete seu perfil:</strong> Para uma melhor
-                experiência, complete seu registro com informações físicas.{" "}
+                experiência, complete seu registro com informações físicas{" "}
                 <a
                   href="/register/step2"
                   className="font-medium underline hover:text-yellow-600"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -133,11 +133,14 @@ export default function DashboardPage() {
           const result = await response.json();
 
           if (result.success && result.isPremium) {
+            // ✅ Atualizações críticas para UI - IMEDIATAS (sem startTransition)
             setShowUpgradeModal(false);
             setPremiumOverride(true);
 
-            // Refresh do trial status após confirmar premium (apenas uma vez)
-            refetchTrial();
+            // ✅ Operação pesada - pode ser não urgente
+            startTransition(() => {
+              refetchTrial();
+            });
           }
         } catch (error) {
           console.error("❌ Erro ao verificar pagamento:", error);
@@ -208,7 +211,34 @@ export default function DashboardPage() {
     }
   }, [user, authLoading, router]);
 
-  // Mostrar loading enquanto verifica autenticação e carrega dados
+  // ✅ Mover TODOS os useMemo para aqui (antes dos early returns)
+  const userDisplayData = useMemo(
+    () => ({
+      full_name:
+        userData?.full_name ||
+        user?.user_metadata?.full_name ||
+        user?.email?.split("@")[0] ||
+        "Usuário",
+      email: userData?.email || user?.email || "",
+    }),
+    [userData, user]
+  );
+
+  const profileData = useMemo(
+    () => ({
+      altura: profile?.height || 0,
+      peso: profile?.weight || 0,
+      pesoInicial: profile?.initial_weight || 0,
+      sexo: profile?.gender || "Não informado",
+      frequenciaTreinos: profile?.training_frequency || "Não informado",
+      objetivo: profile?.objective || "Não informado",
+      birthDate: profile?.birth_date || null,
+      nivelAtividade: "Moderado",
+    }),
+    [profile]
+  );
+
+  // ✅ Early returns DEPOIS dos hooks
   if (
     authLoading ||
     profileLoading ||
@@ -234,35 +264,12 @@ export default function DashboardPage() {
     );
   }
 
-  // Não renderizar nada se não estiver autenticado
   if (!user) {
     return null;
   }
 
-  // Dados do usuário (reais ou fallback)
-  const userDisplayData = {
-    full_name:
-      userData?.full_name ||
-      user.user_metadata?.full_name ||
-      user.email?.split("@")[0] ||
-      "Usuário",
-    email: userData?.email || user.email || "",
-  };
-
   // Verificar se precisa completar o registro
   const needsProfileCompletion = !profile;
-
-  // Dados do perfil (sempre reais, com fallbacks apenas para campos opcionais)
-  const profileData = {
-    altura: profile?.height || 0,
-    peso: profile?.weight || 0, // Peso atual
-    pesoInicial: profile?.initial_weight || 0, // Peso inicial
-    sexo: profile?.gender || "Não informado",
-    frequenciaTreinos: profile?.training_frequency || "Não informado",
-    objetivo: profile?.objective || "Não informado",
-    birthDate: profile?.birth_date || null,
-    nivelAtividade: "Moderado", // Valor padrão fixo
-  };
 
   // Log para debug - verificar se os dados estão chegando do hook
 

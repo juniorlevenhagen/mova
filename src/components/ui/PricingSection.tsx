@@ -49,7 +49,7 @@ export function PricingSection() {
   }, []);
 
   const handleStartJourney = () => {
-    router.push("/auth/cadastro");
+    router.push("/register/step0");
   };
 
   return (
@@ -143,7 +143,7 @@ export function PricingSection() {
                 {/* Botão CTA */}
                 <button
                   onClick={handleStartJourney}
-                  className="w-full md:w-auto bg-gray-800 text-white py-3 px-6 md:px-8 rounded-lg font-medium hover:bg-gray-900 transition-colors duration-200 text-base md:text-lg shadow-lg hover:shadow-xl"
+                  className="w-full md:w-auto bg-gradient-to-r from-blue-500 to-green-500 text-white py-3 px-6 md:px-8 rounded-lg font-medium hover:from-blue-600 hover:to-green-600 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl text-base md:text-lg"
                 >
                   {plan.buttonText}
                 </button>
@@ -185,7 +185,7 @@ export function PricingSection() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span className="text-xs md:text-sm text-gray-700">
+                      <span className="text-base md:text-lg text-gray-700">
                         {feature}
                       </span>
                     </div>

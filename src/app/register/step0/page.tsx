@@ -73,14 +73,15 @@ export default function WelcomePage() {
             <motion.button
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
               whileHover={{
-                scale: 1.02,
-                boxShadow: "0 10px 25px rgba(203, 182, 139, 0.3)",
+                scale: 1.05,
+                boxShadow: "0 12px 28px rgba(203, 182, 139, 0.4)",
+                transition: { duration: 0.4, ease: "easeInOut" },
               }}
               whileTap={{ scale: 0.98 }}
               onClick={handleStartJourney}
-              className="w-full bg-[#cbb68b] text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-[#b8a57a] transition-all duration-300 shadow-lg flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:from-yellow-600 hover:to-orange-600 transition-all duration-300 shadow-lg flex items-center justify-center gap-3"
             >
               Vamos lá! <MoveRight size={20} />
             </motion.button>

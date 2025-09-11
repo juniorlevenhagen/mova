@@ -109,17 +109,17 @@ export default function Step3Page() {
         />
       </div>
 
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl p-4 md:p-6 lg:p-8 mt-16 md:mt-0">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-6 md:p-8 lg:p-10 mt-16 md:mt-0">
         {/* Indicador de progresso */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Mova+ Complete</h2>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-3xl font-bold text-gray-800">Mova+ Complete</h2>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium ${
                     step <= 3
                       ? "bg-gray-800 text-white"
                       : "bg-gray-200 text-gray-600"
@@ -129,7 +129,7 @@ export default function Step3Page() {
                 </div>
                 {step < 3 && (
                   <div
-                    className={`w-12 h-1 mx-2 ${
+                    className={`w-14 h-1 mx-3 ${
                       step <= 3 ? "bg-gray-800" : "bg-gray-200"
                     }`}
                   />
@@ -139,24 +139,24 @@ export default function Step3Page() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="max-w-xl mx-auto">
           {/* Resumo do plano */}
-          <div className="space-y-4">
-            <div className="text-center lg:text-left">
-              <h3 className="text-2xl font-bold text-gray-800 mb-3">
+          <div className="space-y-8">
+            <div className="text-center">
+              <h3 className="text-3xl font-bold text-gray-800 mb-4">
                 Mova+ Complete
               </h3>
-              <p className="text-lg text-gray-600 mb-4">
+              <p className="text-lg text-gray-600 mb-8">
                 Seu plano personalizado está pronto!
               </p>
             </div>
 
             {/* Banner de teste gratuito */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-5 mb-8">
+              <div className="flex items-center justify-center space-x-4">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
                   <svg
-                    className="w-4 h-4 text-white"
+                    className="w-6 h-6 text-white"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -167,27 +167,27 @@ export default function Step3Page() {
                     />
                   </svg>
                 </div>
-                <div>
-                  <p className="text-base font-semibold text-green-800">
+                <div className="text-center">
+                  <p className="text-xl font-semibold text-green-800">
                     7 dias de teste GRATUITO
                   </p>
-                  <p className="text-xs text-green-700">
+                  <p className="text-sm text-green-700">
                     Comece hoje e cancele a qualquer momento
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-base font-semibold text-gray-800">
+            <div className="space-y-6">
+              <h4 className="text-2xl font-semibold text-gray-800 text-center">
                 O que você receberá:
               </h4>
 
-              <div className="space-y-2">
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-5 h-5 text-white"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -203,10 +203,10 @@ export default function Step3Page() {
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-5 h-5 text-white"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -222,10 +222,10 @@ export default function Step3Page() {
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-5 h-5 text-white"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -241,10 +241,10 @@ export default function Step3Page() {
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-5 h-5 text-white"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -258,10 +258,10 @@ export default function Step3Page() {
                   <span className="text-sm text-gray-700">Suporte 24/7</span>
                 </div>
 
-                <div className="flex items-center space-x-3">
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                <div className="flex items-center space-x-4">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                     <svg
-                      className="w-3 h-3 text-white"
+                      className="w-5 h-5 text-white"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -277,76 +277,20 @@ export default function Step3Page() {
                   </span>
                 </div>
               </div>
-
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <div className="text-center">
-                  <p className="text-xs text-gray-600">
-                    Após 7 dias de teste gratuito
-                  </p>
-                  <p className="text-2xl font-bold text-gray-800">R$ 29,90</p>
-                  <p className="text-xs text-gray-600">por mês</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Cancele a qualquer momento
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Área de pagamento */}
-          <div className="space-y-4">
-            <h4 className="text-base font-semibold text-gray-800">
-              Informações de pagamento
-            </h4>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-              <p className="text-xs text-blue-800">
-                <strong>Importante:</strong> Seu cartão não será cobrado durante
-                os 7 dias de teste. Após esse período, será cobrado R$ 29,90
-                mensais. Você pode cancelar a qualquer momento.
-              </p>
             </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="text-center space-y-3">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                  <svg
-                    className="w-6 h-6 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h5 className="font-semibold text-gray-800">
-                    Pagamento Seguro
-                  </h5>
-                  <p className="text-sm text-gray-600">
-                    Processado pela Stripe com criptografia de ponta
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-8">
               <button
                 type="button"
                 onClick={() => router.push("/register/step2")}
-                className="flex-1 bg-transparent text-gray-600 py-2.5 px-4 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
+                className="flex-1 bg-transparent text-gray-600 py-3 px-6 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
               >
                 Voltar
               </button>
               <button
                 onClick={handleStartTrial}
                 disabled={loading}
-                className="flex-1 bg-gray-800 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-gray-800 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Redirecionando..." : "Começar Teste Grátis"}
               </button>

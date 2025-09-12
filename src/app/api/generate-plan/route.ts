@@ -530,7 +530,38 @@ ${
 }
 ${
   userData.latestEvolution
-    ? `- Última evolução: ${userData.latestEvolution.date}`
+    ? `
+📊 ÚLTIMA EVOLUÇÃO (${userData.latestEvolution.date}):
+- Peso: ${userData.latestEvolution.peso || "Não informado"} kg
+- Cintura: ${userData.latestEvolution.cintura || "Não informado"} cm
+- Quadril: ${userData.latestEvolution.quadril || "Não informado"} cm
+- Braço: ${userData.latestEvolution.braco || "Não informado"} cm
+- Percentual de Gordura: ${
+        userData.latestEvolution.percentual_gordura || "Não informado"
+      }%
+- Massa Magra: ${userData.latestEvolution.massa_magra || "Não informado"} kg
+- Bem-estar: ${userData.latestEvolution.bem_estar || "Não informado"}/10
+- Observações: ${userData.latestEvolution.observacoes || "Nenhuma"}
+
+ EVOLUÇÕES ANTERIORES:
+${
+  userData.evolutionHistory
+    ?.slice(1, 4)
+    .map(
+      (evolution, index) => `
+${index + 2}ª Evolução (${evolution.date}):
+- Peso: ${evolution.peso || "N/A"} kg
+- Cintura: ${evolution.cintura || "N/A"} cm
+- Quadril: ${evolution.quadril || "N/A"} cm
+- Braço: ${evolution.braco || "N/A"} cm
+- % Gordura: ${evolution.percentual_gordura || "N/A"}%
+- Massa Magra: ${evolution.massa_magra || "N/A"} kg
+- Bem-estar: ${evolution.bem_estar || "N/A"}/10
+`
+    )
+    .join("") || "- Apenas uma evolução registrada"
+}
+`
     : ""
 }
 

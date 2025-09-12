@@ -233,7 +233,7 @@ export default function DashboardPage() {
       frequenciaTreinos: profile?.training_frequency || "Não informado",
       objetivo: profile?.objective || "Não informado",
       birthDate: profile?.birth_date || null,
-      nivelAtividade: "Moderado",
+      nivelAtividade: profile?.nivel_atividade || "Moderado",
     }),
     [profile]
   );

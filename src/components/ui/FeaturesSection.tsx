@@ -23,9 +23,9 @@ const features = [
     backgroundImage: "/images/feature-card-3.webp",
   },
   {
-    title: "Comunidade Fitness",
+    title: "Mova+ IA",
     description:
-      "Conecte-se com outros usuários e compartilhe suas conquistas.",
+      "Inteligência artificial que adapta seus planos conforme seu progresso.",
     backgroundImage: "/images/feature-card-4.webp",
   },
 ];

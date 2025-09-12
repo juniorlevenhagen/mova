@@ -13,9 +13,8 @@ const plan = {
     "Treinos personalizados baseados no seu perfil",
     "Planos nutricionais adaptados às suas preferências",
     "Acompanhamento semanal do seu progresso",
-    "Biblioteca completa de exercícios com vídeos",
     "Receitas deliciosas para cada objetivo",
-    "Comunidade ativa para trocar experiências",
+    "IA Inteligente que adapta seus planos conforme seu progresso",
     "Acompanhamento visual do seu progresso",
     "Lembretes personalizados para manter a consistência",
     "Suporte para suas dúvidas mais comuns",
@@ -207,7 +206,7 @@ export function PricingSection() {
               <h4 className="text-base md:text-lg font-semibold text-gray-800 mb-2 group-hover:text-gray-600 transition-colors duration-200">
                 Personalizado
               </h4>
-              <p className="text-xs md:text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
+              <p className="text-xs md:text-base text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
                 Cada treino e plano nutricional é criado pensando
                 especificamente em você
               </p>
@@ -216,7 +215,7 @@ export function PricingSection() {
               <h4 className="text-base md:text-lg font-semibold text-gray-800 mb-2 group-hover:text-gray-600 transition-colors duration-200">
                 Acompanhamento
               </h4>
-              <p className="text-xs md:text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
+              <p className="text-xs md:text-base text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
                 Seu progresso é monitorado e os planos são ajustados conforme
                 sua evolução
               </p>
@@ -225,7 +224,7 @@ export function PricingSection() {
               <h4 className="text-base md:text-lg font-semibold text-gray-800 mb-2 group-hover:text-gray-600 transition-colors duration-200">
                 Comunidade
               </h4>
-              <p className="text-xs md:text-sm text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
+              <p className="text-xs md:text-base text-gray-600 group-hover:text-gray-700 transition-colors duration-200">
                 Conecte-se com pessoas que compartilham dos mesmos objetivos que
                 você
               </p>

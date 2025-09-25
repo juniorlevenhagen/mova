@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export function Footer() {
   return (
@@ -73,44 +74,44 @@ export function Footer() {
             <h3 className="text-lg font-semibold mb-6">Links Rápidos</h3>
             <ul className="space-y-3">
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/como-funciona"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Como Funciona
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/planos-precos"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Planos e Preços
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/sobre-nos"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Sobre Nós
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/blog"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Blog
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Comunidade
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -120,44 +121,44 @@ export function Footer() {
             <h3 className="text-lg font-semibold mb-6">Suporte</h3>
             <ul className="space-y-3">
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Central de Ajuda
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Contato
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Status do Sistema
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  href="/"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Reportar Bug
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -201,30 +202,30 @@ export function Footer() {
 
             {/* Links legais */}
             <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
-              <a
-                href="#"
+              <Link
+                href="/"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
               >
                 Termos de Uso
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                href="/"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
               >
                 Política de Privacidade
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                href="/"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
               >
                 Cookies
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                href="/"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
               >
                 LGPD
-              </a>
+              </Link>
             </div>
           </div>
         </div>

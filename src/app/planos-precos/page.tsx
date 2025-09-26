@@ -10,7 +10,7 @@ import {
   Users,
   TrendingUp,
   Clock,
-  Zap,
+
 } from "lucide-react";
 
 const plan = {
@@ -104,10 +104,6 @@ export default function PlanosPrecosPage() {
           </p>
 
           {/* Special Offer Badge */}
-          <div className="inline-flex items-center bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-3 rounded-full text-lg font-medium mb-8">
-            <Zap className="w-5 h-5 mr-2" />
-            Oferta especial: {plan.discount}
-          </div>
         </div>
       </section>
 
@@ -194,7 +190,7 @@ export default function PlanosPrecosPage() {
                 key={index}
                 className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
               >
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center mb-4">
                   <benefit.icon className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-800 mb-3">

@@ -32,29 +32,6 @@ const values = [
   },
 ];
 
-const team = [
-  {
-    name: "Dr. Ana Silva",
-    role: "Diretora Médica",
-    description:
-      "Especialista em medicina esportiva com 15 anos de experiência.",
-    image: "AS",
-  },
-  {
-    name: "Carlos Mendes",
-    role: "Head de Tecnologia",
-    description:
-      "Engenheiro de software especializado em IA e machine learning.",
-    image: "CM",
-  },
-  {
-    name: "Marina Costa",
-    role: "Nutricionista Chefe",
-    description: "Nutricionista esportiva com foco em performance e bem-estar.",
-    image: "MC",
-  },
-];
-
 const stats = [
   { number: "10.000+", label: "Usuários Ativos" },
   { number: "95%", label: "Taxa de Satisfação" },
@@ -116,7 +93,7 @@ export default function SobreNosPage() {
               </div>
             </div>
             <div className="relative">
-              <div className="w-full h-96 bg-gradient-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center">
+              <div className="w-full h-96 bg-gray-800 rounded-2xl flex items-center justify-center">
                 <div className="text-center text-white">
                   <Users className="w-24 h-24 mx-auto mb-4" />
                   <h3 className="text-2xl font-bold">
@@ -155,41 +132,6 @@ export default function SobreNosPage() {
                 </h3>
                 <p className="text-gray-600 leading-relaxed">
                   {value.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Nossa Equipe */}
-      <section className="w-full bg-white py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-              Nossa Equipe
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Especialistas apaixonados por transformar vidas através do
-              movimento
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <div
-                key={index}
-                className="bg-gray-50 rounded-2xl p-8 text-center hover:shadow-lg transition-all duration-300"
-              >
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4">
-                  {member.image}
-                </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">
-                  {member.name}
-                </h3>
-                <p className="text-green-600 font-medium mb-3">{member.role}</p>
-                <p className="text-gray-600 leading-relaxed">
-                  {member.description}
                 </p>
               </div>
             ))}

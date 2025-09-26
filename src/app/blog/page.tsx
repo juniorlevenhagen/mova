@@ -75,7 +75,7 @@ const blogPosts = [
     date: "3 Jan 2024",
     category: "Recuperação",
     readTime: "8 min",
-    image: "��",
+    image: "🛌",
     featured: false,
   },
 ];
@@ -152,7 +152,7 @@ export default function BlogPage() {
       {featuredPost && (
         <section className="w-full bg-white py-20 px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="bg-gradient-to-r from-blue-500 to-green-500 rounded-3xl p-8 md:p-12 text-white">
+            <div className="bg-gray-800 rounded-3xl p-8 md:p-12 text-white">
               <div className="flex items-center mb-4">
                 <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
                   Destaque

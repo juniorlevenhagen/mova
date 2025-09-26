@@ -27,7 +27,7 @@ const detailedSteps = [
       "Aceite os termos de uso",
     ],
     icon: UserPlus,
-    color: "from-blue-500 to-blue-600",
+    color: "bg-gray-800",
   },
   {
     number: "02",
@@ -40,7 +40,7 @@ const detailedSteps = [
       "Escolha seu nível de experiência",
     ],
     icon: Settings,
-    color: "from-green-500 to-green-600",
+    color: "bg-gray-800",
   },
   {
     number: "03",
@@ -53,7 +53,7 @@ const detailedSteps = [
       "Metas realistas e alcançáveis",
     ],
     icon: FileText,
-    color: "from-purple-500 to-purple-600",
+    color: "bg-gray-800",
   },
   {
     number: "04",
@@ -66,7 +66,7 @@ const detailedSteps = [
       "Celebre suas conquistas",
     ],
     icon: TrendingUp,
-    color: "from-orange-500 to-orange-600",
+    color: "bg-gray-800",
   },
 ];
 

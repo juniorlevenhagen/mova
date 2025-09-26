@@ -107,7 +107,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/"
+                  href="/comunidade"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Comunidade
@@ -122,42 +122,10 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/"
+                  href="/central-ajuda"
                   className="text-gray-300 hover:text-white transition-colors duration-200"
                 >
                   Central de Ajuda
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/"
-                  className="text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  Contato
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/"
-                  className="text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  FAQ
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/"
-                  className="text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  Status do Sistema
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/"
-                  className="text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  Reportar Bug
                 </Link>
               </li>
             </ul>

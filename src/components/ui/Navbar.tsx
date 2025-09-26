@@ -18,13 +18,15 @@ export function Navbar() {
     <nav className="w-full bg-[#f5f1e8] px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center shadow-sm">
       {/* Logo à esquerda */}
       <div className="flex items-center">
-        <Image
-          src="/images/logo_blue.webp"
-          alt="Mova+ Logo"
-          width={120}
-          height={40}
-          className="h-4 sm:h-6 w-auto"
-        />
+        <button onClick={() => router.push("/")} className="focus:outline-none">
+          <Image
+            src="/images/logo_blue.webp"
+            alt="Mova+ Logo"
+            width={120}
+            height={40}
+            className="h-4 sm:h-6 w-auto"
+          />
+        </button>
       </div>
 
       {/* Botões à direita */}

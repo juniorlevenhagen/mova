@@ -1,23 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { LogoBlue } from "@/components/ui/LogoBlue";
 import { supabase } from "@/lib/supabase";
+import { useStep1Form } from "@/hooks/useFormValidation";
+import { FormError } from "@/components/ui/FormError";
+import { Step1Data } from "@/lib/validation";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function Step1Page() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    acceptTerms: false,
-  });
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useStep1Form();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: Step1Data) => {
+    if (!captchaToken) {
+      setError("Por favor, complete a verificação de segurança");
+      return;
+    }
+
     setLoading(true);
     setError(""); // Limpar erros anteriores
 
@@ -30,11 +39,12 @@ export default function Step1Page() {
       while (retryCount < maxRetries) {
         try {
           const result = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.password,
+            email: data.email,
+            password: data.password,
             options: {
+              captchaToken, // Adicionar token do captcha
               data: {
-                full_name: formData.fullName,
+                full_name: data.name,
               },
             },
           });
@@ -115,8 +125,8 @@ export default function Step1Page() {
         "insert_user_safe",
         {
           user_id: authData.user.id,
-          user_email: formData.email,
-          user_full_name: formData.fullName,
+          user_email: data.email,
+          user_full_name: data.name,
         }
       );
 
@@ -177,7 +187,7 @@ export default function Step1Page() {
       }
 
       // 4. Salvar dados temporários no localStorage para os próximos steps
-      localStorage.setItem("registerStep1", JSON.stringify(formData));
+      localStorage.setItem("registerStep1", JSON.stringify(data));
 
       router.push("/register/step2");
     } catch (error) {
@@ -186,16 +196,6 @@ export default function Step1Page() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-    // Limpar erro quando o usuário começa a digitar
-    if (error) setError("");
   };
 
   return (
@@ -258,26 +258,25 @@ export default function Step1Page() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
             <label
-              htmlFor="fullName"
+              htmlFor="name"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Nome completo
+              Nome completo *
             </label>
             <input
+              {...register("name")}
               type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
+              id="name"
+              name="name"
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-                error ? "border-red-300" : "border-gray-300"
+                errors.name ? "border-red-300" : "border-gray-300"
               }`}
-              placeholder="Digite seu nome completo"
+              placeholder="Seu nome completo"
             />
+            <FormError error={errors.name?.message} />
           </div>
 
           <div>
@@ -285,20 +284,19 @@ export default function Step1Page() {
               htmlFor="email"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              E-mail
+              E-mail *
             </label>
             <input
+              {...register("email")}
               type="email"
               id="email"
               name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-                error ? "border-red-300" : "border-gray-300"
+                errors.email ? "border-red-300" : "border-gray-300"
               }`}
               placeholder="seu@email.com"
             />
+            <FormError error={errors.email?.message} />
           </div>
 
           <div>
@@ -306,20 +304,39 @@ export default function Step1Page() {
               htmlFor="password"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-              Senha
+              Senha *
             </label>
             <input
+              {...register("password")}
               type="password"
               id="password"
               name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-                error ? "border-red-300" : "border-gray-300"
+                errors.password ? "border-red-300" : "border-gray-300"
               }`}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
             />
+            <FormError error={errors.password?.message} />
+          </div>
+
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Confirmar senha *
+            </label>
+            <input
+              {...register("confirmPassword")}
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
+                errors.confirmPassword ? "border-red-300" : "border-gray-300"
+              }`}
+              placeholder="Digite a senha novamente"
+            />
+            <FormError error={errors.confirmPassword?.message} />
           </div>
 
           <div className="flex items-start">
@@ -327,8 +344,8 @@ export default function Step1Page() {
               type="checkbox"
               id="acceptTerms"
               name="acceptTerms"
-              checked={formData.acceptTerms}
-              onChange={handleChange}
+              checked={true} // This will be handled by Zod
+              onChange={() => {}} // This will be handled by Zod
               required
               className="mt-1 rounded border-gray-300 text-gray-800 focus:ring-gray-800"
             />
@@ -344,9 +361,20 @@ export default function Step1Page() {
             </label>
           </div>
 
+          {/* Adicionar hCaptcha */}
+          <div className="flex justify-center">
+            <HCaptcha
+              ref={captchaRef}
+              sitekey="d2a4e6d6-43ea-4bf4-8218-3f1cc672e172"
+              onVerify={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+            />
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isValid || !captchaToken}
             className="w-full bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold text-base md:text-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Criando conta..." : "Continuar Personalização"}

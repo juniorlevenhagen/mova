@@ -22,6 +22,14 @@ export default function Step1Page() {
   } = useStep1Form();
 
   const onSubmit = async (data: Step1Data) => {
+    console.log("🔍 Debug captcha:", {
+      captchaToken,
+      siteKey: process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY,
+      hasToken: !!captchaToken,
+      tokenLength: captchaToken?.length,
+      timestamp: new Date().toISOString(),
+    });
+
     if (!captchaToken) {
       setError("Por favor, complete a verificação de segurança");
       return;
@@ -31,6 +39,11 @@ export default function Step1Page() {
     setError(""); // Limpar erros anteriores
 
     try {
+      console.log(
+        "🚀 Iniciando signUp com captcha token:",
+        captchaToken.substring(0, 20) + "..."
+      );
+
       // 1. Criar usuário no Supabase Auth (com retry logic)
       let authData, authError;
       let retryCount = 0;
@@ -38,6 +51,8 @@ export default function Step1Page() {
 
       while (retryCount < maxRetries) {
         try {
+          console.log(`🔄 Tentativa ${retryCount + 1}/${maxRetries} de signUp`);
+
           const result = await supabase.auth.signUp({
             email: data.email,
             password: data.password,
@@ -47,6 +62,12 @@ export default function Step1Page() {
                 full_name: data.name,
               },
             },
+          });
+
+          console.log("📊 Resultado do signUp:", {
+            user: result.data?.user?.id,
+            session: !!result.data?.session,
+            error: result.error?.message,
           });
 
           authData = result.data;
@@ -84,6 +105,8 @@ export default function Step1Page() {
       }
 
       if (authError) {
+        console.error("❌ Erro de autenticação:", authError);
+
         // Tratar erros específicos do Supabase
         if (authError.message.includes("User already registered")) {
           setError(
@@ -95,6 +118,9 @@ export default function Step1Page() {
           setError("Por favor, insira um email válido.");
         } else if (authError.message.includes("Email rate limit exceeded")) {
           setError("Muitas tentativas. Aguarde um momento e tente novamente.");
+        } else if (authError.message.includes("captcha protection")) {
+          console.error("🚨 Erro de captcha:", authError.message);
+          setError(`Erro de verificação de segurança: ${authError.message}`);
         } else if (
           authError.message.includes("500") ||
           authError.message.includes("Internal Server Error")
@@ -191,7 +217,7 @@ export default function Step1Page() {
 
       router.push("/register/step2");
     } catch (error) {
-      console.error("Erro no cadastro:", error);
+      console.error("❌ Erro geral no cadastro:", error);
       setError("Erro inesperado. Tente novamente.");
     } finally {
       setLoading(false);
@@ -365,10 +391,23 @@ export default function Step1Page() {
           <div className="flex justify-center">
             <HCaptcha
               ref={captchaRef}
-              sitekey="d2a4e6d6-43ea-4bf4-8218-3f1cc672e172"
-              onVerify={setCaptchaToken}
-              onExpire={() => setCaptchaToken(null)}
-              onError={() => setCaptchaToken(null)}
+              sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!}
+              onVerify={(token) => {
+                console.log("✅ Captcha token gerado:", {
+                  token: token.substring(0, 20) + "...",
+                  length: token.length,
+                  timestamp: new Date().toISOString(),
+                });
+                setCaptchaToken(token);
+              }}
+              onExpire={() => {
+                console.log("⏰ Captcha expirado");
+                setCaptchaToken(null);
+              }}
+              onError={(error) => {
+                console.log("❌ Erro no captcha:", error);
+                setCaptchaToken(null);
+              }}
             />
           </div>
 

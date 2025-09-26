@@ -153,13 +153,13 @@ export default function ComoFuncionaPage() {
             </p>
           </div>
 
-          {/* Steps Navigation */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
+          {/* Steps Navigation - Melhorar responsividade */}
+          <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8 sm:mb-12">
             {detailedSteps.map((step, index) => (
               <button
                 key={index}
                 onClick={() => setActiveStep(index)}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                className={`px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base ${
                   activeStep === index
                     ? "bg-gray-800 text-white shadow-lg"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -170,30 +170,33 @@ export default function ComoFuncionaPage() {
             ))}
           </div>
 
-          {/* Active Step Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="flex items-center space-x-4">
+          {/* Active Step Content - Melhorar layout mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <div
-                  className={`w-16 h-16 rounded-full bg-gradient-to-r ${detailedSteps[activeStep].color} flex items-center justify-center text-white text-2xl font-bold`}
+                  className={`hidden sm:flex w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-r ${detailedSteps[activeStep].color} items-center justify-center text-white text-lg sm:text-2xl font-bold`}
                 >
                   {detailedSteps[activeStep].number}
                 </div>
                 <div>
-                  <h3 className="text-2xl md:text-3xl font-bold text-gray-800">
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800">
                     {detailedSteps[activeStep].title}
                   </h3>
-                  <p className="text-lg text-gray-600">
+                  <p className="text-base sm:text-lg text-gray-600">
                     {detailedSteps[activeStep].description}
                   </p>
                 </div>
               </div>
 
-              <ul className="space-y-3">
+              <ul className="space-y-2 sm:space-y-3">
                 {detailedSteps[activeStep].details.map((detail, index) => (
-                  <li key={index} className="flex items-start space-x-3">
+                  <li
+                    key={index}
+                    className="flex items-start space-x-2 sm:space-x-3"
+                  >
                     <svg
-                      className="w-5 h-5 text-green-500 mt-1 flex-shrink-0"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mt-1 flex-shrink-0"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -203,19 +206,23 @@ export default function ComoFuncionaPage() {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="text-gray-700">{detail}</span>
+                    <span className="text-sm sm:text-base text-gray-700">
+                      {detail}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="relative">
+            <div className="relative order-first lg:order-last">
               <div
-                className={`w-full h-96 bg-gradient-to-br ${detailedSteps[activeStep].color} rounded-2xl flex items-center justify-center text-white transition-all duration-500`}
+                className={`w-full h-64 sm:h-80 lg:h-96 bg-gradient-to-br ${detailedSteps[activeStep].color} rounded-2xl flex items-center justify-center text-white transition-all duration-500`}
               >
                 {(() => {
                   const IconComponent = detailedSteps[activeStep].icon;
-                  return <IconComponent className="w-32 h-32" />;
+                  return (
+                    <IconComponent className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32" />
+                  );
                 })()}
               </div>
             </div>

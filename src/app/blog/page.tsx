@@ -105,37 +105,37 @@ export default function BlogPage() {
       {/* Hero Section */}
       <section className="w-full bg-gradient-to-br from-[#f5f1e8] to-white py-16 md:py-24 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-6 leading-tight">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-800 mb-6 leading-tight">
             Blog <span className="text-gray-600">Mova+</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
             Dicas, estratégias e insights para transformar sua vida através do
             movimento
           </p>
 
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className="max-w-xl sm:max-w-2xl mx-auto relative">
+            <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
             <input
               type="text"
               placeholder="Buscar artigos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 sm:pl-12 pr-4 py-3 sm:py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
             />
           </div>
         </div>
       </section>
 
       {/* Category Filter */}
-      <section className="w-full bg-white py-8 px-4">
+      <section className="w-full bg-white py-6 sm:py-8 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-wrap gap-4 justify-center">
+          <div className="flex flex-wrap gap-2 sm:gap-4 justify-center">
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+                className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base ${
                   selectedCategory === category
                     ? "bg-gray-800 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -150,25 +150,27 @@ export default function BlogPage() {
 
       {/* Featured Post */}
       {featuredPost && (
-        <section className="w-full bg-white py-20 px-4">
+        <section className="w-full bg-white py-16 sm:py-20 px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="bg-gray-800 rounded-3xl p-8 md:p-12 text-white">
+            <div className="bg-gray-800 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 text-white">
               <div className="flex items-center mb-4">
-                <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-white/20 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                   Destaque
                 </span>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">
                 {featuredPost.title}
               </h2>
-              <p className="text-xl opacity-90 mb-6">{featuredPost.excerpt}</p>
-              <div className="flex items-center space-x-6 text-sm opacity-80">
+              <p className="text-lg sm:text-xl opacity-90 mb-6">
+                {featuredPost.excerpt}
+              </p>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm opacity-80">
                 <div className="flex items-center">
-                  <User className="w-4 h-4 mr-2" />
+                  <User className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   {featuredPost.author}
                 </div>
                 <div className="flex items-center">
-                  <Calendar className="w-4 h-4 mr-2" />
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                   {featuredPost.date}
                 </div>
                 <div>{featuredPost.readTime}</div>
@@ -179,43 +181,43 @@ export default function BlogPage() {
       )}
 
       {/* Blog Posts Grid */}
-      <section className="w-full bg-[#f5f1e8] py-20 px-4">
+      <section className="w-full bg-[#f5f1e8] py-16 sm:py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {regularPosts.map((post) => (
               <article
                 key={post.id}
                 className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
               >
-                <div className="p-8">
-                  <div className="text-4xl mb-4">{post.image}</div>
-                  <div className="flex items-center space-x-4 mb-4 text-sm text-gray-500">
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+                <div className="p-6 sm:p-8">
+                  <div className="text-3xl sm:text-4xl mb-4">{post.image}</div>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4 text-xs sm:text-sm text-gray-500">
+                    <span className="bg-blue-100 text-blue-800 px-2 sm:px-3 py-1 rounded-full">
                       {post.category}
                     </span>
                     <span>{post.readTime}</span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 line-clamp-2">
                     {post.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-3">
+                  <p className="text-sm sm:text-base text-gray-600 mb-4 line-clamp-3">
                     {post.excerpt}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <User className="w-4 h-4" />
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                    <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500">
+                      <User className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{post.author}</span>
                     </div>
-                    <div className="flex items-center space-x-2 text-sm text-gray-500">
-                      <Calendar className="w-4 h-4" />
+                    <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-500">
+                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{post.date}</span>
                     </div>
                   </div>
                 </div>
-                <div className="px-8 pb-8">
-                  <button className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200">
+                <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+                  <button className="flex items-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200 text-sm sm:text-base">
                     Ler mais
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-2" />
                   </button>
                 </div>
               </article>
@@ -225,22 +227,22 @@ export default function BlogPage() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="w-full bg-gray-800 py-20 px-4">
+      <section className="w-full bg-gray-800 py-16 sm:py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6">
             Fique por dentro das novidades
           </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Receba nossos melhores artigos e dicas exclusivas diretamente no seu
             email
           </p>
-          <div className="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-xl sm:max-w-2xl mx-auto">
             <input
               type="email"
               placeholder="Seu melhor email"
-              className="flex-1 px-6 py-4 rounded-lg border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-4 sm:px-6 py-3 sm:py-4 rounded-lg border border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base text-center"
             />
-            <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-4 rounded-lg font-medium hover:from-blue-600 hover:to-green-600 transition-all duration-300">
+            <button className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-medium hover:from-blue-600 hover:to-green-600 transition-all duration-300 text-sm sm:text-base">
               Inscrever-se
             </button>
           </div>

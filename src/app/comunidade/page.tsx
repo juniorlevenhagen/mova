@@ -99,14 +99,14 @@ export default function ComunidadePage() {
       {/* Hero Section */}
       <section className="w-full bg-gradient-to-br from-[#f5f1e8] to-white py-16 md:py-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-800 mb-6">
             Junte-se à nossa <span className="text-gray-600">Comunidade</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed">
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed">
             Conecte-se com milhares de pessoas que compartilham seus objetivos
             fitness
           </p>
-          <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
             <span>🏆 15.000+ membros</span>
             <span>💪 Transformações reais</span>
             <span>🤝 Suporte diário</span>
@@ -115,22 +115,22 @@ export default function ComunidadePage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="w-full bg-white py-20 px-4">
+      <section className="w-full bg-white py-16 sm:py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-10 sm:mb-12 text-center">
             Por que participar da nossa comunidade?
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {benefits.map((benefit, index) => (
-              <div key={index} className="text-center p-6">
-                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <benefit.icon className="w-8 h-8 text-white" />
+              <div key={index} className="text-center p-4 sm:p-6">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <benefit.icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-3">
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">
                   {benefit.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                   {benefit.description}
                 </p>
               </div>
@@ -140,29 +140,29 @@ export default function ComunidadePage() {
       </section>
 
       {/* Social Links Section */}
-      <section className="w-full bg-[#f5f1e8] py-20 px-4">
+      <section className="w-full bg-[#f5f1e8] py-16 sm:py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-10 sm:mb-12 text-center">
             Conecte-se conosco
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {socialLinks.map((social, index) => (
               <div
                 key={index}
-                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+                className="bg-white rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
               >
                 <div className="flex items-center justify-between mb-6">
                   <div
-                    className={`w-16 h-16 bg-gradient-to-r ${social.color} rounded-2xl flex items-center justify-center`}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r ${social.color} rounded-2xl flex items-center justify-center`}
                   >
-                    <social.icon className="w-8 h-8 text-white" />
+                    <social.icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-gray-800">
+                    <p className="text-xl sm:text-2xl font-bold text-gray-800">
                       {social.followers || social.members || social.subscribers}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs sm:text-sm text-gray-500">
                       {social.followers
                         ? "seguidores"
                         : social.members
@@ -172,10 +172,10 @@ export default function ComunidadePage() {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3">
                   {social.name}
                 </h3>
-                <p className="text-gray-600 mb-6 leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-600 mb-6 leading-relaxed">
                   {social.description}
                 </p>
 
@@ -183,10 +183,10 @@ export default function ComunidadePage() {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center space-x-2 bg-gradient-to-r ${social.color} text-white px-6 py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105`}
+                  className={`inline-flex items-center space-x-2 bg-gradient-to-r ${social.color} text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105 text-sm sm:text-base`}
                 >
                   <span>Participar</span>
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
                 </a>
               </div>
             ))}
@@ -195,25 +195,27 @@ export default function ComunidadePage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="w-full bg-white py-20 px-4">
+      <section className="w-full bg-white py-16 sm:py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-12 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-10 sm:mb-12 text-center">
             O que nossos membros dizem
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {testimonials.map((testimonial, index) => (
-              <div key={index} className="bg-gray-50 rounded-2xl p-8">
+              <div key={index} className="bg-gray-50 rounded-2xl p-6 sm:p-8">
                 <div className="text-center mb-6">
-                  <div className="text-4xl mb-4">{testimonial.image}</div>
-                  <h4 className="text-xl font-bold text-gray-800 mb-2">
+                  <div className="text-3xl sm:text-4xl mb-4">
+                    {testimonial.image}
+                  </div>
+                  <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-2">
                     {testimonial.name}
                   </h4>
-                  <p className="text-green-600 font-semibold">
+                  <p className="text-green-600 font-semibold text-sm sm:text-base">
                     {testimonial.result}
                   </p>
                 </div>
-                <p className="text-gray-600 leading-relaxed italic">
+                <p className="text-sm sm:text-base text-gray-600 leading-relaxed italic">
                   {testimonial.text}
                 </p>
               </div>
@@ -223,35 +225,35 @@ export default function ComunidadePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="w-full bg-gray-800 py-20 px-4">
+      <section className="w-full bg-gray-800 py-16 sm:py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-6">
             Pronto para se juntar à nossa comunidade?
           </h2>
-          <p className="text-xl text-gray-300 mb-8">
+          <p className="text-lg sm:text-xl text-gray-300 mb-8">
             Comece sua jornada hoje e transforme sua vida junto com milhares de
             pessoas
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             <a
               href="https://instagram.com/movaplus_oficial"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              <Camera className="w-5 h-5" />
+              <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Seguir no Instagram</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </a>
             <a
               href="https://wa.me/5511999999999"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
+              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Entrar no WhatsApp</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </a>
           </div>
         </div>

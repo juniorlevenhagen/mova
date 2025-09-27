@@ -22,11 +22,12 @@ export default function Step1Page() {
   } = useStep1Form();
 
   const onSubmit = async (data: Step1Data) => {
-    console.log("🔍 Debug captcha:", {
+    console.log("�� Debug captcha:", {
       captchaToken,
       siteKey: process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY,
       hasToken: !!captchaToken,
       tokenLength: captchaToken?.length,
+      tokenStart: captchaToken?.substring(0, 10),
       timestamp: new Date().toISOString(),
     });
 
@@ -391,7 +392,7 @@ export default function Step1Page() {
           <div className="flex justify-center">
             <HCaptcha
               ref={captchaRef}
-              sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY!}
+              sitekey="01a65ab4-0f4c-452c-8ce2-1490e8e869ac" // Nova chave
               onVerify={(token) => {
                 console.log("✅ Captcha token gerado:", {
                   token: token.substring(0, 20) + "...",
@@ -408,6 +409,9 @@ export default function Step1Page() {
                 console.log("❌ Erro no captcha:", error);
                 setCaptchaToken(null);
               }}
+              // Adicionar para debug
+              theme="light"
+              size="normal"
             />
           </div>
 

@@ -1,17 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Inter, Poppins } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: "--font-inter"
-});
-
-const poppins = Poppins({ 
-  weight: ["300", "400", "500", "600", "700"],
-  subsets: ["latin"],
-  variable: "--font-poppins"
-});
 
 export const metadata: Metadata = {
   title: "Mova+",
@@ -25,7 +14,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={`bg-[#f5f1e8] ${inter.variable} ${poppins.variable} font-sans`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+      </head>
+      <body className="bg-white font-zalando">
         {children}
         <SpeedInsights />
       </body>

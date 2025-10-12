@@ -53,7 +53,7 @@ body {
 .font-zalando-medium {
   font-family: "Zalando Sans", sans-serif;
   font-optical-sizing: auto;
-  font-weight: 500;
+  font-weight: 600;
   font-style: normal;
   font-variation-settings: "wdth" 100;
 }
@@ -155,4 +155,11 @@ body {
   font-weight: 700;
   font-style: italic;
   font-variation-settings: "wdth" 100;
+}
+
+/* Classes personalizadas para Archivo Black */
+.font-archivo-black {
+  font-family: "Archivo Black", sans-serif;
+  font-weight: 400;
+  font-style: normal;
 }

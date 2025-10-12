@@ -21,6 +21,10 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="bg-white font-zalando">
         {children}

@@ -8,28 +8,29 @@ const steps = [
     title: "01. Cadastre-se",
     description: "Crie sua conta em segundos e comece sua jornada fitness.",
     instruction:
-      "Clique no botão 'Começar agora' e preencha seus dados básicos. É rápido e seguro!",
+      "Preencha seus dados básicos para começarmos a te conhecer melhor. É rápido e seguro!",
   },
   {
     number: "02",
     title: "02. Configure",
     description: "Defina seus objetivos e configure seu perfil.",
     instruction:
-      "Responda algumas perguntas sobre seus objetivos, peso atual e nível de condicionamento físico.",
+      "Responda algumas perguntas sobre seus objetivos, características físicas e nível de condicionamento. Essa parte é muito importante para conseguirmos criar um plano específico para você.",
   },
   {
     number: "03",
     title: "03. Treine",
-    description: "Acesse treinos personalizados adaptados ao seu nível.",
+    description:
+      "Acesse treinos personalizados e dieta adaptados ao seu nível.",
     instruction:
-      "Nossa IA criará um plano de treino exclusivo para você. Siga as instruções e veja os resultados!",
+      "Nossa IA criará um plano de treino e uma dieta exclusiva para você. Aqui contamos com todo o seu empenho e dedicação para juntos alcançarmos seus objetivos.",
   },
   {
     number: "04",
     title: "04. Evolua",
     description: "Acompanhe seu progresso e veja seus resultados.",
     instruction:
-      "Registre seus treinos, tire fotos do progresso e celebre cada conquista alcançada!",
+      "Registre seus treinos, tire fotos do progresso e celebre cada conquista alcançada! Estaremos aqui para te apoiar e torcendo por você!",
   },
 ];
 
@@ -37,6 +38,7 @@ export function HowItWorksSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [hasAnimated, setHasAnimated] = useState(false); // NOVO
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -44,6 +46,8 @@ export function HowItWorksSection() {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsVisible(true);
+            // Marcar como animado após o último card terminar (800ms delay + 700ms animação)
+            setTimeout(() => setHasAnimated(true), 1500);
           }
         });
       },
@@ -58,7 +62,7 @@ export function HowItWorksSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="w-full bg-white py-20 px-4">
+    <section ref={sectionRef} className="w-full bg-white py-20 md:py-32">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Lado esquerdo - Texto motivador que muda no hover */}
@@ -70,7 +74,7 @@ export function HowItWorksSection() {
             }`}
           >
             {/* Texto padrão ou instrução no hover */}
-            <div className="relative min-h-[315px]">
+            <div className="relative min-h-[380px]">
               {/* Texto padrão */}
               <div
                 className={`transition-opacity duration-700 ease-in-out ${
@@ -80,12 +84,13 @@ export function HowItWorksSection() {
                 }`}
               >
                 <h2 className="text-4xl md:text-7xl text-black mb-8">
-                  Transforme sua vida em 4 passos simples
+                  Transforme sua vida em 4 passos simples!
                 </h2>
 
-                <p className="text-xl text-gray-600 leading-relaxed">
-                  A jornada para o seu melhor eu começa aqui. Com o Mova+, cada
-                  passo é uma conquista, cada treino é uma evolução.
+                <p className="text-2xl text-gray-600 leading-relaxed">
+                  A jornada para um corpo saudável e uma vida com mais qualidade
+                  começa aqui. Com o Mova+, cada passo é uma conquista, cada
+                  treino é uma evolução.
                 </p>
               </div>
 
@@ -101,7 +106,7 @@ export function HowItWorksSection() {
                   {hoveredCard !== null && steps[hoveredCard].title}
                 </h2>
 
-                <p className="text-xl text-gray-600 leading-relaxed">
+                <p className="text-2xl text-gray-600 leading-relaxed">
                   {hoveredCard !== null && steps[hoveredCard].instruction}
                 </p>
               </div>
@@ -121,70 +126,114 @@ export function HowItWorksSection() {
               <div className="flex flex-row justify-center items-center gap-4 max-w-8xl mx-auto px-4">
                 {/* Card 1 */}
                 <div
-                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-2xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-2 shadow-md cursor-pointer ${
-                    isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-2xl p-8 shadow-md cursor-pointer ${
+                    isVisible
+                      ? "opacity-100 scale-100 translate-y-0"
+                      : "opacity-0 scale-90 translate-y-12"
                   }`}
                   style={{
-                    animationDelay: "200ms",
                     backgroundImage: "url(/images/03.jpg)",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
+                    transition: hasAnimated
+                      ? "all 0.3s ease-out" // Depois de animar, hover rápido
+                      : "opacity 0.7s ease-out 0.2s, transform 0.7s ease-out 0.2s", // Primeira vez, entrada lenta
                   }}
                   onMouseEnter={() => setHoveredCard(0)}
                   onMouseLeave={() => setHoveredCard(null)}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform =
+                      "scale(1.05) rotate(2deg)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+                  }}
                 >
                   {/* Card vazio - apenas imagem de fundo */}
                 </div>
 
                 {/* Card 2 */}
                 <div
-                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-3xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-2 shadow-md cursor-pointer ${
-                    isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-3xl p-8 shadow-md cursor-pointer ${
+                    isVisible
+                      ? "opacity-100 scale-100 translate-y-0"
+                      : "opacity-0 scale-90 translate-y-12"
                   }`}
                   style={{
-                    animationDelay: "400ms",
                     backgroundImage: "url(/images/02.jpg)",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
+                    transition: hasAnimated
+                      ? "all 0.3s ease-out"
+                      : "opacity 0.7s ease-out 0.4s, transform 0.7s ease-out 0.4s",
                   }}
                   onMouseEnter={() => setHoveredCard(1)}
                   onMouseLeave={() => setHoveredCard(null)}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform =
+                      "scale(1.05) rotate(-2deg)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+                  }}
                 >
-                  {/* Card vazio - apenas imagem de fundo */}
+                 
                 </div>
 
                 {/* Card 3 */}
                 <div
-                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:rotate-1 shadow-md cursor-pointer ${
-                    isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-xl p-8 shadow-md cursor-pointer ${
+                    isVisible
+                      ? "opacity-100 scale-100 translate-y-0"
+                      : "opacity-0 scale-90 translate-y-12"
                   }`}
                   style={{
-                    animationDelay: "600ms",
                     backgroundImage: "url(/images/07.jpg)",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
+                    transition: hasAnimated
+                      ? "all 0.3s ease-out"
+                      : "opacity 0.7s ease-out 0.6s, transform 0.7s ease-out 0.6s",
                   }}
                   onMouseEnter={() => setHoveredCard(2)}
                   onMouseLeave={() => setHoveredCard(null)}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform =
+                      "scale(1.05) rotate(2deg)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+                  }}
                 >
-                  {/* Card vazio - apenas imagem de fundo */}
+              
                 </div>
 
                 {/* Card 4 */}
                 <div
-                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-2xl p-8 hover:border-gray-400 transition-all duration-500 transform hover:scale-105 hover:-rotate-1 shadow-md cursor-pointer ${
-                    isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                  className={`flex-shrink-0 w-[150px] h-[600px] rounded-2xl p-8 shadow-md cursor-pointer ${
+                    isVisible
+                      ? "opacity-100 scale-100 translate-y-0"
+                      : "opacity-0 scale-90 translate-y-12"
                   }`}
                   style={{
-                    animationDelay: "800ms",
                     backgroundImage: "url(/images/01.jpg)",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
+                    transition: hasAnimated
+                      ? "all 0.3s ease-out"
+                      : "opacity 0.7s ease-out 0.8s, transform 0.7s ease-out 0.8s",
                   }}
                   onMouseEnter={() => setHoveredCard(3)}
                   onMouseLeave={() => setHoveredCard(null)}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform =
+                      "scale(1.05) rotate(-2deg)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "scale(1) rotate(0deg)";
+                  }}
                 >
-                  {/* Card vazio - apenas imagem de fundo */}
+                 
                 </div>
               </div>
             </div>

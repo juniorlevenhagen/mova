@@ -1,87 +1,64 @@
 "use client";
-
 import Image from "next/image";
-import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 
 export function AboutSection() {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const observer = new window.IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-          }
-        });
-      },
-      { threshold: 0.2 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <section ref={sectionRef} className="w-full bg-white py-16 md:py-24 px-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Lado esquerdo - Conteúdo */}
-          <div className="space-y-8">
-            <div
-              className={`transition-all duration-1000 ease-out ${
-                isVisible
-                  ? "opacity-100 transform translate-x-0"
-                  : "opacity-0 transform translate-x-[-100px]"
-              }`}
-            >
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-6 leading-tight">
-                Sobre o <span className="text-gray-600">Mova+</span>
-              </h2>
-
-              <p className="text-lg md:text-xl text-gray-600 leading-relaxed mb-6">
-                Somos uma plataforma fitness inovadora que acredita que a
-                transformação física vai muito além dos exercícios. Nossa missão
-                é criar uma experiência completa que transforme não apenas seu
-                corpo, mas sua vida.
-              </p>
-
-              <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-8">
-                Combinando tecnologia de ponta com conhecimento especializado,
-                oferecemos treinos personalizados, planos nutricionais
-                inteligentes e uma comunidade que te motiva a alcançar seus
-                objetivos.
-              </p>
-
-              {/* Botão */}
-              <button className="bg-gray-800 text-white px-8 py-4 rounded-lg font-medium hover:bg-gray-900 transition-colors duration-200 text-lg shadow-lg hover:shadow-xl">
-                Participar do Clube
-              </button>
-            </div>
-          </div>
-
-          {/* Lado direito - Imagem */}
-          <div
-            className={`relative transition-all duration-1000 ease-out delay-300 ${
-              isVisible
-                ? "opacity-100 transform translate-x-0"
-                : "opacity-0 transform translate-x-[100px]"
-            }`}
-          >
+    <section className="w-full bg-white py-20 md:py-32 px-4">
+      <div className="w-full">
+        {/* Seção com design dividido - foto superior e texto inferior */}
+        <section className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-3xl shadow-2xl">
+          {/* Seção superior - Foto da mulher se exercitando */}
+          <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px]">
             <Image
-              src="/images/about-woman-exercising.webp"
-              alt="Mulher praticando exercícios"
-              width={400}
-              height={500}
-              className="w-full h-auto object-cover rounded-3xl shadow-lg"
+              src="/images/10.webp"
+              alt="Mulher fazendo exercício - fique saudável e mais forte"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
               priority
+              quality={100}
             />
           </div>
-        </div>
+
+          {/* Seção inferior - Fundo roxo com texto */}
+          <div
+            className="relative px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20"
+            style={{
+              background:
+                "linear-gradient(to right,rgb(111, 232, 222),rgb(199, 248, 65))",
+            }}
+          >
+            {/* Texto de fundo "WORKOUT" */}
+            <div className="absolute top-0 right-0 text-[8rem] md:text-[12rem] lg:text-[14rem] font-black text-green-600/10 select-none pointer-events-none leading-none transparency">
+              HEAL
+              <br />
+              TH
+            </div>
+
+            {/* Conteúdo principal */}
+            <div className="relative z-10 max-w-xs">
+              {/* Título principal */}
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-black mb-4 md:mb-6 leading-tight">
+                Faça parte de quem escolheu evoluir.
+              </h2>
+
+              {/* Texto descritivo */}
+              <p className="text-base md:text-lg lg:text-xl text-black/90 font-medium leading-relaxed max-w-xs">
+                Entre para o grupo de pessoas que decidiram transformar hábitos
+                diários, conquistando mais disposição, saúde e bem-estar.
+              </p>
+            </div>
+            <div className="mt-6">
+              <Link
+                href="/register/step0"
+                className="inline-block text-white px-20 py-4 rounded-full roboto-medium text-xl bg-black hover:bg-gray-900 transition-colors"
+              >
+                Cadastre-se
+              </Link>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
   );

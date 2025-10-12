@@ -3,9 +3,9 @@ import { HowItWorksSection } from "@/components/ui/HowItWorksSection";
 import { PricingSection } from "@/components/ui/PricingSection";
 import { AboutSection } from "@/components/ui/AboutSection";
 import { Footer } from "@/components/ui/Footer";
-
 import { FAQSection } from "@/components/ui/FAQSection";
 import { Navbar } from "@/components/ui/Navbar";
+import { ScrollGradientText } from "@/components/ui/ScrollGradientText";
 
 export default function Home() {
   return (
@@ -33,7 +33,15 @@ export default function Home() {
 
       <HowItWorksSection />
       <PricingSection />
-     
+
+      {/* Seção com efeito gradiente entre PricingSection e AboutSection */}
+      <section className="w-full bg-gray-50 py-20 md:py-32 px-4 font-bbh-sans-hegarty-regular">
+        <ScrollGradientText
+          text="TRANSFORME SEU CORPO. SUPERE SEUS LIMITES. ALCANCE SEUS OBJETIVOS."
+          className="mb-8"
+        />
+      </section>
+
       <AboutSection />
       <FAQSection />
       <Footer />

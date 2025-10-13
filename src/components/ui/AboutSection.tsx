@@ -1,15 +1,36 @@
 "use client";
+
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 export function AboutSection() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
+      const progress = Math.max(
+        0,
+        Math.min(1, (window.innerHeight - rect.top) / window.innerHeight)
+      );
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <section className="w-full bg-white py-20 md:py-32 px-4">
       <div className="w-full">
         {/* Seção com design dividido - foto superior e texto inferior */}
         <section className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-3xl shadow-2xl">
-          {/* Seção superior - Foto da mulher se exercitando */}
+          {/* Seção superior - Foto FIXA */}
           <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px]">
             <Image
               src="/images/10.webp"
@@ -22,16 +43,29 @@ export function AboutSection() {
             />
           </div>
 
-          {/* Seção inferior - Fundo roxo com texto */}
+          {/* Seção inferior - Gradiente Animado */}
           <div
-            className="relative px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20"
+            ref={sectionRef}
+            className="relative px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 overflow-hidden"
             style={{
-              background:
-                "linear-gradient(to right,rgb(111, 232, 222),rgb(199, 248, 65))",
+              // Gradiente rotativo + posição das cores
+              background: `linear-gradient(${90 + scrollProgress * 180}deg, 
+                           rgb(111, 232, 222) ${scrollProgress * 30}%, 
+                           rgb(199, 248, 65) ${100 - scrollProgress * 30}%)`,
+              transition: "background 0.5s ease-out",
             }}
           >
-            {/* Texto de fundo "WORKOUT" */}
-            <div className="absolute top-0 right-0 text-[8rem] md:text-[12rem] lg:text-[14rem] font-black text-green-600/10 select-none pointer-events-none leading-none transparency">
+            {/* HEALTH - Efeito nítido */}
+            <div
+              className="absolute top-0 right-0 text-[8rem] md:text-[12rem] lg:text-[14rem] 
+                         font-black select-none pointer-events-none leading-none"
+              style={{
+                // Opacidade e escala (sem blur)
+                color: `rgba(34, 197, 94, ${0.15 + scrollProgress * 0.25})`, // Verde com 15% → 40% opacidade
+                transform: `scale(${1 + scrollProgress * 0.1})`, // Cresce 10%
+                transition: "all 0.3s ease-out",
+              }}
+            >
               HEAL
               <br />
               TH
@@ -50,6 +84,7 @@ export function AboutSection() {
                 diários, conquistando mais disposição, saúde e bem-estar.
               </p>
             </div>
+
             <div className="mt-6">
               <Link href="/register/step0">
                 <ShinyButton className="px-12 py-3 lg:text-md bg-black rounded-lg">

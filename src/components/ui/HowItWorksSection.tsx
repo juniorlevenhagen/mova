@@ -168,9 +168,6 @@ export function HowItWorksSection() {
                       <div className="text-5xl font-zalando-black text-white mb-2">
                         {step.number}
                       </div>
-                      <div className="text-lg font-zalando-bold text-white leading-tight">
-                        {step.titleCard}
-                      </div>
                     </div>
                   </div>
                 ))}

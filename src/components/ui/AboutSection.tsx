@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 export function AboutSection() {
   return (
@@ -50,11 +51,10 @@ export function AboutSection() {
               </p>
             </div>
             <div className="mt-6">
-              <Link
-                href="/register/step0"
-                className="inline-block text-white px-20 py-4 rounded-full roboto-medium text-xl bg-black hover:bg-gray-900 transition-colors"
-              >
-                Cadastre-se
+              <Link href="/register/step0">
+                <ShinyButton className="px-12 py-3 lg:text-md bg-black rounded-lg">
+                  Cadastre-se
+                </ShinyButton>
               </Link>
             </div>
           </div>

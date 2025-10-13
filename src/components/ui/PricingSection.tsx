@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 export function PricingSection() {
   return (
@@ -24,7 +25,9 @@ export function PricingSection() {
         {/* Seção inferior - Fundo roxo com texto */}
         <div
           className="relative px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20"
-          style={{ background: "linear-gradient(to right, #6F74E8,rgb(210, 92, 246))" }}
+          style={{
+            background: "linear-gradient(to right, #6F74E8,rgb(210, 92, 246))",
+          }}
         >
           {/* Texto de fundo "WORKOUT" */}
           <div className="absolute top-0 right-0 text-[8rem] md:text-[12rem] lg:text-[14rem] font-black text-purple-600/20 select-none pointer-events-none leading-none transparency">
@@ -48,11 +51,10 @@ export function PricingSection() {
             </p>
           </div>
           <div className="mt-6">
-            <Link
-              href="/register/step0"
-              className="inline-block text-white px-20 py-4 rounded-full roboto-medium text-xl bg-black hover:bg-gray-900 transition-colors"
-            >
-              Calcule seu IMC Gratuito
+            <Link href="/register/step0">
+              <ShinyButton className="px-12 py-3 bg-black rounded-lg">
+                Calcule seu IMC Gratuito
+              </ShinyButton>
             </Link>
           </div>
         </div>

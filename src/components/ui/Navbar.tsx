@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 
 export function Navbar() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function Navbar() {
       </div>
 
       {/* Botões à direita */}
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
         <button className="text-sm px-3 sm:text-base text-black font-zalando hover:text-gray-700 transition-colors duration-200">
           Preços
         </button>
@@ -42,21 +43,21 @@ export function Navbar() {
           Blog
         </button>
 
-        {/* Botão "Entrar" */}
-        <button
+        {/* Botão "Entrar" - Roxo vibrante */}
+        <InteractiveHoverButton
           onClick={handleEnter}
-          className="sm:px-6 py-2 text-xs sm:text-base text-white font-zalando font-medium bg-[#4AA4F7] hover:bg-[#F59C46] transition-all duration-200 rounded-lg mr-2"
+          className="text-xs sm:text-base text-white font-zalando font-semibold bg-[black] border-[#7333EF] hover:bg-[black] hover:border-[#5F2AD1] shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transition-all"
         >
           Entrar
-        </button>
+        </InteractiveHoverButton>
 
-        {/* Botão "Comece agora" */}
-        <button
+        {/* Botão "Comece agora" - Verde neon */}
+        <InteractiveHoverButton
           onClick={handleStartNow}
-          className="sm:px-6 py-2 text-xs sm:text-base text-white font-zalando font-medium bg-black hover:bg-gray-600 transition-all duration-200 rounded-lg"
+          className="text-xs sm:text-base text-white font-zalando font-semibold bg-gray-600 hover:bg-[#63D934] hover:border-[#63D934] shadow-lg hover:shadow-xl hover:shadow-green-400/50 hover:text-black transition-all"
         >
-          Comece agora
-        </button>
+          Comece agora!
+        </InteractiveHoverButton>
       </div>
     </nav>
   );

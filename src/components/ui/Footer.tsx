@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="w-full bg-gray-800 text-white">
+    <footer className="w-full bg-black text-white">
       {/* Seção principal do footer */}
       <div className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
@@ -139,9 +139,10 @@ export function Footer() {
             </p>
             <form className="space-y-3">
               <input
+            
                 type="email"
                 placeholder="Seu melhor email"
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-white transition-colors duration-200 text-center"
+                className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white placeholder-white focus:outline-none focus:border-white transition-colors duration-200 text-center"
               />
               <button
                 type="submit"
@@ -159,12 +160,12 @@ export function Footer() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             {/* Copyright */}
-            <div className="text-gray-400 text-sm text-center md:text-left">
+            <div className="text-white text-sm text-center md:text-left">
               © 2024 Mova+. Todos os direitos reservados.
             </div>
 
             {/* Desenvolvido por ELEVEN - Centralizado */}
-            <div className="text-gray-400 text-sm text-center">
+            <div className="text-white text-sm text-center">
               Desenvolvido por ELEVEN
             </div>
 
@@ -172,25 +173,25 @@ export function Footer() {
             <div className="flex flex-wrap justify-center md:justify-end space-x-6 text-sm">
               <Link
                 href="/"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
+                className="text-white hover:text-white transition-colors duration-200"
               >
                 Termos de Uso
               </Link>
               <Link
                 href="/"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
+                className="text-white hover:text-white transition-colors duration-200"
               >
                 Política de Privacidade
               </Link>
               <Link
                 href="/"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
+                className="text-white hover:text-white transition-colors duration-200"
               >
                 Cookies
               </Link>
               <Link
                 href="/"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
+                className="text-white hover:text-white transition-colors duration-200"
               >
                 LGPD
               </Link>

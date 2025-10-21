@@ -1,6 +1,6 @@
 "use client";
 // src/components/ui/FAQSection.tsx
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const faqs = [
   {
@@ -47,32 +47,87 @@ const faqs = [
 
 export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target); // Stop observing once visible
+          }
+        });
+      },
+      {
+        threshold: 0.7, // Trigger when 20% of the section is visible
+        rootMargin: "0px 0px -50px 0px", // Start animation a bit before fully visible
+      }
+    );
+
+    const currentSection = sectionRef.current;
+    if (currentSection) {
+      observer.observe(currentSection);
+    }
+
+    return () => {
+      if (currentSection) {
+        observer.unobserve(currentSection);
+      }
+    };
+  }, []);
 
   return (
-    <section className="max-w-2xl mx-auto py-16 px-4">
-      <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">
-        Perguntas frequentes
-      </h2>
-      <p className="text-gray-600 text-center mb-8">
-        Tudo que você precisa saber sobre o Mova+
-      </p>
+    <section ref={sectionRef} className="max-w-2xl mx-auto py-16 px-4">
+      <div
+        className={`transition-all duration-700 transform ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
+      >
+        <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">
+          Perguntas frequentes
+        </h2>
+        <p className="text-gray-600 text-center mb-8">
+          Tudo que você precisa saber sobre o Mova+
+        </p>
+      </div>
       <div className="divide-y divide-gray-200">
-        {faqs.map((faq, idx) => (
-          <div key={idx}>
-            <button
-              className="w-full flex justify-between items-center py-5 text-left focus:outline-none"
-              onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+        {faqs.map((faq, idx) => {
+          // Calculate delay for cascade effect (from bottom to top)
+          const delay = (faqs.length - 1 - idx) * 100; // 100ms delay between each item
+
+          return (
+            <div
+              key={idx}
+              className={`transition-all duration-500 transform ${
+                isVisible
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-8"
+              }`}
+              style={{
+                transitionDelay: `${delay}ms`,
+              }}
             >
-              <span className="font-medium text-gray-900">{faq.question}</span>
-              <span className="text-2xl text-gray-400">
-                {openIndex === idx ? "−" : "+"}
-              </span>
-            </button>
-            {openIndex === idx && (
-              <div className="pb-5 text-gray-600">{faq.answer}</div>
-            )}
-          </div>
-        ))}
+              <button
+                className="w-full flex justify-between items-center py-5 text-left focus:outline-none hover:bg-gray-50 transition-colors duration-200 rounded-lg px-2 -mx-2"
+                onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+              >
+                <span className="font-medium text-gray-900">
+                  {faq.question}
+                </span>
+                <span className="text-2xl text-gray-400 transition-transform duration-200">
+                  {openIndex === idx ? "−" : "+"}
+                </span>
+              </button>
+              {openIndex === idx && (
+                <div className="pb-5 text-gray-600 animate-in slide-in-from-top-2 duration-300">
+                  {faq.answer}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </section>
   );

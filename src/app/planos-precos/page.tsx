@@ -1,11 +1,31 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { Check } from "lucide-react";
 import { BackgroundGradient } from "@/components/ui/shadcn-io/background-gradient";
 
 export default function PlanosPrecosPage() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const evolutionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!evolutionRef.current) return;
+      const rect = evolutionRef.current.getBoundingClientRect();
+      const progress = Math.max(
+        0,
+        Math.min(1, (window.innerHeight - rect.top) / window.innerHeight)
+      );
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const plans = [
     {
       name: "Plano Básico",
@@ -91,10 +111,24 @@ export default function PlanosPrecosPage() {
         </div>
       </section>
 
+      <div
+        ref={evolutionRef}
+        className="w-full h-[300px] flex items-center justify-center"
+        style={{
+          background: `linear-gradient(${90 + scrollProgress * 180}deg, 
+                       #f8fafc ${scrollProgress * 30}%, 
+                       #e2e8f0 ${50 + scrollProgress * 10}%,
+                       #cbd5e1 ${100 - scrollProgress * 30}%)`,
+          transition: "background 0.5s ease-out",
+        }}
+      >
+        <p className="text-[18rem] font-black text-white">EVOLUTION</p>
+      </div>
+
       {/* Pricing Cards - Padronizado e otimizado */}
       <section className="w-full py-16 md:py-24 px-4">
         <div className="max-w-7xl mx-auto">
-          <p className="text-2xl md:text-2xl text-gray-800 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed text-center">
+          <p className="text-2xl md:text-2xl text-gray-700 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed text-center">
             Escolha o plano ideal para sua jornada de transformação fitness.
             Todos os planos incluem acesso completo ao dashboard e ferramentas
             personalizadas.

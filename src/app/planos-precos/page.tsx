@@ -42,43 +42,27 @@ export default function PlanosPrecosPage() {
     <div>
       <Navbar />
 
-      {/* Hero Section - Seguindo padrão da página principal */}
-      <section className="w-full py-20 md:py-32 px-4">
-        <div className="mx-auto text-center">
-          <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-60 mx-auto font-zalando relative overflow-hidden group shadow-lg">
+      {/* Hero Section - Padronizado e otimizado */}
+      <section className="w-full py-16 md:py-24 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-sm font-medium text-gray-600 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-60 mx-auto font-zalando relative overflow-hidden group shadow-lg">
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
             <span className="relative z-10">Planos e Preços</span>
           </p>
-          <h1 className="max-w-7xl mx-auto text-3xl md:text-6xl font-zalando-medium text-black leading-tight my-12">
+          <h1 className="text-3xl md:text-6xl font-zalando-medium text-black leading-tight m-18">
             Quanto vale para você transformar seu corpo e sua saúde?
           </h1>
 
-          <section
-            className="relative w-9/12 mx-auto overflow-hidden rounded-3xl shadow-2xl"
-            style={{
-              background:
-                "linear-gradient(to right, #f0f0f0, #ffffff, #f0f0f0)",
-            }}
-          >
-            {/* EVOLUTION centralizado verticalmente */}
-            <div
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[8rem] md:text-[12rem] lg:text-[14rem] 
-                 font-black select-none pointer-events-none leading-none z-0 text-gray-300/30"
-            >
-              EVOL
-              <br />
-              UTION
-            </div>
-
+          <section className="relative w-11/12 mx-auto overflow-hidden rounded-3xl shadow-2xl bg-gray-100">
             {/* Layout em grid - Texto e Vídeo lado a lado */}
-            <div className="grid md:grid-cols-2 gap-8 p-8 relative z-10">
+            <div className="grid md:grid-cols-[2fr_3fr] gap-8 p-8 relative z-10">
               {/* Lado esquerdo - Texto */}
               <div className="text-left flex flex-col justify-center">
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-black mb-6 md:mb-8 leading-tight text-left">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-black mb-6 md:mb-8 leading-tight text-left drop-shadow-lg">
                   Você no controle da sua evolução
                 </h2>
 
-                <p className="text-lg md:text-xl lg:text-2xl text-black/90 font-medium leading-relaxed text-left max-w-xl">
+                <p className="text-lg md:text-xl text-black/90 leading-relaxed max-w-lg drop-shadow-md">
                   O método Mova+ é a revolução que o seu corpo e a sua saúde
                   esperavam. Não importa o seu nível, rotina ou objetivo — nossa
                   IA personalizada cria o caminho certo para você conquistar
@@ -92,12 +76,14 @@ export default function PlanosPrecosPage() {
               {/* Lado direito - Vídeo */}
               <div className="flex items-center justify-end">
                 <video
-                  className="w-full max-w-md h-auto object-cover rounded-2xl shadow-lg"
+                  className="w-full max-w-md h-auto object-cover rounded-2xl shadow-2xl shadow-black/50"
                   src="/images/antesedepois.mp4"
                   autoPlay
                   muted
                   loop
                   playsInline
+                  preload="metadata"
+                  aria-label="Vídeo demonstrativo dos resultados do método Mova+"
                 />
               </div>
             </div>
@@ -105,14 +91,14 @@ export default function PlanosPrecosPage() {
         </div>
       </section>
 
-      {/* Pricing Cards - Com background alternado */}
-      <section className="w-full">
-        <p className="text-2xl md:text-2xl text-gray-800 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed mt-12">
-          Escolha o plano ideal para sua jornada de transformação fitness. Todos
-          os planos incluem acesso completo ao dashboard e ferramentas
-          personalizadas.
-        </p>
-        <div className="max-w-6xl mx-auto">
+      {/* Pricing Cards - Padronizado e otimizado */}
+      <section className="w-full py-16 md:py-24 px-4">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-2xl md:text-2xl text-gray-800 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed text-center">
+            Escolha o plano ideal para sua jornada de transformação fitness.
+            Todos os planos incluem acesso completo ao dashboard e ferramentas
+            personalizadas.
+          </p>
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {plans.map((plan, index) => (
               <BackgroundGradient
@@ -198,8 +184,8 @@ export default function PlanosPrecosPage() {
             ))}
           </div>
 
-          {/* Additional Info */}
-          <div className="mt-12 text-center">
+          {/* Additional Info - Padronizado */}
+          <div className="mt-16 text-center">
             <p className="text-gray-600 text-sm">
               Todos os planos incluem 7 dias de teste grátis. Cancele a qualquer
               momento.

@@ -29,8 +29,7 @@ export default function PlanosPrecosPage() {
   const plans = [
     {
       name: "Plano Básico",
-      price: "14,99",
-      yearlyPrice: "179,88",
+      price: "17,99",
       plansIncluded: 1,
       features: [
         "1 plano personalizado gerado",
@@ -42,9 +41,8 @@ export default function PlanosPrecosPage() {
       popular: false,
     },
     {
-      name: "Plano Premium",
+      name: "Pacote Premium",
       price: "39,99",
-      yearlyPrice: "479,88",
       plansIncluded: 3,
       features: [
         "3 planos personalizados gerados",
@@ -69,7 +67,7 @@ export default function PlanosPrecosPage() {
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
             <span className="relative z-10">Planos e Preços</span>
           </p>
-          <h1 className="text-3xl md:text-6xl font-zalando-medium text-black leading-tight mb-12">
+          <h1 className="text-3xl md:text-6xl font-zalando-medium text-black leading-tight mb-24">
             Quanto vale para você transformar seu corpo e sua saúde?
           </h1>
 
@@ -170,11 +168,7 @@ export default function PlanosPrecosPage() {
                     <span className="text-5xl font-bold text-black">
                       R${plan.price}
                     </span>
-                    <span className="text-xl text-gray-600">/mês</span>
                   </div>
-                  <p className="text-lg text-gray-500 mb-6">
-                    ou R${plan.yearlyPrice} anualmente
-                  </p>
 
                   {/* Divider */}
                   <div className="border-t border-gray-200 my-6"></div>
@@ -232,11 +226,7 @@ export default function PlanosPrecosPage() {
                     <span className="text-5xl font-bold text-black">
                       R${plan.price}
                     </span>
-                    <span className="text-xl text-gray-600">/mês</span>
                   </div>
-                  <p className="text-lg text-gray-500 mb-6">
-                    ou R${plan.yearlyPrice} anualmente
-                  </p>
 
                   {/* Divider */}
                   <div className="border-t border-gray-200 my-6"></div>

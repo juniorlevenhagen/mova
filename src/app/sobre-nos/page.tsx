@@ -1,10 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRef, useEffect, useState } from "react";
+
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { Heart, Target, Users, Zap } from "lucide-react";
-
+import { ShinyButton } from "@/components/ui/shiny-button";
+import Link from "next/link";
 const values = [
   {
     icon: Heart,
@@ -33,45 +35,140 @@ const values = [
 ];
 
 const stats = [
-  { number: "10.000+", label: "Usuários Ativos" },
-  { number: "95%", label: "Taxa de Satisfação" },
-  { number: "50+", label: "Especialistas" },
-  { number: "24/7", label: "Suporte Disponível" },
+  { number: 10000, suffix: "+", label: "Usuários Ativos" },
+  { number: 95, suffix: "%", label: "Taxa de Satisfação" },
+  { number: 50, suffix: "+", label: "Especialistas" },
+  { number: "24/7", label: "Suporte Disponível", isText: true },
 ];
 
-export default function SobreNosPage() {
-  const router = useRouter();
+// Componente para animar números
+function AnimatedNumber({
+  value,
+  suffix = "",
+  isText = false,
+}: {
+  value: number | string;
+  suffix?: string;
+  isText?: boolean;
+}) {
+  const [displayValue, setDisplayValue] = useState<number | string>(0);
 
-  const handleStartJourney = () => {
-    router.push("/register/step0");
+  useEffect(() => {
+    if (isText || typeof value === "string") {
+      setDisplayValue(value);
+      return;
+    }
+
+    const duration = 2000; // 2 segundos
+    const steps = 60;
+    const increment = (value as number) / steps;
+    const stepDuration = duration / steps;
+
+    let current = 0;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= (value as number)) {
+        setDisplayValue(value as number);
+        clearInterval(timer);
+      } else {
+        setDisplayValue(Math.floor(current));
+      }
+    }, stepDuration);
+
+    return () => clearInterval(timer);
+  }, [value, isText]);
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000) {
+      return num.toLocaleString("pt-BR");
+    }
+    return num.toString();
+  };
+
+  if (isText || typeof value === "string") {
+    return <span>{value}</span>;
+  }
+
+  return (
+    <span>
+      {formatNumber(displayValue as number)}
+      {suffix}
+    </span>
+  );
+}
+
+export default function SobreNosPage() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const statsSectionRef = useRef<HTMLDivElement>(null);
+  const [isStatsVisible, setIsStatsVisible] = useState(false);
+
+  useEffect(() => {
+    const currentSection = statsSectionRef.current;
+
+    if (!currentSection) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsStatsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    observer.observe(currentSection);
+
+    return () => {
+      observer.unobserve(currentSection);
+    };
+  }, []);
+
+  const handleVideoHover = () => {
+    if (videoRef.current) {
+      videoRef.current.play();
+    }
+  };
+  const handleVideoEnded = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8]">
+    <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-br from-[#f5f1e8] to-white py-16 md:py-24 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-6 leading-tight">
-            Conheça a <span className="text-gray-600">História do Mova+</span>
+      {/* Hero Section - Padronizado */}
+      <section className="w-full py-16 md:py-24 px-4">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-52 mx-auto font-zalando relative overflow-hidden group shadow-lg">
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+            <span className="relative z-10">Sobre o Mova+</span>
+          </p>
+          <h1 className="text-3xl md:text-6xl font-zalando-medium text-black leading-tight mb-6">
+            Conheça a história por trás do Mova+
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg md:text-xl text-black/90 leading-relaxed max-w-3xl mx-auto">
             Nossa missão é democratizar o acesso a planos fitness
-            personalizados, usando tecnologia de ponta para transformar vidas.
+            personalizados, usando tecnologia de ponta para transformar vidas de
+            forma sustentável.
           </p>
         </div>
       </section>
 
-      {/* Nossa História */}
-      <section className="w-full bg-white py-20 px-4">
-        <div className="max-w-6xl mx-auto">
+      {/* Nossa História - Padronizado */}
+      <section className="w-full py-16 md:py-24 px-4">
+        <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Texto */}
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
+              <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-6 leading-tight">
                 Nossa História
               </h2>
-              <div className="space-y-4 text-gray-600 leading-relaxed">
+              <div className="space-y-4 text-black/80 leading-relaxed text-lg">
                 <p>
                   O Mova+ nasceu da paixão por democratizar o acesso a planos
                   fitness personalizados. Nossa equipe de especialistas em
@@ -80,10 +177,10 @@ export default function SobreNosPage() {
                   com inteligência artificial.
                 </p>
                 <p>
-                  Começamos com uma simples pergunta: &ldquo;Por que planos
-                  personalizados devem ser privilégio de poucos?&rdquo; Hoje,
-                  ajudamos milhares de pessoas a alcançarem seus objetivos de
-                  forma segura e eficaz.
+                  Começamos com uma simples pergunta: “Por que planos
+                  personalizados devem ser privilégio de poucos?” Hoje, ajudamos
+                  milhares de pessoas a alcançarem seus objetivos de forma
+                  segura e eficaz.
                 </p>
                 <p>
                   Nossa tecnologia analisa seu perfil, objetivos e progresso
@@ -92,28 +189,34 @@ export default function SobreNosPage() {
                 </p>
               </div>
             </div>
-            <div className="relative">
-              <div className="w-full h-96 bg-gray-800 rounded-2xl flex items-center justify-center">
-                <div className="text-center text-white">
-                  <Users className="w-24 h-24 mx-auto mb-4" />
-                  <h3 className="text-2xl font-bold">
-                    10.000+ Vidas Transformadas
-                  </h3>
-                </div>
-              </div>
+            {/* Visual */}
+            <div
+              className="flex justify-center"
+              onMouseEnter={handleVideoHover}
+            >
+              <video
+                ref={videoRef}
+                src="/images/jump2.mp4"
+                muted
+                className="w-2/3 h-auto object-cover rounded-3xl shadow-2xl shadow-black/100"
+                style={{ maxWidth: "calc(66.66667% - 2px)" }}
+                onEnded={handleVideoEnded}
+                playsInline
+                preload="metadata"
+              ></video>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Nossos Valores */}
-      <section className="w-full bg-[#f5f1e8] py-20 px-4">
+      {/* Nossos Valores - Padronizado */}
+      <section className="w-full py-16 md:py-24 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-4">
               Nossos Valores
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-black/70 max-w-2xl mx-auto">
               Os princípios que guiam cada decisão e cada linha de código
             </p>
           </div>
@@ -122,15 +225,15 @@ export default function SobreNosPage() {
             {values.map((value, index) => (
               <div
                 key={index}
-                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+                className="rounded-[22px] p-8 border-2 border-black transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-white"
               >
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center mb-4">
+                <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center mb-4">
                   <value.icon className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-3">
+                <h3 className="text-xl font-bold text-black mb-3">
                   {value.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-black/70 leading-relaxed">
                   {value.description}
                 </p>
               </div>
@@ -139,50 +242,78 @@ export default function SobreNosPage() {
         </div>
       </section>
 
-      {/* Estatísticas */}
-      <section className="w-full bg-gray-800 py-20 px-4">
-        <div className="max-w-6xl mx-auto">
+      {/* Estatísticas - Harmonizado preto/cinza */}
+      <section
+        ref={statsSectionRef}
+        className="w-full py-16 md:py-24 px-4 relative"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/images/sven-mieke-Lx_G.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-5xl font-zalando-medium text-white mb-4">
               Números que Falam
             </h2>
-            <p className="text-xl text-gray-300">
+            <p className="text-lg text-white/70">
               Resultados reais de uma comunidade em crescimento
             </p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
+              <div
+                key={index}
+                className="text-center transition-all duration-500"
+                style={{
+                  opacity: isStatsVisible ? 1 : 0,
+                  transform: isStatsVisible
+                    ? "translateY(0)"
+                    : "translateY(20px)",
+                  transitionDelay: `${index * 100}ms`,
+                }}
+              >
                 <div className="text-4xl md:text-5xl font-bold text-white mb-2">
-                  {stat.number}
+                  {isStatsVisible ? (
+                    <AnimatedNumber
+                      value={stat.number}
+                      suffix={stat.suffix}
+                      isText={stat.isText}
+                    />
+                  ) : stat.isText ? (
+                    stat.number
+                  ) : (
+                    "0"
+                  )}
                 </div>
-                <div className="text-gray-300 text-lg">{stat.label}</div>
+                <div className="text-white/70 text-lg">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="w-full bg-[#f5f1e8] py-20 px-4">
+      {/* CTA Section - Padronizado */}
+      <section className="w-full py-16 md:py-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6">
+          <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-6">
             Pronto para fazer parte da nossa história?
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-black/80 mb-8 max-w-2xl mx-auto">
             Junte-se a milhares de pessoas que já transformaram suas vidas com o
             Mova+
           </p>
-          <button
-            onClick={handleStartJourney}
-            className="bg-gradient-to-r from-blue-500 to-green-500 text-white py-4 px-8 rounded-lg font-medium hover:from-blue-600 hover:to-green-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl text-lg"
-          >
-            Começar Minha Jornada
-          </button>
-          <p className="text-gray-500 text-sm mt-4">
-            7 dias grátis • Cancele a qualquer momento
-          </p>
+          <div className="mt-6">
+            <Link href="/register/step0">
+              <ShinyButton className="px-12 py-3 bg-black rounded-lg">
+                Começar Minha Jornada
+              </ShinyButton>
+            </Link>
+          </div>
         </div>
       </section>
 

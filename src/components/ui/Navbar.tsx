@@ -35,7 +35,7 @@ export function Navbar() {
         <button className="text-sm px-3 sm:text-base text-black font-zalando hover:text-gray-700 transition-colors duration-200" onClick={() => router.push("/planos-precos")}>
           Preços
         </button>
-        <button className="text-sm px-3 sm:text-base text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200">
+        <button className="text-sm px-3 sm:text-base text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200" onClick={() => router.push("/sobre-nos")}>
           Sobre
         </button>
 

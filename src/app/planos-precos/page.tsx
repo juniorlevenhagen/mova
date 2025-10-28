@@ -126,7 +126,7 @@ export default function PlanosPrecosPage() {
       {/* Pricing Cards - Padronizado e otimizado */}
       <section className="w-full py-16 md:py-24 px-4">
         <div className="max-w-7xl mx-auto">
-          <p className="text-2xl md:text-2xl text-gray-800 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed text-center">
+          <p className="text-2xl md:text-xl text-white font-zalando max-w-3xl mx-auto mb-12 leading-relaxed text-center bg-black rounded-full p-1">
             Escolha o plano ideal para sua jornada de transformação fitness
           </p>
 

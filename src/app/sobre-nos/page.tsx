@@ -196,9 +196,9 @@ export default function SobreNosPage() {
             >
               <video
                 ref={videoRef}
-                src="/images/jump2.mp4"
+                src="/images/jump3.mp4"
                 muted
-                className="w-2/3 h-auto object-cover rounded-3xl shadow-2xl shadow-black/100"
+                className="w-2/3 h-auto object-cover shadow-2xl shadow-black/100"
                 style={{ maxWidth: "calc(66.66667% - 2px)" }}
                 onEnded={handleVideoEnded}
                 playsInline

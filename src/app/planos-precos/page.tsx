@@ -60,77 +60,27 @@ export default function PlanosPrecosPage() {
     <div>
       <Navbar />
 
-      {/* Hero Section - Padronizado e otimizado */}
-      <section className="w-full py-16 md:py-24 px-4">
+      {/* Hero Section */}
+      <section className="w-full py-16 md:py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-60 mx-auto font-zalando relative overflow-hidden group shadow-lg">
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
             <span className="relative z-10">Planos e Preços</span>
           </p>
-          <h1 className="text-3xl md:text-6xl font-zalando-medium text-black leading-tight mb-24">
+          <h1 className="text-3xl md:text-6xl font-zalando-medium text-black leading-tight mb-6">
             Quanto vale para você transformar seu corpo e sua saúde?
           </h1>
-
-          <section className="relative w-11/12 mx-auto overflow-hidden rounded-3xl shadow-2xl bg-gray-100">
-            {/* Layout em grid - Texto e Vídeo lado a lado */}
-            <div className="grid md:grid-cols-[2fr_3fr] gap-8 p-8 relative z-10">
-              {/* Lado esquerdo - Texto */}
-              <div className="text-left flex flex-col justify-center">
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-black mb-6 md:mb-8 leading-tight text-left drop-shadow-lg">
-                  Você no controle da sua evolução
-                </h2>
-
-                <p className="text-lg md:text-xl text-black/90 leading-relaxed max-w-lg drop-shadow-md">
-                  O método Mova+ é a revolução que o seu corpo e a sua saúde
-                  esperavam. Não importa o seu nível, rotina ou objetivo — nossa
-                  IA personalizada cria o caminho certo para você conquistar
-                  resultados reais, com segurança e eficiência. Transforme seu
-                  corpo em menos tempo, sem dietas malucas nem treinos
-                  intermináveis. O que antes parecia impossível, agora é questão
-                  de método.
-                </p>
-              </div>
-
-              {/* Lado direito - Vídeo */}
-              <div className="flex items-center justify-end">
-                <video
-                  className="w-full max-w-md h-auto object-cover rounded-2xl shadow-2xl shadow-black/50"
-                  src="/images/antesedepois.mp4"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  aria-label="Vídeo demonstrativo dos resultados do método Mova+"
-                />
-              </div>
-            </div>
-          </section>
         </div>
       </section>
 
-      <div
-        ref={evolutionRef}
-        className="w-full h-[300px] flex items-center justify-center"
-        style={{
-          background: `linear-gradient(${90 + scrollProgress * 180}deg, 
-                       #f8fafc ${scrollProgress * 30}%, 
-                       #e2e8f0 ${50 + scrollProgress * 10}%,
-                       #cbd5e1 ${100 - scrollProgress * 30}%)`,
-          transition: "background 0.5s ease-out",
-        }}
-      >
-        <p className="text-[18rem] font-black text-white">EVOLUTION</p>
-      </div>
-
-      {/* Pricing Cards - Padronizado e otimizado */}
-      <section className="w-full py-16 md:py-24 px-4">
+      {/* Pricing Cards Section */}
+      <section className="w-full py-12 md:py-4 md:mb-16 px-4">
         <div className="max-w-7xl mx-auto">
-          <p className="text-2xl md:text-xl text-white font-zalando max-w-3xl mx-auto mb-12 leading-relaxed text-center bg-black rounded-full p-1">
+          <p className="text-xl md:text-2xl text-gray-800 font-zalando max-w-3xl mx-auto mb-14 leading-relaxed text-center py-1 px-6">
             Escolha o plano ideal para sua jornada de transformação fitness
           </p>
 
-          <div className="grid md:grid-cols-2 gap-24 max-w-5xl mx-auto mt-18">
+          <div className="grid md:grid-cols-2 gap-12 md:gap-24 max-w-5xl mx-auto">
             {plans.map((plan, index) =>
               plan.popular ? (
                 <BackgroundGradient
@@ -258,6 +208,62 @@ export default function PlanosPrecosPage() {
                 </div>
               )
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Evolution Section */}
+      <div
+        ref={evolutionRef}
+        className="w-full h-[300px] flex items-center justify-center"
+        style={{
+          background: `linear-gradient(${90 + scrollProgress * 180}deg, 
+                   #f8fafc ${scrollProgress * 30}%, 
+                   #e2e8f0 ${50 + scrollProgress * 10}%,
+                   #cbd5e1 ${100 - scrollProgress * 30}%)`,
+          transition: "background 0.5s ease-out",
+        }}
+      >
+        <p className="text-[18rem] font-black text-white">EVOLUTION</p>
+      </div>
+
+      {/* Video Section */}
+      <section className="w-full py-16 md:py-24 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="relative w-11/12 mx-auto overflow-hidden rounded-3xl shadow-2xl bg-gray-100">
+            {/* Layout em grid - Texto e Vídeo lado a lado */}
+            <div className="grid md:grid-cols-[2fr_3fr] gap-8 p-8 relative z-10">
+              {/* Lado esquerdo - Texto */}
+              <div className="text-left flex flex-col justify-center">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-black mb-6 md:mb-8 leading-tight drop-shadow-lg">
+                  Você no controle da sua evolução
+                </h2>
+
+                <p className="text-lg md:text-xl text-black/90 leading-relaxed max-w-lg drop-shadow-md">
+                  O método Mova+ é a revolução que o seu corpo e a sua saúde
+                  esperavam. Não importa o seu nível, rotina ou objetivo — nossa
+                  IA personalizada cria o caminho certo para você conquistar
+                  resultados reais, com segurança e eficiência. Transforme seu
+                  corpo em menos tempo, sem dietas malucas nem treinos
+                  intermináveis. O que antes parecia impossível, agora é questão
+                  de método.
+                </p>
+              </div>
+
+              {/* Lado direito - Vídeo */}
+              <div className="flex items-center justify-end">
+                <video
+                  className="w-full max-w-md h-auto object-cover rounded-2xl shadow-2xl shadow-black/50"
+                  src="/images/antesedepois.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  aria-label="Vídeo demonstrativo dos resultados do método Mova+"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

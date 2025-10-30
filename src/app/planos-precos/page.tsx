@@ -1,38 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { Check } from "lucide-react";
 import { BackgroundGradient } from "@/components/ui/shadcn-io/background-gradient";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 export default function PlanosPrecosPage() {
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const evolutionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!evolutionRef.current) return;
-      const rect = evolutionRef.current.getBoundingClientRect();
-      const progress = Math.max(
-        0,
-        Math.min(1, (window.innerHeight - rect.top) / window.innerHeight)
-      );
-      setScrollProgress(progress);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const plans = [
     {
       name: "Plano Básico",
       price: "17,99",
+      originalPrice: "35,90",
+      discount: "50%",
       plansIncluded: 1,
       features: [
-        "1 plano personalizado gerado",
+        "1 prompt para gerar plano personalizado",
         "Acesso ao dashboard completo",
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
@@ -43,9 +27,11 @@ export default function PlanosPrecosPage() {
     {
       name: "Pacote Premium",
       price: "39,99",
+      originalPrice: "79,90",
+      discount: "50%",
       plansIncluded: 3,
       features: [
-        "3 planos personalizados gerados",
+        "3 prompts para gerar planos personalizados",
         "Acesso ao dashboard completo",
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
@@ -72,6 +58,18 @@ export default function PlanosPrecosPage() {
           </h1>
         </div>
       </section>
+
+      {/* Social Proof */}
+      <div className="text-center mb-12 max-w-4xl mx-auto px-4">
+        <p className="text-lg text-gray-700 mb-3">
+          Junte-se a <span className="font-bold text-black">10.000+</span>{" "}
+          pessoas que já transformaram suas vidas
+        </p>
+        <div className="flex items-center justify-center space-x-2">
+          <span className="text-black">★★★★★</span>
+          <span className="text-gray-600">4.9/5 • 2.847 avaliações</span>
+        </div>
+      </div>
 
       {/* Pricing Cards Section */}
       <section className="w-full py-12 md:py-4 md:mb-16 px-4">
@@ -115,8 +113,19 @@ export default function PlanosPrecosPage() {
 
                   {/* Price */}
                   <div className="mb-2">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-lg text-gray-400 line-through">
+                        R$ {plan.originalPrice}
+                      </span>
+                      <span className="bg-black text-white px-2 py-1 rounded text-xs font-bold">
+                        {plan.discount} OFF
+                      </span>
+                    </div>
                     <span className="text-5xl font-bold text-black">
                       R${plan.price}
+                    </span>
+                    <span className="text-gray-600 text-base ml-2">
+                      por prompt
                     </span>
                   </div>
 
@@ -144,9 +153,9 @@ export default function PlanosPrecosPage() {
                   </div>
 
                   {/* CTA Button */}
-                  <button className="w-full py-4 px-6 rounded-lg font-medium text-base transition-all duration-200 mt-auto bg-black text-white hover:bg-black/50 shadow-lg hover:shadow-xl">
-                    Começar agora
-                  </button>
+                  <ShinyButton className="w-full py-4 px-6 bg-black rounded-lg mt-auto">
+                    Começar Agora →
+                  </ShinyButton>
                 </BackgroundGradient>
               ) : (
                 <div
@@ -173,8 +182,19 @@ export default function PlanosPrecosPage() {
 
                   {/* Price */}
                   <div className="mb-2">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className="text-lg text-gray-400 line-through">
+                        R$ {plan.originalPrice}
+                      </span>
+                      <span className="bg-black text-white px-2 py-1 rounded text-xs font-bold">
+                        {plan.discount} OFF
+                      </span>
+                    </div>
                     <span className="text-5xl font-bold text-black">
                       R${plan.price}
+                    </span>
+                    <span className="text-gray-600 text-base ml-2">
+                      por prompt
                     </span>
                   </div>
 
@@ -202,30 +222,15 @@ export default function PlanosPrecosPage() {
                   </div>
 
                   {/* CTA Button */}
-                  <button className="w-full py-4 px-6 rounded-lg font-medium text-base transition-all duration-200 mt-auto bg-black text-white hover:bg-black/50 hover:text-white">
-                    Começar agora
-                  </button>
+                  <ShinyButton className="w-full py-4 px-6 bg-black rounded-lg mt-auto">
+                    Começar Agora →
+                  </ShinyButton>
                 </div>
               )
             )}
           </div>
         </div>
       </section>
-
-      {/* Evolution Section */}
-      <div
-        ref={evolutionRef}
-        className="w-full h-[300px] flex items-center justify-center"
-        style={{
-          background: `linear-gradient(${90 + scrollProgress * 180}deg, 
-                   #f8fafc ${scrollProgress * 30}%, 
-                   #e2e8f0 ${50 + scrollProgress * 10}%,
-                   #cbd5e1 ${100 - scrollProgress * 30}%)`,
-          transition: "background 0.5s ease-out",
-        }}
-      >
-        <p className="text-[18rem] font-black text-white">EVOLUTION</p>
-      </div>
 
       {/* Video Section */}
       <section className="w-full py-16 md:py-24 px-4">
@@ -263,6 +268,57 @@ export default function PlanosPrecosPage() {
                   aria-label="Vídeo demonstrativo dos resultados do método Mova+"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="w-full py-16 md:py-24 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-12 text-center">
+            Perguntas Frequentes
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="rounded-[22px] p-6 border-2 border-black bg-white">
+              <h3 className="font-bold text-lg text-black mb-3">
+                Posso gerar planos quando quiser?
+              </h3>
+              <p className="text-gray-700">
+                Sim! Você paga apenas quando gerar um plano. Não há compromisso
+                mensal ou assinatura. Use quando precisar.
+              </p>
+            </div>
+
+            <div className="rounded-[22px] p-6 border-2 border-black bg-white">
+              <h3 className="font-bold text-lg text-black mb-3">
+                Qual método de pagamento aceito?
+              </h3>
+              <p className="text-gray-700">
+                Aceitamos cartões de crédito e débito. O pagamento é processado
+                de forma segura e instantânea.
+              </p>
+            </div>
+
+            <div className="rounded-[22px] p-6 border-2 border-black bg-white">
+              <h3 className="font-bold text-lg text-black mb-3">
+                Posso comprar mais prompts depois?
+              </h3>
+              <p className="text-gray-700">
+                Sim! Você pode comprar prompts adicionais a qualquer momento
+                pelo dashboard, conforme sua necessidade.
+              </p>
+            </div>
+
+            <div className="rounded-[22px] p-6 border-2 border-black bg-white">
+              <h3 className="font-bold text-lg text-black mb-3">
+                Como funciona a cobrança?
+              </h3>
+              <p className="text-gray-700">
+                Cobrança apenas quando você gerar um plano personalizado. Pague
+                somente pelo que usar, sem compromisso mensal.
+              </p>
             </div>
           </div>
         </div>

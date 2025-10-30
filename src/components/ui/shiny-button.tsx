@@ -25,7 +25,7 @@ const animationProps = {
   },
 } as HTMLMotionProps<"button">;
 
-interface ShinyButtonProps {
+interface ShinyButtonProps extends HTMLMotionProps<"button"> {
   children: ReactNode;
   className?: string;
 }

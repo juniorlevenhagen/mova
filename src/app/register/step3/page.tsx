@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 export default function Step3Page() {
   const router = useRouter();
@@ -287,13 +288,13 @@ export default function Step3Page() {
               >
                 Voltar
               </button>
-              <button
+              <ShinyButton
                 onClick={handleStartTrial}
                 disabled={loading}
-                className="flex-1 bg-gray-800 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 px-6 bg-black rounded-lg text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Redirecionando..." : "Começar Teste Grátis"}
-              </button>
+              </ShinyButton>
             </div>
           </div>
         </div>

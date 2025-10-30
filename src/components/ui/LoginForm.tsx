@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { ShinyButton } from "@/components/ui/shiny-button";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -63,11 +64,11 @@ export default function LoginForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Mensagem de erro */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-gray-100 border-2 border-black rounded-lg p-4">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg
-                className="h-5 w-5 text-red-400"
+                className="h-5 w-5 text-black"
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
@@ -79,7 +80,7 @@ export default function LoginForm() {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
+              <p className="text-sm text-black font-medium">{error}</p>
             </div>
           </div>
         </div>
@@ -88,7 +89,7 @@ export default function LoginForm() {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700 mb-2"
+          className="block text-sm font-bold text-black mb-2"
         >
           E-mail
         </label>
@@ -99,8 +100,8 @@ export default function LoginForm() {
           value={formData.email}
           onChange={handleChange}
           required
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-            error ? "border-red-300" : "border-gray-300"
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors ${
+            error ? "border-black" : "border-gray-300"
           }`}
           placeholder="seu@email.com"
         />
@@ -109,7 +110,7 @@ export default function LoginForm() {
       <div>
         <label
           htmlFor="password"
-          className="block text-sm font-medium text-gray-700 mb-2"
+          className="block text-sm font-bold text-black mb-2"
         >
           Senha
         </label>
@@ -120,8 +121,8 @@ export default function LoginForm() {
           value={formData.password}
           onChange={handleChange}
           required
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-            error ? "border-red-300" : "border-gray-300"
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors ${
+            error ? "border-black" : "border-gray-300"
           }`}
           placeholder="Sua senha"
         />
@@ -135,22 +136,24 @@ export default function LoginForm() {
             name="rememberMe"
             checked={formData.rememberMe}
             onChange={handleChange}
-            className="rounded border-gray-300 text-gray-800 focus:ring-gray-800"
+            className="rounded border-2 border-gray-300 text-black focus:ring-black"
           />
-          <span className="ml-2 text-sm text-gray-600">Lembrar de mim</span>
+          <span className="ml-2 text-sm text-gray-700 font-medium">
+            Lembrar de mim
+          </span>
         </div>
-        <a href="#" className="text-sm text-gray-800 hover:underline">
+        <a href="#" className="text-sm text-black font-bold hover:underline">
           Esqueceu a senha?
         </a>
       </div>
 
-      <button
+      <ShinyButton
         type="submit"
         disabled={loading}
-        className="w-full bg-gray-800 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-4 px-6 bg-black rounded-lg text-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Entrando..." : "Entrar"}
-      </button>
+      </ShinyButton>
     </form>
   );
 }

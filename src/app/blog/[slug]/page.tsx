@@ -206,13 +206,13 @@ function formatDate(date?: string) {
 }
 
 type PageParams = {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 };
 
 export async function generateMetadata({
   params,
 }: PageParams): Promise<Metadata> {
-  const slug = params.slug;
+  const { slug } = await params;
   const post = (await getPost(slug)) ?? fallbackPosts[slug];
 
   if (!post) {
@@ -241,7 +241,7 @@ export async function generateMetadata({
 }
 
 export default async function BlogPostPage({ params }: PageParams) {
-  const slug = params.slug;
+  const { slug } = await params;
   const post = (await getPost(slug)) ?? fallbackPosts[slug];
 
   if (!post) {

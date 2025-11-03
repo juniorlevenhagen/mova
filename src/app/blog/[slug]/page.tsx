@@ -174,7 +174,7 @@ async function getPost(slug: string): Promise<BlogPost | null> {
     const { data, error } = await supabase
       .from("blog_posts")
       .select(
-        `id, slug, title, excerpt, content, author, category, read_time, readTime, cover_image, coverImage, published_at, publishedAt, key_takeaways, keyTakeaways, sections, highlighted_quote`
+        `id, slug, title, excerpt, content, author, category, read_time, cover_image, published_at, key_takeaways, sections, highlighted_quote`
       )
       .eq("slug", slug)
       .maybeSingle<SupabasePost>();

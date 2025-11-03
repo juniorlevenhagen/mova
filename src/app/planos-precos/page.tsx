@@ -43,11 +43,11 @@ export default function PlanosPrecosPage() {
   ];
 
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="w-full py-16 md:py-20 px-4">
+      <section className="w-full py-16 md:py-20 px-4 bg-gradient-to-b from-white via-white to-gray-100">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-60 mx-auto font-zalando relative overflow-hidden group shadow-lg">
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
@@ -61,7 +61,7 @@ export default function PlanosPrecosPage() {
 
       {/* Social Proof */}
       <div className="text-center mb-12 max-w-4xl mx-auto px-4">
-        <p className="text-lg text-gray-700 mb-3">
+        <p className="text-lg text-gray-700 mb-3 mt-10">
           Junte-se a <span className="font-bold text-black">10.000+</span>{" "}
           pessoas que já transformaram suas vidas
         </p>
@@ -124,9 +124,7 @@ export default function PlanosPrecosPage() {
                     <span className="text-5xl font-bold text-black">
                       R${plan.price}
                     </span>
-                    <span className="text-gray-600 text-base ml-2">
-                      pacote 
-                    </span>
+                    <span className="text-gray-600 text-base ml-2">pacote</span>
                   </div>
 
                   {/* Divider */}
@@ -193,9 +191,7 @@ export default function PlanosPrecosPage() {
                     <span className="text-5xl font-bold text-black">
                       R${plan.price}
                     </span>
-                    <span className="text-gray-600 text-base ml-2">
-                      plano
-                    </span>
+                    <span className="text-gray-600 text-base ml-2">plano</span>
                   </div>
 
                   {/* Divider */}

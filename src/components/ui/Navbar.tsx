@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 
 export function Navbar() {
   const router = useRouter();
@@ -32,32 +31,39 @@ export function Navbar() {
 
       {/* Botões à direita */}
       <div className="flex items-center gap-2">
-        <button className="text-sm px-3 sm:text-base text-black font-zalando hover:text-gray-700 transition-colors duration-200" onClick={() => router.push("/planos-precos")}>
+        <button
+          className="text-sm px-3 sm:text-base text-black font-zalando hover:text-gray-700 transition-colors duration-200"
+          onClick={() => router.push("/planos-precos")}
+        >
           Preços
         </button>
-        <button className="text-sm px-3 sm:text-base text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200" onClick={() => router.push("/sobre-nos")}>
+        <button
+          className="text-sm px-3 sm:text-base text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200"
+          onClick={() => router.push("/sobre-nos")}
+        >
           Sobre
         </button>
 
-        <button className="text-sm px-3 mr-3 sm:text-base text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200">
+        <button className="text-sm px-3 mr-3 sm:text-base text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200"
+        onClick={() => router.push("/blog")}>
           Blog
         </button>
 
-        {/* Botão "Entrar" - Roxo vibrante */}
-        <InteractiveHoverButton
+        {/* Botão "Entrar" - Minimalista ghost button */}
+        <button
           onClick={handleEnter}
-          className="text-xs sm:text-base text-white font-zalando font-semibold bg-[black] border-[#7333EF] hover:bg-[black] hover:border-[#5F2AD1] shadow-lg hover:shadow-xl hover:shadow-purple-500/50 transition-all"
+          className="text-xs sm:text-sm px-4 py-2 text-black font-zalando font-medium border border-gray-300 hover:border-black hover:bg-black hover:text-white rounded-lg transition-all duration-200"
         >
           Entrar
-        </InteractiveHoverButton>
+        </button>
 
-        {/* Botão "Comece agora" - Verde neon */}
-        <InteractiveHoverButton
+        {/* Botão "Comece agora" - CTA moderno com gradient sutil */}
+        <button
           onClick={handleStartNow}
-          className="text-xs sm:text-base text-white font-zalando font-semibold bg-gray-600 hover:bg-[#63D934] hover:border-[#63D934] shadow-lg hover:shadow-xl hover:shadow-green-400/50 hover:text-black transition-all"
+          className="text-xs sm:text-sm px-5 sm:px-7 py-2 sm:py-2.5 text-white font-zalando font-semibold bg-black hover:bg-gray-900 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
         >
-          Comece agora!
-        </InteractiveHoverButton>
+          Comece agora
+        </button>
       </div>
     </nav>
   );

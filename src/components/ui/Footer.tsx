@@ -105,14 +105,6 @@ export function Footer() {
                   Blog
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/comunidade"
-                  className="text-gray-300 hover:text-white transition-colors duration-200"
-                >
-                  Comunidade
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -139,7 +131,6 @@ export function Footer() {
             </p>
             <form className="space-y-3">
               <input
-            
                 type="email"
                 placeholder="Seu melhor email"
                 className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white placeholder-white focus:outline-none focus:border-white transition-colors duration-200 text-center"

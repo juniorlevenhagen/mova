@@ -35,7 +35,7 @@ export default function WelcomePage() {
 
       <div className="hidden lg:block lg:w-1/2 relative bg-white contrast-100">
         <PixelImage
-          src="/images/salah-pictures-X2xV00F5534-unsplash.webp"
+          src="/images/logan-weaver-lgnwvr-u76Gd0hP5w4-unsplash.webp"
           className="absolute inset-0 w-full h-full object-cover"
           grayscaleAnimation={false}
         />

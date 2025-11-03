@@ -125,7 +125,7 @@ export default function PlanosPrecosPage() {
                       R${plan.price}
                     </span>
                     <span className="text-gray-600 text-base ml-2">
-                      por prompt
+                      pacote 
                     </span>
                   </div>
 
@@ -194,7 +194,7 @@ export default function PlanosPrecosPage() {
                       R${plan.price}
                     </span>
                     <span className="text-gray-600 text-base ml-2">
-                      por prompt
+                      plano
                     </span>
                   </div>
 
@@ -233,9 +233,9 @@ export default function PlanosPrecosPage() {
       </section>
 
       {/* Video Section */}
-      <section className="w-full py-16 md:py-24 px-4">
+      <section className="w-full bg-gray-100 py-16 md:py-24 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="relative w-11/12 mx-auto overflow-hidden rounded-3xl shadow-2xl bg-gray-100">
+          <div className="relative w-11/12 mx-auto overflow-hidden shadow-2xl bg-gray-100">
             {/* Layout em grid - Texto e Vídeo lado a lado */}
             <div className="grid md:grid-cols-[2fr_3fr] gap-8 p-8 relative z-10">
               {/* Lado esquerdo - Texto */}

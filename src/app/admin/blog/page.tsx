@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
-import { Plus, Edit, Eye, Trash2, Calendar, Clock } from "lucide-react";
+import { Plus, Edit, Eye, Trash2, Calendar } from "lucide-react";
 
 type BlogPost = {
   id: string;

@@ -290,7 +290,7 @@ export default function NewBlogPostPage() {
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                         <li>O post só aparecerá publicamente após a data de publicação</li>
                         <li>Revise título, conteúdo e metadados antes de salvar</li>
-                        <li>Clique em "Salvar Post" quando estiver pronto</li>
+                        <li>Clique em &quot;Salvar Post&quot; quando estiver pronto</li>
                       </ul>
                     </div>
                   </div>

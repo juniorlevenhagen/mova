@@ -293,10 +293,48 @@ export default function DashboardPage() {
   // Removido trialPercent pois não está sendo usado no componente
 
   const handleLogout = async () => {
-    setLogoutLoading(true);
-    await supabase.auth.signOut();
-    router.push("/");
-    setLogoutLoading(false);
+    try {
+      setLogoutLoading(true);
+      
+      // Limpar todos os dados de armazenamento ANTES do logout
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Limpar cookies do Supabase manualmente antes do logout
+      if (typeof document !== "undefined") {
+        const cookies = document.cookie.split(";");
+        cookies.forEach((cookie) => {
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          // Limpar cookies do Supabase
+          if (name.includes("supabase") || name.includes("sb-")) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
+          }
+        });
+      }
+      
+      // Fazer logout do Supabase com scope global para limpar todos os dados
+      const { error } = await supabase.auth.signOut({ scope: "global" });
+      
+      if (error) {
+        console.error("Erro ao fazer logout:", error);
+      }
+      
+      // Aguardar um pouco para garantir que o logout foi processado
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      
+      // Redirecionar usando window.location para garantir reload completo
+      window.location.href = "/auth/login";
+    } catch (error) {
+      console.error("Erro inesperado no logout:", error);
+      // Mesmo com erro, tentar redirecionar e limpar tudo
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "/auth/login";
+    } finally {
+      setLogoutLoading(false);
+    }
   };
 
   const handleAddEvolucao = () => {

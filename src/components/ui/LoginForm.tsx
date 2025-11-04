@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function LoginForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -17,6 +20,13 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Verificar captcha antes de prosseguir
+    if (!captchaToken) {
+      setError("Por favor, complete a verificação de segurança");
+      return;
+    }
+
     setLoading(true);
     setError(""); // Limpar erros anteriores
 
@@ -24,6 +34,9 @@ export default function LoginForm() {
       const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
+        options: {
+          captchaToken,
+        },
       });
 
       if (error) {
@@ -34,14 +47,23 @@ export default function LoginForm() {
           setError("Por favor, confirme seu email antes de fazer login.");
         } else if (error.message.includes("Too many requests")) {
           setError("Muitas tentativas. Aguarde um momento e tente novamente.");
+        } else if (error.message.includes("captcha")) {
+          setError("Erro na verificação de segurança. Tente novamente.");
+          // Resetar captcha para tentar novamente
+          setCaptchaToken(null);
+          captchaRef.current?.resetCaptcha();
         } else {
-          setError("Erro ao fazer login. Tente novamente.");
+          setError(`Erro ao fazer login: ${error.message}`);
         }
         return;
       }
 
+      // Aguardar um pouco para garantir que a sessão foi salva
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // Redirecionar para dashboard após login bem-sucedido
       router.push("/dashboard");
+      router.refresh(); // Forçar refresh para atualizar a sessão
     } catch (error) {
       console.error("Erro no login:", error);
       setError("Erro inesperado. Tente novamente.");
@@ -147,9 +169,23 @@ export default function LoginForm() {
         </a>
       </div>
 
+      {/* Adicionar hCaptcha */}
+      <div className="flex justify-center">
+        <HCaptcha
+          ref={captchaRef}
+          sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || ""}
+          onVerify={setCaptchaToken}
+          onExpire={() => setCaptchaToken(null)}
+          onError={() => {
+            setCaptchaToken(null);
+            setError("Erro na verificação de segurança. Tente novamente.");
+          }}
+        />
+      </div>
+
       <ShinyButton
         type="submit"
-        disabled={loading}
+        disabled={loading || !captchaToken}
         className="w-full py-4 px-6 bg-black rounded-lg text-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Entrando..." : "Entrar"}

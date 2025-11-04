@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
     return config;
   },
   serverExternalPackages: ["pdf-parse"],
+  // Desabilitar source maps em desenvolvimento para evitar erros de fetch.ts
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

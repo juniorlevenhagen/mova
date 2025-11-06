@@ -26,7 +26,6 @@ const ANALYSIS_SCHEMA = {
           },
         },
         required: ["currentStatus", "strengths", "improvements"],
-        additionalProperties: false,
       },
     },
     required: ["analysis"],

@@ -455,7 +455,7 @@ export function UserDataSection({
   };
 
   return (
-    <div className={`${components.card.base} ${components.card.padding}`}>
+    <div className={`bg-gray-50 rounded-xl shadow-lg border border-gray-200 ${components.card.padding}`}>
       <div className="mb-6">
         <h2
           className={`${typography.heading.h3} ${colors.text.primary} mb-2 flex items-center gap-3`}
@@ -600,7 +600,7 @@ export function UserDataSection({
             Dados Básicos
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <span className="block text-gray-500 text-sm mb-1">Altura</span>
               <span className="block text-gray-800 font-bold text-lg">
                 {userProfile.altura} cm
@@ -608,11 +608,11 @@ export function UserDataSection({
             </div>
 
             {/* Peso editável */}
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               {renderEditableField("peso", "Peso", `${userProfile.peso} kg`)}
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <span className="block text-gray-500 text-sm">IMC</span>
                 <button
@@ -642,7 +642,7 @@ export function UserDataSection({
               </span>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <span className="block text-gray-500 text-sm mb-1">Sexo</span>
               <span className="block text-gray-800 font-bold text-lg">
                 {userProfile.sexo.charAt(0).toUpperCase() +
@@ -671,7 +671,7 @@ export function UserDataSection({
             Dados de Treino
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <span className="block text-gray-500 text-sm mb-1">Idade</span>
               <span className="block text-gray-800 font-bold text-lg">
                 {userProfile.birthDate
@@ -680,7 +680,7 @@ export function UserDataSection({
               </span>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               {renderEditableField(
                 "frequenciaTreinos",
                 "Frequência de Treinos",
@@ -695,7 +695,7 @@ export function UserDataSection({
               )}
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               {renderEditableField(
                 "objetivo",
                 "Objetivo",
@@ -731,7 +731,7 @@ export function UserDataSection({
             Metabolismo
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <span className="block text-gray-500 text-sm">
                   Caloria Basal Estimada
@@ -758,7 +758,7 @@ export function UserDataSection({
               </span>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               {renderEditableField(
                 "nivelAtividade",
                 "Nível de Atividade",
@@ -900,7 +900,7 @@ export function UserDataSection({
           <button
             onClick={handleGeneratePlan}
             disabled={isGeneratingPlan || isCheckingPlanStatus}
-            className={`flex-1 ${components.button.base} ${components.button.sizes.lg} bg-gradient-to-r from-gray-800 to-gray-900 text-white hover:from-gray-900 hover:to-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200`}
+            className={`flex-1 ${components.button.base} ${components.button.sizes.lg} bg-black text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200`}
           >
             {isGeneratingPlan ? (
               <>
@@ -1041,7 +1041,7 @@ export function UserDataSection({
               </button>
               <button
                 onClick={confirmGeneratePlan}
-                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900`}
+                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
               >
                 Gerar Sem Avaliação
               </button>
@@ -1080,7 +1080,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowIMCModal(false)}
-              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900`}
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
             >
               Entendi
             </button>
@@ -1119,7 +1119,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowCaloriaModal(false)}
-              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900`}
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
             >
               Entendi
             </button>

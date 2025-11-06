@@ -273,15 +273,24 @@ export default function BlogPage() {
       const selectedCat = normalizedCategory.toLowerCase();
       const matchesCategory = showAll || postCategory === selectedCat;
 
-      // Verificar busca
-      const postTitle = (post.title || "").toLowerCase();
-      const postExcerpt = (post.excerpt || "").toLowerCase();
-      const matchesSearch =
-        !normalizedSearchTerm ||
-        postTitle.includes(normalizedSearchTerm) ||
-        postExcerpt.includes(normalizedSearchTerm);
+      // Verificar busca - expandido para incluir título, excerpt, categoria e autor
+      if (normalizedSearchTerm) {
+        const postTitle = (post.title || "").toLowerCase();
+        const postExcerpt = (post.excerpt || "").toLowerCase();
+        const postCategorySearch = postCategory;
+        const postAuthor = (post.author || "").toLowerCase();
 
-      return matchesCategory && matchesSearch;
+        const matchesSearch =
+          postTitle.includes(normalizedSearchTerm) ||
+          postExcerpt.includes(normalizedSearchTerm) ||
+          postCategorySearch.includes(normalizedSearchTerm) ||
+          postAuthor.includes(normalizedSearchTerm);
+
+        return matchesCategory && matchesSearch;
+      }
+
+      // Se não houver termo de busca, apenas filtrar por categoria
+      return matchesCategory;
     });
 
     // Criar uma cópia antes de ordenar para evitar mutação
@@ -415,7 +424,7 @@ export default function BlogPage() {
                   type="text"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Busque por título ou assunto"
+                  placeholder="Busque por título, assunto, categoria ou autor"
                   className="w-full border-0 bg-transparent px-4 py-4 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-0 sm:text-base"
                 />
                 <span className="mr-4 hidden rounded-full border border-black px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-black sm:inline-flex">
@@ -441,9 +450,17 @@ export default function BlogPage() {
                 <motion.button
                   key={category}
                   variants={cardVariant}
+                  layout
                   onClick={() => setSelectedCategory(category)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{
+                    duration: 0.4,
+                    ease: [0.16, 1, 0.3, 1],
+                    layout: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+                  }}
                   className={cn(
-                    "group inline-flex items-center rounded-full border px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-all duration-200 sm:px-6 sm:py-2.5 sm:text-sm",
+                    "group inline-flex items-center rounded-full border px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors duration-500 ease-out sm:px-6 sm:py-2.5 sm:text-sm",
                     isActive
                       ? "border-black bg-black text-white shadow-[0_15px_40px_-25px_rgba(0,0,0,0.6)]"
                       : "border-gray-200 bg-white text-gray-600 hover:border-black hover:text-black"

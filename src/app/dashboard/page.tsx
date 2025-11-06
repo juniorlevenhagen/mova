@@ -247,7 +247,7 @@ export default function DashboardPage() {
     trialLoading
   ) {
     return (
-      <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">
@@ -384,7 +384,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      <div className="min-h-screen bg-[#f5f1e8] p-4">
+      <div className="min-h-screen bg-white p-4">
         <div className="max-w-3xl mx-auto space-y-8">
           {/* ✅ Alerta de erro ao gerar plano */}
           {planError && (

@@ -17,7 +17,7 @@ export function TrialSection({
   const hasUsedFreePlan = trial.requisicoesRestantes === 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 mb-4">
+    <div className="bg-gray-50 rounded-2xl shadow-lg border border-gray-200 p-6 mb-4">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">
         {isPremium ? "Seu Plano Premium" : "Seu Plano Gratuito"}
       </h2>
@@ -77,7 +77,7 @@ export function TrialSection({
                   </p>
                   <button
                     onClick={onUpgrade}
-                    className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    className="bg-black hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
                   >
                     Upgrade para Premium - R$ 29,90/mês
                   </button>
@@ -103,7 +103,7 @@ export function TrialSection({
                 </p>
                 <button
                   onClick={onUpgrade}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                 >
                   Ver Planos Premium
                 </button>

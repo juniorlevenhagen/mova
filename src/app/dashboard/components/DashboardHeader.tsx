@@ -27,7 +27,7 @@ export function DashboardHeader({
       <button
         onClick={onLogout}
         disabled={logoutLoading}
-        className={`${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed`}
+        className={`${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200`}
       >
         {logoutLoading ? "Saindo..." : "Sair"}
       </button>

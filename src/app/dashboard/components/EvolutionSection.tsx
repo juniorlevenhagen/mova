@@ -667,7 +667,7 @@ export function EvolutionSection({
   };
 
   return (
-    <div className={`${components.card.base} ${components.card.padding} mt-8`}>
+    <div className={`bg-gray-50 rounded-xl shadow-lg border border-gray-200 ${components.card.padding} mt-8`}>
       <div className="flex items-center justify-between mb-8">
         <h2 className={`${typography.heading.h2} ${colors.text.primary}`}>
           Sua Evolução
@@ -676,7 +676,7 @@ export function EvolutionSection({
         {/* Filtros de período */}
         <div className="flex gap-2">
           <button
-            className={`${components.button.base} ${components.button.sizes.sm} bg-gray-800 text-white`}
+            className={`${components.button.base} ${components.button.sizes.sm} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
           >
             Semanal
           </button>
@@ -910,7 +910,7 @@ export function EvolutionSection({
           <h3 className="text-md font-semibold text-gray-800">Atividade</h3>
           <button
             onClick={() => setShowActivityModal(true)}
-            className="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+            className="text-sm bg-black text-white px-3 py-1 rounded-lg hover:bg-gray-900 transition-colors duration-200"
           >
             Adicionar Atividade
           </button>
@@ -955,7 +955,7 @@ export function EvolutionSection({
               onClick={() => setEvolutionFilter("10")}
               className={`px-2 py-1 text-xs rounded ${
                 evolutionFilter === "10"
-                  ? "bg-blue-600 text-white"
+                  ? "bg-black text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
@@ -965,7 +965,7 @@ export function EvolutionSection({
               onClick={() => setEvolutionFilter("20")}
               className={`px-2 py-1 text-xs rounded ${
                 evolutionFilter === "20"
-                  ? "bg-blue-600 text-white"
+                  ? "bg-black text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
@@ -975,7 +975,7 @@ export function EvolutionSection({
               onClick={() => setEvolutionFilter("all")}
               className={`px-2 py-1 text-xs rounded ${
                 evolutionFilter === "all"
-                  ? "bg-blue-600 text-white"
+                  ? "bg-black text-white"
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300"
               }`}
             >
@@ -1260,7 +1260,7 @@ export function EvolutionSection({
                     onClick={() => setProgressFilter("10")}
                     className={`px-2 py-1 text-xs rounded ${
                       progressFilter === "10"
-                        ? "bg-orange-600 text-white"
+                        ? "bg-black text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
@@ -1270,7 +1270,7 @@ export function EvolutionSection({
                     onClick={() => setProgressFilter("20")}
                     className={`px-2 py-1 text-xs rounded ${
                       progressFilter === "20"
-                        ? "bg-orange-600 text-white"
+                        ? "bg-black text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
@@ -1280,7 +1280,7 @@ export function EvolutionSection({
                     onClick={() => setProgressFilter("all")}
                     className={`px-2 py-1 text-xs rounded ${
                       progressFilter === "all"
-                        ? "bg-orange-600 text-white"
+                        ? "bg-black text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
@@ -1745,7 +1745,7 @@ export function EvolutionSection({
       <button
         onClick={onAddEvolution}
         disabled={isAddingEvolution}
-        className={`mt-6 ${components.button.base} ${components.button.sizes.lg} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+        className={`mt-6 ${components.button.base} ${components.button.sizes.lg} bg-black text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors duration-200`}
       >
         {isAddingEvolution ? (
           <>

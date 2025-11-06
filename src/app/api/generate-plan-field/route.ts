@@ -26,7 +26,6 @@ const ANALYSIS_SCHEMA = {
           },
         },
         required: ["currentStatus", "strengths", "improvements"],
-        additionalProperties: false,
       },
     },
     required: ["analysis"],
@@ -75,7 +74,6 @@ const TRAINING_SCHEMA = {
           progression: { type: "string" },
         },
         required: ["overview", "weeklySchedule", "progression"],
-        additionalProperties: false,
       },
     },
     required: ["trainingPlan"],
@@ -222,7 +220,7 @@ Gere um plano de treino completo, detalhado e personalizado para atingir o objet
       [fieldType]: result[fieldType],
     });
   } catch (error: unknown) {
-    console.error(`❌ Erro ao gerar ${fieldType}:`, error);
+    console.error(`❌ Erro ao gerar campo:`, error);
     const errorMessage =
       error instanceof Error ? error.message : "Erro desconhecido";
     return NextResponse.json(

@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Configurar produtos baseado no tipo
     let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     let mode: "payment" | "subscription" = "payment";
-    let metadata: Record<string, string> = {
+    const metadata: Record<string, string> = {
       user_id: user.id,
     };
 
@@ -100,15 +100,6 @@ export async function POST(request: NextRequest) {
       metadata.prompts_amount = "3";
     } else {
       // Premium mensal (comportamento original)
-      const { data: trialData } = await supabase
-        .from("user_trials")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const isInTrial =
-        trialData && trialData.is_active && !trialData.upgraded_to_premium;
-
       lineItems = [
         {
           price_data: {

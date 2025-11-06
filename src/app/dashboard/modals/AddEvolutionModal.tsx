@@ -51,7 +51,7 @@ export function AddEvolutionModal({
     e.preventDefault();
 
     // Remover bracoLado do submit (não é salvo no banco, apenas informativo)
-    const { bracoLado, ...dataToSubmit } = modalData;
+    const { bracoLado: _bracoLado, ...dataToSubmit } = modalData;
 
     onSubmit(dataToSubmit as EvolutionData);
   };

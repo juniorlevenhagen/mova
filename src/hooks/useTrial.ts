@@ -217,7 +217,7 @@ export function useTrial(user: User | null) {
   }, [user]);
 
   // Incrementar contador de planos gerados
-  const incrementPlanUsage = async () => {
+  const incrementPlanUsage = useCallback(async () => {
     if (!user) return false;
 
     try {
@@ -300,10 +300,10 @@ export function useTrial(user: User | null) {
       console.error("Erro ao incrementar uso do plano:", error);
       return false;
     }
-  };
+  }, [user, fetchTrial]);
 
   // Fazer upgrade para premium
-  const upgradeToPremium = async () => {
+  const upgradeToPremium = useCallback(async () => {
     if (!trial || !user) return false;
 
     try {
@@ -325,7 +325,7 @@ export function useTrial(user: User | null) {
       console.error("Erro ao fazer upgrade:", error);
       return false;
     }
-  };
+  }, [trial, user, setTrial]);
 
   // Carregar trial quando usuário mudar
   useEffect(() => {

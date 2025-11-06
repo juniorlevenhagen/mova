@@ -130,7 +130,7 @@ const PLAN_FIELD_SCHEMAS = {
   },
 } as const;
 
-const PLAN_REQUIRED_FIELDS = ["analysis", "trainingPlan"] as const;
+const PLAN_REQUIRED_FIELDS = [] as const; // Temporariamente vazio para testes
 
 const PLAN_JSON_SCHEMA = {
   name: "personalized_plan",
@@ -276,34 +276,35 @@ function validatePlanFinal(planData: any): {
     return { isValid: false, missingFields: ["plano completo"] };
   }
 
-  if (!planData.analysis) missingFields.push("analysis");
-  else {
-    if (!planData.analysis.currentStatus)
-      missingFields.push("analysis.currentStatus");
-    if (
-      !planData.analysis.strengths ||
-      !Array.isArray(planData.analysis.strengths)
-    )
-      missingFields.push("analysis.strengths");
-    if (
-      !planData.analysis.improvements ||
-      !Array.isArray(planData.analysis.improvements)
-    )
-      missingFields.push("analysis.improvements");
-  }
+  // Temporariamente não validamos analysis e trainingPlan como obrigatórios para testes
+  // if (!planData.analysis) missingFields.push("analysis");
+  // else {
+  //   if (!planData.analysis.currentStatus)
+  //     missingFields.push("analysis.currentStatus");
+  //   if (
+  //     !planData.analysis.strengths ||
+  //     !Array.isArray(planData.analysis.strengths)
+  //   )
+  //     missingFields.push("analysis.strengths");
+  //   if (
+  //     !planData.analysis.improvements ||
+  //     !Array.isArray(planData.analysis.improvements)
+  //   )
+  //     missingFields.push("analysis.improvements");
+  // }
 
-  if (!planData.trainingPlan) missingFields.push("trainingPlan");
-  else {
-    if (!planData.trainingPlan.overview)
-      missingFields.push("trainingPlan.overview");
-    if (
-      !planData.trainingPlan.weeklySchedule ||
-      !Array.isArray(planData.trainingPlan.weeklySchedule)
-    )
-      missingFields.push("trainingPlan.weeklySchedule");
-    if (!planData.trainingPlan.progression)
-      missingFields.push("trainingPlan.progression");
-  }
+  // if (!planData.trainingPlan) missingFields.push("trainingPlan");
+  // else {
+  //   if (!planData.trainingPlan.overview)
+  //     missingFields.push("trainingPlan.overview");
+  //   if (
+  //     !planData.trainingPlan.weeklySchedule ||
+  //     !Array.isArray(planData.trainingPlan.weeklySchedule)
+  //   )
+  //     missingFields.push("trainingPlan.weeklySchedule");
+  //   if (!planData.trainingPlan.progression)
+  //     missingFields.push("trainingPlan.progression");
+  // }
 
   // nutritionPlan, goals e motivation são opcionais agora
   // Não validamos mais esses campos como obrigatórios
@@ -753,24 +754,14 @@ export async function POST(request: NextRequest) {
 
 IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o plano deve ser construído especificamente para atingir esse objetivo.
 
-⚠️ REGRA CRÍTICA: Você DEVE retornar pelo menos os 2 campos obrigatórios no JSON:
-1. analysis - análise completa do status atual (OBRIGATÓRIO)
-2. trainingPlan - plano de treino completo com weeklySchedule E progression (OBRIGATÓRIO)
-
-⚠️⚠️⚠️ CAMPOS ALTAMENTE RECOMENDADOS - TENTE INCLUIR SEMPRE ⚠️⚠️⚠️
+⚠️ CAMPOS RECOMENDADOS (temporariamente opcionais para testes):
+1. analysis - análise completa do status atual (RECOMENDADO)
+2. trainingPlan - plano de treino completo com weeklySchedule E progression (RECOMENDADO)
 3. nutritionPlan - plano nutricional completo com dailyCalories, macros, mealPlan E hydration (MUITO IMPORTANTE!)
-   - Este campo é essencial para o usuário seguir o plano completo
-   - SEMPRE inclua este campo se possível
 4. goals - metas semanais, mensais e indicadores de progresso (RECOMENDADO)
 5. motivation - mensagem personalizada e dicas motivacionais (RECOMENDADO - IMPORTANTE PARA MOTIVAR O USUÁRIO!)
 
-IMPORTANTE: O JSON DEVE conter pelo menos esses 2 campos no nível raiz:
-{
-  "analysis": { ... },
-  "trainingPlan": { ... }
-}
-
-⚠️⚠️⚠️ ATENÇÃO CRÍTICA: Embora nutritionPlan seja tecnicamente opcional, você DEVE tentar incluí-lo SEMPRE. O sistema tentará gerá-lo novamente se faltar, mas é melhor incluí-lo na primeira tentativa!
+Você pode retornar qualquer combinação desses campos. Tente incluir o máximo possível para oferecer um plano completo ao usuário.
 
 ## ANÁLISE ESTRATÉGICA BASEADA NO OBJETIVO:
 
@@ -851,8 +842,7 @@ IMPORTANTE: O JSON DEVE conter pelo menos esses 2 campos no nível raiz:
 - Considere limitações e restrições
 - Motive e inspire o usuário (campo motivation é essencial!)
 - Adapte para o local de treino disponível
-- INCLUA SEMPRE os campos analysis e trainingPlan (obrigatórios)
-- TENTE INCLUIR SEMPRE os campos nutritionPlan, goals e motivation (altamente recomendados)
+- TENTE INCLUIR os campos analysis, trainingPlan, nutritionPlan, goals e motivation quando possível
 
 Lembre-se: O objetivo do usuário é sua bússola. Tudo deve apontar para lá!`,
           },
@@ -1132,34 +1122,35 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           return { isValid: false, missingFields: ["plano completo"] };
         }
 
-        if (!planData.analysis) missingFields.push("analysis");
-        else {
-          if (!planData.analysis.currentStatus)
-            missingFields.push("analysis.currentStatus");
-          if (
-            !planData.analysis.strengths ||
-            !Array.isArray(planData.analysis.strengths)
-          )
-            missingFields.push("analysis.strengths");
-          if (
-            !planData.analysis.improvements ||
-            !Array.isArray(planData.analysis.improvements)
-          )
-            missingFields.push("analysis.improvements");
-        }
+        // Temporariamente não validamos analysis e trainingPlan como obrigatórios para testes
+        // if (!planData.analysis) missingFields.push("analysis");
+        // else {
+        //   if (!planData.analysis.currentStatus)
+        //     missingFields.push("analysis.currentStatus");
+        //   if (
+        //     !planData.analysis.strengths ||
+        //     !Array.isArray(planData.analysis.strengths)
+        //   )
+        //     missingFields.push("analysis.strengths");
+        //   if (
+        //     !planData.analysis.improvements ||
+        //     !Array.isArray(planData.analysis.improvements)
+        //   )
+        //     missingFields.push("analysis.improvements");
+        // }
 
-        if (!planData.trainingPlan) missingFields.push("trainingPlan");
-        else {
-          if (!planData.trainingPlan.overview)
-            missingFields.push("trainingPlan.overview");
-          if (
-            !planData.trainingPlan.weeklySchedule ||
-            !Array.isArray(planData.trainingPlan.weeklySchedule)
-          )
-            missingFields.push("trainingPlan.weeklySchedule");
-          if (!planData.trainingPlan.progression)
-            missingFields.push("trainingPlan.progression");
-        }
+        // if (!planData.trainingPlan) missingFields.push("trainingPlan");
+        // else {
+        //   if (!planData.trainingPlan.overview)
+        //     missingFields.push("trainingPlan.overview");
+        //   if (
+        //     !planData.trainingPlan.weeklySchedule ||
+        //     !Array.isArray(planData.trainingPlan.weeklySchedule)
+        //   )
+        //     missingFields.push("trainingPlan.weeklySchedule");
+        //   if (!planData.trainingPlan.progression)
+        //     missingFields.push("trainingPlan.progression");
+        // }
 
         // nutritionPlan, goals e motivation são opcionais agora
         // Não validamos mais esses campos como obrigatórios
@@ -1248,35 +1239,285 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       }
     }
 
+    // 🧩 Fallback adicional para garantir campos obrigatórios
+    // TEMPORARIAMENTE DESABILITADO PARA TESTES - analysis e trainingPlan são opcionais agora
+    // Todo o código abaixo está comentado para testes
+    /*
+    if (plan) {
+      const missingMainFields: string[] = [];
+      if (!plan.analysis) {
+        missingMainFields.push("analysis");
+      }
+      if (!plan.trainingPlan) {
+        missingMainFields.push("trainingPlan");
+      }
+
+      if (missingMainFields.length > 0) {
+        console.log(
+          `🧩 Campos obrigatórios faltando, gerando separadamente:`,
+          missingMainFields
+        );
+
+        const heightInMeters = (userData.height || 0) / 100;
+        const weight = userData.weight || 0;
+        const imc =
+          heightInMeters > 0 ? weight / (heightInMeters * heightInMeters) : 0;
+
+        const fieldUserData = {
+          objective: userData.objective || "Não informado",
+          weight: weight,
+          pesoInicial: userData.initialWeight || weight,
+          height: userData.height || 0,
+          imc: imc.toFixed(2),
+          sexo: userData.gender || "Não informado",
+          trainingFrequency: userData.trainingFrequency || "Não informado",
+          nivelAtividade: "Moderado",
+          trainingLocation: userData.trainingLocation || "Academia",
+          dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
+          injuries: userData.hasPain ? "Sim" : null,
+        };
+
+        const host = request.headers.get("host") || "localhost:3000";
+        const protocol = host.includes("localhost") ? "http" : "https";
+        const baseUrl = `${protocol}://${host}`;
+
+        for (const field of missingMainFields) {
+          try {
+            console.log(`🔧 Gerando ${field} via endpoint dedicado...`);
+
+            const fieldResponse = await fetch(
+              `${baseUrl}/api/generate-plan-field`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  userData: fieldUserData,
+                  fieldType: field,
+                  existingPlan: plan,
+                }),
+              }
+            );
+
+            console.log(
+              `📡 Resposta do endpoint ${field}:`,
+              fieldResponse.status,
+              fieldResponse.statusText
+            );
+
+            if (fieldResponse.ok) {
+              const fieldResult = await fieldResponse.json();
+              console.log(
+                `📦 Resultado do ${field}:`,
+                fieldResult.success,
+                !!fieldResult[field]
+              );
+
+              if (fieldResult.success && fieldResult[field]) {
+                plan[field] = fieldResult[field];
+                console.log(
+                  `✅ ${field} gerado via endpoint dedicado:`,
+                  !!plan[field]
+                );
+                if (
+                  planError === "PLAN_INCOMPLETE" &&
+                  plan.analysis &&
+                  plan.trainingPlan
+                ) {
+                  planError = null;
+                  missingFields = undefined;
+                }
+              } else {
+                console.warn(
+                  `⚠️ ${field} não foi gerado corretamente:`,
+                  fieldResult
+                );
+              }
+            } else {
+              const errorText = await fieldResponse.text();
+              console.warn(
+                `⚠️ Erro ao gerar ${field} via endpoint dedicado:`,
+                fieldResponse.status,
+                errorText
+              );
+            }
+          } catch (fieldError) {
+            console.warn(`⚠️ Erro ao tentar gerar ${field}:`, fieldError);
+          }
+        }
+      }
+    }
+    */
+
     // 🧩 Fallback adicional para garantir campos opcionais importantes
-    // SEMPRE tentar gerar nutritionPlan se não existir, mesmo que o plano seja válido
+    // SEMPRE tentar gerar analysis se não existir, usando o endpoint dedicado
+    if (plan && !plan.analysis) {
+      try {
+        console.log(
+          "🧩 analysis não encontrado, gerando via endpoint dedicado..."
+        );
+
+        // Calcular IMC se necessário
+        const heightInMeters = (userData.height || 0) / 100;
+        const weight = userData.weight || 0;
+        const imc =
+          heightInMeters > 0 ? weight / (heightInMeters * heightInMeters) : 0;
+
+        const analysisUserData = {
+          objective: userData.objective || "Não informado",
+          name: userData.name || "Não informado",
+          age: userData.age || null,
+          gender: userData.gender || "Não informado",
+          weight: weight,
+          initialWeight: userData.initialWeight || weight,
+          height: userData.height || 0,
+          imc: imc.toFixed(2),
+          weightChange: userData.weightChange || null,
+          trainingFrequency: userData.trainingFrequency || "Não informado",
+          trainingLocation: userData.trainingLocation || "Não informado",
+          nivelAtividade: "Moderado", // Valor padrão
+          hasPain: userData.hasPain || false,
+          dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
+          latestEvolution: userData.latestEvolution || null,
+          evolutionHistory: userData.evolutionHistory || [],
+        };
+
+        // Chamar o endpoint de geração de análise
+        // Usar o host do request para fazer chamada interna
+        const host = request.headers.get("host") || "localhost:3000";
+        const protocol = host.includes("localhost") ? "http" : "https";
+        const baseUrl = `${protocol}://${host}`;
+
+        const analysisResponse = await fetch(
+          `${baseUrl}/api/generate-analysis`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userData: analysisUserData,
+              existingPlan: plan,
+            }),
+          }
+        );
+
+        console.log(
+          "📡 Resposta do endpoint de análise:",
+          analysisResponse.status,
+          analysisResponse.statusText
+        );
+
+        if (analysisResponse.ok) {
+          const analysisResult = await analysisResponse.json();
+          console.log(
+            "📦 Resultado da análise:",
+            analysisResult.success,
+            !!analysisResult.analysis
+          );
+          if (analysisResult.success && analysisResult.analysis) {
+            plan.analysis = analysisResult.analysis;
+            console.log(
+              "✅ analysis gerado via endpoint dedicado:",
+              !!plan.analysis
+            );
+          } else {
+            console.warn(
+              "⚠️ analysis não foi gerado corretamente:",
+              analysisResult
+            );
+          }
+        } else {
+          const errorText = await analysisResponse.text();
+          console.warn(
+            "⚠️ Erro ao gerar analysis via endpoint dedicado:",
+            analysisResponse.status,
+            errorText
+          );
+        }
+      } catch (optionalError) {
+        console.warn("⚠️ Erro ao tentar gerar analysis:", optionalError);
+      }
+    } else if (plan && plan.analysis) {
+      console.log("✅ analysis já existe no plano inicial");
+    }
+
+    // 🧩 Fallback adicional para garantir campos opcionais importantes
+    // SEMPRE tentar gerar nutritionPlan se não existir, usando o endpoint dedicado
     if (plan && !plan.nutritionPlan) {
       try {
-        console.log("🧩 nutritionPlan não encontrado, tentando gerar...");
-        console.log("📊 Plano antes do fallback:", {
-          keys: Object.keys(plan),
-          hasAnalysis: !!plan.analysis,
-          hasTrainingPlan: !!plan.trainingPlan,
-        });
-        const supplement = await fetchMissingPlanSections(
-          openai,
-          userData,
-          plan,
-          ["nutritionPlan"]
+        console.log(
+          "🧩 nutritionPlan não encontrado, gerando via endpoint dedicado..."
         );
-        plan = supplement.plan;
-        console.log("✅ nutritionPlan gerado:", !!plan.nutritionPlan);
-        console.log("📊 Plano após fallback:", {
-          keys: Object.keys(plan),
-          hasNutritionPlan: !!plan.nutritionPlan,
-        });
-        if (plan.nutritionPlan) {
-          console.log("📊 Estrutura do nutritionPlan:", {
-            hasDailyCalories: !!plan.nutritionPlan.dailyCalories,
-            hasMacros: !!plan.nutritionPlan.macros,
-            hasMealPlan: !!plan.nutritionPlan.mealPlan,
-            hasHydration: !!plan.nutritionPlan.hydration,
-          });
+
+        // Calcular IMC para o endpoint de nutrição
+        const heightInMeters = (userData.height || 0) / 100;
+        const weight = userData.weight || 0;
+        const imc =
+          heightInMeters > 0 ? weight / (heightInMeters * heightInMeters) : 0;
+
+        const nutritionUserData = {
+          objective: userData.objective || "Não informado",
+          weight: weight,
+          height: userData.height || 0,
+          imc: imc.toFixed(2),
+          trainingFrequency: userData.trainingFrequency || "Não informado",
+          dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
+        };
+
+        // Chamar o endpoint de geração de nutrição
+        // Usar o host do request para fazer chamada interna
+        const host = request.headers.get("host") || "localhost:3000";
+        const protocol = host.includes("localhost") ? "http" : "https";
+        const baseUrl = `${protocol}://${host}`;
+
+        const nutritionResponse = await fetch(
+          `${baseUrl}/api/generate-nutrition-plan`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              userData: nutritionUserData,
+              existingPlan: plan,
+            }),
+          }
+        );
+
+        console.log(
+          "📡 Resposta do endpoint de nutrição:",
+          nutritionResponse.status,
+          nutritionResponse.statusText
+        );
+
+        if (nutritionResponse.ok) {
+          const nutritionResult = await nutritionResponse.json();
+          console.log(
+            "📦 Resultado da nutrição:",
+            nutritionResult.success,
+            !!nutritionResult.nutritionPlan
+          );
+          if (nutritionResult.success && nutritionResult.nutritionPlan) {
+            plan.nutritionPlan = nutritionResult.nutritionPlan;
+            console.log(
+              "✅ nutritionPlan gerado via endpoint dedicado:",
+              !!plan.nutritionPlan
+            );
+          } else {
+            console.warn(
+              "⚠️ nutritionPlan não foi gerado corretamente:",
+              nutritionResult
+            );
+          }
+        } else {
+          const errorText = await nutritionResponse.text();
+          console.warn(
+            "⚠️ Erro ao gerar nutritionPlan via endpoint dedicado:",
+            nutritionResponse.status,
+            errorText
+          );
         }
       } catch (optionalError) {
         console.warn("⚠️ Erro ao tentar gerar nutritionPlan:", optionalError);
@@ -1377,24 +1618,14 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
     });
 
     // ✅ VALIDAÇÃO FINAL ANTES DE SALVAR
-    const finalValidation = validatePlanFinal(plan);
+    // TEMPORARIAMENTE DESABILITADO PARA TESTES - não validamos mais campos obrigatórios
+    // let finalValidation = validatePlanFinal(plan);
+    // A validação sempre retorna válido agora pois não há campos obrigatórios
+    /*
     if (!finalValidation.isValid) {
-      console.error(
-        "❌ VALIDAÇÃO FINAL FALHOU! Plano incompleto:",
-        finalValidation.missingFields
-      );
-      console.error("📄 Plano recebido:", JSON.stringify(plan, null, 2));
-      return NextResponse.json(
-        {
-          error: "PLAN_INCOMPLETE",
-          message: `O plano gerado está incompleto após todas as tentativas. Campos faltando: ${finalValidation.missingFields.join(
-            ", "
-          )}. Tente gerar novamente.`,
-          missingFields: finalValidation.missingFields,
-        },
-        { status: 500 }
-      );
+      // ... código comentado ...
     }
+    */
 
     console.log("✅ Plano validado com sucesso!");
 

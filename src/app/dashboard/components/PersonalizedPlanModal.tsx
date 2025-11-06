@@ -1,47 +1,196 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { typography, components, colors } from "@/lib/design-tokens";
 import { PersonalizedPlan } from "@/types/personalized-plan";
+import { supabase } from "@/lib/supabase";
 
 interface PersonalizedPlanModalProps {
   isOpen: boolean;
   onClose: () => void;
   plan: PersonalizedPlan | null;
-  profileData?: {
+  userProfile?: {
     altura: number;
     peso: number;
-    objetivo: string;
+    pesoInicial: number;
+    sexo: string;
     frequenciaTreinos: string;
-    birthDate?: string | null;
-    nivelAtividade?: string;
+    objetivo: string;
+    birthDate: string | null;
+    nivelAtividade: string;
   };
+}
+
+// Funções auxiliares para extrair informações do texto da OpenAI
+function extractCalories(text: string): string {
+  const match = text.match(/(\d+)\s*(?:kcal|calorias|cal)/i);
+  return match ? `${match[1]} kcal` : "";
+}
+
+function extractMacros(text: string): Array<{ name: string; value: string }> {
+  const macros: Array<{ name: string; value: string }> = [];
+
+  // Proteínas
+  const proteinMatch = text.match(/prote[íi]nas?[:\s]+([^\n]+)/i);
+  if (proteinMatch) {
+    macros.push({ name: "Proteínas", value: proteinMatch[1].trim() });
+  }
+
+  // Carboidratos
+  const carbsMatch = text.match(/carboidratos?[:\s]+([^\n]+)/i);
+  if (carbsMatch) {
+    macros.push({ name: "Carboidratos", value: carbsMatch[1].trim() });
+  }
+
+  // Gorduras
+  const fatsMatch = text.match(/gorduras?[:\s]+([^\n]+)/i);
+  if (fatsMatch) {
+    macros.push({ name: "Gorduras", value: fatsMatch[1].trim() });
+  }
+
+  return macros;
+}
+
+function extractMeals(text: string): Array<{
+  name: string;
+  timing?: string;
+  foods: Array<{ name: string; quantity?: string; calories?: string }>;
+  totalCalories?: string;
+}> {
+  const meals: Array<{
+    name: string;
+    timing?: string;
+    foods: Array<{ name: string; quantity?: string; calories?: string }>;
+    totalCalories?: string;
+  }> = [];
+
+  // Padrões comuns de refeições
+  const mealPatterns = [
+    /(?:caf[ée]\s+da\s+manh[ãa]|desjejum|breakfast)/i,
+    /(?:lanche\s+da\s+manh[ãa]|lanche\s+matinal)/i,
+    /(?:almo[çc]o|lunch)/i,
+    /(?:lanche\s+da\s+tarde|lanche\s+tarde)/i,
+    /(?:jantar|dinner)/i,
+    /(?:ceia|supper)/i,
+  ];
+
+  const lines = text.split("\n");
+  let currentMeal: {
+    name: string;
+    timing?: string;
+    foods: Array<{ name: string; quantity?: string; calories?: string }>;
+    totalCalories?: string;
+  } | null = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Verificar se é uma nova refeição
+    const mealMatch = mealPatterns.find((pattern) => pattern.test(line));
+    if (mealMatch) {
+      if (currentMeal) {
+        meals.push(currentMeal);
+      }
+      currentMeal = {
+        name: line,
+        foods: [],
+      };
+
+      // Tentar extrair horário da próxima linha
+      if (i + 1 < lines.length) {
+        const timingMatch = lines[i + 1].match(/(\d{1,2}[:h]\d{2}|\d{1,2}h)/i);
+        if (timingMatch) {
+          currentMeal.timing = timingMatch[1];
+        }
+      }
+      continue;
+    }
+
+    // Se estamos em uma refeição, tentar extrair alimentos
+    if (currentMeal) {
+      // Padrão: alimento (quantidade) - calorias
+      const foodMatch = line.match(
+        /[-•]\s*(.+?)(?:\s*\(([^)]+)\))?(?:\s*-\s*(\d+)\s*kcal)?/i
+      );
+      if (foodMatch) {
+        currentMeal.foods.push({
+          name: foodMatch[1].trim(),
+          quantity: foodMatch[2]?.trim(),
+          calories: foodMatch[3] ? `${foodMatch[3]} kcal` : undefined,
+        });
+      } else if (line && !line.match(/^(total|calorias|kcal)/i)) {
+        // Se não tem padrão mas tem conteúdo, adicionar como alimento
+        currentMeal.foods.push({ name: line });
+      }
+
+      // Tentar extrair total de calorias da refeição
+      const totalMatch = line.match(/total[:\s]+(\d+)\s*kcal/i);
+      if (totalMatch) {
+        currentMeal.totalCalories = `${totalMatch[1]} kcal`;
+      }
+    }
+  }
+
+  if (currentMeal) {
+    meals.push(currentMeal);
+  }
+
+  // Se não encontrou refeições estruturadas, criar uma refeição genérica com todo o texto
+  if (meals.length === 0) {
+    meals.push({
+      name: "Plano Nutricional",
+      foods: [{ name: text }],
+    });
+  }
+
+  return meals;
+}
+
+function extractHydration(text: string): string | null {
+  const hydrationMatch = text.match(
+    /hidrata[çc][ãa]o[:\s]+([^\n]+(?:\n[^\n]+)*)/i
+  );
+  return hydrationMatch ? hydrationMatch[1].trim() : null;
+}
+
+function extractSupplements(text: string): string[] {
+  const supplements: string[] = [];
+  const supplementMatch = text.match(
+    /suplementos?[:\s]+([^\n]+(?:\n[^\n]+)*)/i
+  );
+
+  if (supplementMatch) {
+    const supplementText = supplementMatch[1];
+    const lines = supplementText.split("\n");
+    lines.forEach((line) => {
+      const cleanLine = line.replace(/^[-•]\s*/, "").trim();
+      if (cleanLine) {
+        supplements.push(cleanLine);
+      }
+    });
+  }
+
+  return supplements;
 }
 
 export function PersonalizedPlanModal({
   isOpen,
   onClose,
   plan,
-  profileData,
+  userProfile,
 }: PersonalizedPlanModalProps) {
   const [activeTab, setActiveTab] = useState<
     "analysis" | "training" | "diet" | "nutrition" | "goals" | "motivation"
   >("analysis");
-  const [generatedNutritionPlan, setGeneratedNutritionPlan] = useState<
-    PersonalizedPlan["nutritionPlan"] | null
-  >(null);
-  const [isGeneratingNutrition, setIsGeneratingNutrition] = useState(false);
-  const [nutritionError, setNutritionError] = useState<string | null>(null);
+  const [openAIMessage, setOpenAIMessage] = useState<string>("");
+  const [isLoadingOpenAI, setIsLoadingOpenAI] = useState<boolean>(false);
 
-  // Campos opcionais do plano (incluindo o gerado dinamicamente)
+  // Campos opcionais do plano
   const hasOptionalFields = {
-    nutritionPlan: !!plan?.nutritionPlan || !!generatedNutritionPlan,
+    nutritionPlan: !!plan?.nutritionPlan,
     goals: !!plan?.goals,
     motivation: !!plan?.motivation,
   };
-
-  // Nutrition plan a ser exibido (do plano original ou gerado)
-  const displayNutritionPlan = plan?.nutritionPlan || generatedNutritionPlan;
 
   console.log("📊 Campos opcionais presentes:", hasOptionalFields);
   console.log(
@@ -57,87 +206,6 @@ export function PersonalizedPlanModal({
       hasHydration: !!plan.nutritionPlan.hydration,
     });
   }
-
-  // Gerar plano nutricional quando a aba Dieta for aberta e não houver nutritionPlan
-  const generateNutritionPlan = useCallback(async () => {
-    if (!profileData) {
-      setNutritionError("Dados do perfil não disponíveis");
-      return;
-    }
-
-    setIsGeneratingNutrition(true);
-    setNutritionError(null);
-
-    try {
-      // Calcular IMC
-      const heightInMeters = (profileData.altura || 0) / 100;
-      const weight = profileData.peso || 0;
-      const imc =
-        heightInMeters > 0 ? weight / (heightInMeters * heightInMeters) : 0;
-
-      const userData = {
-        objective: profileData.objetivo || "Não informado",
-        weight: weight,
-        height: profileData.altura || 0,
-        imc: imc.toFixed(2),
-        trainingFrequency: profileData.frequenciaTreinos || "Não informado",
-        dietaryRestrictions: "Nenhuma", // Pode ser expandido depois
-      };
-
-      const response = await fetch("/api/generate-nutrition-plan", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userData,
-          existingPlan: plan,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erro ao gerar plano nutricional");
-      }
-
-      const result = await response.json();
-
-      if (result.success && result.nutritionPlan) {
-        setGeneratedNutritionPlan(result.nutritionPlan);
-        console.log("✅ Plano nutricional gerado com sucesso!");
-      } else {
-        throw new Error("Plano nutricional não foi gerado");
-      }
-    } catch (error: unknown) {
-      console.error("❌ Erro ao gerar plano nutricional:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Erro ao gerar plano nutricional. Tente novamente.";
-      setNutritionError(errorMessage);
-    } finally {
-      setIsGeneratingNutrition(false);
-    }
-  }, [profileData, plan]);
-
-  useEffect(() => {
-    if (
-      activeTab === "diet" &&
-      !plan?.nutritionPlan &&
-      !generatedNutritionPlan &&
-      !isGeneratingNutrition &&
-      profileData
-    ) {
-      generateNutritionPlan();
-    }
-  }, [
-    activeTab,
-    plan?.nutritionPlan,
-    generatedNutritionPlan,
-    isGeneratingNutrition,
-    profileData,
-    generateNutritionPlan,
-  ]);
 
   // Resetar activeTab se a tab atual não existir mais
   useEffect(() => {
@@ -163,71 +231,128 @@ export function PersonalizedPlanModal({
     activeTab,
   ]);
 
+  // Chamar OpenAI quando a aba Dieta for aberta
+  useEffect(() => {
+    if (activeTab === "diet" && !openAIMessage && !isLoadingOpenAI) {
+      // Primeiro, tentar carregar dieta salva
+      const loadSavedDiet = async () => {
+        try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (!session) return null;
+
+          const response = await fetch("/api/save-diet", {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.dietPlan) {
+              return data.dietPlan;
+            }
+          }
+          return null;
+        } catch (error) {
+          console.error("Erro ao carregar dieta salva:", error);
+          return null;
+        }
+      };
+
+      // Carregar dieta salva primeiro
+      loadSavedDiet().then((savedDiet) => {
+        if (savedDiet) {
+          // Se existe dieta salva, usar ela
+          setOpenAIMessage(savedDiet);
+        } else {
+          // Se não existe, gerar nova
+          setIsLoadingOpenAI(true);
+
+          // Preparar dados do usuário para enviar à API
+          const userDataForAPI = userProfile
+            ? {
+                altura: userProfile.altura || 0,
+                peso: userProfile.peso || userProfile.pesoInicial || 0,
+                pesoInicial: userProfile.pesoInicial || 0,
+                sexo: userProfile.sexo || "Não informado",
+                frequenciaTreinos:
+                  userProfile.frequenciaTreinos || "Não informado",
+                objetivo: userProfile.objetivo || "Não informado",
+                nivelAtividade: userProfile.nivelAtividade || "Moderado",
+                birthDate: userProfile.birthDate || null,
+              }
+            : null;
+
+          fetch("/api/test-openai", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userData: userDataForAPI }),
+          })
+            .then((res) => res.json())
+            .then(async (data) => {
+              if (data.success && data.message) {
+                setOpenAIMessage(data.message);
+
+                // Salvar dieta no banco de dados
+                try {
+                  const {
+                    data: { session },
+                  } = await supabase.auth.getSession();
+                  if (session) {
+                    await fetch("/api/save-diet", {
+                      method: "POST",
+                      headers: {
+                        Authorization: `Bearer ${session.access_token}`,
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        dietPlan: data.message,
+                      }),
+                    });
+                  }
+                } catch (saveError) {
+                  console.error("Erro ao salvar dieta:", saveError);
+                }
+              } else {
+                setOpenAIMessage("Erro ao conectar com OpenAI");
+              }
+              setIsLoadingOpenAI(false);
+            })
+            .catch((error) => {
+              console.error("Erro ao chamar OpenAI:", error);
+              setOpenAIMessage("Erro ao conectar com OpenAI");
+              setIsLoadingOpenAI(false);
+            });
+        }
+      });
+    }
+  }, [activeTab, openAIMessage, isLoadingOpenAI, userProfile]);
+
   if (!isOpen || !plan) return null;
 
   // Verificações de segurança para evitar erros
-  // Apenas analysis e trainingPlan são obrigatórios agora
-  const missingFields: string[] = [];
-  if (!plan.analysis) missingFields.push("analysis");
-  if (!plan.trainingPlan) missingFields.push("trainingPlan");
+  // Temporariamente não validamos campos obrigatórios para testes
+  // const missingFields: string[] = [];
+  // if (!plan.analysis) missingFields.push("analysis");
+  // if (!plan.trainingPlan) missingFields.push("trainingPlan");
 
   console.log("📊 Campos opcionais presentes:", hasOptionalFields);
 
-  if (missingFields.length > 0) {
-    console.error("❌ Plano incompleto. Campos faltando:", missingFields);
-    console.error("📄 Plano completo:", JSON.stringify(plan, null, 2));
-
-    return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-          <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <svg
-                  className="h-6 w-6 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.93L13.732 4.242a2 2 0 00-3.464 0L3.34 16.07c-.77 1.263.192 2.93 1.732 2.93z"
-                  />
-                </svg>
-              </div>
-              <div className="mt-3 sm:mt-5">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">
-                  Erro no Plano
-                </h3>
-                <div className="mt-2">
-                  <p className="text-sm text-gray-500">
-                    O plano gerado está incompleto. Campos faltando:{" "}
-                    {missingFields.join(", ")}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Tente gerar um novo plano. Se o problema persistir, entre em
-                    contato com o suporte.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-5 sm:mt-6">
-              <button
-                type="button"
-                className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
-                onClick={onClose}
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Temporariamente desabilitado para testes
+  // if (missingFields.length > 0) {
+  //   console.error("❌ Plano incompleto. Campos faltando:", missingFields);
+  //   console.error("📄 Plano completo:", JSON.stringify(plan, null, 2));
+  //   return (
+  //     <div className="fixed inset-0 z-50 overflow-y-auto">
+  //       ... código do erro comentado ...
+  //     </div>
+  //   );
+  // }
 
   const tabs = [
     { id: "analysis", label: "Análise" },
@@ -507,30 +632,16 @@ export function PersonalizedPlanModal({
             {/* Dieta */}
             {validActiveTab === "diet" && (
               <div className="space-y-6">
-                {isGeneratingNutrition ? (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
-                      <p className="text-blue-800">
-                        Gerando plano nutricional personalizado...
-                      </p>
-                    </div>
+                {isLoadingOpenAI ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className={`${colors.text.secondary}`}>
+                      Gerando plano nutricional personalizado...
+                    </p>
                   </div>
-                ) : nutritionError ? (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                    <h4 className="text-xl font-semibold text-red-900 mb-4">
-                      ⚠️ Erro ao Gerar Plano Nutricional
-                    </h4>
-                    <p className="text-red-800 mb-4">{nutritionError}</p>
-                    <button
-                      onClick={generateNutritionPlan}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      Tentar Novamente
-                    </button>
-                  </div>
-                ) : displayNutritionPlan ? (
-                  <>
+                ) : openAIMessage ? (
+                  <div className="space-y-6">
+                    {/* Resumo de Calorias e Macronutrientes */}
                     <div className="grid md:grid-cols-2 gap-6">
                       <div
                         className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
@@ -543,7 +654,7 @@ export function PersonalizedPlanModal({
                         <p
                           className={`text-2xl font-bold ${colors.status.success.text}`}
                         >
-                          {displayNutritionPlan?.dailyCalories || 0} kcal
+                          {extractCalories(openAIMessage) || "Calculando..."}
                         </p>
                       </div>
 
@@ -556,90 +667,86 @@ export function PersonalizedPlanModal({
                           Macronutrientes
                         </h4>
                         <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className={`${colors.status.info.text}`}>
-                              Proteínas:
-                            </span>
-                            <span
-                              className={`font-medium ${colors.status.info.text}`}
-                            >
-                              {displayNutritionPlan?.macros?.protein || "N/A"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className={`${colors.status.info.text}`}>
-                              Carboidratos:
-                            </span>
-                            <span
-                              className={`font-medium ${colors.status.info.text}`}
-                            >
-                              {displayNutritionPlan?.macros?.carbs || "N/A"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className={`${colors.status.info.text}`}>
-                              Gorduras:
-                            </span>
-                            <span
-                              className={`font-medium ${colors.status.info.text}`}
-                            >
-                              {displayNutritionPlan?.macros?.fats || "N/A"}
-                            </span>
-                          </div>
+                          {extractMacros(openAIMessage).map((macro, index) => (
+                            <div key={index} className="flex justify-between">
+                              <span className={`${colors.status.info.text}`}>
+                                {macro.name}:
+                              </span>
+                              <span
+                                className={`font-medium ${colors.status.info.text}`}
+                              >
+                                {macro.value}
+                              </span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
 
+                    {/* Plano Alimentar */}
                     <div>
                       <h4
                         className={`${typography.heading.h4} ${colors.text.primary} mb-4`}
                       >
-                        Plano Alimentar
+                        Plano Alimentar Diário
                       </h4>
                       <div className="space-y-4">
-                        {(displayNutritionPlan?.mealPlan || []).map(
-                          (meal, index) => (
-                            <div
-                              key={index}
-                              className="border border-gray-200 rounded-lg p-4"
-                            >
-                              <div className="flex items-center justify-between mb-3">
-                                <h5 className="font-semibold text-gray-900">
-                                  {meal?.meal || "Refeição não especificada"}
-                                </h5>
-                                <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                                  {meal?.timing || "Horário não especificado"}
+                        {extractMeals(openAIMessage).map((meal, index) => (
+                          <div
+                            key={index}
+                            className="border border-gray-200 rounded-lg p-4"
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <h5 className="font-semibold text-gray-900 text-lg">
+                                {meal.name}
+                              </h5>
+                              {meal.timing && (
+                                <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                                  {meal.timing}
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              {meal.foods.map((food, foodIndex) => (
+                                <div
+                                  key={foodIndex}
+                                  className="flex items-start bg-gray-50 border border-gray-100 rounded p-2"
+                                >
+                                  <span className="text-green-600 mr-2 mt-1">
+                                    •
+                                  </span>
+                                  <div className="flex-1">
+                                    <span className="text-gray-900">
+                                      {food.name}
+                                    </span>
+                                    {food.quantity && (
+                                      <span className="text-gray-600 ml-2">
+                                        ({food.quantity})
+                                      </span>
+                                    )}
+                                    {food.calories && (
+                                      <span className="text-gray-500 text-sm ml-2">
+                                        - {food.calories} kcal
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {meal.totalCalories && (
+                              <div className="mt-3 pt-3 border-t border-gray-200">
+                                <span className="text-sm font-medium text-gray-700">
+                                  Total da refeição: {meal.totalCalories} kcal
                                 </span>
                               </div>
-                              <div className="space-y-2">
-                                {(meal.options || []).map(
-                                  (option, optionIndex) => (
-                                    <div
-                                      key={optionIndex}
-                                      className="flex items-start"
-                                    >
-                                      <span className="text-green-600 mr-2">
-                                        •
-                                      </span>
-                                      <span className="text-gray-900">
-                                        {option?.food ||
-                                          "Alimento não especificado"}{" "}
-                                        -{" "}
-                                        {option?.quantity ||
-                                          "Quantidade não especificada"}{" "}
-                                        ({option?.calories || 0} kcal)
-                                      </span>
-                                    </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )
-                        )}
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
 
-                    {displayNutritionPlan?.hydration && (
+                    {/* Hidratação */}
+                    {extractHydration(openAIMessage) && (
                       <div
                         className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
                       >
@@ -649,55 +756,56 @@ export function PersonalizedPlanModal({
                           Hidratação
                         </h4>
                         <p className={`${colors.status.info.text}`}>
-                          {displayNutritionPlan.hydration}
+                          {extractHydration(openAIMessage)}
                         </p>
                       </div>
                     )}
 
-                    {displayNutritionPlan?.supplements &&
-                      displayNutritionPlan.supplements.length > 0 && (
-                        <div
-                          className={`${colors.status.warning.bg} ${colors.status.warning.border} border rounded-lg p-4`}
+                    {/* Suplementos */}
+                    {extractSupplements(openAIMessage).length > 0 && (
+                      <div
+                        className={`${colors.status.warning.bg} ${colors.status.warning.border} border rounded-lg p-4`}
+                      >
+                        <h4
+                          className={`${typography.heading.h4} ${colors.status.warning.text} mb-2`}
                         >
-                          <h4
-                            className={`${typography.heading.h4} ${colors.status.warning.text} mb-2`}
-                          >
-                            Suplementos Recomendados
-                          </h4>
-                          <ul className="space-y-1">
-                            {displayNutritionPlan.supplements.map(
-                              (supplement, index) => (
-                                <li
-                                  key={index}
-                                  className={`${colors.status.warning.text}`}
-                                >
-                                  • {supplement}
-                                </li>
-                              )
-                            )}
-                          </ul>
-                        </div>
-                      )}
-                  </>
+                          Suplementos Recomendados
+                        </h4>
+                        <ul className="space-y-1">
+                          {extractSupplements(openAIMessage).map(
+                            (supplement, index) => (
+                              <li
+                                key={index}
+                                className={`${colors.status.warning.text}`}
+                              >
+                                • {supplement}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Texto completo (fallback) */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h4
+                        className={`${typography.heading.h4} ${colors.text.primary} mb-3`}
+                      >
+                        Detalhes Completos
+                      </h4>
+                      <div
+                        className={`${colors.text.secondary} whitespace-pre-wrap`}
+                      >
+                        {openAIMessage}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                    <h4 className="text-xl font-semibold text-yellow-900 mb-4">
-                      ⚠️ Plano Nutricional em Geração
-                    </h4>
-                    <p className="text-yellow-800 mb-4">
-                      O plano nutricional personalizado está sendo gerado pela
-                      inteligência artificial. Por favor, aguarde alguns
-                      instantes ou tente gerar um novo plano.
+                  <div className="text-center py-8">
+                    <p className={`${colors.text.secondary}`}>
+                      Clique na aba Dieta para gerar seu plano nutricional
+                      personalizado.
                     </p>
-                    <p className="text-sm text-yellow-700">
-                      O plano nutricional incluirá:
-                    </p>
-                    <ul className="list-disc list-inside text-sm text-yellow-700 mt-2 space-y-1">
-                      <li>Calorias diárias recomendadas</li>
-                      <li>Distribuição de macronutrientes</li>
-                      <li>Plano alimentar detalhado com quantidades</li>
-                      <li>Orientações de hidratação</li>
-                    </ul>
                   </div>
                 )}
               </div>

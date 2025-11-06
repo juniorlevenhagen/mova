@@ -498,7 +498,7 @@ export default function DashboardPage() {
           isOpen={showPlanModal}
           onClose={() => setShowPlanModal(false)}
           plan={plan}
-          profileData={profileData}
+          userProfile={profileData}
         />
 
         <PromptPurchaseModal

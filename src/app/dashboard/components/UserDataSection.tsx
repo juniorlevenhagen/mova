@@ -211,7 +211,7 @@ export function UserDataSection({
           });
           setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
         }
-      } catch (error) {
+      } catch {
         setUploadStatus({
           type: "error",
           message: "Erro inesperado ao processar arquivo. Tente novamente.",

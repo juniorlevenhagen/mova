@@ -564,7 +564,7 @@ export function EvolutionSection({
     });
 
     return chartData;
-  }, [validEvolutions, evolutionFilter, userProfile?.pesoInicial]);
+  }, [validEvolutions, evolutionFilter, userProfile?.pesoInicial, initialData.massaMagra]);
 
   // Memoizar dados do gráfico de pizza para performance
   const pieChartData = useMemo(() => {

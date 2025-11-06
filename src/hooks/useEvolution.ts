@@ -10,7 +10,6 @@ interface EvolutionData {
   quadril: string;
   braco: string;
   coxa: string;
-  treinos: string;
   bemEstar: string;
   observacoes: string;
   objetivo: string;

@@ -102,6 +102,7 @@ export function EvolutionSection({
   const [evolutionFilter, setEvolutionFilter] = useState<"10" | "20" | "all">(
     "10"
   ); // Novo estado para gráficos de evolução
+  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set()); // Estado para controlar dias expandidos
   const { goals, isAdding: isAddingGoal, addGoal } = useGoals(user); // Remover goalsLoading que não é usado
   const {
     activities,
@@ -523,6 +524,12 @@ export function EvolutionSection({
         data: "Início",
         peso: Number(userProfile.pesoInicial),
         cintura: null, // Não temos cintura inicial
+        percentualGordura: null,
+        massaMagra: initialData.massaMagra,
+        braco: null,
+        coxa: null,
+        quadril: null,
+        bemEstar: null,
         date: "Início",
         id: "inicio",
         uniqueKey: "inicio",
@@ -541,6 +548,12 @@ export function EvolutionSection({
         data: `${formattedDate} #${index + 1}`, // Identificador único
         peso: Number(evolution.peso),
         cintura: evolution.cintura ? Number(evolution.cintura) : null,
+        percentualGordura: evolution.percentual_gordura ? Number(evolution.percentual_gordura) : null,
+        massaMagra: evolution.massa_magra ? Number(evolution.massa_magra) : null,
+        braco: evolution.braco ? Number(evolution.braco) : null,
+        coxa: evolution.coxa ? Number(evolution.coxa) : null,
+        quadril: evolution.quadril ? Number(evolution.quadril) : null,
+        bemEstar: evolution.bem_estar ? Number(evolution.bem_estar) : null,
         date: evolution.date,
         evolutionIndex: index + 1,
         id: `evolution-${index + 1}`,
@@ -583,6 +596,43 @@ export function EvolutionSection({
 
   // Memoizar dados semanais para performance
   const weeklyData = useMemo(() => getWeeklyData(), [getWeeklyData]);
+
+  // Agrupar atividades por data
+  const groupedActivities = useMemo(() => {
+    const grouped: { [key: string]: typeof activities } = {};
+    
+    activities.slice(0, 20).forEach((activity) => {
+      const dateKey = activity.date;
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(activity);
+    });
+
+    // Ordenar por data (mais recente primeiro)
+    return Object.entries(grouped)
+      .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+      .map(([date, activities]) => ({
+        date,
+        activities,
+        totalTreinos: activities.reduce((sum, a) => sum + (a.treinos_concluidos || 0), 0),
+        totalCalorias: activities.reduce((sum, a) => sum + (a.calorias_queimadas || 0), 0),
+        totalDuracao: activities.reduce((sum, a) => sum + (a.duracao_minutos || 0), 0),
+      }));
+  }, [activities]);
+
+  // Função para alternar expansão de um dia
+  const toggleDayExpansion = (date: string) => {
+    setExpandedDays((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(date)) {
+        newSet.delete(date);
+      } else {
+        newSet.add(date);
+      }
+      return newSet;
+    });
+  };
 
   // Função para lidar com o envio da meta
   const handleMetaSubmit = async (data: MetaData) => {
@@ -997,9 +1047,9 @@ export function EvolutionSection({
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              Evolução do Peso e Cintura
+              Evolução do Peso, Cintura e Composição
             </h4>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={300}>
               <LineChart
                 data={chartData}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -1015,9 +1065,17 @@ export function EvolutionSection({
                   tick={{ fontSize: 10 }}
                 />
                 <YAxis
+                  yAxisId="left"
                   stroke="#6b7280"
                   fontSize={10}
                   domain={["dataMin - 2", "dataMax + 2"]}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="#6b7280"
+                  fontSize={10}
+                  domain={[0, 100]}
                 />
                 <Tooltip
                   content={({ active, payload, label }) => {
@@ -1040,6 +1098,10 @@ export function EvolutionSection({
                               displayValue = `${Number(value).toFixed(1)} kg`;
                             } else if (name === "cintura") {
                               displayValue = `${Number(value).toFixed(0)} cm`;
+                            } else if (name === "percentualGordura") {
+                              displayValue = `${Number(value).toFixed(1)}%`;
+                            } else if (name === "massaMagra") {
+                              displayValue = `${Number(value).toFixed(1)} kg`;
                             } else {
                               displayValue = String(value);
                             }
@@ -1054,6 +1116,10 @@ export function EvolutionSection({
                                   ? "Peso"
                                   : name === "cintura"
                                   ? "Cintura"
+                                  : name === "percentualGordura"
+                                  ? "% Gordura"
+                                  : name === "massaMagra"
+                                  ? "Massa Magra"
                                   : name}
                                 : {displayValue}
                               </p>
@@ -1067,6 +1133,7 @@ export function EvolutionSection({
                 />
                 <Legend />
                 <Line
+                  yAxisId="left"
                   type="monotone"
                   dataKey="peso"
                   stroke="#3B82F6"
@@ -1078,6 +1145,7 @@ export function EvolutionSection({
                   isAnimationActive={false}
                 />
                 <Line
+                  yAxisId="left"
                   type="monotone"
                   dataKey="cintura"
                   stroke="#10B981"
@@ -1085,6 +1153,31 @@ export function EvolutionSection({
                   name="Cintura (cm)"
                   dot={{ fill: "#10B981", strokeWidth: 2, r: 3 }}
                   activeDot={{ r: 5, stroke: "#10B981", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="percentualGordura"
+                  stroke="#EF4444"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  name="% Gordura"
+                  dot={{ fill: "#EF4444", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#EF4444", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="massaMagra"
+                  stroke="#8B5CF6"
+                  strokeWidth={2}
+                  name="Massa Magra (kg)"
+                  dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#8B5CF6", strokeWidth: 2 }}
                   connectNulls={false}
                   isAnimationActive={false}
                 />
@@ -1108,7 +1201,7 @@ export function EvolutionSection({
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               Composição Corporal Atual
             </h4>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={pieChartData}
@@ -1179,13 +1272,203 @@ export function EvolutionSection({
             )}
           </div>
 
+          {/* Gráfico de Linha: Medidas Corporais */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              Evolução das Medidas Corporais
+            </h4>
+            <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
+              <strong>Nota:</strong> Para o braço, sempre meça o mesmo braço (recomendado: braço dominante) para manter consistência nas comparações.
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="uniqueKey"
+                  stroke="#6b7280"
+                  fontSize={10}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  fontSize={10}
+                  domain={["dataMin - 2", "dataMax + 2"]}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                          <p className="font-medium text-gray-800 mb-2">
+                            {label === "inicio" ? "Cadastro Inicial" : label}
+                          </p>
+                          {payload.map((entry, index) => {
+                            const value = entry.value;
+                            const name = entry.name;
+
+                            if (value === null || value === undefined) {
+                              return null;
+                            }
+
+                            return (
+                              <p
+                                key={index}
+                                className="text-sm"
+                                style={{ color: entry.color }}
+                              >
+                                {name === "braco"
+                                  ? "Braço"
+                                  : name === "coxa"
+                                  ? "Coxa"
+                                  : name === "quadril"
+                                  ? "Quadril"
+                                  : name}
+                                : {Number(value).toFixed(0)} cm
+                              </p>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="braco"
+                  stroke="#F59E0B"
+                  strokeWidth={2}
+                  name="Braço (cm) - sempre o mesmo braço"
+                  dot={{ fill: "#F59E0B", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#F59E0B", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="coxa"
+                  stroke="#EC4899"
+                  strokeWidth={2}
+                  name="Coxa (cm)"
+                  dot={{ fill: "#EC4899", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#EC4899", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="quadril"
+                  stroke="#14B8A6"
+                  strokeWidth={2}
+                  name="Quadril (cm)"
+                  dot={{ fill: "#14B8A6", strokeWidth: 2, r: 3 }}
+                  activeDot={{ r: 5, stroke: "#14B8A6", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+
+            {/* Mensagem quando não há dados */}
+            {chartData.filter(
+              (d) => d.braco !== null || d.coxa !== null || d.quadril !== null
+            ).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum dado de medidas corporais disponível.</p>
+                <p className="text-sm">
+                  Adicione evoluções com medidas para ver o gráfico!
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Gráfico de Linha: Bem-estar */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
+              <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+              Evolução do Bem-estar
+            </h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={chartData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="uniqueKey"
+                  stroke="#6b7280"
+                  fontSize={10}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  fontSize={10}
+                  domain={[0, 5]}
+                  ticks={[0, 1, 2, 3, 4, 5]}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const value = payload[0]?.value;
+                      if (value === null || value === undefined) return null;
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                          <p className="font-medium text-gray-800 mb-2">
+                            {label === "inicio" ? "Cadastro Inicial" : label}
+                          </p>
+                          <p className="text-sm" style={{ color: payload[0]?.color }}>
+                            Bem-estar: {Number(value).toFixed(0)}/5
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="bemEstar"
+                  stroke="#EC4899"
+                  strokeWidth={2}
+                  name="Bem-estar (1-5)"
+                  dot={{ fill: "#EC4899", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, stroke: "#EC4899", strokeWidth: 2 }}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+
+            {/* Mensagem quando não há dados */}
+            {chartData.filter((d) => d.bemEstar !== null).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>Nenhum dado de bem-estar disponível.</p>
+                <p className="text-sm">
+                  Adicione evoluções com avaliação de bem-estar para ver o gráfico!
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Gráfico de Barras: Treinos Concluídos por Semana */}
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
               <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
               Treinos Concluídos por Semana
             </h4>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart
                 data={weeklyData}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -1329,7 +1612,7 @@ export function EvolutionSection({
                 }
 
                 return (
-                  <ResponsiveContainer width="100%" height={200}>
+                  <ResponsiveContainer width="100%" height={300}>
                     <AreaChart
                       data={progressData}
                       margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -1695,44 +1978,136 @@ export function EvolutionSection({
           Histórico de Atividades
         </h3>
 
-        {activities.length > 0 ? (
+        {groupedActivities.length > 0 ? (
           <div className="space-y-3">
-            {activities.slice(0, 10).map((activity) => (
-              <div
-                key={activity.id}
-                className="bg-gray-50 p-4 rounded-lg border"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h4 className="font-medium text-gray-800">
-                      {activity.tipo_treino || "Atividade"}
-                    </h4>
-                    <p className="text-sm text-gray-600">
-                      {new Date(activity.date).toLocaleDateString("pt-BR")} às{" "}
-                      {activity.horario}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-blue-600">
-                      {activity.treinos_concluidos} treino
-                      {activity.treinos_concluidos > 1 ? "s" : ""}
-                    </p>
-                    <p className="text-sm text-red-600">
-                      {activity.calorias_queimadas} kcal
-                    </p>
-                  </div>
-                </div>
+            {groupedActivities.map((dayGroup) => {
+              const isExpanded = expandedDays.has(dayGroup.date);
+              const formattedDate = new Date(dayGroup.date).toLocaleDateString("pt-BR", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              });
 
-                <div className="flex gap-4 text-sm text-gray-600">
-                  <span>Duração: {activity.duracao_minutos}min</span>
-                  {activity.observacoes && (
-                    <span className="italic">
-                      &ldquo;{activity.observacoes}&rdquo;
-                    </span>
+              return (
+                <div
+                  key={dayGroup.date}
+                  className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
+                >
+                  {/* Cabeçalho do dia - sempre visível */}
+                  <button
+                    onClick={() => toggleDayExpansion(dayGroup.date)}
+                    className="w-full p-4 hover:bg-gray-100 transition-colors duration-200"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3 flex-1 text-left">
+                        <div className="flex-shrink-0">
+                          {isExpanded ? (
+                            <svg
+                              className="w-5 h-5 text-gray-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="w-5 h-5 text-gray-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5l7 7-7 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-800 capitalize">
+                            {formattedDate}
+                          </h4>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {dayGroup.activities.length} atividade
+                            {dayGroup.activities.length > 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="text-right">
+                          <p className="font-semibold text-blue-600">
+                            {dayGroup.totalTreinos} treino
+                            {dayGroup.totalTreinos > 1 ? "s" : ""}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            {dayGroup.totalCalorias} kcal
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-700">
+                            {dayGroup.totalDuracao}min
+                          </p>
+                          <p className="text-xs text-gray-500">total</p>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Detalhes das atividades - visível quando expandido */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-200 bg-white">
+                      <div className="p-4 space-y-3">
+                        {dayGroup.activities.map((activity) => (
+                          <div
+                            key={activity.id}
+                            className="bg-gray-50 p-3 rounded-lg border border-gray-100"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-gray-800">
+                                  {activity.tipo_treino || "Atividade"}
+                                </h5>
+                                {activity.horario && (
+                                  <p className="text-xs text-gray-600 mt-0.5">
+                                    às {activity.horario}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="text-right ml-4">
+                                <p className="text-sm font-semibold text-blue-600">
+                                  {activity.treinos_concluidos || 0} treino
+                                  {(activity.treinos_concluidos || 0) > 1 ? "s" : ""}
+                                </p>
+                                <p className="text-xs text-red-600">
+                                  {activity.calorias_queimadas || 0} kcal
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-4 text-xs text-gray-600">
+                              <span>Duração: {activity.duracao_minutos || 0}min</span>
+                              {activity.observacoes && (
+                                <span className="italic flex-1 truncate">
+                                  &ldquo;{activity.observacoes}&rdquo;
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">

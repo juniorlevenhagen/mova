@@ -11,7 +11,7 @@ import { UserDataSection } from "./components/UserDataSection";
 import { EvolutionSection } from "./components/EvolutionSection";
 import { AddEvolutionModal } from "./modals/AddEvolutionModal";
 import { PersonalizedPlanModal } from "./components/PersonalizedPlanModal";
-import { UpgradeModal } from "./components/UpgradeModal";
+import { PromptPurchaseModal } from "./components/PromptPurchaseModal";
 import { useEvolution } from "@/hooks/useEvolution";
 import { usePlanGeneration } from "@/hooks/usePlanGeneration";
 import { useTrial } from "@/hooks/useTrial";
@@ -25,7 +25,6 @@ interface EvolutionData {
   quadril: string;
   braco: string;
   coxa: string;
-  treinos: string;
   bemEstar: string;
   observacoes: string;
   objetivo: string;
@@ -107,10 +106,14 @@ export default function DashboardPage() {
   // ✅ Detectar retorno do Stripe e verificar pagamento (ANTES dos early returns)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const upgradeParam = urlParams.get("upgrade");
+    const purchaseParam = urlParams.get("purchase");
+    const upgradeParam = urlParams.get("upgrade"); // Mantém compatibilidade com código antigo
     const sessionId = urlParams.get("session_id");
 
-    if (upgradeParam === "success" && sessionId && user) {
+    // Suporta tanto "purchase" (novo) quanto "upgrade" (antigo)
+    const isSuccess = (purchaseParam === "success" || upgradeParam === "success") && sessionId && user;
+
+    if (isSuccess) {
       const verifyPayment = async () => {
         try {
           // Obter token de autenticação
@@ -132,10 +135,12 @@ export default function DashboardPage() {
 
           const result = await response.json();
 
-          if (result.success && result.isPremium) {
+          if (result.success) {
             // ✅ Atualizações críticas para UI - IMEDIATAS (sem startTransition)
             setShowUpgradeModal(false);
-            setPremiumOverride(true);
+            if (result.isPremium) {
+              setPremiumOverride(true);
+            }
 
             // ✅ Operação pesada - pode ser não urgente
             startTransition(() => {
@@ -152,7 +157,7 @@ export default function DashboardPage() {
       };
 
       verifyPayment();
-    } else if (upgradeParam === "success" && user) {
+    } else if ((purchaseParam === "success" || upgradeParam === "success") && user) {
       // Fallback sem session_id: tentar ativar premium via /api/verify-payment
       const runFallback = async () => {
         try {
@@ -171,9 +176,11 @@ export default function DashboardPage() {
           });
 
           const res = await response.json();
-          if (res.success && res.isPremium) {
+          if (res.success) {
             setShowUpgradeModal(false);
-            setPremiumOverride(true);
+            if (res.isPremium) {
+              setPremiumOverride(true);
+            }
             // Refresh apenas uma vez
             refetchTrial();
           }
@@ -491,12 +498,12 @@ export default function DashboardPage() {
           isOpen={showPlanModal}
           onClose={() => setShowPlanModal(false)}
           plan={plan}
+          profileData={profileData}
         />
 
-        <UpgradeModal
+        <PromptPurchaseModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          isPremium={isPremiumUI}
         />
       </div>
     </ProtectedRoute>

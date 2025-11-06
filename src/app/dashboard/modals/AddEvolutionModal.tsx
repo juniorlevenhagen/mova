@@ -11,11 +11,11 @@ interface EvolutionData {
   quadril: string;
   braco: string;
   coxa: string;
-  treinos: string;
   bemEstar: string;
   observacoes: string;
   objetivo: string;
   nivelAtividade: string;
+  // Removido: treinos - não existe no banco de dados
   // Removido: arquivoAvaliacao - upload agora é só em "Seus Dados"
 }
 
@@ -39,8 +39,8 @@ export function AddEvolutionModal({
     cintura: "",
     quadril: "",
     braco: "",
+    bracoLado: "dominante",
     coxa: "",
-    treinos: "",
     bemEstar: "3",
     observacoes: "",
     objetivo: "",
@@ -50,11 +50,10 @@ export function AddEvolutionModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const dataToSubmit: EvolutionData = {
-      ...modalData,
-    };
+    // Remover bracoLado do submit (não é salvo no banco, apenas informativo)
+    const { bracoLado, ...dataToSubmit } = modalData;
 
-    onSubmit(dataToSubmit);
+    onSubmit(dataToSubmit as EvolutionData);
   };
 
   const handleInputChange = (
@@ -74,8 +73,8 @@ export function AddEvolutionModal({
       cintura: "",
       quadril: "",
       braco: "",
+      bracoLado: "dominante",
       coxa: "",
-      treinos: "",
       bemEstar: "3",
       observacoes: "",
       objetivo: "",
@@ -92,11 +91,11 @@ export function AddEvolutionModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+      <div className="flex items-center justify-center min-h-screen px-4 py-8">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={handleClose}></div>
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div className="relative w-full max-w-7xl bg-white rounded-lg shadow-xl transform transition-all">
+          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[85vh] overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className={`${typography.heading.h3} ${colors.text.primary}`}>
                 Adicionar Evolução Manual
@@ -238,15 +237,33 @@ export function AddEvolutionModal({
                     >
                       Braço (cm)
                     </label>
-                    <input
-                      type="number"
-                      id="braco"
-                      name="braco"
-                      value={modalData.braco}
-                      onChange={handleInputChange}
-                      placeholder="ex: 32"
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div className="mt-1 flex gap-2">
+                      <input
+                        type="number"
+                        id="braco"
+                        name="braco"
+                        value={modalData.braco}
+                        onChange={handleInputChange}
+                        placeholder="ex: 32"
+                        className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <select
+                        id="bracoLado"
+                        name="bracoLado"
+                        value={modalData.bracoLado}
+                        onChange={handleInputChange}
+                        className="w-32 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                        title="Selecione qual braço foi medido"
+                      >
+                        <option value="dominante">Dominante</option>
+                        <option value="direito">Direito</option>
+                        <option value="esquerdo">Esquerdo</option>
+                        <option value="media">Média</option>
+                      </select>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Selecione qual braço foi medido. Use sempre o mesmo para consistência.
+                    </p>
                   </div>
 
                   <div>
@@ -277,31 +294,6 @@ export function AddEvolutionModal({
                   Atividade & Bem-estar
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="treinos"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Treinos na semana
-                    </label>
-                    <select
-                      id="treinos"
-                      name="treinos"
-                      value={modalData.treinos}
-                      onChange={handleInputChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Selecione...</option>
-                      <option value="1">1x por semana</option>
-                      <option value="2">2x por semana</option>
-                      <option value="3">3x por semana</option>
-                      <option value="4">4x por semana</option>
-                      <option value="5">5x por semana</option>
-                      <option value="6">6x por semana</option>
-                      <option value="7">Todos os dias</option>
-                    </select>
-                  </div>
-
                   <div>
                     <label
                       htmlFor="nivelAtividade"
@@ -350,7 +342,7 @@ export function AddEvolutionModal({
                     </select>
                   </div>
 
-                  <div>
+                  <div className="col-span-2">
                     <label
                       htmlFor="bemEstar"
                       className="block text-sm font-medium text-gray-700"
@@ -394,7 +386,7 @@ export function AddEvolutionModal({
               </div>
 
               {/* Botões */}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
                 <button
                   type="button"
                   onClick={handleClose}

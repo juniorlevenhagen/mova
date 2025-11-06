@@ -12,7 +12,7 @@ export function usePlanGeneration() {
     daysUntilNext?: number;
     nextPlanAvailable?: string;
     isPremiumCooldown?: boolean; // Nova propriedade para cooldown premium
-    hoursUntilNext?: number; // Horas até próximo plano (premium)
+    hoursUntilNext?: number; // Horas até próximo plano (premium) - para countdown preciso
   } | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
@@ -79,24 +79,28 @@ export function usePlanGeneration() {
             const canGenerateMore = currentCycleCount < maxPlansPerCycle;
 
             if (canGenerateMore) {
-              // ✅ Premium pode gerar mais planos - mostrar cooldown de 24h
+              // ✅ Premium pode gerar mais planos - mostrar cooldown de 7 dias
               const lastPlanTime = new Date(planEntry.generated_at);
-              const hoursSinceLastPlan =
-                (now.getTime() - lastPlanTime.getTime()) / (1000 * 60 * 60);
-              const MIN_INTERVAL_HOURS = 24;
+              const daysSinceLastPlan =
+                (now.getTime() - lastPlanTime.getTime()) / (1000 * 60 * 60 * 24);
+              const MIN_INTERVAL_DAYS = 7;
 
-              if (hoursSinceLastPlan < MIN_INTERVAL_HOURS) {
+              if (daysSinceLastPlan < MIN_INTERVAL_DAYS) {
                 // Ainda em cooldown - mostrar quando próximo estará disponível
+                const daysUntilNext = Math.ceil(
+                  MIN_INTERVAL_DAYS - daysSinceLastPlan
+                );
                 const hoursUntilNext = Math.ceil(
-                  MIN_INTERVAL_HOURS - hoursSinceLastPlan
+                  (MIN_INTERVAL_DAYS - daysSinceLastPlan) * 24
                 );
                 setPlanStatus({
                   isExisting: true,
                   generatedAt: planEntry.generated_at,
                   isPremiumCooldown: true,
+                  daysUntilNext,
                   hoursUntilNext,
                   nextPlanAvailable: new Date(
-                    lastPlanTime.getTime() + MIN_INTERVAL_HOURS * 60 * 60 * 1000
+                    lastPlanTime.getTime() + MIN_INTERVAL_DAYS * 24 * 60 * 60 * 1000
                   ).toISOString(),
                 });
               } else {
@@ -191,10 +195,10 @@ export function usePlanGeneration() {
         }
 
         if (errorData.error === "COOLDOWN_ACTIVE") {
-          const hours = errorData.hoursRemaining || 24;
+          const days = errorData.daysRemaining || 7;
           throw new Error(
             errorData.message ||
-              `Aguarde ${hours} horas para gerar o próximo plano.`
+              `Aguarde ${days} dia${days > 1 ? "s" : ""} para gerar o próximo plano.`
           );
         }
 
@@ -203,8 +207,19 @@ export function usePlanGeneration() {
 
       const result = await response.json();
 
+      console.log("📥 Resposta da API:", {
+        success: result.success,
+        hasPlan: !!result.plan,
+        planKeys: result.plan ? Object.keys(result.plan) : [],
+        hasNutritionPlan: !!result.plan?.nutritionPlan,
+      });
+
       if (result.success) {
         setPlan(result.plan);
+        console.log("✅ Plano definido no estado:", {
+          keys: result.plan ? Object.keys(result.plan) : [],
+          hasNutritionPlan: !!result.plan?.nutritionPlan,
+        });
         // ✅ Atualizar planStatus IMEDIATAMENTE com dados da API
         setPlanStatus({
           isExisting: result.isExisting || true, // Usar dados da API
@@ -230,6 +245,13 @@ export function usePlanGeneration() {
         setIsGenerating(false);
 
         throw new Error(result.message);
+      } else if (result.error === "PLAN_INCOMPLETE") {
+        // Plano incompleto retornado pela API
+        setIsGenerating(false);
+        throw new Error(
+          result.message ||
+            `O plano gerado está incompleto. Campos faltando: ${result.missingFields?.join(", ") || "desconhecidos"}. Tente gerar novamente.`
+        );
       } else {
         throw new Error(result.error || "Erro desconhecido");
       }

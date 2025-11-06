@@ -460,7 +460,7 @@ export default function BlogPage() {
                     layout: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
                   }}
                   className={cn(
-                    "group inline-flex items-center rounded-full border px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition-colors duration-500 ease-out sm:px-6 sm:py-2.5 sm:text-sm",
+                    "group inline-flex items-center rounded-full border px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] sm:px-6 sm:py-2.5 sm:text-sm",
                     isActive
                       ? "border-black bg-black text-white shadow-[0_15px_40px_-25px_rgba(0,0,0,0.6)]"
                       : "border-gray-200 bg-white text-gray-600 hover:border-black hover:text-black"

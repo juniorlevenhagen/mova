@@ -72,8 +72,74 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   try {
     const now = new Date().toISOString();
+    const purchaseType = session.metadata?.purchase_type;
+    const promptsAmount = session.metadata?.prompts_amount
+      ? parseInt(session.metadata.prompts_amount)
+      : 0;
 
-    // Buscar trial existente ou criar um novo
+    // Se for compra de prompts (não premium)
+    if (purchaseType === "prompt_single" || purchaseType === "prompt_triple") {
+      console.log(
+        `✅ Processando compra de ${promptsAmount} prompt(s) para usuário:`,
+        userId
+      );
+
+      // Buscar trial existente
+      const { data: existingTrial } = await supabase
+        .from("user_trials")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingTrial) {
+        // Atualizar trial adicionando prompts disponíveis
+        const currentPrompts =
+          existingTrial.available_prompts || 0;
+        const newPrompts = currentPrompts + promptsAmount;
+
+        const { error } = await supabase
+          .from("user_trials")
+          .update({
+            available_prompts: newPrompts,
+            updated_at: now,
+          })
+          .eq("user_id", userId);
+
+        if (error) {
+          console.error("❌ Erro ao atualizar prompts:", error);
+        } else {
+          console.log(
+            `✅ ${promptsAmount} prompt(s) adicionado(s). Total disponível: ${newPrompts}`
+          );
+        }
+      } else {
+        // Criar novo trial com prompts
+        const { error } = await supabase.from("user_trials").insert({
+          user_id: userId,
+          trial_start_date: now,
+          trial_end_date: new Date(
+            Date.now() + 365 * 24 * 60 * 60 * 1000
+          ).toISOString(), // 1 ano de validade
+          plans_generated: 0,
+          max_plans_allowed: 1,
+          is_active: true,
+          upgraded_to_premium: false,
+          available_prompts: promptsAmount,
+        });
+
+        if (error) {
+          console.error("❌ Erro ao criar trial com prompts:", error);
+        } else {
+          console.log(
+            `✅ Trial criado com ${promptsAmount} prompt(s) para usuário:`,
+            userId
+          );
+        }
+      }
+      return; // Não processar como premium
+    }
+
+    // Processamento para premium (comportamento original)
     const { data: existingTrial } = await supabase
       .from("user_trials")
       .select("*")

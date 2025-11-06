@@ -20,6 +20,7 @@ interface UserTrial {
   premium_plan_cycle_start: string | null;
   premium_max_plans_per_cycle: number;
   premium_cycle_days: number;
+  available_prompts?: number; // Prompts comprados disponíveis
 }
 
 interface TrialStatus {
@@ -101,6 +102,7 @@ export function useTrial(user: User | null) {
         // Usuário existente
         const isPremium = trialData.upgraded_to_premium;
         const plansGenerated = trialData.plans_generated || 0;
+        const availablePrompts = trialData.available_prompts || 0;
 
         // Calcular dias restantes do trial
         const trialEndDate = new Date(trialData.trial_end_date);
@@ -112,8 +114,19 @@ export function useTrial(user: User | null) {
           )
         );
 
-        if (isPremium) {
-          // ✅ Usuário premium - 2 planos por período de 30 dias (não por mês do calendário)
+        // ✅ PRIORIDADE 1: Verificar se tem prompts comprados disponíveis
+        if (availablePrompts > 0) {
+          status = {
+            isNewUser: false,
+            canGenerate: true,
+            plansRemaining: availablePrompts,
+            isPremium: false,
+            message: `Você tem ${availablePrompts} prompt${availablePrompts > 1 ? "s" : ""} disponível${availablePrompts > 1 ? "is" : ""} para gerar planos!`,
+            daysRemaining,
+            plansGenerated,
+          };
+        } else if (isPremium) {
+          // ✅ PRIORIDADE 2: Usuário premium - 2 planos por período de 30 dias
           const maxPlansPerCycle = trialData.premium_max_plans_per_cycle || 2;
           const cycleStartDate = trialData.premium_plan_cycle_start
             ? new Date(trialData.premium_plan_cycle_start)
@@ -161,7 +174,7 @@ export function useTrial(user: User | null) {
             cycleDays: cycleLength,
           };
         } else {
-          // Usuário grátis - 1 plano total
+          // ✅ PRIORIDADE 3: Usuário grátis - 1 plano total
           const maxPlans = 1; // Usuários grátis só podem gerar 1 plano
           const plansRemaining = Math.max(0, maxPlans - plansGenerated);
 
@@ -170,6 +183,7 @@ export function useTrial(user: User | null) {
             canGenerate: plansRemaining > 0,
             plansRemaining,
             isPremium: false,
+            hasUsedFreePlan: plansRemaining === 0,
             message:
               plansRemaining > 0
                 ? "Você pode gerar 1 plano grátis!"

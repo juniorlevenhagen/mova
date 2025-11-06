@@ -13,9 +13,10 @@ interface TrialStatus {
 
 interface TrialAlertProps {
   trialStatus: TrialStatus;
+  onUpgrade?: () => void;
 }
 
-export function TrialAlert({ trialStatus }: TrialAlertProps) {
+export function TrialAlert({ trialStatus, onUpgrade }: TrialAlertProps) {
   // Não mostrar nada se for premium
   if (trialStatus.isPremium) {
     return null;
@@ -43,8 +44,8 @@ export function TrialAlert({ trialStatus }: TrialAlertProps) {
         iconColor: "text-orange-600",
         title: "Plano Gratuito Usado",
         message:
-          "Você já usou seu plano gratuito. Faça upgrade para gerar mais planos personalizados.",
-        actionText: "Fazer Upgrade",
+          "Você já usou seu plano gratuito. Compre prompts para gerar mais planos personalizados quando precisar!",
+        actionText: "Comprar Prompts",
       };
     } else if (trialStatus.isPremium && trialStatus.plansRemaining === 0) {
       const daysUntilNext = trialStatus.daysUntilNextCycle || 0;
@@ -79,9 +80,11 @@ export function TrialAlert({ trialStatus }: TrialAlertProps) {
   const alertConfig = getAlertType();
 
   const handleUpgrade = () => {
-    // TODO: Implementar modal de upgrade ou redirecionamento
-    console.log("Upgrade clicked");
-    alert("Upgrade em breve! Por enquanto, entre em contato conosco.");
+    if (onUpgrade) {
+      onUpgrade();
+    } else {
+      console.log("Comprar prompts clicked");
+    }
   };
 
   return (

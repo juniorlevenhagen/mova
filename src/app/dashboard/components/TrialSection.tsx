@@ -49,7 +49,7 @@ export function TrialSection({
         // Usuário Gratuito
         <div className="space-y-4">
           {hasUsedFreePlan ? (
-            // ✅ Usou o plano grátis - botão de upgrade ativo
+            // ✅ Usou o plano grátis - oferecer compra de prompts
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0">
@@ -72,14 +72,13 @@ export function TrialSection({
                     Plano Grátis Utilizado
                   </h3>
                   <p className="text-orange-700 text-sm mb-3">
-                    Você já utilizou seu plano personalizado gratuito. Com o
-                    Premium você pode gerar 2 planos a cada 30 dias!
+                    Você já utilizou seu plano personalizado gratuito. Compre prompts para gerar mais planos quando precisar!
                   </p>
                   <button
                     onClick={onUpgrade}
                     className="bg-black hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
                   >
-                    Upgrade para Premium - R$ 29,90/mês
+                    Comprar Prompts
                   </button>
                 </div>
               </div>
@@ -99,13 +98,13 @@ export function TrialSection({
 
               <div className="pt-2 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-2">
-                  Quer gerar mais planos? Conheça o Premium:
+                  Quer gerar mais planos? Escolha uma opção:
                 </p>
                 <button
                   onClick={onUpgrade}
-                  className="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                  className="bg-black hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 w-full"
                 >
-                  Ver Planos Premium
+                  Comprar Prompts
                 </button>
               </div>
             </div>

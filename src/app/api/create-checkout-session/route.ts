@@ -44,38 +44,78 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ Usuário autenticado:", user.id);
 
-    // Buscar dados do usuário (pode não existir ainda no cadastro)
+    // Ler body da requisição para determinar o tipo de compra
+    const body = await request.json().catch(() => ({}));
+    const purchaseType = body.type || "premium"; // 'prompt_single', 'prompt_triple', ou 'premium'
+
+    // Buscar dados do usuário
     const { data: userProfile } = await supabase
       .from("user_profiles")
       .select("email, full_name")
       .eq("user_id", user.id)
       .maybeSingle();
 
-    console.log("🔍 Criando sessão de checkout para usuário:", user.id);
-    console.log("🔍 Email do usuário:", userProfile?.email || user.email);
+    console.log("🔍 Tipo de compra:", purchaseType);
 
-    // Verificar se usuário já está em trial
-    const { data: trialData } = await supabase
-      .from("user_trials")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // Configurar produtos baseado no tipo
+    let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    let mode: "payment" | "subscription" = "payment";
+    let metadata: Record<string, string> = {
+      user_id: user.id,
+    };
 
-    const isInTrial =
-      trialData && trialData.is_active && !trialData.upgraded_to_premium;
-    console.log("🔍 Usuário em trial:", isInTrial);
+    if (purchaseType === "prompt_single") {
+      // Compra de 1 prompt - R$ 17,99
+      lineItems = [
+        {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: "Mova+ - 1 Prompt",
+              description: "1 prompt para gerar plano personalizado",
+            },
+            unit_amount: 1799, // R$ 17,99 em centavos
+          },
+          quantity: 1,
+        },
+      ];
+      metadata.purchase_type = "prompt_single";
+      metadata.prompts_amount = "1";
+    } else if (purchaseType === "prompt_triple") {
+      // Compra de 3 prompts - R$ 39,99
+      lineItems = [
+        {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: "Mova+ - Pacote Premium (3 Prompts)",
+              description: "3 prompts para gerar planos personalizados",
+            },
+            unit_amount: 3999, // R$ 39,99 em centavos
+          },
+          quantity: 1,
+        },
+      ];
+      metadata.purchase_type = "prompt_triple";
+      metadata.prompts_amount = "3";
+    } else {
+      // Premium mensal (comportamento original)
+      const { data: trialData } = await supabase
+        .from("user_trials")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    // Criar sessão de checkout
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [
+      const isInTrial =
+        trialData && trialData.is_active && !trialData.upgraded_to_premium;
+
+      lineItems = [
         {
           price_data: {
             currency: "brl",
             product_data: {
               name: "Mova+ Premium",
               description: "Plano premium com 2 planos personalizados por mês",
-              // images: ["https://movamais.fit/images/logo_blue.webp"], // Logo do seu domínio
             },
             unit_amount: 2990, // R$ 29,90 em centavos
             recurring: {
@@ -84,37 +124,57 @@ export async function POST(request: NextRequest) {
           },
           quantity: 1,
         },
-      ],
-      mode: "subscription",
+      ];
+      mode = "subscription";
+      metadata.subscription_type = "premium";
+    }
+
+    // Criar sessão de checkout
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      payment_method_types: ["card"],
+      line_items: lineItems,
+      mode,
       success_url: `${
         process.env.NODE_ENV === "production"
           ? "https://movamais.fit"
           : "http://localhost:3000"
-      }/dashboard?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
+      }/dashboard?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${
         process.env.NODE_ENV === "production"
           ? "https://movamais.fit"
           : "http://localhost:3000"
-      }/dashboard?upgrade=canceled`,
+      }/dashboard?purchase=canceled`,
       customer_email: userProfile?.email || user.email,
-      metadata: {
-        user_id: user.id,
-        subscription_type: "premium",
-      },
-      subscription_data: {
+      metadata,
+    };
+
+    // Adicionar subscription_data apenas para premium
+    if (mode === "subscription") {
+      const { data: trialData } = await supabase
+        .from("user_trials")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const isInTrial =
+        trialData && trialData.is_active && !trialData.upgraded_to_premium;
+
+      sessionParams.subscription_data = {
         metadata: {
           user_id: user.id,
         },
-        trial_period_days: isInTrial ? 0 : 7, // 0 dias se já está em trial, 7 dias se é novo
-      },
-      custom_text: {
+        trial_period_days: isInTrial ? 0 : 7,
+      };
+      sessionParams.custom_text = {
         submit: {
           message: isInTrial
             ? "Fazer upgrade para Premium"
             : "Começar meu teste gratuito de 7 dias",
         },
-      },
-    });
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

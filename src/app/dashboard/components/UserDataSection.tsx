@@ -25,7 +25,7 @@ interface UserDataSectionProps {
     daysUntilNext?: number;
     nextPlanAvailable?: string;
     isPremiumCooldown?: boolean; // Nova propriedade para cooldown premium
-    hoursUntilNext?: number; // Horas até próximo plano (premium)
+    hoursUntilNext?: number; // Horas até próximo plano (premium) - para countdown preciso
   } | null;
   isCheckingPlanStatus?: boolean;
   isPremium?: boolean; // Nova prop para identificar usuários premium
@@ -45,6 +45,10 @@ export function UserDataSection({
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showIMCModal, setShowIMCModal] = useState(false);
   const [showCaloriaModal, setShowCaloriaModal] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<{
+    type: "success" | "error" | "info" | null;
+    message: string;
+  }>({ type: null, message: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para edição inline
@@ -76,16 +80,28 @@ export function UserDataSection({
       const maxSize = 10 * 1024 * 1024; // 10MB
 
       if (!allowedTypes.includes(file.type)) {
-        console.error("Tipo de arquivo não suportado:", file.type);
+        setUploadStatus({
+          type: "error",
+          message: `Tipo de arquivo não suportado. Use PDF, Word ou imagens (JPG/PNG).`,
+        });
+        setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
         return;
       }
 
       if (file.size > maxSize) {
-        console.error("Arquivo muito grande:", file.size);
+        setUploadStatus({
+          type: "error",
+          message: `Arquivo muito grande. Tamanho máximo: 10MB.`,
+        });
+        setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
         return;
       }
 
       setIsUploading(true);
+      setUploadStatus({
+        type: "info",
+        message: "Enviando arquivo...",
+      });
 
       try {
         // Se for PDF, processar com a API
@@ -96,12 +112,22 @@ export function UserDataSection({
           } = await supabase.auth.getSession();
 
           if (!session?.access_token) {
-            console.error("❌ Erro: Usuário não autenticado");
+            setUploadStatus({
+              type: "error",
+              message: "Erro de autenticação. Por favor, faça login novamente.",
+            });
+            setIsUploading(false);
+            setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
             return;
           }
 
           const formData = new FormData();
           formData.append("file", file);
+
+          setUploadStatus({
+            type: "info",
+            message: "Processando PDF com IA...",
+          });
 
           const response = await fetch("/api/process-pdf", {
             method: "POST",
@@ -115,7 +141,10 @@ export function UserDataSection({
             const result = await response.json();
 
             if (result.success) {
-              console.log("✅ PDF processado com sucesso!");
+              setUploadStatus({
+                type: "success",
+                message: `PDF processado com sucesso! Dados extraídos e evolução criada automaticamente.`,
+              });
 
               // ✅ Só fazemos refresh mínimo se dados importantes mudaram
               if (result.evolutionCreated && onProfileUpdate) {
@@ -123,13 +152,17 @@ export function UserDataSection({
                 setTimeout(() => onProfileUpdate(), 100);
               }
 
-              console.log("✅ Dashboard atualizado instantaneamente!");
+              // Limpar mensagem de sucesso após 8 segundos
+              setTimeout(() => setUploadStatus({ type: null, message: "" }), 8000);
             } else {
-              console.error("❌ Erro no processamento:", result.error);
+              setUploadStatus({
+                type: "error",
+                message: result.error || "Erro ao processar PDF. Verifique se o arquivo contém dados de avaliação física.",
+              });
+              setIsUploading(false);
+              setTimeout(() => setUploadStatus({ type: null, message: "" }), 8000);
             }
           } else {
-            console.error("❌ Erro na API:", response.status);
-
             // Ler o erro apenas uma vez
             let errorMessage = "Erro desconhecido";
             try {
@@ -145,7 +178,12 @@ export function UserDataSection({
               }
             }
 
-            console.error("❌ Detalhes do erro:", errorMessage);
+            setUploadStatus({
+              type: "error",
+              message: `Erro ao processar PDF: ${errorMessage}`,
+            });
+            setIsUploading(false);
+            setTimeout(() => setUploadStatus({ type: null, message: "" }), 8000);
           }
         }
 
@@ -157,15 +195,28 @@ export function UserDataSection({
         });
 
         if (success) {
-          console.log("✅ Avaliação salva com sucesso!");
-
-          // ✅ Não fazemos refresh - o hook useEvaluation já atualizou o estado otimisticamente
-          // A interface já mostra o estado correto instantaneamente
+          if (file.type !== "application/pdf") {
+            // Para arquivos não-PDF, mostrar mensagem de sucesso
+            setUploadStatus({
+              type: "success",
+              message: "Arquivo salvo com sucesso!",
+            });
+            setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
+          }
+          // Para PDFs, a mensagem já foi mostrada acima
         } else {
-          return;
+          setUploadStatus({
+            type: "error",
+            message: "Erro ao salvar arquivo. Tente novamente.",
+          });
+          setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
         }
       } catch (error) {
-        console.error("❌ Erro no processamento:", error);
+        setUploadStatus({
+          type: "error",
+          message: "Erro inesperado ao processar arquivo. Tente novamente.",
+        });
+        setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
       } finally {
         setIsUploading(false);
       }
@@ -481,6 +532,55 @@ export function UserDataSection({
           Gerencie suas informações pessoais e acompanhe seu progresso
         </p>
       </div>
+
+      {/* Mensagens de Status do Upload */}
+      {uploadStatus.type && (
+        <div className={`mb-6 rounded-lg border p-4 ${
+          uploadStatus.type === "success"
+            ? "bg-green-50 border-green-200"
+            : uploadStatus.type === "error"
+            ? "bg-red-50 border-red-200"
+            : "bg-blue-50 border-blue-200"
+        }`}>
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              {uploadStatus.type === "success" ? (
+                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : uploadStatus.type === "error" ? (
+                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className={`text-sm font-medium ${
+                uploadStatus.type === "success"
+                  ? "text-green-800"
+                  : uploadStatus.type === "error"
+                  ? "text-red-800"
+                  : "text-blue-800"
+              }`}>
+                {uploadStatus.message}
+              </p>
+            </div>
+            <button
+              onClick={() => setUploadStatus({ type: null, message: "" })}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Indicador permanente de avaliação */}
       {evaluation && (
@@ -831,10 +931,23 @@ export function UserDataSection({
                       </svg>
                       Próximo plano disponível em:{" "}
                       <span className="font-semibold">
-                        {planStatus.hoursUntilNext === 1
-                          ? "1 hora"
-                          : `${planStatus.hoursUntilNext} horas`}
+                        {planStatus.daysUntilNext !== undefined ? (
+                          planStatus.daysUntilNext === 1
+                            ? "1 dia"
+                            : `${planStatus.daysUntilNext} dias`
+                        ) : planStatus.hoursUntilNext ? (
+                          planStatus.hoursUntilNext < 24
+                            ? `${planStatus.hoursUntilNext} horas`
+                            : `${Math.ceil(planStatus.hoursUntilNext / 24)} dias`
+                        ) : (
+                          "7 dias"
+                        )}
                       </span>
+                      {planStatus.nextPlanAvailable && (
+                        <span className="text-blue-500 ml-1">
+                          ({new Date(planStatus.nextPlanAvailable).toLocaleDateString("pt-BR")})
+                        </span>
+                      )}
                     </p>
                   ) : (
                     !isPremium && (

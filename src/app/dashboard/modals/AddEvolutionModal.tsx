@@ -51,6 +51,7 @@ export function AddEvolutionModal({
     e.preventDefault();
 
     // Remover bracoLado do submit (não é salvo no banco, apenas informativo)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { bracoLado: _bracoLado, ...dataToSubmit } = modalData;
 
     onSubmit(dataToSubmit as EvolutionData);

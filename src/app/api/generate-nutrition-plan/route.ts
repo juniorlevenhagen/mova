@@ -14,18 +14,19 @@ const PLAN_FIELD_SCHEMAS = {
       dailyCalories: { type: "number" },
       macros: {
         type: "object",
+        additionalProperties: false,
         properties: {
           protein: { type: "string" },
           carbs: { type: "string" },
           fats: { type: "string" },
         },
         required: ["protein", "carbs", "fats"],
-        additionalProperties: false,
       },
       mealPlan: {
         type: "array",
         items: {
           type: "object",
+          additionalProperties: false,
           properties: {
             meal: { type: "string" },
             timing: { type: "string" },
@@ -33,6 +34,7 @@ const PLAN_FIELD_SCHEMAS = {
               type: "array",
               items: {
                 type: "object",
+                additionalProperties: false,
                 properties: {
                   food: { type: "string" },
                   quantity: { type: "string" },

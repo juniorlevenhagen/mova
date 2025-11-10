@@ -60,7 +60,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Extrair dieta do plan_data se existir
-    const dietData = savedDiet?.plan_data?.dietPlan || null;
+    // Priorizar nutritionPlan (estruturado) sobre dietPlan (legacy)
+    const dietData =
+      savedDiet?.plan_data?.nutritionPlan ||
+      savedDiet?.plan_data?.dietPlan ||
+      null;
 
     return NextResponse.json({
       success: true,
@@ -147,9 +151,19 @@ export async function POST(request: NextRequest) {
 
     if (existingPlan) {
       // Atualizar plano existente com a dieta
+      // Parse dietPlan se for string (legacy), ou usar diretamente se for objeto
+      let nutritionPlanData;
+      try {
+        nutritionPlanData =
+          typeof dietPlan === "string" ? JSON.parse(dietPlan) : dietPlan;
+      } catch (e) {
+        nutritionPlanData = dietPlan;
+      }
+
       const updatedPlanData = {
         ...existingPlan.plan_data,
-        dietPlan: dietPlan,
+        nutritionPlan: nutritionPlanData, // Atualizar nutritionPlan no plano completo
+        dietPlan: dietPlan, // Manter dietPlan para compatibilidade
       };
 
       const { error: updateError } = await supabaseUser

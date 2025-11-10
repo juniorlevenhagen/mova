@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
-
+import { PersonalizedPlan } from "@/types/personalized-plan";
 // Função para criar cliente OpenAI apenas quando necessário
 function createOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -130,7 +130,13 @@ const PLAN_FIELD_SCHEMAS = {
   },
 } as const;
 
-const PLAN_REQUIRED_FIELDS = [] as const; // Temporariamente vazio para testes
+const PLAN_REQUIRED_FIELDS = [
+  "analysis",
+  "trainingPlan",
+  "nutritionPlan",
+  "goals",
+  "motivation",
+] as const; // Temporariamente vazio para testes
 
 const PLAN_JSON_SCHEMA = {
   name: "personalized_plan",
@@ -276,38 +282,102 @@ function validatePlanFinal(planData: any): {
     return { isValid: false, missingFields: ["plano completo"] };
   }
 
+  if (!planData.nutritionPlan) {
+    missingFields.push("nutritionPlan");
+  } else {
+    const nutrition =
+      planData.nutritionPlan as PersonalizedPlan["nutritionPlan"];
+
+    if (typeof nutrition.dailyCalories !== "number") {
+      missingFields.push("nutritionPlan.dailyCalories");
+    }
+
+    if (
+      !nutrition.macros ||
+      !nutrition.macros.protein ||
+      !nutrition.macros.carbs ||
+      !nutrition.macros.fats
+    ) {
+      missingFields.push("nutritionPlan.macros");
+    }
+
+    const mealPlan =
+      nutrition.mealPlan as PersonalizedPlan["nutritionPlan"]["mealPlan"];
+    if (!Array.isArray(mealPlan) || mealPlan.length === 0) {
+      missingFields.push("nutritionPlan.mealPlan");
+    } else {
+      mealPlan.forEach((meal, idx) => {
+        if (!meal.meal) {
+          missingFields.push(`nutritionPlan.mealPlan[${idx}].meal`);
+        }
+
+        const options =
+          meal.options ??
+          ([] as PersonalizedPlan["nutritionPlan"]["mealPlan"][number]["options"]);
+        if (!options.length) {
+          missingFields.push(`nutritionPlan.mealPlan[${idx}].options`);
+        } else {
+          options.forEach((option, optIdx) => {
+            if (!option.food || !option.quantity) {
+              missingFields.push(
+                `nutritionPlan.mealPlan[${idx}].options[${optIdx}]`
+              );
+            }
+          });
+        }
+
+        if (!meal.timing) {
+          missingFields.push(`nutritionPlan.mealPlan[${idx}].timing`);
+        }
+      });
+    }
+
+    if (!nutrition.hydration) {
+      missingFields.push("nutritionPlan.hydration");
+    }
+  }
+
   // Temporariamente não validamos analysis e trainingPlan como obrigatórios para testes
-  // if (!planData.analysis) missingFields.push("analysis");
-  // else {
-  //   if (!planData.analysis.currentStatus)
-  //     missingFields.push("analysis.currentStatus");
-  //   if (
-  //     !planData.analysis.strengths ||
-  //     !Array.isArray(planData.analysis.strengths)
-  //   )
-  //     missingFields.push("analysis.strengths");
-  //   if (
-  //     !planData.analysis.improvements ||
-  //     !Array.isArray(planData.analysis.improvements)
-  //   )
-  //     missingFields.push("analysis.improvements");
-  // }
+  if (!planData.analysis) missingFields.push("analysis");
+  else {
+    if (!planData.analysis.currentStatus)
+      missingFields.push("analysis.currentStatus");
+    if (
+      !planData.analysis.strengths ||
+      !Array.isArray(planData.analysis.strengths)
+    )
+      missingFields.push("analysis.strengths");
+    if (
+      !planData.analysis.improvements ||
+      !Array.isArray(planData.analysis.improvements)
+    )
+      missingFields.push("analysis.improvements");
+  }
 
-  // if (!planData.trainingPlan) missingFields.push("trainingPlan");
-  // else {
-  //   if (!planData.trainingPlan.overview)
-  //     missingFields.push("trainingPlan.overview");
-  //   if (
-  //     !planData.trainingPlan.weeklySchedule ||
-  //     !Array.isArray(planData.trainingPlan.weeklySchedule)
-  //   )
-  //     missingFields.push("trainingPlan.weeklySchedule");
-  //   if (!planData.trainingPlan.progression)
-  //     missingFields.push("trainingPlan.progression");
-  // }
-
-  // nutritionPlan, goals e motivation são opcionais agora
-  // Não validamos mais esses campos como obrigatórios
+  if (!planData.trainingPlan) missingFields.push("trainingPlan");
+  else {
+    if (!planData.trainingPlan.overview)
+      missingFields.push("trainingPlan.overview");
+    if (
+      !planData.trainingPlan.weeklySchedule ||
+      !Array.isArray(planData.trainingPlan.weeklySchedule)
+    )
+      missingFields.push("trainingPlan.weeklySchedule");
+    if (!planData.trainingPlan.progression)
+      missingFields.push("trainingPlan.progression");
+  }
+  if (!planData.goals) missingFields.push("goals");
+  else {
+    if (!planData.goals.weekly) missingFields.push("goals.weekly");
+    if (!planData.goals.monthly) missingFields.push("goals.monthly");
+    if (!planData.goals.tracking) missingFields.push("goals.tracking");
+  }
+  if (!planData.motivation) missingFields.push("motivation");
+  else {
+    if (!planData.motivation.personalMessage)
+      missingFields.push("motivation.personalMessage");
+    if (!planData.motivation.tips) missingFields.push("motivation.tips");
+  }
 
   return { isValid: missingFields.length === 0, missingFields };
 }
@@ -1118,39 +1188,122 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       ): { isValid: boolean; missingFields: string[] } => {
         const missingFields: string[] = [];
 
-        if (!planData) {
-          return { isValid: false, missingFields: ["plano completo"] };
+        if (!planData.analysis) {
+          missingFields.push("analysis");
+        } else {
+          if (!planData.analysis.currentStatus) {
+            missingFields.push("analysis.currentStatus");
+          }
+          if (
+            !planData.analysis.strengths ||
+            !Array.isArray(planData.analysis.strengths) ||
+            planData.analysis.strengths.length === 0
+          ) {
+            missingFields.push("analysis.strengths");
+          }
+          if (
+            !planData.analysis.improvements ||
+            !Array.isArray(planData.analysis.improvements) ||
+            planData.analysis.improvements.length === 0
+          ) {
+            missingFields.push("analysis.improvements");
+          }
         }
 
-        // Temporariamente não validamos analysis e trainingPlan como obrigatórios para testes
-        // if (!planData.analysis) missingFields.push("analysis");
-        // else {
-        //   if (!planData.analysis.currentStatus)
-        //     missingFields.push("analysis.currentStatus");
-        //   if (
-        //     !planData.analysis.strengths ||
-        //     !Array.isArray(planData.analysis.strengths)
-        //   )
-        //     missingFields.push("analysis.strengths");
-        //   if (
-        //     !planData.analysis.improvements ||
-        //     !Array.isArray(planData.analysis.improvements)
-        //   )
-        //     missingFields.push("analysis.improvements");
-        // }
+        if (!planData.trainingPlan) {
+          missingFields.push("trainingPlan");
+        } else {
+          if (!planData.trainingPlan.overview) {
+            missingFields.push("trainingPlan.overview");
+          }
+          if (
+            !planData.trainingPlan.weeklySchedule ||
+            !Array.isArray(planData.trainingPlan.weeklySchedule) ||
+            planData.trainingPlan.weeklySchedule.length === 0
+          ) {
+            missingFields.push("trainingPlan.weeklySchedule");
+          }
+          if (!planData.trainingPlan.progression) {
+            missingFields.push("trainingPlan.progression");
+          }
+        }
 
-        // if (!planData.trainingPlan) missingFields.push("trainingPlan");
-        // else {
-        //   if (!planData.trainingPlan.overview)
-        //     missingFields.push("trainingPlan.overview");
-        //   if (
-        //     !planData.trainingPlan.weeklySchedule ||
-        //     !Array.isArray(planData.trainingPlan.weeklySchedule)
-        //   )
-        //     missingFields.push("trainingPlan.weeklySchedule");
-        //   if (!planData.trainingPlan.progression)
-        //     missingFields.push("trainingPlan.progression");
-        // }
+        if (!planData.nutritionPlan) missingFields.push("nutritionPlan");
+        else {
+          const nutrition =
+            planData.nutritionPlan as PersonalizedPlan["nutritionPlan"];
+          if (typeof nutrition.dailyCalories !== "number")
+            missingFields.push("nutritionPlan.dailyCalories");
+          if (
+            !nutrition.macros ||
+            !nutrition.macros.protein ||
+            !nutrition.macros.carbs ||
+            !nutrition.macros.fats
+          ) {
+            missingFields.push("nutritionPlan.macros");
+          }
+          if (
+            !Array.isArray(nutrition.mealPlan) ||
+            nutrition.mealPlan.length === 0
+          ) {
+            missingFields.push("nutritionPlan.mealPlan");
+          } else {
+            const mealPlan =
+              nutrition.mealPlan as PersonalizedPlan["nutritionPlan"]["mealPlan"];
+            mealPlan.forEach((meal, idx) => {
+              if (!meal.meal)
+                missingFields.push(`nutritionPlan.mealPlan[${idx}].meal`);
+              const options =
+                meal.options ??
+                ([] as PersonalizedPlan["nutritionPlan"]["mealPlan"][number]["options"]);
+              if (!options.length) {
+                missingFields.push(`nutritionPlan.mealPlan[${idx}].options`);
+              } else {
+                options.forEach((option, optIdx) => {
+                  if (!option.food || !option.quantity) {
+                    missingFields.push(
+                      `nutritionPlan.mealPlan[${idx}].options[${optIdx}]`
+                    );
+                  }
+                });
+              }
+              if (!meal.timing)
+                missingFields.push(`nutritionPlan.mealPlan[${idx}].timing`);
+            });
+          }
+          if (!nutrition.hydration)
+            missingFields.push("nutritionPlan.hydration");
+        }
+
+        if (!planData.goals) missingFields.push("goals");
+        else {
+          if (
+            !Array.isArray(planData.goals.weekly) ||
+            planData.goals.weekly.length === 0
+          )
+            missingFields.push("goals.weekly");
+          if (
+            !Array.isArray(planData.goals.monthly) ||
+            planData.goals.monthly.length === 0
+          )
+            missingFields.push("goals.monthly");
+          if (
+            !Array.isArray(planData.goals.tracking) ||
+            planData.goals.tracking.length === 0
+          )
+            missingFields.push("goals.tracking");
+        }
+
+        if (!planData.motivation) missingFields.push("motivation");
+        else {
+          if (!planData.motivation.personalMessage)
+            missingFields.push("motivation.personalMessage");
+          if (
+            !Array.isArray(planData.motivation.tips) ||
+            planData.motivation.tips.length === 0
+          )
+            missingFields.push("motivation.tips");
+        }
 
         // nutritionPlan, goals e motivation são opcionais agora
         // Não validamos mais esses campos como obrigatórios
@@ -1242,7 +1395,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
     // 🧩 Fallback adicional para garantir campos obrigatórios
     // TEMPORARIAMENTE DESABILITADO PARA TESTES - analysis e trainingPlan são opcionais agora
     // Todo o código abaixo está comentado para testes
-    /*
+
     if (plan) {
       const missingMainFields: string[] = [];
       if (!plan.analysis) {
@@ -1348,7 +1501,6 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
         }
       }
     }
-    */
 
     // 🧩 Fallback adicional para garantir campos opcionais importantes
     // SEMPRE tentar gerar analysis se não existir, usando o endpoint dedicado
@@ -1619,13 +1771,26 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
 
     // ✅ VALIDAÇÃO FINAL ANTES DE SALVAR
     // TEMPORARIAMENTE DESABILITADO PARA TESTES - não validamos mais campos obrigatórios
-    // let finalValidation = validatePlanFinal(plan);
+    // let finalValidation = (plan);
     // A validação sempre retorna válido agora pois não há campos obrigatórios
-    /*
+
+    const finalValidation = validatePlanFinal(plan);
     if (!finalValidation.isValid) {
-      // ... código comentado ...
+      console.error(
+        "❌ Plano inválido antes de salvar. Campos faltando:",
+        finalValidation.missingFields
+      );
+      return NextResponse.json(
+        {
+          error: "PLAN_INCOMPLETE",
+          message: `O plano continua incompleto. Campos faltando: ${finalValidation.missingFields.join(
+            ", "
+          )}.`,
+          missingFields: finalValidation.missingFields,
+        },
+        { status: 500 }
+      );
     }
-    */
 
     console.log("✅ Plano validado com sucesso!");
 

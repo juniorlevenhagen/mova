@@ -53,6 +53,28 @@ export function usePlanGeneration() {
           let existingPlan = null;
           try {
             existingPlan = planEntry.plan_data;
+            
+            // ✅ Compatibilidade: Se não houver nutritionPlan mas houver dietPlan (legacy), converter
+            if (existingPlan && !existingPlan.nutritionPlan && existingPlan.dietPlan) {
+              try {
+                existingPlan.nutritionPlan =
+                  typeof existingPlan.dietPlan === "string"
+                    ? JSON.parse(existingPlan.dietPlan)
+                    : existingPlan.dietPlan;
+                console.log("🔄 Convertido dietPlan (legacy) para nutritionPlan");
+              } catch (e) {
+                console.warn("⚠️ Erro ao converter dietPlan para nutritionPlan:", e);
+              }
+            }
+            
+            console.log("📥 Plano carregado do banco:", {
+              hasAnalysis: !!existingPlan?.analysis,
+              hasTrainingPlan: !!existingPlan?.trainingPlan,
+              hasNutritionPlan: !!existingPlan?.nutritionPlan,
+              hasGoals: !!existingPlan?.goals,
+              hasMotivation: !!existingPlan?.motivation,
+              planKeys: existingPlan ? Object.keys(existingPlan) : [],
+            });
           } catch (error) {
             console.warn("Erro ao extrair plano:", error);
           }

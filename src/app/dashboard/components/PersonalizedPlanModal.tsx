@@ -173,6 +173,21 @@ function extractSupplements(text: string): string[] {
   return supplements;
 }
 
+interface MealOption {
+  food?: string;
+  name?: string;
+  quantity?: string;
+  calories?: number;
+}
+
+interface MealPlanItem {
+  meal?: string;
+  name?: string;
+  timing?: string;
+  options?: MealOption[];
+  foods?: Array<{ name: string; quantity?: string; calories?: string }>;
+}
+
 export function PersonalizedPlanModal({
   isOpen,
   onClose,
@@ -180,7 +195,7 @@ export function PersonalizedPlanModal({
   userProfile,
 }: PersonalizedPlanModalProps) {
   const [activeTab, setActiveTab] = useState<
-    "analysis" | "training" | "diet" | "nutrition" | "goals" | "motivation"
+    "analysis" | "training" | "diet" | "goals" | "motivation"
   >("analysis");
   const [openAIMessage, setOpenAIMessage] = useState<string>("");
   const [isLoadingOpenAI, setIsLoadingOpenAI] = useState<boolean>(false);
@@ -215,7 +230,6 @@ export function PersonalizedPlanModal({
       "analysis",
       "training",
       "diet", // Sempre disponível
-      ...(hasOptionalFields.nutritionPlan ? ["nutrition"] : []),
       ...(hasOptionalFields.goals ? ["goals"] : []),
       ...(hasOptionalFields.motivation ? ["motivation"] : []),
     ];
@@ -225,7 +239,6 @@ export function PersonalizedPlanModal({
   }, [
     isOpen,
     plan,
-    hasOptionalFields.nutritionPlan,
     hasOptionalFields.goals,
     hasOptionalFields.motivation,
     activeTab,
@@ -268,70 +281,96 @@ export function PersonalizedPlanModal({
           // Se existe dieta salva, usar ela
           setOpenAIMessage(savedDiet);
         } else {
-          // Se não existe, gerar nova
+          // Se não existe, gerar nova usando endpoint estruturado
           setIsLoadingOpenAI(true);
 
-          // Preparar dados do usuário para enviar à API
-          const userDataForAPI = userProfile
-            ? {
-                altura: userProfile.altura || 0,
-                peso: userProfile.peso || userProfile.pesoInicial || 0,
-                pesoInicial: userProfile.pesoInicial || 0,
-                sexo: userProfile.sexo || "Não informado",
-                frequenciaTreinos:
-                  userProfile.frequenciaTreinos || "Não informado",
-                objetivo: userProfile.objetivo || "Não informado",
-                nivelAtividade: userProfile.nivelAtividade || "Moderado",
-                birthDate: userProfile.birthDate || null,
-              }
-            : null;
+          if (!userProfile) {
+            console.error("Perfil do usuário não disponível");
+            setIsLoadingOpenAI(false);
+            return;
+          }
 
-          fetch("/api/test-openai", {
+          // Calcular IMC
+          const heightInMeters = (userProfile.altura || 0) / 100;
+          const weight = userProfile.peso || 0;
+          const imc =
+            heightInMeters > 0 ? weight / (heightInMeters * heightInMeters) : 0;
+
+          const userDataForAPI = {
+            objective: userProfile.objetivo || "Não informado",
+            weight: weight,
+            height: userProfile.altura || 0,
+            imc: imc.toFixed(2),
+            trainingFrequency: userProfile.frequenciaTreinos || "Não informado",
+            dietaryRestrictions: "Nenhuma", // Adicionar se disponível no perfil
+          };
+
+          fetch("/api/generate-nutrition-plan", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ userData: userDataForAPI }),
+            body: JSON.stringify({
+              userData: userDataForAPI,
+              existingPlan: plan,
+            }),
           })
             .then((res) => res.json())
             .then(async (data) => {
-              if (data.success && data.message) {
-                setOpenAIMessage(data.message);
+              if (data.success && data.nutritionPlan) {
+                // Atualizar o plan com o nutritionPlan gerado
+                if (plan) {
+                  plan.nutritionPlan = data.nutritionPlan;
+                }
+                // Também salvar uma mensagem para fallback
+                setOpenAIMessage("Plano nutricional gerado com sucesso!");
 
                 // Salvar dieta no banco de dados
+                // Isso atualizará o plano completo no banco com o nutritionPlan
                 try {
                   const {
                     data: { session },
                   } = await supabase.auth.getSession();
                   if (session) {
-                    await fetch("/api/save-diet", {
+                    const saveResponse = await fetch("/api/save-diet", {
                       method: "POST",
                       headers: {
                         Authorization: `Bearer ${session.access_token}`,
                         "Content-Type": "application/json",
                       },
                       body: JSON.stringify({
-                        dietPlan: data.message,
+                        dietPlan: data.nutritionPlan, // Enviar objeto, não string
                       }),
                     });
+
+                    if (saveResponse.ok) {
+                      console.log(
+                        "✅ Plano completo atualizado no banco de dados com nutritionPlan"
+                      );
+                    } else {
+                      console.warn(
+                        "⚠️ Aviso: Plano pode não ter sido atualizado no banco"
+                      );
+                    }
                   }
                 } catch (saveError) {
                   console.error("Erro ao salvar dieta:", saveError);
                 }
               } else {
-                setOpenAIMessage("Erro ao conectar com OpenAI");
+                console.error("Erro ao gerar plano nutricional:", data.error);
+                setOpenAIMessage("Erro ao gerar plano nutricional.");
               }
               setIsLoadingOpenAI(false);
             })
             .catch((error) => {
-              console.error("Erro ao chamar OpenAI:", error);
-              setOpenAIMessage("Erro ao conectar com OpenAI");
+              console.error("Erro ao gerar dieta:", error);
+              setOpenAIMessage("Erro ao gerar plano nutricional.");
               setIsLoadingOpenAI(false);
             });
         }
       });
     }
-  }, [activeTab, openAIMessage, isLoadingOpenAI, userProfile]);
+  }, [activeTab, openAIMessage, isLoadingOpenAI, userProfile, plan]);
 
   if (!isOpen || !plan) return null;
 
@@ -358,13 +397,6 @@ export function PersonalizedPlanModal({
     { id: "analysis", label: "Análise" },
     { id: "training", label: "Treino" },
     { id: "diet", label: "Dieta" },
-    ...(hasOptionalFields.nutritionPlan
-      ? [{ id: "nutrition", label: "Plano Nutricional (IA)" }]
-      : []),
-    ...(hasOptionalFields.goals ? [{ id: "goals", label: "Metas" }] : []),
-    ...(hasOptionalFields.motivation
-      ? [{ id: "motivation", label: "Motivação" }]
-      : []),
   ];
 
   // Garantir que activeTab seja válido (se a tab atual não existir, usar "analysis")
@@ -417,7 +449,6 @@ export function PersonalizedPlanModal({
                         | "analysis"
                         | "training"
                         | "diet"
-                        | "nutrition"
                         | "goals"
                         | "motivation"
                     )
@@ -450,7 +481,7 @@ export function PersonalizedPlanModal({
                     Status Atual
                   </h4>
                   <p className={`${colors.status.info.text}`}>
-                    {plan.analysis?.currentStatus || "Status não disponível"}
+                    {plan.analysis?.currentStatus}
                   </p>
                 </div>
 
@@ -632,7 +663,177 @@ export function PersonalizedPlanModal({
             {/* Dieta */}
             {validActiveTab === "diet" && (
               <div className="space-y-6">
-                {isLoadingOpenAI ? (
+                {/* Priorizar dados estruturados do plan.nutritionPlan se disponível */}
+                {plan?.nutritionPlan ? (
+                  <div className="space-y-6">
+                    {/* Resumo de Calorias e Macronutrientes */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div
+                        className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
+                      >
+                        <h4
+                          className={`${typography.heading.h4} ${colors.status.success.text} mb-3`}
+                        >
+                          Calorias Diárias
+                        </h4>
+                        <p
+                          className={`text-2xl font-bold ${colors.status.success.text}`}
+                        >
+                          {plan.nutritionPlan.dailyCalories || 0} kcal
+                        </p>
+                      </div>
+
+                      <div
+                        className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
+                      >
+                        <h4
+                          className={`${typography.heading.h4} ${colors.status.info.text} mb-3`}
+                        >
+                          Macronutrientes
+                        </h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className={`${colors.status.info.text}`}>
+                              Proteínas:
+                            </span>
+                            <span
+                              className={`font-medium ${colors.status.info.text}`}
+                            >
+                              {plan.nutritionPlan.macros?.protein || "N/A"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className={`${colors.status.info.text}`}>
+                              Carboidratos:
+                            </span>
+                            <span
+                              className={`font-medium ${colors.status.info.text}`}
+                            >
+                              {plan.nutritionPlan.macros?.carbs || "N/A"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className={`${colors.status.info.text}`}>
+                              Gorduras:
+                            </span>
+                            <span
+                              className={`font-medium ${colors.status.info.text}`}
+                            >
+                              {plan.nutritionPlan.macros?.fats || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Plano Alimentar */}
+                    {plan.nutritionPlan.mealPlan &&
+                      plan.nutritionPlan.mealPlan.length > 0 && (
+                        <div>
+                          <h4
+                            className={`${typography.heading.h4} ${colors.text.primary} mb-4`}
+                          >
+                            Plano Alimentar Diário
+                          </h4>
+                          <div className="space-y-4">
+                            {plan.nutritionPlan.mealPlan.map(
+                              (meal: MealPlanItem, index: number) => (
+                                <div
+                                  key={index}
+                                  className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
+                                >
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h5 className="font-semibold text-gray-900 text-lg">
+                                      {meal?.meal || meal?.name || "Refeição"}
+                                    </h5>
+                                    {meal?.timing && (
+                                      <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                                        {meal.timing}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="space-y-2">
+                                    {(meal.options || []).map(
+                                      (
+                                        option: MealOption,
+                                        optionIndex: number
+                                      ) => (
+                                        <div
+                                          key={optionIndex}
+                                          className="flex items-start bg-gray-50 border border-gray-100 rounded p-2"
+                                        >
+                                          <span className="text-green-600 mr-2 mt-1">
+                                            •
+                                          </span>
+                                          <div className="flex-1">
+                                            <span className="text-gray-900 font-medium">
+                                              {option.food || option.name}
+                                            </span>
+                                            {option.quantity && (
+                                              <span className="text-gray-600 ml-2">
+                                                ({option.quantity})
+                                              </span>
+                                            )}
+                                            {option.calories && (
+                                              <span className="text-gray-500 text-sm ml-2">
+                                                - {option.calories} kcal
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Hidratação */}
+                    {plan.nutritionPlan.hydration && (
+                      <div
+                        className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
+                      >
+                        <h4
+                          className={`${typography.heading.h4} ${colors.status.info.text} mb-2`}
+                        >
+                          Hidratação
+                        </h4>
+                        <p className={`${colors.status.info.text}`}>
+                          {plan.nutritionPlan.hydration}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Suplementos */}
+                    {plan.nutritionPlan.supplements &&
+                      plan.nutritionPlan.supplements.length > 0 && (
+                        <div
+                          className={`${colors.status.warning.bg} ${colors.status.warning.border} border rounded-lg p-4`}
+                        >
+                          <h4
+                            className={`${typography.heading.h4} ${colors.status.warning.text} mb-2`}
+                          >
+                            Suplementos Recomendados
+                          </h4>
+                          <ul className="space-y-1">
+                            {plan.nutritionPlan.supplements.map(
+                              (supplement: string, index: number) => (
+                                <li
+                                  key={index}
+                                  className={`${colors.status.warning.text}`}
+                                >
+                                  • {supplement}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                  </div>
+                ) : isLoadingOpenAI ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                     <p className={`${colors.text.secondary}`}>
@@ -641,6 +842,14 @@ export function PersonalizedPlanModal({
                   </div>
                 ) : openAIMessage ? (
                   <div className="space-y-6">
+                    {/* Fallback: usar dados extraídos do texto quando não há dados estruturados */}
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                      <p className="text-sm text-yellow-800">
+                        ⚠️ Exibindo dados extraídos do texto. Para dados mais
+                        precisos, aguarde a geração completa do plano.
+                      </p>
+                    </div>
+
                     {/* Resumo de Calorias e Macronutrientes */}
                     <div className="grid md:grid-cols-2 gap-6">
                       <div
@@ -667,83 +876,91 @@ export function PersonalizedPlanModal({
                           Macronutrientes
                         </h4>
                         <div className="space-y-2">
-                          {extractMacros(openAIMessage).map((macro, index) => (
-                            <div key={index} className="flex justify-between">
-                              <span className={`${colors.status.info.text}`}>
-                                {macro.name}:
-                              </span>
-                              <span
-                                className={`font-medium ${colors.status.info.text}`}
-                              >
-                                {macro.value}
-                              </span>
-                            </div>
-                          ))}
+                          {extractMacros(openAIMessage).length > 0 ? (
+                            extractMacros(openAIMessage).map((macro, index) => (
+                              <div key={index} className="flex justify-between">
+                                <span className={`${colors.status.info.text}`}>
+                                  {macro.name}:
+                                </span>
+                                <span
+                                  className={`font-medium ${colors.status.info.text}`}
+                                >
+                                  {macro.value}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className={`${colors.status.info.text} text-sm`}>
+                              Não encontrado no texto
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Plano Alimentar */}
-                    <div>
-                      <h4
-                        className={`${typography.heading.h4} ${colors.text.primary} mb-4`}
-                      >
-                        Plano Alimentar Diário
-                      </h4>
-                      <div className="space-y-4">
-                        {extractMeals(openAIMessage).map((meal, index) => (
-                          <div
-                            key={index}
-                            className="border border-gray-200 rounded-lg p-4"
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <h5 className="font-semibold text-gray-900 text-lg">
-                                {meal.name}
-                              </h5>
-                              {meal.timing && (
-                                <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
-                                  {meal.timing}
-                                </span>
+                    {extractMeals(openAIMessage).length > 0 && (
+                      <div>
+                        <h4
+                          className={`${typography.heading.h4} ${colors.text.primary} mb-4`}
+                        >
+                          Plano Alimentar Diário
+                        </h4>
+                        <div className="space-y-4">
+                          {extractMeals(openAIMessage).map((meal, index) => (
+                            <div
+                              key={index}
+                              className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <h5 className="font-semibold text-gray-900 text-lg">
+                                  {meal.name}
+                                </h5>
+                                {meal.timing && (
+                                  <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                                    {meal.timing}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-y-2">
+                                {meal.foods.map((food, foodIndex) => (
+                                  <div
+                                    key={foodIndex}
+                                    className="flex items-start bg-gray-50 border border-gray-100 rounded p-2"
+                                  >
+                                    <span className="text-green-600 mr-2 mt-1">
+                                      •
+                                    </span>
+                                    <div className="flex-1">
+                                      <span className="text-gray-900 font-medium">
+                                        {food.name}
+                                      </span>
+                                      {food.quantity && (
+                                        <span className="text-gray-600 ml-2">
+                                          ({food.quantity})
+                                        </span>
+                                      )}
+                                      {food.calories && (
+                                        <span className="text-gray-500 text-sm ml-2">
+                                          - {food.calories} kcal
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              {meal.totalCalories && (
+                                <div className="mt-3 pt-3 border-t border-gray-200">
+                                  <span className="text-sm font-medium text-gray-700">
+                                    Total da refeição: {meal.totalCalories} kcal
+                                  </span>
+                                </div>
                               )}
                             </div>
-                            <div className="space-y-2">
-                              {meal.foods.map((food, foodIndex) => (
-                                <div
-                                  key={foodIndex}
-                                  className="flex items-start bg-gray-50 border border-gray-100 rounded p-2"
-                                >
-                                  <span className="text-green-600 mr-2 mt-1">
-                                    •
-                                  </span>
-                                  <div className="flex-1">
-                                    <span className="text-gray-900">
-                                      {food.name}
-                                    </span>
-                                    {food.quantity && (
-                                      <span className="text-gray-600 ml-2">
-                                        ({food.quantity})
-                                      </span>
-                                    )}
-                                    {food.calories && (
-                                      <span className="text-gray-500 text-sm ml-2">
-                                        - {food.calories} kcal
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            {meal.totalCalories && (
-                              <div className="mt-3 pt-3 border-t border-gray-200">
-                                <span className="text-sm font-medium text-gray-700">
-                                  Total da refeição: {meal.totalCalories} kcal
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Hidratação */}
                     {extractHydration(openAIMessage) && (
@@ -785,170 +1002,14 @@ export function PersonalizedPlanModal({
                         </ul>
                       </div>
                     )}
-
-                    {/* Texto completo (fallback) */}
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <h4
-                        className={`${typography.heading.h4} ${colors.text.primary} mb-3`}
-                      >
-                        Detalhes Completos
-                      </h4>
-                      <div
-                        className={`${colors.text.secondary} whitespace-pre-wrap`}
-                      >
-                        {openAIMessage}
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-8">
                     <p className={`${colors.text.secondary}`}>
-                      Clique na aba Dieta para gerar seu plano nutricional
-                      personalizado.
+                      Gerando plano nutricional personalizado...
                     </p>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* Dieta (IA) */}
-            {validActiveTab === "nutrition" && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div
-                    className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
-                  >
-                    <h4
-                      className={`${typography.heading.h4} ${colors.status.success.text} mb-3`}
-                    >
-                      Calorias Diárias
-                    </h4>
-                    <p
-                      className={`text-2xl font-bold ${colors.status.success.text}`}
-                    >
-                      {plan.nutritionPlan?.dailyCalories || 0} kcal
-                    </p>
-                  </div>
-
-                  <div
-                    className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
-                  >
-                    <h4
-                      className={`${typography.heading.h4} ${colors.status.info.text} mb-3`}
-                    >
-                      Macronutrientes
-                    </h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className={`${colors.status.info.text}`}>
-                          Proteínas:
-                        </span>
-                        <span
-                          className={`font-medium ${colors.status.info.text}`}
-                        >
-                          {plan.nutritionPlan?.macros?.protein || "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className={`${colors.status.info.text}`}>
-                          Carboidratos:
-                        </span>
-                        <span
-                          className={`font-medium ${colors.status.info.text}`}
-                        >
-                          {plan.nutritionPlan?.macros?.carbs || "N/A"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className={`${colors.status.info.text}`}>
-                          Gorduras:
-                        </span>
-                        <span
-                          className={`font-medium ${colors.status.info.text}`}
-                        >
-                          {plan.nutritionPlan?.macros?.fats || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4
-                    className={`${typography.heading.h4} ${colors.text.primary} mb-4`}
-                  >
-                    Plano Alimentar
-                  </h4>
-                  <div className="space-y-4">
-                    {(plan.nutritionPlan?.mealPlan || []).map((meal, index) => (
-                      <div
-                        key={index}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <h5 className="font-semibold text-gray-900">
-                            {meal?.meal || "Refeição não especificada"}
-                          </h5>
-                          <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                            {meal?.timing || "Horário não especificado"}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {(meal.options || []).map((option, optionIndex) => (
-                            <div key={optionIndex} className="flex items-start">
-                              <span className="text-green-600 mr-2">•</span>
-                              <span className="text-gray-900">
-                                {option?.food || "Alimento não especificado"} -{" "}
-                                {option?.quantity ||
-                                  "Quantidade não especificada"}{" "}
-                                ({option?.calories || 0} kcal)
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  {plan.nutritionPlan?.supplements &&
-                    plan.nutritionPlan.supplements.length > 0 && (
-                      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <h4
-                          className={`${typography.heading.h4} ${colors.status.info.text} mb-3`}
-                        >
-                          Suplementação
-                        </h4>
-                        <ul className="space-y-1">
-                          {plan.nutritionPlan.supplements.map(
-                            (supplement, index) => (
-                              <li key={index} className="flex items-start">
-                                <span className="text-purple-600 mr-2">•</span>
-                                <span className="text-purple-800">
-                                  {supplement}
-                                </span>
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      </div>
-                    )}
-
-                  <div
-                    className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
-                  >
-                    <h4
-                      className={`${typography.heading.h4} ${colors.status.info.text} mb-3`}
-                    >
-                      Hidratação
-                    </h4>
-                    <p className={`${colors.status.info.text}`}>
-                      {plan.nutritionPlan?.hydration ||
-                        "Recomendação de hidratação não disponível"}
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
 

@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       try {
         nutritionPlanData =
           typeof dietPlan === "string" ? JSON.parse(dietPlan) : dietPlan;
-      } catch (e) {
+      } catch {
         nutritionPlanData = dietPlan;
       }
 

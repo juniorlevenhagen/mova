@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { PersonalizedPlanModal } from "./PersonalizedPlanModal";
 import { PersonalizedPlan } from "@/types/personalized-plan";
+import jsPDF from "jspdf";
 
 interface PlanHistoryItem {
   id: string;
@@ -114,6 +115,271 @@ export function PlanHistoryModal({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const exportToPDF = (plan: PlanHistoryItem) => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      let yPosition = margin;
+      const lineHeight = 7;
+      const maxWidth = pageWidth - 2 * margin;
+
+      // Função auxiliar para adicionar texto com quebra de linha
+      const addText = (text: string, fontSize: number = 10, isBold: boolean = false, color: string = "#000000") => {
+        doc.setFontSize(fontSize);
+        doc.setFont("helvetica", isBold ? "bold" : "normal");
+        doc.setTextColor(color);
+        
+        // Quebrar texto em linhas que cabem na largura da página
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let currentLine = '';
+        
+        words.forEach((word) => {
+          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          const testWidth = doc.getTextWidth(testLine);
+          
+          if (testWidth > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        });
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+        
+        // Verificar se precisa de nova página
+        if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        
+        // Adicionar linhas ao PDF
+        lines.forEach((line: string) => {
+          doc.text(line, margin, yPosition);
+          yPosition += lineHeight;
+        });
+        yPosition += 2; // Espaço entre parágrafos
+      };
+
+      // Cabeçalho
+      doc.setFillColor(59, 130, 246); // Azul
+      doc.rect(0, 0, pageWidth, 40, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text("Plano Personalizado", margin, 25);
+      
+      yPosition = 50;
+      doc.setTextColor(0, 0, 0);
+
+      // Informações do plano
+      addText(`Gerado em: ${formatDate(plan.generatedAt)}`, 12, true);
+      if (plan.summary.objective) {
+        addText(`Objetivo: ${plan.summary.objective}`, 12, true);
+      }
+      addText(`Tipo: ${plan.planType === "complete" ? "Completo" : plan.planType}`, 10);
+      if (plan.isActive) {
+        addText("Status: Ativo", 10, true, "#10b981");
+      }
+      yPosition += 5;
+
+      // Análise
+      if (plan.planData.analysis) {
+        doc.setFillColor(59, 130, 246);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("ANÁLISE", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.planData.analysis.currentStatus) {
+          addText("Status Atual:", 11, true);
+          addText(plan.planData.analysis.currentStatus, 10);
+        }
+
+        if (plan.planData.analysis.strengths && plan.planData.analysis.strengths.length > 0) {
+          addText("Pontos Fortes:", 11, true);
+          plan.planData.analysis.strengths.forEach((strength) => {
+            addText(`• ${strength}`, 10);
+          });
+        }
+
+        if (plan.planData.analysis.improvements && plan.planData.analysis.improvements.length > 0) {
+          addText("Áreas de Melhoria:", 11, true);
+          plan.planData.analysis.improvements.forEach((improvement) => {
+            addText(`• ${improvement}`, 10);
+          });
+        }
+        yPosition += 5;
+      }
+
+      // Plano de Treino
+      if (plan.planData.trainingPlan) {
+        doc.setFillColor(34, 197, 94);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("PLANO DE TREINO", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.planData.trainingPlan.overview) {
+          addText("Visão Geral:", 11, true);
+          addText(plan.planData.trainingPlan.overview, 10);
+        }
+
+        if (plan.planData.trainingPlan.weeklySchedule && plan.planData.trainingPlan.weeklySchedule.length > 0) {
+          addText("Cronograma Semanal:", 11, true);
+          plan.planData.trainingPlan.weeklySchedule.forEach((day) => {
+            addText(`${day.day} - ${day.type}`, 10, true);
+            if (day.exercises && day.exercises.length > 0) {
+              day.exercises.forEach((exercise) => {
+                addText(`  • ${exercise.name} - ${exercise.sets} séries x ${exercise.reps} reps`, 9);
+                if (exercise.rest) {
+                  addText(`    Descanso: ${exercise.rest}`, 9);
+                }
+              });
+            }
+            yPosition += 2;
+          });
+        }
+
+        if (plan.planData.trainingPlan.progression) {
+          addText("Progressão:", 11, true);
+          addText(plan.planData.trainingPlan.progression, 10);
+        }
+        yPosition += 5;
+      }
+
+      // Plano Nutricional
+      if (plan.planData.nutritionPlan) {
+        doc.setFillColor(249, 115, 22);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("PLANO NUTRICIONAL", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.planData.nutritionPlan.dailyCalories) {
+          addText(`Calorias Diárias: ${plan.planData.nutritionPlan.dailyCalories} kcal`, 11, true);
+        }
+
+        if (plan.planData.nutritionPlan.macros) {
+          addText("Macronutrientes:", 11, true);
+          if (plan.planData.nutritionPlan.macros.protein) {
+            addText(`Proteínas: ${plan.planData.nutritionPlan.macros.protein}`, 10);
+          }
+          if (plan.planData.nutritionPlan.macros.carbs) {
+            addText(`Carboidratos: ${plan.planData.nutritionPlan.macros.carbs}`, 10);
+          }
+          if (plan.planData.nutritionPlan.macros.fats) {
+            addText(`Gorduras: ${plan.planData.nutritionPlan.macros.fats}`, 10);
+          }
+        }
+
+        if (plan.planData.nutritionPlan.mealPlan && plan.planData.nutritionPlan.mealPlan.length > 0) {
+          addText("Plano Alimentar:", 11, true);
+          plan.planData.nutritionPlan.mealPlan.forEach((meal) => {
+            addText(`${meal.meal} - ${meal.timing}`, 10, true);
+            if (meal.options && meal.options.length > 0) {
+              meal.options.forEach((option) => {
+                const caloriesText = option.calories ? ` (${option.calories} kcal)` : "";
+                addText(`  • ${option.food} - ${option.quantity}${caloriesText}`, 9);
+              });
+            }
+            yPosition += 2;
+          });
+        }
+
+        if (plan.planData.nutritionPlan.hydration) {
+          addText("Hidratação:", 11, true);
+          addText(plan.planData.nutritionPlan.hydration, 10);
+        }
+        yPosition += 5;
+      }
+
+      // Metas
+      if (plan.planData.goals) {
+        doc.setFillColor(139, 92, 246);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("METAS E OBJETIVOS", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.planData.goals.weekly && plan.planData.goals.weekly.length > 0) {
+          addText("Metas Semanais:", 11, true);
+          plan.planData.goals.weekly.forEach((goal) => {
+            addText(`• ${goal}`, 10);
+          });
+        }
+
+        if (plan.planData.goals.monthly && plan.planData.goals.monthly.length > 0) {
+          addText("Metas Mensais:", 11, true);
+          plan.planData.goals.monthly.forEach((goal) => {
+            addText(`• ${goal}`, 10);
+          });
+        }
+        yPosition += 5;
+      }
+
+      // Motivação
+      if (plan.planData.motivation) {
+        doc.setFillColor(236, 72, 153);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("MOTIVAÇÃO", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.planData.motivation.personalMessage) {
+          addText(plan.planData.motivation.personalMessage, 10, true);
+        }
+
+        if (plan.planData.motivation.tips && plan.planData.motivation.tips.length > 0) {
+          addText("Dicas:", 11, true);
+          plan.planData.motivation.tips.forEach((tip) => {
+            addText(`• ${tip}`, 10);
+          });
+        }
+      }
+
+      // Rodapé
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Página ${i} de ${totalPages} - Mova+`,
+          pageWidth - margin,
+          pageHeight - 10,
+          { align: "right" }
+        );
+      }
+
+      // Salvar PDF
+      const fileName = `Plano_${formatDate(plan.generatedAt).replace(/[\/\s:]/g, "_")}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Erro ao gerar PDF. Por favor, tente novamente.");
+    }
   };
 
   if (!isOpen) return null;
@@ -242,12 +508,34 @@ export function PlanHistoryModal({
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => handleViewPlan(plan)}
-                        className="ml-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap"
-                      >
-                        Ver Plano
-                      </button>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleViewPlan(plan)}
+                          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap"
+                        >
+                          Ver Plano
+                        </button>
+                        <button
+                          onClick={() => exportToPDF(plan)}
+                          className="px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg hover:from-gray-800 hover:to-gray-900 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap flex items-center gap-2"
+                          title="Exportar para PDF"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          PDF
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

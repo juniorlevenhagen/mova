@@ -69,17 +69,19 @@ export async function POST(request: NextRequest) {
           `✅ Pagamento confirmado: ${promptsPurchased} prompt(s) comprado(s) para usuário ${user.id}`
         );
 
-        let { data: trialData, error: trialError } = await supabaseUser
+        const { data: initialTrialData, error: trialError } = await supabaseUser
           .from("user_trials")
           .select("available_prompts, plans_generated, max_plans_allowed")
           .eq("user_id", user.id)
           .maybeSingle();
+        
+        let trialData = initialTrialData;
 
         if (trialError) {
           console.error("❌ Erro ao buscar trial:", trialError);
         } else {
           console.log(
-            `📊 Trial encontrado: available_prompts=${trialData?.available_prompts ?? 0}, plans_generated=${trialData?.plans_generated ?? 0}`
+            `📊 Trial encontrado: available_prompts=${initialTrialData?.available_prompts ?? 0}, plans_generated=${initialTrialData?.plans_generated ?? 0}`
           );
         }
 

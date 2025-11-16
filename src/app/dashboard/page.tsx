@@ -122,23 +122,41 @@ export default function DashboardPage() {
         await refetchTrial();
         setShowPlanModal(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // ✅ Capturar erro de cooldown especificamente
-      const errorMessage = error?.message || "Erro ao gerar plano";
+      const errorMessage = error instanceof Error ? error.message : "Erro ao gerar plano";
+      
+      // ✅ Type guard para erro de cooldown
+      interface CooldownError extends Error {
+        type?: string;
+        hoursRemaining?: number;
+        nextPlanAvailable?: string;
+        availablePrompts?: number;
+      }
+      
+      const isCooldownError = (err: unknown): err is CooldownError => {
+        return (
+          typeof err === "object" &&
+          err !== null &&
+          ("type" in err || "message" in err)
+        );
+      };
+      
+      const cooldownError = isCooldownError(error) ? error : null;
       
       console.log("🔍 Erro capturado no handleGeneratePlan:", {
         error,
         errorMessage,
-        type: error?.type,
-        hoursRemaining: error?.hoursRemaining,
-        nextPlanAvailable: error?.nextPlanAvailable,
-        availablePrompts: error?.availablePrompts,
+        type: cooldownError?.type,
+        hoursRemaining: cooldownError?.hoursRemaining,
+        nextPlanAvailable: cooldownError?.nextPlanAvailable,
+        availablePrompts: cooldownError?.availablePrompts,
       });
       
       // ✅ Verificar se é erro de cooldown (por tipo ou mensagem)
-      if (error?.type === "COOLDOWN_ACTIVE" || errorMessage.includes("Aguarde") || errorMessage.includes("cooldown") || errorMessage.includes("Cooldown")) {
+      if (cooldownError?.type === "COOLDOWN_ACTIVE" || errorMessage.includes("Aguarde") || errorMessage.includes("cooldown") || errorMessage.includes("Cooldown")) {
         // ✅ Usar dados do erro se disponíveis, senão extrair da mensagem
-        const hoursRemaining = error?.hoursRemaining || (() => {
+        const hoursRemaining = cooldownError?.hoursRemaining || (() => {
           const hoursMatch = errorMessage.match(/(\d+)h/);
           const minutesMatch = errorMessage.match(/(\d+)m/);
           const hours = hoursMatch ? parseInt(hoursMatch[1]) : 24;
@@ -146,12 +164,12 @@ export default function DashboardPage() {
           return hours + (minutes / 60);
         })();
         
-        const nextPlanAvailable = error?.nextPlanAvailable || (() => {
+        const nextPlanAvailable = cooldownError?.nextPlanAvailable || (() => {
           const now = new Date();
           return new Date(now.getTime() + hoursRemaining * 60 * 60 * 1000).toISOString();
         })();
         
-        const availablePrompts = error?.availablePrompts || trialStatus?.availablePrompts || 0;
+        const availablePrompts = cooldownError?.availablePrompts || trialStatus?.availablePrompts || 0;
         
         console.log("✅ Abrindo modal de cooldown com dados:", {
           message: errorMessage,

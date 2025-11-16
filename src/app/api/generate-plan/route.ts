@@ -1033,7 +1033,9 @@ Use esta tabela para definir a estratégia correta:
 
 #### 🎯 EMAGRECIMENTO:
 - Déficit calórico controlado (respeitando limites de segurança)
+- **ATIVIDADE CARDIOVASCULAR OBRIGATÓRIA**: 3-5x por semana, moderada a intensa (30-60min)
 - Treinos de alta intensidade (HIIT, cardio) + força para preservar massa
+- **Cardio é etapa FUNDAMENTAL junto à alimentação** - essencial para déficit calórico e perda de gordura
 - Foco em queima de gordura preservando massa magra
 - Proteína elevada (1.6-2.0g/kg) para preservação muscular
 - Metabolismo acelerado
@@ -1042,6 +1044,8 @@ Use esta tabela para definir a estratégia correta:
 - **IMC < 25**: Superávit calórico moderado (TDEE + 200-400 kcal)
 - **IMC ≥ 25**: RECOMPOSIÇÃO - Déficit calórico (TDEE - 300-500 kcal ou 20-25%)
 - Treinos de força progressiva
+- **ATIVIDADE CARDIOVASCULAR OBRIGATÓRIA**: 2-3x por semana, LEVE a MODERADA (30-45min)
+- **Cardio leve/moderado é essencial** para saúde cardiovascular e recuperação, sem interferir no ganho de massa
 - Foco em grupos musculares específicos
 - Recuperação adequada
 - Proteína elevada (1.6-2.5g/kg dependendo do IMC)
@@ -1088,10 +1092,13 @@ Use esta tabela para definir a estratégia correta:
 
 2. **PLANO DE TREINO ALINHADO AO OBJETIVO**
    - Cronograma semanal específico para o objetivo
+   - **SEMPRE inclua atividade cardiovascular/aeróbica** (2-5x por semana, dependendo do objetivo)
    - Exercícios selecionados para o objetivo
    - Séries, repetições e descanso otimizados
    - Progressão baseada no objetivo
    - Adaptações para local e limitações
+   - **Para ganhar massa**: Cardio leve/moderado (2-3x/semana)
+   - **Para emagrecer**: Cardio moderado/intenso (3-5x/semana) - etapa fundamental junto à alimentação
 
 3. **PLANO ALIMENTAR ESTRATÉGICO DETALHADO**
    - Calorias diárias calculadas para o objetivo
@@ -1114,6 +1121,73 @@ Use esta tabela para definir a estratégia correta:
    - Dicas práticas para manter a motivação durante a jornada
    - Encorajamento específico para o objetivo (emagrecimento, hipertrofia, etc.)
    - Lembre-se: motivação é crucial para o sucesso do plano!
+
+## 🏃‍♂️ ATIVIDADE CARDIOVASCULAR (OBRIGATÓRIA EM TODOS OS PLANOS):
+
+⚠️ **REGRA CRÍTICA: SEMPRE inclua atividade aeróbica/cardiovascular em TODOS os planos de treino, independente do objetivo!**
+
+### 📋 INTENSIDADE BASEADA NO OBJETIVO:
+
+#### 💪 GANHAR MASSA MUSCULAR:
+- **Cardio LEVE a MODERADO** (30-45 minutos, 2-3x por semana)
+- Intensidade: 60-70% da frequência cardíaca máxima
+- Tipos recomendados: caminhada rápida, ciclismo leve, esteira inclinada, elíptico
+- **Objetivo**: Melhorar saúde cardiovascular sem interferir na recuperação e ganho de massa
+- **Timing**: Preferencialmente após treino de força ou em dias separados
+- **Importância**: Mantém saúde cardiovascular, melhora recuperação e metabolismo
+
+#### 🎯 EMAGRECIMENTO:
+- **Cardio MODERADO a INTENSO** (30-60 minutos, 3-5x por semana)
+- Intensidade: 65-85% da frequência cardíaca máxima
+- Tipos recomendados: HIIT, corrida, ciclismo, natação, elíptico, escada
+- **Objetivo**: Maximizar queima calórica e gordura, acelerar metabolismo
+- **Timing**: Pode ser combinado com treino de força (antes ou depois) ou em dias separados
+- **Importância**: Essencial para déficit calórico e perda de gordura - etapa fundamental junto à alimentação
+
+#### ⚖️ MANUTENÇÃO:
+- **Cardio MODERADO** (30-45 minutos, 2-4x por semana)
+- Intensidade: 65-75% da frequência cardíaca máxima
+- Tipos recomendados: caminhada, corrida leve, ciclismo, natação
+- **Objetivo**: Manter saúde cardiovascular e equilíbrio físico
+- **Timing**: Distribuído ao longo da semana
+
+#### 🏃‍♂️ CONDICIONAMENTO/RESISTÊNCIA:
+- **Cardio INTENSO** (45-60 minutos, 4-6x por semana)
+- Intensidade: 70-85% da frequência cardíaca máxima
+- Tipos recomendados: corrida, ciclismo, natação, HIIT, treinos de endurance
+- **Objetivo**: Melhorar capacidade cardiovascular e resistência
+- **Timing**: Foco principal do plano, combinado com treino de força
+
+#### 🧘‍♀️ SAÚDE E BEM-ESTAR:
+- **Cardio LEVE a MODERADO** (20-40 minutos, 2-3x por semana)
+- Intensidade: 60-70% da frequência cardíaca máxima
+- Tipos recomendados: caminhada, yoga flow, dança, ciclismo recreativo
+- **Objetivo**: Manter saúde cardiovascular e bem-estar geral
+
+### ✅ REGRAS OBRIGATÓRIAS PARA ATIVIDADE CARDIOVASCULAR:
+
+1. **SEMPRE inclua pelo menos 2-3 sessões de cardio por semana** em TODOS os planos
+2. **Especifique duração, intensidade e tipo** de atividade cardiovascular
+3. **Ajuste a intensidade baseado no objetivo** (leve para ganhar massa, moderado/intenso para emagrecer)
+4. **Para emagrecimento**: Cardio é etapa FUNDAMENTAL junto à alimentação - não omita!
+5. **Para ganhar massa**: Cardio leve/moderado é importante para saúde cardiovascular e recuperação
+6. **Inclua opções variadas** de atividades aeróbicas (caminhada, corrida, ciclismo, natação, HIIT, etc.)
+7. **Considere o local de treino** do usuário (academia, casa, ao ar livre)
+
+### 📝 EXEMPLOS DE COMO INCLUIR NO PLANO:
+
+**Exemplo para Ganhar Massa:**
+- "Segunda-feira: Treino de força + 20min cardio leve (caminhada ou elíptico)"
+- "Quarta-feira: Treino de força + 20min cardio leve"
+- "Sábado: 30-40min caminhada ou ciclismo leve"
+
+**Exemplo para Emagrecer:**
+- "Segunda-feira: Treino de força + 30min HIIT ou corrida"
+- "Terça-feira: 45min cardio moderado (ciclismo ou esteira)"
+- "Quinta-feira: Treino de força + 30min cardio"
+- "Sábado: 60min caminhada ou corrida moderada"
+
+⚠️ **NUNCA omita atividade cardiovascular do plano!** Ela é essencial para saúde, independente do objetivo.
 
 ## REGRAS NUTRICIONAIS ESPECÍFICAS:
 - SEMPRE especifique quantidades EXATAS (gramas, xícaras, unidades)
@@ -1172,6 +1246,9 @@ Antes de retornar o plano nutricional, SEMPRE verifique:
 ## REGRAS IMPORTANTES:
 - ⚠️ SEMPRE use a TABELA DE DECISÃO para definir estratégia baseada em IMC + Objetivo
 - ⚠️ SEMPRE considere o IMC antes de definir superávit/déficit calórico
+- ⚠️ **SEMPRE inclua atividade cardiovascular em TODOS os planos** (2-5x por semana, ajustando intensidade pelo objetivo)
+- ⚠️ **Para ganhar massa**: Cardio leve/moderado (2-3x/semana) - essencial para saúde cardiovascular
+- ⚠️ **Para emagrecer**: Cardio moderado/intenso (3-5x/semana) - etapa FUNDAMENTAL junto à alimentação
 - Se IMC ≥ 25 e objetivo é ganhar massa, use RECOMPOSIÇÃO CORPORAL (déficit + força)
 - NUNCA sugira superávit calórico para pessoas com IMC ≥ 30
 - Para IMC < 18.5 + objetivo "emagrecer": avise que não é recomendado

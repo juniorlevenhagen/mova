@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { typography, components, colors } from "@/lib/design-tokens";
 import { PersonalizedPlan } from "@/types/personalized-plan";
 import { supabase } from "@/lib/supabase";
+import jsPDF from "jspdf";
 
 interface PersonalizedPlanModalProps {
   isOpen: boolean;
@@ -404,6 +405,279 @@ export function PersonalizedPlanModal({
     ? activeTab
     : "analysis";
 
+  const exportToPDF = () => {
+    if (!plan) return;
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      let yPosition = margin;
+      const lineHeight = 7;
+      const maxWidth = pageWidth - 2 * margin;
+
+      // Função auxiliar para adicionar texto com quebra de linha
+      const addText = (text: string, fontSize: number = 10, isBold: boolean = false, color: string = "#000000") => {
+        doc.setFontSize(fontSize);
+        doc.setFont("helvetica", isBold ? "bold" : "normal");
+        doc.setTextColor(color);
+        
+        // Quebrar texto em linhas que cabem na largura da página
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let currentLine = '';
+        
+        words.forEach((word) => {
+          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          const testWidth = doc.getTextWidth(testLine);
+          
+          if (testWidth > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        });
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+        
+        // Verificar se precisa de nova página
+        if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        
+        // Adicionar linhas ao PDF
+        lines.forEach((line: string) => {
+          doc.text(line, margin, yPosition);
+          yPosition += lineHeight;
+        });
+        yPosition += 2; // Espaço entre parágrafos
+      };
+
+      // Cabeçalho
+      doc.setFillColor(59, 130, 246); // Azul
+      doc.rect(0, 0, pageWidth, 40, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text("Plano Personalizado", margin, 25);
+      
+      yPosition = 50;
+      doc.setTextColor(0, 0, 0);
+
+      // Informações do plano
+      const currentDate = new Date().toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      addText(`Gerado em: ${currentDate}`, 12, true);
+      if (userProfile?.objetivo) {
+        addText(`Objetivo: ${userProfile.objetivo}`, 12, true);
+      }
+      if (userProfile?.peso) {
+        addText(`Peso atual: ${userProfile.peso} kg`, 10);
+      }
+      yPosition += 5;
+
+      // Análise
+      if (plan.analysis) {
+        doc.setFillColor(59, 130, 246);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("ANÁLISE", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.analysis.currentStatus) {
+          addText("Status Atual:", 11, true);
+          addText(plan.analysis.currentStatus, 10);
+        }
+
+        if (plan.analysis.strengths && plan.analysis.strengths.length > 0) {
+          addText("Pontos Fortes:", 11, true);
+          plan.analysis.strengths.forEach((strength) => {
+            addText(`• ${strength}`, 10);
+          });
+        }
+
+        if (plan.analysis.improvements && plan.analysis.improvements.length > 0) {
+          addText("Áreas de Melhoria:", 11, true);
+          plan.analysis.improvements.forEach((improvement) => {
+            addText(`• ${improvement}`, 10);
+          });
+        }
+        yPosition += 5;
+      }
+
+      // Plano de Treino
+      if (plan.trainingPlan) {
+        doc.setFillColor(34, 197, 94);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("PLANO DE TREINO", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.trainingPlan.overview) {
+          addText("Visão Geral:", 11, true);
+          addText(plan.trainingPlan.overview, 10);
+        }
+
+        if (plan.trainingPlan.weeklySchedule && plan.trainingPlan.weeklySchedule.length > 0) {
+          addText("Cronograma Semanal:", 11, true);
+          plan.trainingPlan.weeklySchedule.forEach((day) => {
+            addText(`${day.day} - ${day.type}`, 10, true);
+            if (day.exercises && day.exercises.length > 0) {
+              day.exercises.forEach((exercise) => {
+                addText(`  • ${exercise.name} - ${exercise.sets} séries x ${exercise.reps} reps`, 9);
+                if (exercise.rest) {
+                  addText(`    Descanso: ${exercise.rest}`, 9);
+                }
+              });
+            }
+            yPosition += 2;
+          });
+        }
+
+        if (plan.trainingPlan.progression) {
+          addText("Progressão:", 11, true);
+          addText(plan.trainingPlan.progression, 10);
+        }
+        yPosition += 5;
+      }
+
+      // Plano Nutricional
+      if (plan.nutritionPlan) {
+        doc.setFillColor(249, 115, 22);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("PLANO NUTRICIONAL", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.nutritionPlan.dailyCalories) {
+          addText(`Calorias Diárias: ${plan.nutritionPlan.dailyCalories} kcal`, 11, true);
+        }
+
+        if (plan.nutritionPlan.macros) {
+          addText("Macronutrientes:", 11, true);
+          if (plan.nutritionPlan.macros.protein) {
+            addText(`Proteínas: ${plan.nutritionPlan.macros.protein}`, 10);
+          }
+          if (plan.nutritionPlan.macros.carbs) {
+            addText(`Carboidratos: ${plan.nutritionPlan.macros.carbs}`, 10);
+          }
+          if (plan.nutritionPlan.macros.fats) {
+            addText(`Gorduras: ${plan.nutritionPlan.macros.fats}`, 10);
+          }
+        }
+
+        if (plan.nutritionPlan.mealPlan && plan.nutritionPlan.mealPlan.length > 0) {
+          addText("Plano Alimentar:", 11, true);
+          plan.nutritionPlan.mealPlan.forEach((meal) => {
+            addText(`${meal.meal} - ${meal.timing}`, 10, true);
+            if (meal.options && meal.options.length > 0) {
+              meal.options.forEach((option) => {
+                const caloriesText = option.calories ? ` (${option.calories} kcal)` : "";
+                addText(`  • ${option.food} - ${option.quantity}${caloriesText}`, 9);
+              });
+            }
+            yPosition += 2;
+          });
+        }
+
+        if (plan.nutritionPlan.hydration) {
+          addText("Hidratação:", 11, true);
+          addText(plan.nutritionPlan.hydration, 10);
+        }
+        yPosition += 5;
+      }
+
+      // Metas
+      if (plan.goals) {
+        doc.setFillColor(139, 92, 246);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("METAS E OBJETIVOS", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.goals.weekly && plan.goals.weekly.length > 0) {
+          addText("Metas Semanais:", 11, true);
+          plan.goals.weekly.forEach((goal) => {
+            addText(`• ${goal}`, 10);
+          });
+        }
+
+        if (plan.goals.monthly && plan.goals.monthly.length > 0) {
+          addText("Metas Mensais:", 11, true);
+          plan.goals.monthly.forEach((goal) => {
+            addText(`• ${goal}`, 10);
+          });
+        }
+        yPosition += 5;
+      }
+
+      // Motivação
+      if (plan.motivation) {
+        doc.setFillColor(236, 72, 153);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("MOTIVAÇÃO", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.motivation.personalMessage) {
+          addText(plan.motivation.personalMessage, 10, true);
+        }
+
+        if (plan.motivation.tips && plan.motivation.tips.length > 0) {
+          addText("Dicas:", 11, true);
+          plan.motivation.tips.forEach((tip) => {
+            addText(`• ${tip}`, 10);
+          });
+        }
+      }
+
+      // Rodapé
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(
+          `Página ${i} de ${totalPages} - Mova+`,
+          pageWidth - margin,
+          pageHeight - 10,
+          { align: "right" }
+        );
+      }
+
+      // Salvar PDF
+      const fileName = `Plano_${currentDate.replace(/[\/\s:]/g, "_")}.pdf`;
+      doc.save(fileName);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Erro ao gerar PDF. Por favor, tente novamente.");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-4">
@@ -418,24 +692,46 @@ export function PersonalizedPlanModal({
               <h3 className={`${typography.heading.h2} text-white`}>
                 Seu Plano Personalizado
               </h3>
-              <button
-                onClick={onClose}
-                className="text-white hover:text-gray-200 transition-colors"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={exportToPDF}
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap"
+                  title="Exportar para PDF"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  PDF
+                </button>
+                <button
+                  onClick={onClose}
+                  className="text-white hover:text-gray-200 transition-colors"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}

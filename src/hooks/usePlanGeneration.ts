@@ -200,7 +200,14 @@ export function usePlanGeneration() {
           });
           
           // ✅ Criar erro customizado com dados adicionais
-          const cooldownError: any = new Error(message);
+          interface CooldownError extends Error {
+            type: string;
+            hoursRemaining: number;
+            nextPlanAvailable?: string;
+            availablePrompts: number;
+          }
+          
+          const cooldownError = new Error(message) as CooldownError;
           cooldownError.type = "COOLDOWN_ACTIVE";
           cooldownError.hoursRemaining = hoursRemaining;
           cooldownError.nextPlanAvailable = errorData.nextPlanAvailable;

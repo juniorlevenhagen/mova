@@ -153,12 +153,23 @@ Gere uma análise completa, detalhada e personalizada.`;
 
 IMPORTANTE: Você DEVE retornar um plano de treino completo e detalhado baseado nos dados do usuário e objetivo.
 
+⚠️ REGRA CRÍTICA: SEMPRE inclua atividade cardiovascular/aeróbica em TODOS os planos de treino, independente do objetivo!
+
 O plano de treino DEVE incluir:
 1. overview - visão geral do plano de treino e estratégia
 2. weeklySchedule - cronograma semanal completo com pelo menos 5 dias de treino
    - Cada dia deve ter: day (nome do dia), type (tipo de treino), exercises (array de exercícios)
    - Cada exercício deve ter: name, sets, reps, rest, notes (opcional)
+   - **SEMPRE inclua dias ou exercícios de atividade cardiovascular** (caminhada, corrida, ciclismo, HIIT, etc.)
 3. progression - estratégia de progressão ao longo do tempo
+
+### ATIVIDADE CARDIOVASCULAR OBRIGATÓRIA:
+- **Para ganhar massa**: Cardio LEVE a MODERADO (2-3x por semana, 30-45min) - caminhada, ciclismo leve, elíptico
+- **Para emagrecer**: Cardio MODERADO a INTENSO (3-5x por semana, 30-60min) - HIIT, corrida, ciclismo, natação
+- **Para manter**: Cardio MODERADO (2-4x por semana, 30-45min)
+- **Para condicionamento**: Cardio INTENSO (4-6x por semana, 45-60min)
+
+⚠️ NUNCA omita atividade cardiovascular do plano! Ela é essencial para saúde, independente do objetivo.
 
 Seja específico, detalhado e adaptado ao objetivo do usuário.`;
 

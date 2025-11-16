@@ -20,6 +20,7 @@
     "clsx": "^2.1.1",
     "cobe": "^0.6.5",
     "framer-motion": "^12.23.24",
+    "jspdf": "^3.0.3",
     "lucide-react": "^0.545.0",
     "motion": "^12.23.24",
     "multer": "^2.0.2",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/jspdf": "^2.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^20",
     "@types/react": "^18",

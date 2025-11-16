@@ -29,6 +29,11 @@ interface UserDataSectionProps {
   } | null;
   isCheckingPlanStatus?: boolean;
   isPremium?: boolean; // Nova prop para identificar usuários premium
+  onViewHistory?: () => void; // Nova prop para abrir histórico de planos
+  trialStatus?: {
+    availablePrompts?: number;
+    canGenerate?: boolean;
+  } | null; // Nova prop para verificar se pode gerar novo plano
 }
 
 export function UserDataSection({
@@ -39,6 +44,8 @@ export function UserDataSection({
   planStatus,
   isCheckingPlanStatus = false,
   isPremium = false,
+  onViewHistory,
+  trialStatus,
 }: UserDataSectionProps) {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -236,19 +243,24 @@ export function UserDataSection({
   }, [removeEvaluation]);
 
   const handleGeneratePlan = useCallback(() => {
-    // ✅ PRIMEIRO: Verificar se já existe plano
-    if (planStatus?.isExisting) {
-      onGeneratePlan(); // Abre modal do plano existente
+    // ✅ Verificar se está em modo "Ver Plano Atual" (não deve mostrar modal de avaliação)
+    const isViewingExistingPlan = planStatus?.isExisting && 
+                                   !trialStatus?.canGenerate && 
+                                   (trialStatus?.availablePrompts || 0) === 0;
+    
+    // ✅ Se está apenas visualizando plano existente, não mostrar modal de avaliação
+    if (isViewingExistingPlan) {
+      onGeneratePlan(); // Apenas mostra o plano existente
       return;
     }
-
-    // ✅ SEGUNDO: Se não tem plano, verificar avaliação
+    
+    // ✅ Se vai gerar novo plano, verificar avaliação apenas se não tiver avaliação
     if (!evaluation) {
       setShowConfirmationModal(true); // Mostra modal de avaliação
     } else {
       onGeneratePlan(); // Gera novo plano
     }
-  }, [evaluation, onGeneratePlan, planStatus?.isExisting]);
+  }, [evaluation, onGeneratePlan, planStatus, trialStatus]);
 
   const confirmGeneratePlan = useCallback(() => {
     setShowConfirmationModal(false);
@@ -258,14 +270,49 @@ export function UserDataSection({
   // Funções para edição inline
   const startEditing = (field: string, currentValue: string) => {
     setEditingField(field);
-    setEditValue(currentValue);
+    // ✅ Remover unidades (kg, cm) do valor ao iniciar edição
+    let cleanValue = currentValue;
+    if (field === "peso") {
+      cleanValue = currentValue.replace(/\s*kg\s*/gi, "").trim();
+    } else if (field === "altura") {
+      cleanValue = currentValue.replace(/\s*cm\s*/gi, "").trim();
+    }
+    setEditValue(cleanValue);
   };
 
   const saveEdit = async () => {
     if (editingField && editValue.trim()) {
+      // ✅ Processar valor antes de salvar (remover unidades e converter para número se necessário)
+      let processedValue: string | number = editValue.trim();
+      
+      // ✅ Remover unidades se presentes
+      if (editingField === "peso") {
+        processedValue = editValue.replace(/\s*kg\s*/gi, "").trim();
+        // Converter para número para campos numéricos
+        const numericValue = parseFloat(processedValue);
+        if (!isNaN(numericValue)) {
+          processedValue = numericValue;
+        } else {
+          console.error("Valor de peso inválido:", editValue);
+          alert("Por favor, insira um valor numérico válido para o peso.");
+          return;
+        }
+      } else if (editingField === "altura") {
+        processedValue = editValue.replace(/\s*cm\s*/gi, "").trim();
+        // Converter para número para campos numéricos
+        const numericValue = parseFloat(processedValue);
+        if (!isNaN(numericValue)) {
+          processedValue = numericValue;
+        } else {
+          console.error("Valor de altura inválido:", editValue);
+          alert("Por favor, insira um valor numérico válido para a altura.");
+          return;
+        }
+      }
+
       setUserProfile((prev) => ({
         ...prev,
-        [editingField]: editValue,
+        [editingField]: processedValue,
       }));
 
       // Salvar no localStorage
@@ -273,7 +320,7 @@ export function UserDataSection({
         "userProfile",
         JSON.stringify({
           ...userProfile,
-          [editingField]: editValue,
+          [editingField]: processedValue,
         })
       );
 
@@ -287,6 +334,7 @@ export function UserDataSection({
         // Mapear campos do frontend para campos do banco
         const fieldMapping: { [key: string]: string } = {
           peso: "weight",
+          altura: "height",
           frequenciaTreinos: "training_frequency",
           objetivo: "objective",
           nivelAtividade: "nivel_atividade",
@@ -297,7 +345,7 @@ export function UserDataSection({
         const { error } = await supabase
           .from("user_profiles")
           .update({
-            [dbField]: editValue,
+            [dbField]: processedValue,
           })
           .eq("user_id", user.id);
 
@@ -308,6 +356,11 @@ export function UserDataSection({
             ...prev,
             [editingField]: profile[editingField as keyof typeof profile],
           }));
+        } else {
+          // ✅ Atualizar perfil no componente pai após salvar com sucesso
+          if (onProfileUpdate) {
+            await onProfileUpdate();
+          }
         }
       } catch (error) {
         console.error("Erro inesperado ao salvar:", error);
@@ -460,13 +513,16 @@ export function UserDataSection({
                 </select>
               ) : (
                 <input
-                  type="text"
+                  type={field === "peso" || field === "altura" ? "number" : "text"}
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
                   onKeyDown={handleKeyPress}
                   onBlur={saveEdit}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   autoFocus
+                  step={field === "peso" ? "0.1" : field === "altura" ? "1" : undefined}
+                  min={field === "peso" || field === "altura" ? "0" : undefined}
+                  placeholder={field === "peso" ? "Ex: 75" : field === "altura" ? "Ex: 175" : undefined}
                 />
               )}
             </div>
@@ -963,10 +1019,7 @@ export function UserDataSection({
                             clipRule="evenodd"
                           />
                         </svg>
-                        Próximo plano disponível em:{" "}
-                        <span className="font-semibold">
-                          {planStatus.daysUntilNext} dias
-                        </span>
+                        Para gerar um novo plano, compre prompts adicionais no botão acima.
                       </p>
                     )
                   )}
@@ -1013,22 +1066,26 @@ export function UserDataSection({
           <button
             onClick={handleGeneratePlan}
             disabled={isGeneratingPlan || isCheckingPlanStatus}
-            className={`flex-1 ${components.button.base} ${components.button.sizes.lg} bg-black text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200`}
+            className={`flex-1 ${components.button.base} ${components.button.sizes.lg} ${
+              planStatus?.isExisting && !trialStatus?.canGenerate && (trialStatus?.availablePrompts || 0) === 0
+                ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700"
+                : "bg-black text-white hover:bg-gray-900"
+            } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap`}
           >
             {isGeneratingPlan ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Gerando Plano...
+                <span>Gerando Plano...</span>
               </>
             ) : isCheckingPlanStatus ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Verificando...
+                <span>Verificando...</span>
               </>
-            ) : planStatus?.isExisting ? (
+            ) : planStatus?.isExisting && !trialStatus?.canGenerate && (trialStatus?.availablePrompts || 0) === 0 ? (
               <>
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1046,12 +1103,12 @@ export function UserDataSection({
                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                   />
                 </svg>
-                Ver Plano Atual (Treino + Dieta)
+                <span>Ver Plano Atual</span>
               </>
             ) : (
               <>
                 <svg
-                  className="w-5 h-5"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1063,17 +1120,41 @@ export function UserDataSection({
                     d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"
                   />
                 </svg>
-                Gerar Plano Personalizado (Treino + Dieta)
+                <span>Gerar Plano Personalizado</span>
               </>
             )}
           </button>
+
+          {onViewHistory && (
+            <button
+              onClick={onViewHistory}
+              className={`${components.button.base} ${
+                components.button.sizes.lg
+              } flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 whitespace-nowrap`}
+            >
+              <svg
+                className="w-5 h-5 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>Ver Histórico de Planos</span>
+            </button>
+          )}
 
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             className={`${components.button.base} ${
               components.button.sizes.lg
-            } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 ${
+            } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap ${
               evaluation
                 ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
                 : "bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800"
@@ -1125,8 +1206,8 @@ export function UserDataSection({
 
       {/* Modal de Confirmação */}
       {showConfirmationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               Avaliação Física Recomendada
             </h3>
@@ -1139,22 +1220,22 @@ export function UserDataSection({
               Deseja gerar seu plano personalizado sem adicionar avaliação
               física?
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
               <button
                 onClick={() => setShowConfirmationModal(false)}
-                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-gray-200 text-gray-800 hover:bg-gray-300`}
+                className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.md} bg-gray-200 text-gray-800 hover:bg-gray-300 transition-all duration-200 shadow-md hover:shadow-lg`}
               >
                 Cancelar
               </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-green-600 text-white hover:bg-green-700`}
+                className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.md} bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg`}
               >
                 Adicionar Avaliação
               </button>
               <button
                 onClick={confirmGeneratePlan}
-                className={`flex-1 ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
+                className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-md hover:shadow-lg`}
               >
                 Gerar Sem Avaliação
               </button>
@@ -1193,7 +1274,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowIMCModal(false)}
-              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap`}
             >
               Entendi
             </button>
@@ -1232,7 +1313,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowCaloriaModal(false)}
-              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap`}
             >
               Entendi
             </button>

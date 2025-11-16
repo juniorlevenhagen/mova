@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { PersonalizedPlan } from "@/types/personalized-plan";
 
@@ -16,9 +16,8 @@ export function usePlanGeneration() {
   } | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
-  // Verificar automaticamente se já existe um plano ao carregar
-  useEffect(() => {
-    const checkExistingPlan = async () => {
+  // Função para verificar status do plano (extraída para poder ser chamada externamente)
+  const checkExistingPlan = useCallback(async () => {
       try {
         const {
           data: { session },
@@ -47,7 +46,6 @@ export function usePlanGeneration() {
 
         if (planResults && planResults.length > 0) {
           const planEntry = planResults[0];
-          const isPremium = trialData?.upgraded_to_premium || false;
 
           // ✅ Extrair plano diretamente do campo plan_data
           let existingPlan = null;
@@ -79,97 +77,62 @@ export function usePlanGeneration() {
             console.warn("Erro ao extrair plano:", error);
           }
 
-          // ✅ Lógica diferente para premium vs grátis
-          if (isPremium) {
-            // Para premium: verificar se ainda pode gerar mais planos no ciclo
-            const cycleStartDate = trialData?.premium_plan_cycle_start
-              ? new Date(trialData.premium_plan_cycle_start)
-              : new Date(trialData?.upgraded_at || planEntry.generated_at);
+          const availablePrompts = trialData?.available_prompts || 0;
+          const maxFreePlans = trialData?.max_plans_allowed || 1;
+          const plansGenerated = trialData?.plans_generated || 0;
+          const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
 
-            const now = new Date();
-            const daysSinceStart = Math.floor(
-              (now.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-            const cycleLength = trialData?.premium_cycle_days || 30;
-            const isNewCycle = daysSinceStart >= cycleLength;
+          console.log("📊 Status do plano verificado:", {
+            availablePrompts,
+            plansGenerated,
+            freePlansRemaining,
+            hasExistingPlan: true,
+            willAllowNewPlan: availablePrompts > 0 || freePlansRemaining > 0,
+          });
 
-            const currentCycleCount = isNewCycle
-              ? 0
-              : trialData?.premium_plan_count || 0;
-            const maxPlansPerCycle =
-              trialData?.premium_max_plans_per_cycle || 2;
-            const canGenerateMore = currentCycleCount < maxPlansPerCycle;
-
-            if (canGenerateMore) {
-              // ✅ Premium pode gerar mais planos - mostrar cooldown de 7 dias
-              const lastPlanTime = new Date(planEntry.generated_at);
-              const daysSinceLastPlan =
-                (now.getTime() - lastPlanTime.getTime()) / (1000 * 60 * 60 * 24);
-              const MIN_INTERVAL_DAYS = 7;
-
-              if (daysSinceLastPlan < MIN_INTERVAL_DAYS) {
-                // Ainda em cooldown - mostrar quando próximo estará disponível
-                const daysUntilNext = Math.ceil(
-                  MIN_INTERVAL_DAYS - daysSinceLastPlan
-                );
-                const hoursUntilNext = Math.ceil(
-                  (MIN_INTERVAL_DAYS - daysSinceLastPlan) * 24
-                );
-                setPlanStatus({
-                  isExisting: true,
-                  generatedAt: planEntry.generated_at,
-                  isPremiumCooldown: true,
-                  daysUntilNext,
-                  hoursUntilNext,
-                  nextPlanAvailable: new Date(
-                    lastPlanTime.getTime() + MIN_INTERVAL_DAYS * 24 * 60 * 60 * 1000
-                  ).toISOString(),
-                });
-              } else {
-                // Cooldown passou - pode gerar novo plano
-                setPlanStatus({
-                  isExisting: false,
-                });
-              }
-            } else {
-              // Premium atingiu limite - calcular próximo ciclo
-              const nextCycleDate = new Date(cycleStartDate);
-              nextCycleDate.setDate(nextCycleDate.getDate() + cycleLength);
-
-              const daysUntilNext = Math.ceil(
-                (nextCycleDate.getTime() - now.getTime()) /
-                  (1000 * 60 * 60 * 24)
-              );
-
-              setPlanStatus({
-                isExisting: true,
-                generatedAt: planEntry.generated_at,
-                daysUntilNext,
-                nextPlanAvailable: nextCycleDate.toISOString().split("T")[0],
-              });
+          if (availablePrompts > 0) {
+            // ✅ HÁ PROMPTS DISPONÍVEIS - mostrar plano existente MAS permitir gerar novo
+            // IMPORTANTE: Manter plano existente para o usuário poder visualizar
+            setPlanStatus({
+              isExisting: true, // true = existe plano, mas pode gerar novo se tiver prompts
+              generatedAt: planEntry.generated_at,
+            });
+            if (existingPlan) {
+              setPlan(existingPlan); // Manter plano existente no estado
             }
-          } else {
-            // Para usuários grátis: bloquear após 1 plano (lógica original)
-            const planGeneratedAt = new Date(planEntry.generated_at);
-            const nextPlanDate = new Date(planGeneratedAt);
-            nextPlanDate.setDate(nextPlanDate.getDate() + 30);
-
-            const daysUntilNext = Math.ceil(
-              (nextPlanDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-            );
-
+            console.log(`✅ ${availablePrompts} prompt(s) disponível(is) - mostrando plano existente (mas pode gerar novo)`);
+          } else if (freePlansRemaining <= 0) {
+            // Não há prompts e não há planos grátis - mostrar plano existente
             setPlanStatus({
               isExisting: true,
               generatedAt: planEntry.generated_at,
-              daysUntilNext,
-              nextPlanAvailable: nextPlanDate.toISOString().split("T")[0],
             });
-          }
-
-          if (existingPlan) {
-            setPlan(existingPlan);
+            if (existingPlan) {
+              setPlan(existingPlan); // Definir plano existente apenas quando não há prompts
+            }
+            console.log("📌 Sem prompts e sem planos grátis - mostrar plano existente");
+          } else {
+            // Há plano grátis disponível - permitir gerar
+            setPlanStatus({
+              isExisting: false,
+            });
+            setPlan(null); // Limpar plano antigo quando há plano grátis disponível
+            console.log("✅ Plano grátis disponível - pode gerar novo plano (plano antigo removido do estado)");
           }
         } else {
+          // Não há plano existente - permitir gerar
+          const availablePrompts = trialData?.available_prompts || 0;
+          const maxFreePlans = trialData?.max_plans_allowed || 1;
+          const plansGenerated = trialData?.plans_generated || 0;
+          const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
+          
+          console.log("📊 Sem plano existente - status:", {
+            availablePrompts,
+            plansGenerated,
+            freePlansRemaining,
+            canGenerate: availablePrompts > 0 || freePlansRemaining > 0,
+          });
+          
           setPlanStatus({
             isExisting: false,
           });
@@ -182,10 +145,12 @@ export function usePlanGeneration() {
       } finally {
         setIsCheckingStatus(false);
       }
-    };
-
-    checkExistingPlan();
   }, []);
+
+  // Verificar automaticamente se já existe um plano ao carregar
+  useEffect(() => {
+    checkExistingPlan();
+  }, [checkExistingPlan]);
 
   const generatePlan = async () => {
     setIsGenerating(true);
@@ -217,11 +182,32 @@ export function usePlanGeneration() {
         }
 
         if (errorData.error === "COOLDOWN_ACTIVE") {
-          const days = errorData.daysRemaining || 7;
-          throw new Error(
-            errorData.message ||
-              `Aguarde ${days} dia${days > 1 ? "s" : ""} para gerar o próximo plano.`
-          );
+          // ✅ Usar horasRemaining para mensagem mais precisa
+          const hoursRemaining = errorData.hoursRemaining || 0;
+          const hours = Math.floor(hoursRemaining);
+          const minutes = Math.floor((hoursRemaining - hours) * 60);
+          
+          const message = errorData.message || 
+            (hoursRemaining >= 1
+              ? `Aguarde ${hours}h ${minutes}m para gerar um novo plano.`
+              : `Aguarde ${minutes} minutos para gerar um novo plano.`);
+          
+          console.log("⏳ Erro de cooldown detectado:", {
+            message,
+            hoursRemaining,
+            nextPlanAvailable: errorData.nextPlanAvailable,
+            availablePrompts: errorData.availablePrompts,
+          });
+          
+          // ✅ Criar erro customizado com dados adicionais
+          const cooldownError: any = new Error(message);
+          cooldownError.type = "COOLDOWN_ACTIVE";
+          cooldownError.hoursRemaining = hoursRemaining;
+          cooldownError.nextPlanAvailable = errorData.nextPlanAvailable;
+          cooldownError.availablePrompts = errorData.availablePrompts || 0;
+          
+          console.log("📤 Relançando erro de cooldown com dados:", cooldownError);
+          throw cooldownError;
         }
 
         throw new Error(errorData.error || "Erro ao gerar plano");
@@ -241,11 +227,14 @@ export function usePlanGeneration() {
         console.log("✅ Plano definido no estado:", {
           keys: result.plan ? Object.keys(result.plan) : [],
           hasNutritionPlan: !!result.plan?.nutritionPlan,
+          isExisting: result.isExisting,
         });
         // ✅ Atualizar planStatus IMEDIATAMENTE com dados da API
+        // IMPORTANTE: Se um plano foi gerado (mesmo que haja prompts disponíveis), 
+        // devemos mostrar esse plano como existente para que o usuário possa visualizá-lo
         setPlanStatus({
-          isExisting: result.isExisting || true, // Usar dados da API
-          generatedAt: result.generatedAt,
+          isExisting: true, // Sempre true quando um plano é gerado (permite visualizar)
+          generatedAt: result.generatedAt || new Date().toISOString(),
           daysUntilNext: result.daysUntilNext,
           nextPlanAvailable: result.nextPlanAvailable,
         });
@@ -286,7 +275,17 @@ export function usePlanGeneration() {
       // ✅ Parar loading
       setIsGenerating(false);
 
-      // ✅ Não re-lançar o erro - apenas retornar null para indicar falha
+      // ✅ Relançar erros de cooldown para serem tratados no componente
+      if (error && typeof error === 'object' && 'type' in error && error.type === "COOLDOWN_ACTIVE") {
+        throw error; // Relançar erro de cooldown
+      }
+      
+      // ✅ Verificar se é erro de cooldown pela mensagem
+      if (errorMessage.includes("Aguarde") || errorMessage.includes("cooldown") || errorMessage.includes("Cooldown")) {
+        throw error; // Relançar erro de cooldown
+      }
+
+      // ✅ Não re-lançar outros erros - apenas retornar null para indicar falha
       return null;
     }
   };
@@ -305,5 +304,6 @@ export function usePlanGeneration() {
     isCheckingStatus,
     generatePlan,
     clearPlan,
+    refetchPlanStatus: checkExistingPlan,
   };
 }

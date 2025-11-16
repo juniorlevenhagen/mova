@@ -726,12 +726,12 @@ export function EvolutionSection({
         {/* Filtros de período */}
         <div className="flex gap-2">
           <button
-            className={`${components.button.base} ${components.button.sizes.sm} bg-black text-white hover:bg-gray-900 transition-colors duration-200`}
+            className={`${components.button.base} ${components.button.sizes.sm} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap`}
           >
             Semanal
           </button>
           <button
-            className={`${components.button.base} ${components.button.sizes.sm} bg-gray-200 text-gray-700 hover:bg-gray-300`}
+            className={`${components.button.base} ${components.button.sizes.sm} bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap`}
           >
             Mensal
           </button>
@@ -2120,15 +2120,15 @@ export function EvolutionSection({
       <button
         onClick={onAddEvolution}
         disabled={isAddingEvolution}
-        className={`mt-6 ${components.button.base} ${components.button.sizes.lg} bg-black text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors duration-200`}
+        className={`mt-6 ${components.button.base} ${components.button.sizes.lg} bg-black text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap`}
       >
         {isAddingEvolution ? (
           <>
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            Salvando...
+            <span>Salvando...</span>
           </>
         ) : (
-          "Adicionar Evolução"
+          <span>Adicionar Evolução</span>
         )}
       </button>
 

@@ -279,17 +279,18 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (trialData) {
-      const isPremium = trialData.upgraded_to_premium;
       const now = new Date().toISOString();
 
       const updateData: Record<string, number | string> = {
         last_plan_generated_at: now,
+        plans_generated: (trialData.plans_generated || 0) + 1,
       };
 
-      if (isPremium) {
-        updateData.premium_plan_count = (trialData.premium_plan_count || 0) + 1;
-      } else {
-        updateData.plans_generated = (trialData.plans_generated || 0) + 1;
+      if ((trialData.available_prompts || 0) > 0) {
+        updateData.available_prompts = Math.max(
+          (trialData.available_prompts || 0) - 1,
+          0
+        );
       }
 
       await supabaseUser

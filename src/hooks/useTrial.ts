@@ -15,26 +15,22 @@ interface UserTrial {
   created_at: string;
   updated_at: string;
   last_plan_generated_at: string | null;
-  days_between_plans: number;
-  premium_plan_count: number;
-  premium_plan_cycle_start: string | null;
-  premium_max_plans_per_cycle: number;
-  premium_cycle_days: number;
-  available_prompts?: number; // Prompts comprados disponíveis
+  available_prompts?: number;
+  package_prompts?: number; // ✅ Prompts do pacote de 3 (têm cooldown de 24h)
 }
 
-interface TrialStatus {
+export interface TrialStatus {
   isNewUser?: boolean;
   canGenerate: boolean;
   plansRemaining: number;
-  isPremium: boolean;
-  hasUsedFreePlan?: boolean;
+  hasUsedFreePlan: boolean;
   message: string;
-  daysRemaining?: number;
   plansGenerated?: number;
-  // Para premium
-  daysUntilNextCycle?: number;
-  cycleDays?: number;
+  availablePrompts: number;
+  // ✅ Informações de cooldown para prompts
+  isInCooldown?: boolean;
+  hoursUntilNextPlan?: number;
+  nextPlanAvailable?: string;
 }
 
 export function useTrial(user: User | null) {
@@ -42,7 +38,8 @@ export function useTrial(user: User | null) {
   const [trialStatus, setTrialStatus] = useState<TrialStatus>({
     canGenerate: false,
     plansRemaining: 0,
-    isPremium: false,
+    hasUsedFreePlan: false,
+    availablePrompts: 0,
     message: "Carregando...",
   });
   const [loading, setLoading] = useState(true);
@@ -61,7 +58,8 @@ export function useTrial(user: User | null) {
         isNewUser: true,
         canGenerate: true,
         plansRemaining: 1,
-        isPremium: false,
+        hasUsedFreePlan: false,
+        availablePrompts: 0,
         message: "Você pode gerar 1 plano grátis!",
       });
       setLoading(false);
@@ -88,114 +86,151 @@ export function useTrial(user: User | null) {
       let status: TrialStatus;
 
       if (!trialData) {
-        // Usuário novo - pode gerar 1 plano grátis
         status = {
           isNewUser: true,
           canGenerate: true,
           plansRemaining: 1,
-          isPremium: false,
+          hasUsedFreePlan: false,
+          availablePrompts: 0,
           message: "Você pode gerar 1 plano grátis!",
-          daysRemaining: 7,
           plansGenerated: 0,
+          isInCooldown: false,
         };
       } else {
-        // Usuário existente
-        const isPremium = trialData.upgraded_to_premium;
         const plansGenerated = trialData.plans_generated || 0;
         const availablePrompts = trialData.available_prompts || 0;
-
-        // Calcular dias restantes do trial
-        const trialEndDate = new Date(trialData.trial_end_date);
-        const now = new Date();
-        const daysRemaining = Math.max(
-          0,
-          Math.ceil(
-            (trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-          )
-        );
-
-        // ✅ PRIORIDADE 1: Verificar se tem prompts comprados disponíveis
-        if (availablePrompts > 0) {
-          status = {
-            isNewUser: false,
-            canGenerate: true,
-            plansRemaining: availablePrompts,
-            isPremium: false,
-            message: `Você tem ${availablePrompts} prompt${availablePrompts > 1 ? "s" : ""} disponível${availablePrompts > 1 ? "is" : ""} para gerar planos!`,
-            daysRemaining,
-            plansGenerated,
-          };
-        } else if (isPremium) {
-          // ✅ PRIORIDADE 2: Usuário premium - 2 planos por período de 30 dias
-          const maxPlansPerCycle = trialData.premium_max_plans_per_cycle || 2;
-          const cycleStartDate = trialData.premium_plan_cycle_start
-            ? new Date(trialData.premium_plan_cycle_start)
-            : new Date(trialData.upgraded_at || trialData.created_at);
-
+        const maxFreePlans = trialData.max_plans_allowed || 1;
+        const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
+        
+        // ✅ Calcular cooldown APENAS para prompts do pacote de 3
+        // Prompts unitários não têm cooldown - podem ser usados imediatamente
+        const packagePrompts = trialData.package_prompts || 0;
+        const singlePrompts = availablePrompts - packagePrompts; // Prompts unitários
+        const promptCooldownHours = 24; // Configurável: horas de espera entre gerar planos com prompts do pacote
+        let isInCooldown = false;
+        let hoursUntilNextPlan: number | undefined;
+        let nextPlanAvailable: string | undefined;
+        
+        console.log("📊 Debug cooldown:", {
+          availablePrompts,
+          packagePrompts,
+          singlePrompts,
+          lastPlanGeneratedAt: trialData.last_plan_generated_at,
+        });
+        
+        // ✅ Calcular cooldown se houver prompts do pacote OU se houver last_plan_generated_at para mostrar informações
+        if (trialData.last_plan_generated_at) {
+          const lastPlanDate = new Date(trialData.last_plan_generated_at);
           const now = new Date();
-          const daysSinceStart = Math.floor(
-            (now.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)
-          );
-
-          // Verificar se precisa resetar o ciclo (30 dias)
-          const cycleLength = trialData.premium_cycle_days || 30;
-          const isNewCycle = daysSinceStart >= cycleLength;
-
-          // Calcular planos restantes no ciclo atual
-          const currentCycleCount = isNewCycle
-            ? 0
-            : trialData.premium_plan_count || 0;
-          const plansRemaining = Math.max(
-            0,
-            maxPlansPerCycle - currentCycleCount
-          );
-
-          // Calcular próxima renovação
-          const nextRenewalDate = new Date(cycleStartDate);
-          nextRenewalDate.setDate(nextRenewalDate.getDate() + cycleLength);
-          const daysUntilRenewal = Math.ceil(
-            (nextRenewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-          );
-
-          status = {
-            isNewUser: false,
-            canGenerate: plansRemaining > 0,
-            plansRemaining,
-            isPremium: true,
-            message:
-              plansRemaining > 0
-                ? `Você pode gerar ${plansRemaining} plano${
-                    plansRemaining !== 1 ? "s" : ""
-                  } neste ciclo!`
-                : `Limite do ciclo atingido. Renovação em ${daysUntilRenewal} dias.`,
-            daysRemaining: daysUntilRenewal,
-            plansGenerated: currentCycleCount,
-            daysUntilNextCycle: daysUntilRenewal,
-            cycleDays: cycleLength,
-          };
-        } else {
-          // ✅ PRIORIDADE 3: Usuário grátis - 1 plano total
-          const maxPlans = 1; // Usuários grátis só podem gerar 1 plano
-          const plansRemaining = Math.max(0, maxPlans - plansGenerated);
-
-          status = {
-            isNewUser: false,
-            canGenerate: plansRemaining > 0,
-            plansRemaining,
-            isPremium: false,
-            hasUsedFreePlan: plansRemaining === 0,
-            message:
-              plansRemaining > 0
-                ? "Você pode gerar 1 plano grátis!"
-                : "Plano grátis utilizado. Faça upgrade para continuar!",
-            daysRemaining,
-            plansGenerated,
-          };
+          const hoursSinceLastPlan = (now.getTime() - lastPlanDate.getTime()) / (1000 * 60 * 60);
+          
+          // ✅ Só calcular cooldown se houver prompts do pacote E estiver dentro do período
+          if (packagePrompts > 0) {
+            const hoursRemaining = promptCooldownHours - hoursSinceLastPlan;
+            
+            console.log("⏳ Verificando cooldown do pacote:", {
+              hoursSinceLastPlan: hoursSinceLastPlan.toFixed(2),
+              hoursRemaining: hoursRemaining.toFixed(2),
+              hasSinglePrompts: singlePrompts > 0,
+            });
+            
+            if (hoursSinceLastPlan < promptCooldownHours) {
+              // ✅ Se tem prompts do pacote e está dentro do período de cooldown, mostrar countdown
+              isInCooldown = true; // ✅ Sempre mostrar countdown se tem prompts do pacote em cooldown
+              hoursUntilNextPlan = Math.max(0, hoursRemaining);
+              nextPlanAvailable = new Date(now.getTime() + hoursRemaining * 60 * 60 * 1000).toISOString();
+              console.log("✅ Countdown do pacote ativo:", {
+                isInCooldown,
+                hoursUntilNextPlan,
+                canStillUseSinglePrompts: singlePrompts > 0,
+              });
+            } else {
+              // ✅ Cooldown terminou, mostrar quando pode gerar novamente (agora)
+              hoursUntilNextPlan = 0;
+              nextPlanAvailable = now.toISOString();
+              console.log("✅ Cooldown do pacote terminou - pode gerar agora");
+            }
+          } else if (singlePrompts === 0 && availablePrompts === 0) {
+            // ✅ Sem prompts mas teve plano gerado - mostrar quando foi o último
+            // Isso ajuda o usuário a saber quando pode comprar mais
+            nextPlanAvailable = undefined;
+          }
         }
+        
+        // ✅ Pode gerar se: tem prompts unitários OU (tem prompts do pacote e não está em cooldown) OU tem plano grátis
+        const canGenerate = (singlePrompts > 0 || (packagePrompts > 0 && !isInCooldown)) || freePlansRemaining > 0;
+
+        let message: string;
+        if (availablePrompts > 0) {
+          if (isInCooldown && hoursUntilNextPlan !== undefined) {
+            // ✅ Em cooldown do pacote - mas pode ter prompts unitários
+            const hours = Math.floor(hoursUntilNextPlan);
+            const minutes = Math.floor((hoursUntilNextPlan - hours) * 60);
+            const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+            
+            if (singlePrompts > 0) {
+              message =
+                singlePrompts === 1
+                  ? `Você tem 1 prompt disponível agora (sem cooldown). Próximo prompt do pacote disponível em ${timeStr}.`
+                  : `Você tem ${singlePrompts} prompts disponíveis agora (sem cooldown). Próximos prompts do pacote disponíveis em ${timeStr}.`;
+            } else {
+              message =
+                packagePrompts === 1
+                  ? `Você tem 1 prompt do pacote disponível. Próximo plano pode ser gerado em ${timeStr}.`
+                  : `Você tem ${packagePrompts} prompts do pacote disponíveis. Próximo plano pode ser gerado em ${timeStr}.`;
+            }
+          } else {
+            // ✅ Não está em cooldown ou só tem prompts unitários
+            if (singlePrompts > 0 && packagePrompts > 0) {
+              message =
+                singlePrompts === 1
+                  ? `Você tem 1 prompt unitário disponível (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`
+                  : `Você tem ${singlePrompts} prompts unitários disponíveis (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`;
+            } else if (singlePrompts > 0) {
+              message =
+                singlePrompts === 1
+                  ? "Você tem 1 prompt disponível para gerar planos!"
+                  : `Você tem ${singlePrompts} prompts disponíveis para gerar planos!`;
+            } else {
+              message =
+                packagePrompts === 1
+                  ? "Você tem 1 prompt disponível para gerar planos!"
+                  : `Você tem ${packagePrompts} prompts disponíveis para gerar planos!`;
+            }
+          }
+        } else if (freePlansRemaining > 0) {
+          message = "Você pode gerar 1 plano grátis!";
+        } else {
+          message =
+            "Plano gratuito utilizado. Compre prompts para gerar novos planos.";
+        }
+
+        const plansRemaining =
+          availablePrompts > 0 ? availablePrompts : freePlansRemaining;
+
+        status = {
+          isNewUser: false,
+          canGenerate,
+          plansRemaining,
+          hasUsedFreePlan: freePlansRemaining === 0,
+          availablePrompts,
+          message,
+          plansGenerated,
+          isInCooldown,
+          hoursUntilNextPlan,
+          nextPlanAvailable,
+        };
       }
 
       setTrialStatus(status);
       setTrial(trialData || null);
+      
+      console.log("✅ Trial atualizado:", {
+        availablePrompts: status.availablePrompts,
+        plansRemaining: status.plansRemaining,
+        canGenerate: status.canGenerate,
+        message: status.message,
+      });
     } catch (error: unknown) {
       console.error("Erro ao buscar trial:", error);
       setError("Erro ao carregar dados do trial");
@@ -205,10 +240,11 @@ export function useTrial(user: User | null) {
         isNewUser: true,
         canGenerate: true,
         plansRemaining: 1,
-        isPremium: false,
+        hasUsedFreePlan: false,
+        availablePrompts: 0,
         message: "Você pode gerar 1 plano grátis!",
-        daysRemaining: 7,
         plansGenerated: 0,
+        isInCooldown: false,
       });
     } finally {
       setLoading(false);
@@ -235,7 +271,7 @@ export function useTrial(user: User | null) {
       }
 
       if (!currentTrial) {
-        // Criar novo trial para usuário
+        // Primeiro plano do usuário (gratuito)
         const { error: insertError } = await supabase
           .from("user_trials")
           .insert({
@@ -244,45 +280,33 @@ export function useTrial(user: User | null) {
             last_plan_generated_at: now,
             trial_start_date: now,
             trial_end_date: new Date(
-              Date.now() + 7 * 24 * 60 * 60 * 1000
-            ).toISOString(), // 7 dias
+              Date.now() + 365 * 24 * 60 * 60 * 1000
+            ).toISOString(),
             is_active: true,
             upgraded_to_premium: false,
-            max_plans_allowed: 1, // Usuários grátis só podem gerar 1 plano
+            max_plans_allowed: 1,
+            available_prompts: 0,
           });
 
         if (insertError) throw insertError;
       } else {
-        // Atualizar trial existente
-        const isPremium = currentTrial.upgraded_to_premium;
+        const availablePrompts = currentTrial.available_prompts || 0;
+        const plansGenerated = currentTrial.plans_generated || 0;
+        const maxFreePlans = currentTrial.max_plans_allowed || 1;
+
         const updateData: Record<string, number | string> = {
           last_plan_generated_at: now,
+          plans_generated: plansGenerated + 1,
         };
 
-        if (isPremium) {
-          // ✅ Lógica premium - verificar se precisa resetar ciclo
-          const cycleStartDate = currentTrial.premium_plan_cycle_start
-            ? new Date(currentTrial.premium_plan_cycle_start)
-            : new Date(currentTrial.upgraded_at || currentTrial.created_at);
-
-          const daysSinceStart = Math.floor(
-            (new Date(now).getTime() - cycleStartDate.getTime()) /
-              (1000 * 60 * 60 * 24)
+        if (availablePrompts > 0) {
+          updateData.available_prompts = Math.max(availablePrompts - 1, 0);
+        } else if (plansGenerated >= maxFreePlans) {
+          // Nenhum recurso disponível - prevenir inconsistência
+          console.warn(
+            "Tentativa de gerar plano sem prompts ou plano grátis disponível."
           );
-          const cycleLength = currentTrial.premium_cycle_days || 30;
-
-          if (daysSinceStart >= cycleLength) {
-            // Resetar ciclo premium
-            updateData.premium_plan_count = 1;
-            updateData.premium_plan_cycle_start = now;
-          } else {
-            // Incrementar contador do ciclo atual
-            updateData.premium_plan_count =
-              (currentTrial.premium_plan_count || 0) + 1;
-          }
-        } else {
-          // Lógica grátis - apenas incrementar
-          updateData.plans_generated = (currentTrial.plans_generated || 0) + 1;
+          return false;
         }
 
         const { error: updateError } = await supabase
@@ -302,31 +326,6 @@ export function useTrial(user: User | null) {
     }
   }, [user, fetchTrial]);
 
-  // Fazer upgrade para premium
-  const upgradeToPremium = useCallback(async () => {
-    if (!trial || !user) return false;
-
-    try {
-      const { data, error } = await supabase
-        .from("user_trials")
-        .update({
-          upgraded_to_premium: true,
-          upgraded_at: new Date().toISOString(),
-          is_active: false, // Trial não é mais necessário
-        })
-        .eq("user_id", user.id)
-        .select()
-        .maybeSingle(); // Usar maybeSingle() em vez de single()
-
-      if (error) throw error;
-      setTrial(data);
-      return true;
-    } catch (error: unknown) {
-      console.error("Erro ao fazer upgrade:", error);
-      return false;
-    }
-  }, [trial, user, setTrial]);
-
   // Carregar trial quando usuário mudar
   useEffect(() => {
     // Resetar dados quando o usuário mudar
@@ -334,7 +333,8 @@ export function useTrial(user: User | null) {
     setTrialStatus({
       canGenerate: false,
       plansRemaining: 0,
-      isPremium: false,
+      hasUsedFreePlan: false,
+      availablePrompts: 0,
       message: "Carregando...",
     });
     setError(null);
@@ -359,17 +359,8 @@ export function useTrial(user: User | null) {
       loading,
       error,
       incrementPlanUsage,
-      upgradeToPremium,
       refetch: fetchTrial,
     }),
-    [
-      trial,
-      trialStatus,
-      loading,
-      error,
-      incrementPlanUsage,
-      upgradeToPremium,
-      fetchTrial,
-    ]
+    [trial, trialStatus, loading, error, incrementPlanUsage, fetchTrial]
   );
 }

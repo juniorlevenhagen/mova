@@ -3,16 +3,7 @@
 
 "use client";
 
-interface TrialStatus {
-  isNewUser?: boolean;
-  canGenerate: boolean;
-  plansRemaining: number;
-  isPremium: boolean;
-  hasUsedFreePlan?: boolean;
-  message: string;
-  daysUntilNextCycle?: number;
-  cycleDays?: number;
-}
+import { TrialStatus } from "@/hooks/useTrial";
 
 interface TrialDebugProps {
   trialStatus: TrialStatus;
@@ -30,10 +21,6 @@ export function TrialDebug({ trialStatus }: TrialDebugProps) {
           {trialStatus.canGenerate ? "✅ true" : "❌ false"}
         </div>
         <div>
-          <strong>isPremium:</strong>{" "}
-          {trialStatus.isPremium ? "✅ true" : "❌ false"}
-        </div>
-        <div>
           <strong>isNewUser:</strong>{" "}
           {trialStatus.isNewUser ? "✅ true" : "❌ false"}
         </div>
@@ -42,22 +29,14 @@ export function TrialDebug({ trialStatus }: TrialDebugProps) {
           {trialStatus.hasUsedFreePlan ? "✅ true" : "❌ false"}
         </div>
         <div>
+          <strong>availablePrompts:</strong> {trialStatus.availablePrompts}
+        </div>
+        <div>
           <strong>plansRemaining:</strong> {trialStatus.plansRemaining}
         </div>
         <div>
           <strong>message:</strong> &quot;{trialStatus.message}&quot;
         </div>
-        {trialStatus.daysUntilNextCycle && (
-          <div>
-            <strong>daysUntilNextCycle:</strong>{" "}
-            {trialStatus.daysUntilNextCycle}
-          </div>
-        )}
-        {trialStatus.cycleDays && (
-          <div>
-            <strong>cycleDays:</strong> {trialStatus.cycleDays}
-          </div>
-        )}
       </div>
       <div className="mt-2 text-xs text-yellow-600">
         Este componente é temporário para debug. Remover após resolver o

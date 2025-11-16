@@ -227,7 +227,7 @@ async function fetchMissingPlanSections(
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o",
-    temperature: 0.2,
+    temperature: 0.3, // ✅ Aumentar temperatura para mais variação nos planos
     max_tokens: 2048,
     messages: [
       {
@@ -510,7 +510,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Buscar dados completos do usuário
 
-    // Perfil do usuário
+    // Perfil do usuário - ✅ Buscar sempre os dados mais recentes
     const { data: profile, error: profileError } = await supabaseUser
       .from("user_profiles")
       .select("*")
@@ -518,11 +518,21 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (profileError) {
+      console.error("❌ Erro ao buscar perfil:", profileError);
       return NextResponse.json(
         { error: "Perfil do usuário não encontrado" },
         { status: 404 }
       );
     }
+
+    // ✅ Log dos dados do perfil para debug
+    console.log("📊 Dados do perfil atualizados:", {
+      weight: profile?.weight,
+      height: profile?.height,
+      objective: profile?.objective,
+      trainingFrequency: profile?.training_frequency,
+      timestamp: new Date().toISOString(),
+    });
 
     // Evoluções do usuário (últimas 10)
     const { data: evolutions } = await supabaseUser
@@ -566,121 +576,164 @@ export async function POST(request: NextRequest) {
     let canGenerate = true;
     let trialMessage = "";
     let usePrompt = false; // Flag para indicar se está usando prompt comprado
+    let availablePrompts = 0; // Declarar no escopo global para usar depois
 
     if (!trialData) {
       // Usuário novo - pode gerar 1 plano grátis
       canGenerate = true;
-      trialMessage = "Plano grátis";
+      trialMessage = "Plano grátis disponível";
+      availablePrompts = 0;
     } else {
-      const isPremium = trialData.upgraded_to_premium;
       const plansGenerated = trialData.plans_generated || 0;
-      const availablePrompts = trialData.available_prompts || 0;
+      availablePrompts = trialData.available_prompts || 0;
+      const maxFreePlans = trialData.max_plans_allowed || 1;
+      const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
 
-      // ✅ PRIORIDADE 1: Verificar se tem prompts comprados disponíveis
       if (availablePrompts > 0) {
-        canGenerate = true;
-        usePrompt = true;
-        trialMessage = `${availablePrompts} prompt${
-          availablePrompts > 1 ? "s" : ""
-        } disponível${availablePrompts > 1 ? "is" : ""}`;
-      } else if (isPremium) {
-        // ✅ PRIORIDADE 2: Usuário premium - 2 planos por ciclo de 30 dias
-        const maxPlansPerCycle = trialData.premium_max_plans_per_cycle || 2;
-        const cycleStartDate = trialData.premium_plan_cycle_start
-          ? new Date(trialData.premium_plan_cycle_start)
-          : new Date(trialData.upgraded_at || trialData.created_at);
+        // ✅ Verificar cooldown APENAS para prompts do pacote de 3
+        // Prompts unitários não têm cooldown - podem ser usados imediatamente
+        const packagePrompts = trialData.package_prompts || 0;
+        const singlePrompts = availablePrompts - packagePrompts; // Prompts unitários
+        const lastPlanGeneratedAt = trialData.last_plan_generated_at;
+        const promptCooldownHours = 24; // Configurável: horas de espera entre gerar planos com prompts do pacote
 
-        const now = new Date();
-        const daysSinceStart = Math.floor(
-          (now.getTime() - cycleStartDate.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        // Verificar se precisa resetar o ciclo (30 dias)
-        const cycleLength = trialData.premium_cycle_days || 30;
-        const isNewCycle = daysSinceStart >= cycleLength;
-
-        // Calcular planos restantes no ciclo atual
-        const currentCycleCount = isNewCycle
-          ? 0
-          : trialData.premium_plan_count || 0;
-        const plansRemaining = Math.max(
-          0,
-          maxPlansPerCycle - currentCycleCount
-        );
-
-        // ✅ Verificar se ainda tem planos no ciclo
-        canGenerate = plansRemaining > 0;
-
-        // ✅ Controle de intervalo de 7 dias entre planos premium
-        if (
-          canGenerate &&
-          currentCycleCount > 0 &&
-          trialData.last_plan_generated_at
-        ) {
-          const lastPlanTime = new Date(trialData.last_plan_generated_at);
+        // ✅ Se tem prompts do pacote E gerou plano recentemente, verificar cooldown
+        if (packagePrompts > 0 && lastPlanGeneratedAt) {
+          const lastPlanDate = new Date(lastPlanGeneratedAt);
           const now = new Date();
-          const daysSinceLastPlan =
-            (now.getTime() - lastPlanTime.getTime()) / (1000 * 60 * 60 * 24);
-          const MIN_INTERVAL_DAYS = 7;
+          const hoursSinceLastPlan =
+            (now.getTime() - lastPlanDate.getTime()) / (1000 * 60 * 60);
+          const hoursRemaining = promptCooldownHours - hoursSinceLastPlan;
 
-          if (daysSinceLastPlan < MIN_INTERVAL_DAYS) {
-            const daysRemaining = Math.ceil(
-              MIN_INTERVAL_DAYS - daysSinceLastPlan
-            );
-            const hoursRemaining = Math.ceil(
-              (MIN_INTERVAL_DAYS - daysSinceLastPlan) * 24
-            );
-            return NextResponse.json(
-              {
-                error: "COOLDOWN_ACTIVE",
-                message: `Aguarde ${daysRemaining} dia${
-                  daysRemaining > 1 ? "s" : ""
-                } para gerar o próximo plano. Isso garante que você aproveite melhor cada estratégia personalizada!`,
-                daysRemaining,
-                hoursRemaining,
-                nextAvailableDate: new Date(
-                  lastPlanTime.getTime() +
-                    MIN_INTERVAL_DAYS * 24 * 60 * 60 * 1000
-                ).toISOString(),
-                trialMessage: `Premium: Próximo plano em ${daysRemaining} dia${
-                  daysRemaining > 1 ? "s" : ""
-                }`,
-              },
-              { status: 429 }
+          if (hoursSinceLastPlan < promptCooldownHours) {
+            // ✅ Ainda está em cooldown do pacote - mas pode usar prompts unitários se tiver
+            if (singlePrompts > 0) {
+              // Tem prompts unitários disponíveis - pode usar sem cooldown
+              canGenerate = true;
+              usePrompt = true;
+              trialMessage =
+                singlePrompts === 1
+                  ? "1 prompt unitário disponível (sem cooldown)"
+                  : `${singlePrompts} prompts unitários disponíveis (sem cooldown)`;
+              console.log(
+                `✅ ${singlePrompts} prompt(s) unitário(s) disponível(is) - pode gerar sem cooldown`
+              );
+            } else {
+              // Só tem prompts do pacote - precisa aguardar cooldown
+              const hours = Math.floor(hoursRemaining);
+              const minutes = Math.floor((hoursRemaining - hours) * 60);
+              canGenerate = false;
+              usePrompt = false;
+              trialMessage = `Aguarde ${hours}h ${minutes}m para gerar um novo plano (cooldown do pacote). Você ainda tem ${packagePrompts} prompt(s) do pacote disponível(is).`;
+
+              console.log(
+                `⏳ Cooldown do pacote ativo: ${hoursSinceLastPlan.toFixed(
+                  1
+                )}h desde último plano. Aguarde ${hoursRemaining.toFixed(1)}h`
+              );
+            }
+          } else {
+            // Cooldown passou, pode gerar
+            canGenerate = true;
+            usePrompt = true;
+            trialMessage =
+              availablePrompts === 1
+                ? "1 prompt disponível"
+                : `${availablePrompts} prompts disponíveis`;
+
+            console.log(
+              `✅ Cooldown do pacote passou. Pode gerar novo plano (${hoursSinceLastPlan.toFixed(
+                1
+              )}h desde último)`
             );
           }
+        } else {
+          // ✅ Não tem prompts do pacote OU nunca gerou plano antes - pode gerar (sem cooldown)
+          canGenerate = true;
+          usePrompt = true;
+
+          if (singlePrompts > 0 && packagePrompts > 0) {
+            trialMessage =
+              singlePrompts === 1
+                ? `1 prompt unitário disponível (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`
+                : `${singlePrompts} prompts unitários disponíveis (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`;
+          } else {
+            trialMessage =
+              availablePrompts === 1
+                ? "1 prompt disponível"
+                : `${availablePrompts} prompts disponíveis`;
+          }
+
+          if (packagePrompts === 0) {
+            console.log(
+              `✅ ${availablePrompts} prompt(s) unitário(s) - pode gerar sem cooldown`
+            );
+          } else {
+            console.log("✅ Primeiro plano com prompt do pacote - pode gerar");
+          }
         }
-
-        trialMessage = `Premium: ${plansRemaining} de ${maxPlansPerCycle} planos restantes neste ciclo`;
+      } else if (freePlansRemaining > 0) {
+        canGenerate = true;
+        trialMessage = "Plano grátis disponível";
       } else {
-        // ✅ PRIORIDADE 3: Usuário grátis - 1 plano total
-        const maxPlans = 1; // Usuários grátis só podem gerar 1 plano
-        const plansRemaining = Math.max(0, maxPlans - plansGenerated);
-
-        canGenerate = plansRemaining > 0;
-        trialMessage =
-          plansRemaining > 0 ? "Plano grátis" : "Plano grátis já utilizado";
+        canGenerate = false;
+        trialMessage = "Plano grátis já utilizado";
       }
     }
 
     if (!canGenerate) {
-      return NextResponse.json(
-        {
-          error: "TRIAL_LIMIT_REACHED",
-          message:
-            "Você atingiu o limite de planos. Faça upgrade para continuar gerando planos personalizados!",
-          trialMessage,
-        },
-        { status: 403 }
-      );
+      // ✅ Verificar se é erro de cooldown ou limite de trial
+      const isCooldownActive =
+        availablePrompts > 0 && trialData?.last_plan_generated_at;
+
+      if (isCooldownActive) {
+        const lastPlanDate = new Date(trialData.last_plan_generated_at!);
+        const now = new Date();
+        const hoursSinceLastPlan =
+          (now.getTime() - lastPlanDate.getTime()) / (1000 * 60 * 60);
+        const promptCooldownHours = 24;
+        const hoursRemaining = promptCooldownHours - hoursSinceLastPlan;
+
+        return NextResponse.json(
+          {
+            error: "COOLDOWN_ACTIVE",
+            message: trialMessage,
+            hoursRemaining: Math.max(0, hoursRemaining),
+            nextPlanAvailable: new Date(
+              now.getTime() + hoursRemaining * 60 * 60 * 1000
+            ).toISOString(),
+            availablePrompts: availablePrompts,
+            trialMessage,
+          },
+          { status: 429 } // Too Many Requests
+        );
+      } else {
+        return NextResponse.json(
+          {
+            error: "TRIAL_LIMIT_REACHED",
+            message:
+              "Você atingiu o limite de planos gratuitos. Compre prompts para gerar novos planos personalizados!",
+            trialMessage,
+          },
+          { status: 403 }
+        );
+      }
     }
 
-    // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO (apenas para usuários grátis)
-    const isPremium = trialData?.upgraded_to_premium || false;
-    console.log("🎯 Verificando status premium:", isPremium);
+    // 🔒 VERIFICAR SE JÁ EXISTE PLANO VÁLIDO (apenas para usuários grátis SEM prompts)
+    // ✅ IMPORTANTE: Se houver prompts disponíveis, SEMPRE gerar novo plano, ignorando plano existente
+    // availablePrompts já foi declarado acima no escopo global
 
-    if (!isPremium) {
-      console.log("🔄 Usuário grátis - verificando user_evolutions");
+    if (availablePrompts > 0) {
+      console.log(
+        `✅ ${availablePrompts} prompt(s) disponível(is) - gerando novo plano (ignorando plano existente)`
+      );
+      // Pular verificação de plano existente e ir direto para geração
+    } else {
+      // Apenas verificar plano existente se NÃO houver prompts disponíveis
+      console.log(
+        "🔄 Usuário sem prompts - verificando plano existente em user_evolutions"
+      );
       const currentDate = new Date();
 
       // CONTROLE: Verificar se já há plano gerado nos últimos 30 dias
@@ -760,31 +813,123 @@ export async function POST(request: NextRequest) {
         // Se chegou aqui, é porque o marcador antigo foi removido
         // Continua para gerar novo plano
       }
-    } else {
-      console.log(
-        "🎯 Usuário premium - pulando verificação de user_evolutions"
-      );
+    }
+    // Fim da verificação de plano grátis/prompts
+
+    // ✅ 2. Buscar planos anteriores para criar efeito composto
+    console.log("📚 Buscando planos anteriores do usuário para análise...");
+    const { data: previousPlans, error: previousPlansError } =
+      await supabaseUser
+        .from("user_plans")
+        .select("id, plan_data, plan_type, generated_at, expires_at, is_active")
+        .eq("user_id", user.id)
+        .order("generated_at", { ascending: false })
+        .limit(5); // Últimos 5 planos
+
+    interface PlanHistoryItem {
+      id: string;
+      generatedAt: string;
+      planType: string;
+      isActive: boolean;
+      hasTrainingPlan: boolean;
+      hasNutritionPlan: boolean;
+      goals: any;
+      analysis: any;
+      objectiveFromPlan: string | null;
     }
 
-    // 2. Preparar dados para OpenAI
+    interface PlanInsights {
+      hasPreviousPlan: boolean;
+      lastPlanGeneratedAt?: string;
+      previousObjective?: string | null;
+      previousTrainingFocus?: string | null;
+      previousNutritionCalories?: number | null;
+      previousGoals?: any;
+      totalPlansGenerated: number;
+    }
+
+    let planHistory: PlanHistoryItem[] = [];
+    let planInsights: PlanInsights | null = null;
+
+    if (!previousPlansError && previousPlans && previousPlans.length > 0) {
+      console.log(
+        `✅ Encontrados ${previousPlans.length} plano(s) anterior(es)`
+      );
+
+      // Processar planos anteriores para extrair insights
+      planHistory = previousPlans.map((prevPlan) => {
+        const planData = prevPlan.plan_data || {};
+        return {
+          id: prevPlan.id,
+          generatedAt: prevPlan.generated_at,
+          planType: prevPlan.plan_type,
+          isActive: prevPlan.is_active,
+          hasTrainingPlan: !!planData.trainingPlan,
+          hasNutritionPlan: !!planData.nutritionPlan,
+          goals: planData.goals || null,
+          analysis: planData.analysis || null,
+          // Extrair informações úteis
+          objectiveFromPlan:
+            planData.analysis?.objective ||
+            planData.goals?.monthly?.[0]?.description ||
+            null,
+        };
+      });
+
+      // Criar insights composto dos planos anteriores
+      const activePlan = previousPlans.find((p) => p.is_active);
+      if (activePlan && activePlan.plan_data) {
+        const activePlanData = activePlan.plan_data;
+        planInsights = {
+          hasPreviousPlan: true,
+          lastPlanGeneratedAt: activePlan.generated_at,
+          previousObjective:
+            activePlanData.analysis?.objective ||
+            activePlanData.goals?.monthly?.[0]?.description ||
+            null,
+          previousTrainingFocus: activePlanData.trainingPlan?.focus || null,
+          previousNutritionCalories:
+            activePlanData.nutritionPlan?.dailyCalories || null,
+          previousGoals: activePlanData.goals || null,
+          totalPlansGenerated: previousPlans.length,
+        };
+
+        console.log("📊 Insights dos planos anteriores:", {
+          hasPreviousPlan: true,
+          lastPlanGeneratedAt: planInsights.lastPlanGeneratedAt,
+          totalPlans: planInsights.totalPlansGenerated,
+        });
+      }
+    } else {
+      console.log(
+        "📝 Nenhum plano anterior encontrado - este será o primeiro plano"
+      );
+      planInsights = {
+        hasPreviousPlan: false,
+        totalPlansGenerated: 0,
+      };
+    }
+
+    // 3. Preparar dados para OpenAI (incluindo histórico de planos)
+    // ✅ Garantir que estamos usando os dados mais recentes do perfil
     const userData = {
       // Dados básicos
       name:
         user.user_metadata?.full_name || user.email?.split("@")[0] || "Usuário",
-      age: profile.age,
-      gender: profile.gender,
-      height: profile.height,
-      weight: profile.weight,
-      initialWeight: profile.initial_weight,
+      age: profile?.age || null,
+      gender: profile?.gender || "Não informado",
+      height: profile?.height || 0,
+      weight: profile?.weight || 0, // ✅ Peso atualizado do banco
+      initialWeight: profile?.initial_weight || profile?.weight || 0,
 
       // Objetivos e preferências
-      objective: profile.objective,
-      trainingFrequency: profile.training_frequency,
-      trainingLocation: profile.training_location,
+      objective: profile?.objective || "Não informado",
+      trainingFrequency: profile?.training_frequency || "Não informado",
+      trainingLocation: profile?.training_location || "Academia",
 
       // Restrições
-      hasPain: profile.has_pain,
-      dietaryRestrictions: profile.dietary_restrictions,
+      hasPain: profile?.has_pain || false,
+      dietaryRestrictions: profile?.dietary_restrictions || "Nenhuma",
 
       // Histórico de evolução
       latestEvolution: evolutions?.[0] || null,
@@ -796,18 +941,22 @@ export async function POST(request: NextRequest) {
       // Metas
       currentGoals: goals || [],
 
-      // Cálculos
+      // Cálculos - ✅ Recalcular com dados atualizados
       imc:
-        profile.height && profile.weight
+        profile?.height && profile?.weight
           ? (profile.weight / Math.pow(profile.height / 100, 2)).toFixed(1)
           : null,
       weightChange:
-        profile.weight && profile.initial_weight
+        profile?.weight && profile?.initial_weight
           ? (profile.weight - profile.initial_weight).toFixed(1)
           : null,
+
+      // ✅ Histórico de planos anteriores para efeito composto
+      previousPlans: planHistory,
+      planInsights: planInsights,
     };
 
-    // 3. Gerar plano com OpenAI
+    // 4. Gerar plano com OpenAI (usando histórico de planos anteriores)
     const openai = createOpenAIClient();
 
     // Função para gerar plano com retry se necessário
@@ -817,6 +966,8 @@ export async function POST(request: NextRequest) {
       );
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
+        temperature: 0.3, // ✅ Aumentar temperatura para mais variação nos planos
+        max_tokens: 4096, // ✅ Aumentar tokens para planos mais completos
         messages: [
           {
             role: "system",
@@ -833,32 +984,99 @@ IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o 
 
 Você pode retornar qualquer combinação desses campos. Tente incluir o máximo possível para oferecer um plano completo ao usuário.
 
-## ANÁLISE ESTRATÉGICA BASEADA NO OBJETIVO:
+## ANÁLISE ESTRATÉGICA BASEADA NO OBJETIVO E IMC:
 
-### 🎯 EMAGRECIMENTO:
-- Déficit calórico controlado
-- Treinos de alta intensidade (HIIT, cardio)
-- Foco em queima de gordura
-- Preservação de massa magra
+⚠️ REGRA CRÍTICA: SEMPRE considere o IMC antes de definir a estratégia nutricional!
+
+### 📊 CLASSIFICAÇÃO DO IMC:
+- Abaixo do peso: IMC < 18.5
+- Normal: IMC 18.5 - 24.9
+- Sobrepeso: IMC 25 - 29.9
+- Obesidade Grau I: IMC 30 - 34.9
+- Obesidade Grau II: IMC 35 - 39.9
+- Obesidade Grau III (Grave): IMC ≥ 40
+
+### 📋 TABELA DE DECISÃO: IMC + OBJETIVO = ESTRATÉGIA
+
+Use esta tabela para definir a estratégia correta:
+
+| IMC | Objetivo | Estratégia Nutricional | Estratégia de Treino | Proteína |
+|-----|----------|------------------------|---------------------|----------|
+| < 18.5 | Ganhar Massa | Superávit moderado (TDEE + 200-400 kcal) | Força progressiva | 1.6-2.2g/kg |
+| < 18.5 | Emagrecer | ⚠️ NÃO recomendado (já abaixo do peso) | Manutenção/Leve | 1.2-1.6g/kg |
+| < 18.5 | Manter | Manutenção (TDEE) | Equilíbrio força/cardio | 1.2-1.6g/kg |
+| < 18.5 | Condicionamento | Manutenção ou leve superávit | Endurance + força | 1.4-1.8g/kg |
+| 18.5-24.9 | Ganhar Massa | Superávit leve (TDEE + 200-400 kcal) | Força progressiva | 1.6-2.2g/kg |
+| 18.5-24.9 | Emagrecer | Déficit moderado (TDEE - 300-500 kcal) | HIIT + força | 1.6-2.0g/kg |
+| 18.5-24.9 | Manter | Manutenção (TDEE) | Equilíbrio força/cardio | 1.2-1.6g/kg |
+| 18.5-24.9 | Condicionamento | Manutenção ou leve déficit | Endurance + força | 1.4-1.8g/kg |
+| 25-29.9 | Ganhar Massa | 🔄 RECOMPOSIÇÃO: Déficit (TDEE - 300-500 kcal) | Força progressiva | 2.2-2.5g/kg |
+| 25-29.9 | Emagrecer | Déficit moderado (TDEE - 300-500 kcal) | HIIT + força | 1.6-2.0g/kg |
+| 25-29.9 | Manter | Manutenção ou leve déficit (TDEE - 100-200 kcal) | Força + cardio | 1.4-1.8g/kg |
+| 25-29.9 | Condicionamento | Déficit leve (TDEE - 200-300 kcal) | Endurance + força | 1.6-2.0g/kg |
+| 30-34.9 | Ganhar Massa | 🔄 RECOMPOSIÇÃO: Déficit (TDEE - 20-25%) | Força progressiva | 2.2-2.5g/kg |
+| 30-34.9 | Emagrecer | Déficit moderado (TDEE - 20-25%) | HIIT + força | 1.6-2.0g/kg |
+| 30-34.9 | Manter | Déficit leve (TDEE - 10-15%) | Força + cardio | 1.6-2.0g/kg |
+| 30-34.9 | Condicionamento | Déficit moderado (TDEE - 20-25%) | Endurance + força | 1.6-2.0g/kg |
+| ≥ 35 | Ganhar Massa | 🔄 RECOMPOSIÇÃO: Déficit (TDEE - 20-25%) | Força progressiva | 2.2-2.5g/kg |
+| ≥ 35 | Emagrecer | Déficit conservador (TDEE - 20-25%) | Força + cardio moderado | 1.6-2.0g/kg |
+| ≥ 35 | Manter | Déficit leve (TDEE - 15-20%) | Força + cardio leve | 1.6-2.0g/kg |
+| ≥ 35 | Condicionamento | Déficit conservador (TDEE - 20-25%) | Endurance + força | 1.6-2.0g/kg |
+
+⚠️ **REGRAS CRÍTICAS:**
+- IMC ≥ 25 + "Ganhar Massa" = SEMPRE usar RECOMPOSIÇÃO (déficit + força)
+- IMC ≥ 30 = NUNCA usar superávit calórico
+- IMC < 18.5 + "Emagrecer" = Avisar que não é recomendado
+- Todos os cenários devem respeitar os limites mínimos de calorias, proteína e gorduras
+
+### 🎯 ESTRATÉGIAS DETALHADAS POR OBJETIVO:
+
+#### 🎯 EMAGRECIMENTO:
+- Déficit calórico controlado (respeitando limites de segurança)
+- Treinos de alta intensidade (HIIT, cardio) + força para preservar massa
+- Foco em queima de gordura preservando massa magra
+- Proteína elevada (1.6-2.0g/kg) para preservação muscular
 - Metabolismo acelerado
 
-### 💪 HIPERTROFIA (AUMENTO DE MASSA):
-- Superávit calórico moderado
+#### 💪 GANHAR MASSA MUSCULAR:
+- **IMC < 25**: Superávit calórico moderado (TDEE + 200-400 kcal)
+- **IMC ≥ 25**: RECOMPOSIÇÃO - Déficit calórico (TDEE - 300-500 kcal ou 20-25%)
 - Treinos de força progressiva
 - Foco em grupos musculares específicos
 - Recuperação adequada
-- Proteína elevada
+- Proteína elevada (1.6-2.5g/kg dependendo do IMC)
 
-### 🏃‍♂️ RESISTÊNCIA/CONDICIONAMENTO:
-- Treinos de endurance
+#### 🔄 RECOMPOSIÇÃO CORPORAL (IMC ≥ 25 + Objetivo de Ganhar Massa):
+⚠️ ATENÇÃO: Se o usuário tem IMC ≥ 25 MAS o objetivo é "ganhar massa muscular":
+- NÃO use superávit calórico! Isso é PERIGOSO e contraproducente
+- Use DÉFICIT CALÓRICO MODERADO baseado no TDEE:
+  * IMC 25-34.9: TDEE - 300-500 kcal
+  * IMC ≥ 35: TDEE - 20-25% (mais conservador)
+- Foco em treino de FORÇA para preservar/aumentar massa magra
+- Alta ingestão de PROTEÍNA (2.2-2.5g/kg de peso)
+- Redução moderada de carboidratos e gorduras
+- Objetivo: Perder GORDURA enquanto mantém/ganha MÚSCULO
+
+#### ⚖️ MANUTENÇÃO:
+- Calorias próximas ao TDEE (manutenção ou leve déficit de 100-200 kcal)
+- Equilíbrio entre treino de força e cardio
+- Foco em qualidade de vida e saúde
+- Proteína adequada (1.2-1.6g/kg)
+- Nutrição balanceada
+
+#### 🏃‍♂️ RESISTÊNCIA/CONDICIONAMENTO:
+- Calorias: manutenção ou leve déficit (dependendo do IMC)
+- Treinos de endurance + força
 - Foco em capacidade cardiovascular
 - Progressão gradual de intensidade
-- Nutrição para performance
+- Nutrição para performance (carboidratos adequados)
+- Proteína: 1.4-1.8g/kg
 
-### 🧘‍♀️ SAÚDE E BEM-ESTAR:
+#### 🧘‍♀️ SAÚDE E BEM-ESTAR:
 - Equilíbrio entre treino e recuperação
-- Nutrição balanceada
+- Nutrição balanceada (respeitando limites de segurança)
 - Foco em qualidade de vida
+- Proteína adequada (1.2-1.6g/kg)
 
 ## ESTRUTURA DO PLANO:
 
@@ -900,36 +1118,88 @@ Você pode retornar qualquer combinação desses campos. Tente incluir o máximo
 ## REGRAS NUTRICIONAIS ESPECÍFICAS:
 - SEMPRE especifique quantidades EXATAS (gramas, xícaras, unidades)
 - Calcule calorias por porção de cada alimento
-- Distribua macronutrientes de acordo com o objetivo
+- ⚠️ CRÍTICO: Use a TABELA DE DECISÃO acima para definir estratégia baseada em IMC + Objetivo
+- ⚠️ CRÍTICO: Se IMC ≥ 25 e objetivo é "ganhar massa", use RECOMPOSIÇÃO (déficit calórico), não superávit!
+- Distribua macronutrientes de acordo com a estratégia definida na tabela
 - Seja específico com horários das refeições
 - Considere restrições alimentares do usuário
-- Adapte porções para o objetivo (emagrecimento = porções menores, hipertrofia = porções maiores)
+- Adapte porções baseado na estratégia da tabela de decisão
+
+## ⚠️ LIMITES DE SEGURANÇA NUTRICIONAL (OBRIGATÓRIOS - BASEADOS EM CIÊNCIA):
+
+### 📊 CÁLCULO CORRETO DE CALORIAS:
+1. **Calcule TMB (Taxa Metabólica Basal)** usando fórmula de Harris-Benedict:
+   - Homem: TMB = 88.362 + (13.397 × peso em kg) + (4.799 × altura em cm) - (5.677 × idade)
+   - Mulher: TMB = 447.593 + (9.247 × peso em kg) + (3.098 × altura em cm) - (4.330 × idade)
+
+2. **Calcule TDEE (Gasto Energético Total)** multiplicando TMB pelo fator de atividade:
+   - Sedentário: TMB × 1.2
+   - Leve: TMB × 1.375
+   - Moderado: TMB × 1.55
+   - Ativo: TMB × 1.725
+   - Muito Ativo: TMB × 1.9
+
+3. **Aplique déficit/superávit baseado no TDEE (NÃO no TMB)**
+
+### 🚨 CALORIAS MÍNIMAS/MAXIMAS (NUNCA VIOLAR):
+- **Mínimo absoluto**: 1200 kcal (mulheres) ou 1500 kcal (homens) - diretrizes médicas
+- **Para déficit**: máximo de 25% do TDEE OU 500 kcal, o que for MENOR
+- **Para superávit**: máximo de 20% do TDEE OU 400 kcal, o que for MENOR
+- **Para IMC ≥ 35**: déficit deve ser 20-25% do TDEE (mais conservador)
+
+### 💪 PROTEÍNA (LIMITES BASEADOS EM CIÊNCIA):
+- **Mínimo**: 1.2g/kg de peso corporal (manutenção básica)
+- **Recomendado para recomposição (IMC ≥ 25)**: 2.2-2.5g/kg de peso
+- **Máximo seguro**: 3.5g/kg (apenas para atletas avançados)
+- **Exemplo**: Para 140kg, proteína deve estar entre 168g (mínimo) e 350g (máximo)
+
+### 🥑 GORDURAS (ESSENCIAL PARA SAÚDE):
+- **Mínimo**: 0.5g/kg de peso corporal (essencial para saúde hormonal)
+- **Recomendado**: 0.8-1.2g/kg
+- **Exemplo**: Para 140kg, gorduras mínimas = 70g
+
+### ✅ VALIDAÇÃO OBRIGATÓRIA ANTES DE RETORNAR:
+Antes de retornar o plano nutricional, SEMPRE verifique:
+1. ✅ Calorias estão entre mínimo (1200/1500) e máximo (TDEE × 1.5)?
+2. ✅ Proteína está entre 1.2g/kg e 3.5g/kg?
+3. ✅ Gorduras estão acima de 0.5g/kg?
+4. ✅ Para IMC ≥ 25: déficit não excede 25% do TDEE?
+5. ✅ Para IMC ≥ 35: déficit está entre 20-25% do TDEE?
+6. ✅ Para IMC ≥ 25 + ganhar massa: NÃO está usando superávit?
+
+**Se qualquer validação falhar, ajuste o plano antes de retornar!**
 
 ## REGRAS IMPORTANTES:
-- SEMPRE priorize o objetivo principal
-- Use TODOS os dados disponíveis do usuário
+- ⚠️ SEMPRE use a TABELA DE DECISÃO para definir estratégia baseada em IMC + Objetivo
+- ⚠️ SEMPRE considere o IMC antes de definir superávit/déficit calórico
+- Se IMC ≥ 25 e objetivo é ganhar massa, use RECOMPOSIÇÃO CORPORAL (déficit + força)
+- NUNCA sugira superávit calórico para pessoas com IMC ≥ 30
+- Para IMC < 18.5 + objetivo "emagrecer": avise que não é recomendado
+- Use TODOS os dados disponíveis do usuário (peso, altura, IMC, objetivo, idade, gênero)
 - Seja específico e prático
 - Considere limitações e restrições
 - Motive e inspire o usuário (campo motivation é essencial!)
 - Adapte para o local de treino disponível
 - TENTE INCLUIR os campos analysis, trainingPlan, nutritionPlan, goals e motivation quando possível
 
-Lembre-se: O objetivo do usuário é sua bússola. Tudo deve apontar para lá!`,
+Lembre-se: O objetivo do usuário é importante, mas a SAÚDE vem primeiro! Use sempre a tabela de decisão para garantir estratégias seguras e eficazes.`,
           },
           {
             role: "user",
-            content: `Dados do usuário para análise:
+            content: `Dados do usuário para análise (⚠️ USE OS DADOS ATUALIZADOS ABAIXO):
 
 🎯 OBJETIVO PRINCIPAL: ${userData.objective || "Não definido"}
 
-📊 PERFIL FÍSICO:
+📊 PERFIL FÍSICO ATUAL (⚠️ IMPORTANTE: Use estes valores atualizados):
 - Nome: ${userData.name}
 - Idade: ${userData.age} anos
 - Gênero: ${userData.gender}
 - Altura: ${userData.height} cm
-- Peso atual: ${userData.weight} kg
+- Peso atual: ${
+              userData.weight
+            } kg ⚠️ USE ESTE PESO ATUALIZADO PARA CALCULAR CALORIAS E MACROS
 - Peso inicial: ${userData.initialWeight} kg
-- IMC: ${userData.imc}
+- IMC: ${userData.imc} (calculado com peso atual: ${userData.weight} kg)
 - Variação de peso: ${userData.weightChange} kg
 
 🏋️ PREFERÊNCIAS DE TREINO:
@@ -997,9 +1267,99 @@ ${
     : "- Nenhuma atividade registrada"
 }
 
-IMPORTANTE: Baseie TODO o plano no objetivo "${
+📚 HISTÓRICO DE PLANOS ANTERIORES:
+${
+  userData.planInsights?.hasPreviousPlan
+    ? `
+✅ O usuário já possui ${
+        userData.planInsights.totalPlansGenerated
+      } plano(s) gerado(s) anteriormente.
+
+📅 Último plano gerado em: ${
+        userData.planInsights.lastPlanGeneratedAt
+          ? new Date(
+              userData.planInsights.lastPlanGeneratedAt
+            ).toLocaleDateString("pt-BR")
+          : "Data não disponível"
+      }
+
+🎯 Objetivo do plano anterior: ${
+        userData.planInsights.previousObjective || "Não especificado"
+      }
+
+💡 INFORMAÇÕES DO PLANO ANTERIOR:
+- Foco de treino: ${
+        userData.planInsights.previousTrainingFocus || "Não especificado"
+      }
+- Calorias diárias: ${
+        userData.planInsights.previousNutritionCalories || "Não especificado"
+      }
+
+📈 ANÁLISE PARA EFEITO COMPOSTO:
+Analise o histórico de planos anteriores e use essas informações para:
+1. Identificar o que funcionou bem nos planos anteriores
+2. Adaptar e melhorar o novo plano baseado no progresso
+3. Evoluir o plano considerando o histórico de resultados
+4. Evitar repetir estratégias que não deram resultado
+5. Aumentar a intensidade/progressão se o usuário está progredindo
+6. Ajustar calorias e macros baseado em mudanças de peso/composição corporal
+
+${
+  userData.previousPlans?.length > 0
+    ? `
+📋 RESUMO DOS ÚLTIMOS ${Math.min(userData.previousPlans.length, 3)} PLANO(S):
+${userData.previousPlans
+  .slice(0, 3)
+  .map(
+    (plan, idx) => `
+${idx + 1}º Plano (${
+      plan.generatedAt
+        ? new Date(plan.generatedAt).toLocaleDateString("pt-BR")
+        : "Data não disponível"
+    }):
+- Tipo: ${plan.planType}
+- Objetivo: ${plan.objectiveFromPlan || "Não especificado"}
+- Status: ${plan.isActive ? "Ativo" : "Inativo"}
+`
+  )
+  .join("")}
+`
+    : ""
+}
+
+⚠️ IMPORTANTE: Use essas informações para criar um plano MELHORADO e PROGRESSIVO, não apenas repetir o plano anterior.
+`
+    : `
+📝 Este é o PRIMEIRO plano gerado para este usuário. Crie um plano inicial completo e bem estruturado.
+`
+}
+
+⚠️ IMPORTANTE: Baseie TODO o plano no objetivo "${
               userData.objective
             }". Seja específico e estratégico para atingir esse objetivo específico.
+
+⚠️ ATENÇÃO CRÍTICA: Use SEMPRE os dados atualizados do usuário acima:
+- Peso atual: ${
+              userData.weight
+            } kg (use este valor para calcular calorias e macros)
+- IMC atual: ${userData.imc} (baseado no peso atual)
+- Variação de peso: ${userData.weightChange} kg
+
+⚠️ REGRA DE OURO PARA ESTRATÉGIA NUTRICIONAL:
+- Se IMC ≥ 25 (sobrepeso/obesidade) E objetivo é "ganhar massa muscular":
+  → Use RECOMPOSIÇÃO CORPORAL: DÉFICIT calórico moderado + treino de força
+  → NÃO use superávit calórico (isso é perigoso e contraproducente)
+  → Foco em perder gordura mantendo/ganhando músculo
+  
+- Se IMC < 25 E objetivo é "ganhar massa muscular":
+  → Use superávit calórico moderado + treino de força
+
+⚠️ NÃO repita planos anteriores. Crie um plano NOVO e ATUALIZADO baseado nos dados atuais do usuário.
+${
+  userData.planInsights?.hasPreviousPlan
+    ? "IMPORTANTE: Considere o histórico de planos anteriores para evoluir e melhorar o novo plano, mas SEMPRE use os dados atualizados do usuário."
+    : ""
+}
 
 ⚠️ ATENÇÃO CRÍTICA: Você DEVE retornar pelo menos os campos obrigatórios do JSON:
 - analysis (obrigatório)
@@ -1799,6 +2159,34 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90); // Plano expira em 90 dias
 
+    // ✅ Desativar planos anteriores antes de salvar o novo
+    if (previousPlans && previousPlans.length > 0) {
+      const activePlansIds = previousPlans
+        .filter((p) => p.is_active)
+        .map((p) => p.id);
+
+      if (activePlansIds.length > 0) {
+        console.log(
+          `🔄 Desativando ${activePlansIds.length} plano(s) anterior(es)...`
+        );
+        const { error: deactivateError } = await supabaseUser
+          .from("user_plans")
+          .update({ is_active: false })
+          .in("id", activePlansIds);
+
+        if (deactivateError) {
+          console.warn(
+            "⚠️ Erro ao desativar planos anteriores:",
+            deactivateError
+          );
+        } else {
+          console.log(
+            `✅ ${activePlansIds.length} plano(s) anterior(es) desativado(s) com sucesso`
+          );
+        }
+      }
+    }
+
     console.log("💾 Salvando plano na tabela user_plans...");
     const { data: savedPlan, error: planSaveError } = await supabaseUser
       .from("user_plans")
@@ -1883,11 +2271,12 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           last_plan_generated_at: trialUpdateTime,
           trial_start_date: trialUpdateTime,
           trial_end_date: new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000
-          ).toISOString(), // 7 dias
+            Date.now() + 365 * 24 * 60 * 60 * 1000
+          ).toISOString(), // 1 ano
           is_active: true,
           upgraded_to_premium: false,
           max_plans_allowed: 1, // Usuários grátis só podem gerar 1 plano
+          available_prompts: 0,
         });
 
       if (insertError) {
@@ -1898,49 +2287,38 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       }
     } else {
       // Atualizar trial existente - SÓ DEPOIS DE SALVAR O PLANO COM SUCESSO
-      const isPremium = trialData.upgraded_to_premium;
       const updateData: Record<string, any> = {
         last_plan_generated_at: trialUpdateTime,
+        plans_generated: (trialData.plans_generated || 0) + 1,
       };
 
       if (usePrompt) {
         // ✅ Usando prompt comprado - decrementar available_prompts
         const currentPrompts = trialData.available_prompts || 0;
-        updateData.available_prompts = Math.max(0, currentPrompts - 1);
-        console.log(
-          `🎫 Usando prompt comprado. Restantes: ${updateData.available_prompts}`
-        );
-      } else if (isPremium) {
-        // ✅ Lógica premium - verificar se precisa resetar ciclo
-        const cycleStartDate = trialData.premium_plan_cycle_start
-          ? new Date(trialData.premium_plan_cycle_start)
-          : new Date(trialData.upgraded_at || trialData.created_at);
+        const currentPackagePrompts = trialData.package_prompts || 0;
 
-        const daysSinceStart = Math.floor(
-          (new Date(trialUpdateTime).getTime() - cycleStartDate.getTime()) /
-            (1000 * 60 * 60 * 24)
-        );
-        const cycleLength = trialData.premium_cycle_days || 30;
-
-        if (daysSinceStart >= cycleLength) {
-          // Resetar ciclo premium
-          updateData.premium_plan_count = 1;
-          updateData.premium_plan_cycle_start = trialUpdateTime;
-          console.log("🔄 Resetando ciclo premium");
-        } else {
-          // Incrementar contador do ciclo atual
-          updateData.premium_plan_count =
-            (trialData.premium_plan_count || 0) + 1;
+        // ✅ Se tem prompts do pacote disponíveis, usar do pacote (tem cooldown)
+        // Caso contrário, usar prompt unitário (sem cooldown)
+        if (currentPackagePrompts > 0) {
+          updateData.available_prompts = Math.max(0, currentPrompts - 1);
+          updateData.package_prompts = Math.max(0, currentPackagePrompts - 1);
+          const remainingPackagePrompts = updateData.package_prompts as number;
+          const remainingTotal = updateData.available_prompts as number;
           console.log(
-            "📈 Incrementando contador premium:",
-            updateData.premium_plan_count
+            `🎫 Usando prompt do PACOTE (tem cooldown). Restantes: ${remainingTotal} total (${remainingPackagePrompts} do pacote, ${
+              remainingTotal - remainingPackagePrompts
+            } unitários)`
+          );
+        } else {
+          // Usando prompt unitário (sem cooldown)
+          updateData.available_prompts = Math.max(0, currentPrompts - 1);
+          console.log(
+            `🎫 Usando prompt UNITÁRIO (sem cooldown). Restantes: ${updateData.available_prompts}`
           );
         }
       } else {
-        // Lógica grátis - apenas incrementar
-        updateData.plans_generated = (trialData.plans_generated || 0) + 1;
         console.log(
-          "📈 Incrementando planos grátis:",
+          "📈 Incrementando contagem de planos gerados:",
           updateData.plans_generated
         );
       }
@@ -1958,22 +2336,23 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       }
     }
 
-    const nextPlanDate = new Date();
-    nextPlanDate.setDate(nextPlanDate.getDate() + 30);
-
     console.log("🎯 CHECKPOINT FINAL: Retornando resposta...");
     console.log("🎯 savedPlan?.id:", savedPlan?.id);
     console.log("🎯 planMarker:", planMarker?.[0]?.id);
+
+    // ✅ Determinar se é plano novo ou existente
+    // Se usou prompt ou está gerando novo plano, isExisting deve ser false
+    const isNewPlan = usePrompt || availablePrompts > 0;
 
     return NextResponse.json({
       success: true,
       message: "Plano personalizado gerado com sucesso!",
       plan,
       planId: savedPlan?.id || planMarker?.[0]?.id || null,
-      isExisting: true,
+      isExisting: !isNewPlan, // false se é plano novo, true se é plano existente
       generatedAt: generatedAt,
-      daysUntilNext: 30,
-      nextPlanAvailable: nextPlanDate.toISOString().split("T")[0],
+      daysUntilNext: null,
+      nextPlanAvailable: null,
     });
   } catch (error: any) {
     console.error("❌ Erro ao gerar plano:", error);

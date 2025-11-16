@@ -172,7 +172,7 @@ export function PromptPurchaseModal({
             <button
               onClick={() => handlePurchase("single")}
               disabled={loading !== null}
-              className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
+              className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto whitespace-nowrap"
             >
               {loading === "single" ? "Processando..." : "Comprar 1 Prompt"}
             </button>
@@ -285,7 +285,7 @@ export function PromptPurchaseModal({
             <button
               onClick={() => handlePurchase("triple")}
               disabled={loading !== null}
-              className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
+              className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto whitespace-nowrap"
             >
               {loading === "triple" ? "Processando..." : "Comprar Pacote (3 Prompts)"}
             </button>

@@ -406,11 +406,11 @@ export function PersonalizedPlanModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-4">
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
         <div
-          className={`${components.card.base} inline-block align-bottom text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full max-h-[90vh]`}
+          className={`${components.card.base} relative inline-block align-bottom text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl w-full max-h-[90vh]`}
         >
           {/* Header */}
           <div className="bg-gray-800 px-6 py-4 text-white">
@@ -480,6 +480,13 @@ export function PersonalizedPlanModal({
                   >
                     Status Atual
                   </h4>
+                  {userProfile?.peso && (
+                    <div className="mb-3 pb-3 border-b border-blue-200">
+                      <p className={`${colors.status.info.text} font-semibold`}>
+                        Peso Atual: {userProfile.peso} kg
+                      </p>
+                    </div>
+                  )}
                   <p className={`${colors.status.info.text}`}>
                     {plan.analysis?.currentStatus}
                   </p>

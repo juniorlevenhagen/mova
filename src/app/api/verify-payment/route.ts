@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    // sessionId é OPCIONAL agora. Se ausente, aplicamos fallback robusto
+    // sessionId é opcional; se ausente, retornamos apenas o estado atual do usuário
     const body = await request
       .json()
       .catch(() => ({} as Record<string, unknown>));
@@ -48,189 +48,162 @@ export async function POST(request: NextRequest) {
     );
 
     if (sessionId) {
+      console.log(`🔍 Verificando sessão do Stripe: ${sessionId}`);
       // Verificar sessão no Stripe
       const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      console.log(`📋 Status do pagamento: ${session.payment_status}`);
+      console.log(`📋 Metadata da sessão:`, JSON.stringify(session.metadata, null, 2));
 
       if (
         session.payment_status === "paid" &&
         session.metadata?.user_id === user.id
       ) {
-        // ✅ Pagamento confirmado - forçar atualização premium
-        const now = new Date().toISOString();
+        const purchaseType = session.metadata?.purchase_type || null;
+        const promptsAmount = session.metadata?.prompts_amount
+          ? parseInt(session.metadata.prompts_amount, 10)
+          : 0;
+        const promptsPurchased = promptsAmount > 0 ? promptsAmount : 1;
 
-        // Buscar trial existente
-        const { data: existingTrial } = await supabaseUser
+        console.log(
+          `✅ Pagamento confirmado: ${promptsPurchased} prompt(s) comprado(s) para usuário ${user.id}`
+        );
+
+        let { data: trialData, error: trialError } = await supabaseUser
           .from("user_trials")
-          .select("*")
+          .select("available_prompts, plans_generated, max_plans_allowed")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        let updateError: { message?: string } | null = null;
-
-        if (existingTrial) {
-          // Atualizar trial existente para premium
-          const { error } = await supabaseUser
-            .from("user_trials")
-            .update({
-              upgraded_to_premium: true,
-              upgraded_at: now,
-              is_active: false,
-              premium_plan_count: 0,
-              premium_plan_cycle_start: now,
-              premium_max_plans_per_cycle: 2,
-              premium_cycle_days: 30,
-            })
-            .eq("user_id", user.id);
-
-          updateError = error as { message?: string } | null;
+        if (trialError) {
+          console.error("❌ Erro ao buscar trial:", trialError);
         } else {
-          // Criar novo trial premium
-          const { error } = await supabaseUser.from("user_trials").insert({
-            user_id: user.id,
-            trial_start_date: now,
-            trial_end_date: new Date(
-              Date.now() + 30 * 24 * 60 * 60 * 1000
-            ).toISOString(),
-            plans_generated: 0,
-            max_plans_allowed: 2,
-            is_active: false,
-            upgraded_to_premium: true,
-            upgraded_at: now,
-            premium_plan_count: 0,
-            premium_plan_cycle_start: now,
-            premium_max_plans_per_cycle: 2,
-            premium_cycle_days: 30,
-          });
-
-          updateError = error as { message?: string } | null;
+          console.log(
+            `📊 Trial encontrado: available_prompts=${trialData?.available_prompts ?? 0}, plans_generated=${trialData?.plans_generated ?? 0}`
+          );
         }
 
-        if (updateError) {
-          console.error("❌ Erro ao atualizar status premium:", updateError);
-          return NextResponse.json(
-            { error: "Erro ao atualizar status premium" },
-            { status: 500 }
-          );
+        // ✅ FALLBACK: Verificar se o webhook processou. Se não, adicionar prompts diretamente.
+        // Estratégia: Aguardar um pouco e verificar se os prompts aumentaram. Se não aumentaram, usar fallback.
+        const currentPrompts = trialData?.available_prompts ?? 0;
+        const promptsBeforeCheck = currentPrompts;
+        
+        // Aguardar um pouco para dar tempo ao webhook processar
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Verificar novamente após aguardar
+        const { data: trialDataAfterWait } = await supabaseUser
+          .from("user_trials")
+          .select("available_prompts, updated_at")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        const promptsAfterWait = trialDataAfterWait?.available_prompts ?? 0;
+        const wasUpdated = promptsAfterWait > promptsBeforeCheck;
+        
+        // Se os prompts não aumentaram, adicionar via fallback
+        if (!wasUpdated) {
+          console.log(`⚠️ Webhook pode não ter processado ainda (prompts: ${promptsBeforeCheck} → ${promptsAfterWait}). Adicionando prompts diretamente como fallback...`);
+          
+          const now = new Date().toISOString();
+          
+          if (trialDataAfterWait || trialData) {
+            // Atualizar trial existente - adicionar prompts comprados
+            const promptsToAdd = promptsAfterWait > 0 ? promptsAfterWait : promptsBeforeCheck;
+            const newPrompts = promptsToAdd + promptsPurchased;
+            
+            const { data: updatedTrial, error: updateError } = await supabaseUser
+              .from("user_trials")
+              .update({
+                available_prompts: newPrompts,
+                updated_at: now,
+              })
+              .eq("user_id", user.id)
+              .select("available_prompts, plans_generated, max_plans_allowed")
+              .maybeSingle();
+            
+            if (updateError) {
+              console.error("❌ Erro ao adicionar prompts (fallback):", updateError);
+              // Se erro for de coluna não existente, informar
+              if (updateError.message?.includes("column") || updateError.message?.includes("does not exist")) {
+                console.error("⚠️ ATENÇÃO: A coluna 'available_prompts' pode não existir na tabela 'user_trials'.");
+              }
+            } else {
+              console.log(`✅ ${promptsPurchased} prompt(s) adicionado(s) diretamente (fallback). Total: ${newPrompts}`);
+              trialData = updatedTrial;
+            }
+          } else {
+            // Criar novo trial se não existir
+            const { data: newTrial, error: insertError } = await supabaseUser
+              .from("user_trials")
+              .insert({
+                user_id: user.id,
+                trial_start_date: now,
+                trial_end_date: new Date(
+                  Date.now() + 365 * 24 * 60 * 60 * 1000
+                ).toISOString(),
+                plans_generated: 0,
+                max_plans_allowed: 1,
+                is_active: true,
+                upgraded_to_premium: false,
+                available_prompts: promptsPurchased,
+              })
+              .select("available_prompts, plans_generated, max_plans_allowed")
+              .maybeSingle();
+            
+            if (insertError) {
+              console.error("❌ Erro ao criar trial com prompts (fallback):", insertError);
+            } else {
+              console.log(`✅ Trial criado com ${promptsPurchased} prompt(s) (fallback)`);
+              trialData = newTrial;
+            }
+          }
+        } else {
+          console.log(`✅ Webhook processou com sucesso. Prompts aumentaram: ${promptsBeforeCheck} → ${promptsAfterWait}. Total disponível: ${promptsAfterWait}`);
+          trialData = trialDataAfterWait ? {
+            ...trialDataAfterWait,
+            plans_generated: trialData?.plans_generated ?? 0,
+            max_plans_allowed: trialData?.max_plans_allowed ?? 1,
+          } : trialData;
         }
 
         return NextResponse.json({
           success: true,
-          isPremium: true,
-          message: "Pagamento confirmado e status premium ativado!",
+          purchaseType,
+          promptsPurchased,
+          availablePrompts: trialData?.available_prompts ?? 0,
+          plansGenerated: trialData?.plans_generated ?? 0,
+          maxPlansAllowed: trialData?.max_plans_allowed ?? 1,
+          message:
+            promptsPurchased > 1
+              ? `Pagamento confirmado: ${promptsPurchased} prompts liberados.`
+              : "Pagamento confirmado: 1 prompt liberado.",
         });
+      } else {
+        console.log(
+          `⚠️ Pagamento não confirmado ou user_id não corresponde: payment_status=${session.payment_status}, user_id=${session.metadata?.user_id}, expected=${user.id}`
+        );
       }
 
       return NextResponse.json({
         success: false,
-        isPremium: false,
         message: "Pagamento não confirmado",
       });
     }
 
-    // 🔁 Fallback: sem sessionId, verificar assinatura ativa (DB/Stripe)
-    const { data: subscription } = await supabase
-      .from("subscriptions")
-      .select("status")
-      .eq("user_id", user.id)
-      .in("status", ["active", "trialing"])
-      .maybeSingle();
-    let premiumActive = !!subscription;
-
-    if (!premiumActive && user.email) {
-      try {
-        const customers = await stripe.customers.list({
-          email: user.email,
-          limit: 1,
-        });
-        const customer = customers.data?.[0];
-        if (customer) {
-          const subs = await stripe.subscriptions.list({
-            customer: customer.id,
-            status: "active",
-            limit: 1,
-          });
-          premiumActive = (subs.data?.length || 0) > 0;
-        }
-      } catch (lookupErr) {
-        console.warn("Fallback Stripe lookup falhou:", lookupErr);
-      }
-    }
-
-    // 🚨 FORÇAR PREMIUM PARA TESTE (manter até resolver checkout)
-    premiumActive = true;
-
-    if (!premiumActive) {
-      return NextResponse.json({
-        success: false,
-        isPremium: false,
-        message: "Nenhuma assinatura ativa encontrada",
-      });
-    }
-
-    // Ativar premium via fallback
-    const now = new Date().toISOString();
-    const { data: existingTrial } = await supabaseUser
+    // Sem sessionId: apenas retornar estado atual de prompts
+    const { data: trialData } = await supabaseUser
       .from("user_trials")
-      .select("*")
+      .select("available_prompts, plans_generated, max_plans_allowed")
       .eq("user_id", user.id)
       .maybeSingle();
-
-    if (existingTrial) {
-      const { error: updateError } = await supabaseUser
-        .from("user_trials")
-        .update({
-          upgraded_to_premium: true,
-          upgraded_at: now,
-          is_active: false,
-          premium_plan_count: existingTrial.premium_plan_count || 0,
-          premium_plan_cycle_start:
-            existingTrial.premium_plan_cycle_start || now,
-          premium_max_plans_per_cycle:
-            existingTrial.premium_max_plans_per_cycle || 2,
-          premium_cycle_days: existingTrial.premium_cycle_days || 30,
-        })
-        .eq("user_id", user.id);
-
-      if (updateError) {
-        console.error("Erro ao atualizar trial:", updateError);
-        return NextResponse.json(
-          { error: "Erro ao atualizar status premium" },
-          { status: 500 }
-        );
-      }
-    } else {
-      const { error: insertError } = await supabaseUser
-        .from("user_trials")
-        .insert({
-          user_id: user.id,
-          trial_start_date: now,
-          trial_end_date: new Date(
-            Date.now() + 30 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          plans_generated: 0,
-          max_plans_allowed: 2,
-          is_active: false,
-          upgraded_to_premium: true,
-          upgraded_at: now,
-          premium_plan_count: 0,
-          premium_plan_cycle_start: now,
-          premium_max_plans_per_cycle: 2,
-          premium_cycle_days: 30,
-        });
-
-      if (insertError) {
-        console.error("Erro ao criar trial:", insertError);
-        return NextResponse.json(
-          { error: "Erro ao criar trial premium" },
-          { status: 500 }
-        );
-      }
-    }
 
     return NextResponse.json({
       success: true,
-      isPremium: true,
-      message: "Premium ativado via fallback de assinatura",
+      availablePrompts: trialData?.available_prompts ?? 0,
+      plansGenerated: trialData?.plans_generated ?? 0,
+      maxPlansAllowed: trialData?.max_plans_allowed ?? 1,
+      message: "Status de prompts recuperado com sucesso.",
     });
   } catch (error) {
     console.error("❌ Erro ao verificar pagamento:", error);

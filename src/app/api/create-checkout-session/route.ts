@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Ler body da requisição para determinar o tipo de compra
     const body = await request.json().catch(() => ({}));
-    const purchaseType = body.type || "premium"; // 'prompt_single', 'prompt_triple', ou 'premium'
+    const purchaseType = body.type || "prompt_single"; // 'prompt_single' ou 'prompt_triple'
 
     // Buscar dados do usuário
     const { data: userProfile } = await supabase
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Configurar produtos baseado no tipo
     let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-    let mode: "payment" | "subscription" = "payment";
+    const mode: "payment" | "subscription" = "payment";
     const metadata: Record<string, string> = {
       user_id: user.id,
     };
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "brl",
             product_data: {
-              name: "Mova+ - Pacote Premium (3 Prompts)",
+              name: "Mova+ - Pacote com 3 Prompts",
               description: "3 prompts para gerar planos personalizados",
             },
             unit_amount: 3999, // R$ 39,99 em centavos
@@ -99,25 +99,22 @@ export async function POST(request: NextRequest) {
       metadata.purchase_type = "prompt_triple";
       metadata.prompts_amount = "3";
     } else {
-      // Premium mensal (comportamento original)
+      // Fallback para compra de 1 prompt caso o tipo seja desconhecido
       lineItems = [
         {
           price_data: {
             currency: "brl",
             product_data: {
-              name: "Mova+ Premium",
-              description: "Plano premium com 2 planos personalizados por mês",
+              name: "Mova+ - 1 Prompt",
+              description: "1 prompt para gerar plano personalizado",
             },
-            unit_amount: 2990, // R$ 29,90 em centavos
-            recurring: {
-              interval: "month",
-            },
+            unit_amount: 1799,
           },
           quantity: 1,
         },
       ];
-      mode = "subscription";
-      metadata.subscription_type = "premium";
+      metadata.purchase_type = "prompt_single";
+      metadata.prompts_amount = "1";
     }
 
     // Criar sessão de checkout
@@ -138,32 +135,6 @@ export async function POST(request: NextRequest) {
       customer_email: userProfile?.email || user.email,
       metadata,
     };
-
-    // Adicionar subscription_data apenas para premium
-    if (mode === "subscription") {
-      const { data: trialData } = await supabase
-        .from("user_trials")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      const isInTrial =
-        trialData && trialData.is_active && !trialData.upgraded_to_premium;
-
-      sessionParams.subscription_data = {
-        metadata: {
-          user_id: user.id,
-        },
-        trial_period_days: isInTrial ? 0 : 7,
-      };
-      sessionParams.custom_text = {
-        submit: {
-          message: isInTrial
-            ? "Fazer upgrade para Premium"
-            : "Começar meu teste gratuito de 7 dias",
-        },
-      };
-    }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 

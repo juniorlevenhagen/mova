@@ -48,6 +48,7 @@ function getSupabaseUserClient(token: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const cookieStoreGlobal = await cookies();
     const authHeader = request.headers.get("Authorization");
     const bearerToken = authHeader?.startsWith("Bearer ")
       ? authHeader.replace("Bearer ", "")
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // 2) Fallback: tentar autenticar via cookie da sessão (requisição do browser logado)
     if (!authedUser) {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       const supabaseServer = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
           {
             cookies: {
-              get: (name: string) => cookies().get(name)?.value,
+              get: (name: string) => cookieStoreGlobal.get(name)?.value,
               set: () => {},
               remove: () => {},
             },

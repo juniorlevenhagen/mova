@@ -3,7 +3,34 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-type Json = Record<string, any>;
+type PlanAnalysis = {
+  currentStatus?: string | null;
+  strengths?: unknown[];
+  improvements?: unknown[];
+  specialConsiderations?: unknown[];
+};
+
+type TrainingPlan = {
+  overview?: unknown;
+  progression?: unknown;
+  weeklySchedule?: unknown;
+};
+
+type NutritionPlan = {
+  dailyCalories?: unknown;
+  macros?: {
+    protein?: unknown;
+    carbs?: unknown;
+    fats?: unknown;
+  };
+  mealPlan?: unknown;
+};
+
+type PlanData = {
+  analysis?: PlanAnalysis;
+  trainingPlan?: TrainingPlan;
+  nutritionPlan?: NutritionPlan;
+};
 
 function getSupabaseUserClient(token: string) {
   return createClient(
@@ -135,7 +162,7 @@ export async function POST(request: NextRequest) {
     }
 
     for (const p of plans) {
-      const planData = (p.plan_data || {}) as Json;
+      const planData = (p.plan_data || {}) as PlanData;
       const hasAnalysis = !!planData.analysis;
       const hasTraining = !!planData.trainingPlan;
       const hasNutrition = !!planData.nutritionPlan;
@@ -208,9 +235,9 @@ export async function POST(request: NextRequest) {
 
         if (!exists && !dryRun) {
           // Extrair números de macros que podem vir como strings "180g"
-          const toNumber = (val: any): number | null => {
+          const toNumber = (val: unknown): number | null => {
             if (val === null || val === undefined) return null;
-            if (typeof val === "number") return val;
+            if (typeof val === "number") return Number.isFinite(val) ? val : null;
             if (typeof val === "string") {
               const num = Number(val.replace(/[^\d.,-]/g, "").replace(",", "."));
               return Number.isFinite(num) ? num : null;

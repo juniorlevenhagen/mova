@@ -20,6 +20,19 @@ export interface PersonalizedPlan {
     }>;
     progression: string;
   };
+  aerobicTraining?: {
+    overview: string;
+    weeklySchedule: Array<{
+      day: string;
+      activity: string;
+      duration: string;
+      intensity: string;
+      heartRateZone?: string;
+      notes?: string;
+    }>;
+    recommendations: string;
+    progression: string;
+  };
   nutritionPlan: {
     dailyCalories: number;
     macros: {

@@ -107,6 +107,12 @@ export function PlanHistoryModal({
     setShowPlanModal(true);
   };
 
+  // Extrair peso histórico do plan_data (metadata salva no momento da geração)
+  const getHistoricalWeight = (planData: PersonalizedPlan): number | null => {
+    // @ts-expect-error - metadata pode não estar tipado
+    return planData?.metadata?.weightAtGeneration || null;
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -564,7 +570,16 @@ export function PlanHistoryModal({
             setSelectedPlan(null);
           }}
           plan={selectedPlan}
-          userProfile={userProfile}
+          userProfile={
+            userProfile
+              ? {
+                  ...userProfile,
+                  // ✅ Usar peso histórico se disponível, senão usar peso atual
+                  peso:
+                    getHistoricalWeight(selectedPlan) ?? userProfile.peso,
+                }
+              : undefined
+          }
         />
       )}
     </>

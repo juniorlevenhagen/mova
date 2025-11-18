@@ -196,13 +196,14 @@ export function PersonalizedPlanModal({
   userProfile,
 }: PersonalizedPlanModalProps) {
   const [activeTab, setActiveTab] = useState<
-    "analysis" | "training" | "diet" | "goals" | "motivation"
+    "analysis" | "training" | "aerobic" | "diet" | "goals" | "motivation"
   >("analysis");
   const [openAIMessage, setOpenAIMessage] = useState<string>("");
   const [isLoadingOpenAI, setIsLoadingOpenAI] = useState<boolean>(false);
 
   // Campos opcionais do plano
   const hasOptionalFields = {
+    aerobicTraining: !!plan?.aerobicTraining,
     nutritionPlan: !!plan?.nutritionPlan,
     goals: !!plan?.goals,
     motivation: !!plan?.motivation,
@@ -230,6 +231,7 @@ export function PersonalizedPlanModal({
     const availableTabs = [
       "analysis",
       "training",
+      ...(hasOptionalFields.aerobicTraining ? ["aerobic"] : []),
       "diet", // Sempre disponível
       ...(hasOptionalFields.goals ? ["goals"] : []),
       ...(hasOptionalFields.motivation ? ["motivation"] : []),
@@ -240,6 +242,7 @@ export function PersonalizedPlanModal({
   }, [
     isOpen,
     plan,
+    hasOptionalFields.aerobicTraining,
     hasOptionalFields.goals,
     hasOptionalFields.motivation,
     activeTab,
@@ -397,7 +400,10 @@ export function PersonalizedPlanModal({
   const tabs = [
     { id: "analysis", label: "Análise" },
     { id: "training", label: "Treino" },
+    ...(hasOptionalFields.aerobicTraining ? [{ id: "aerobic", label: "Aeróbico" }] : []),
     { id: "diet", label: "Dieta" },
+    ...(hasOptionalFields.goals ? [{ id: "goals", label: "Metas" }] : []),
+    ...(hasOptionalFields.motivation ? [{ id: "motivation", label: "Motivação" }] : []),
   ];
 
   // Garantir que activeTab seja válido (se a tab atual não existir, usar "analysis")
@@ -481,6 +487,7 @@ export function PersonalizedPlanModal({
         addText(`Objetivo: ${userProfile.objetivo}`, 12, true);
       }
       if (userProfile?.peso) {
+        // ✅ Usar peso do userProfile (que já pode ser histórico se veio do histórico)
         addText(`Peso atual: ${userProfile.peso} kg`, 10);
       }
       yPosition += 5;
@@ -552,6 +559,51 @@ export function PersonalizedPlanModal({
         if (plan.trainingPlan.progression) {
           addText("Progressão:", 11, true);
           addText(plan.trainingPlan.progression, 10);
+        }
+        yPosition += 5;
+      }
+
+      // Treino Aeróbico
+      if (plan.aerobicTraining) {
+        doc.setFillColor(59, 130, 246);
+        doc.rect(margin, yPosition - 5, maxWidth, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text("TREINO AERÓBICO/CARDIOVASCULAR", margin + 5, yPosition);
+        yPosition += 10;
+        doc.setTextColor(0, 0, 0);
+
+        if (plan.aerobicTraining.overview) {
+          addText("Visão Geral:", 11, true);
+          addText(plan.aerobicTraining.overview, 10);
+        }
+
+        if (plan.aerobicTraining.weeklySchedule && plan.aerobicTraining.weeklySchedule.length > 0) {
+          addText("Cronograma Semanal de Atividades Aeróbicas:", 11, true);
+          plan.aerobicTraining.weeklySchedule.forEach((day) => {
+            addText(`${day.day}`, 10, true);
+            addText(`  Atividade: ${day.activity}`, 9);
+            addText(`  Duração: ${day.duration}`, 9);
+            addText(`  Intensidade: ${day.intensity}`, 9);
+            if (day.heartRateZone) {
+              addText(`  Zona de FC: ${day.heartRateZone}`, 9);
+            }
+            if (day.notes) {
+              addText(`  Nota: ${day.notes}`, 9);
+            }
+            yPosition += 2;
+          });
+        }
+
+        if (plan.aerobicTraining.recommendations) {
+          addText("Recomendações:", 11, true);
+          addText(plan.aerobicTraining.recommendations, 10);
+        }
+
+        if (plan.aerobicTraining.progression) {
+          addText("Progressão:", 11, true);
+          addText(plan.aerobicTraining.progression, 10);
         }
         yPosition += 5;
       }
@@ -744,6 +796,7 @@ export function PersonalizedPlanModal({
                       tab.id as
                         | "analysis"
                         | "training"
+                        | "aerobic"
                         | "diet"
                         | "goals"
                         | "motivation"
@@ -960,6 +1013,122 @@ export function PersonalizedPlanModal({
                       "Progressão não disponível"}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* Aeróbico */}
+            {validActiveTab === "aerobic" && plan.aerobicTraining && (
+              <div className="space-y-6">
+                <div
+                  className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
+                >
+                  <h4
+                    className={`${typography.heading.h4} ${colors.status.info.text} mb-2`}
+                  >
+                    Visão Geral do Treino Aeróbico
+                  </h4>
+                  <p className={`${colors.status.info.text}`}>
+                    {plan.aerobicTraining.overview ||
+                      "Visão geral não disponível"}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <h4
+                    className={`${typography.heading.h4} ${colors.text.primary}`}
+                  >
+                    Cronograma Semanal de Atividades Aeróbicas
+                  </h4>
+                  {(plan.aerobicTraining.weeklySchedule || []).map(
+                    (day, dayIndex) => (
+                      <div
+                        key={dayIndex}
+                        className="border border-gray-200 rounded-lg p-4"
+                      >
+                        <div className="flex items-center mb-3">
+                          <h5 className="font-semibold text-lg text-gray-900">
+                            {day?.day || "Dia não especificado"}
+                          </h5>
+                        </div>
+
+                        <div className="bg-gray-50 border border-gray-100 rounded p-3 space-y-2">
+                          <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex-1">
+                              <span className="text-sm font-medium text-gray-600">
+                                Atividade:
+                              </span>
+                              <p className="font-medium text-gray-900">
+                                {day?.activity || "Não especificado"}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">
+                                Duração:
+                              </span>
+                              <p className="text-gray-900">
+                                {day?.duration || "N/A"}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">
+                                Intensidade:
+                              </span>
+                              <p className="text-gray-900">
+                                {day?.intensity || "N/A"}
+                              </p>
+                            </div>
+                            {day?.heartRateZone && (
+                              <div>
+                                <span className="text-sm font-medium text-gray-600">
+                                  Zona FC:
+                                </span>
+                                <p className="text-gray-900">
+                                  {day.heartRateZone}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          {day.notes && (
+                            <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                              <span className="font-medium">Nota:</span>{" "}
+                              {day.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+
+                {plan.aerobicTraining.recommendations && (
+                  <div
+                    className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
+                  >
+                    <h4
+                      className={`${typography.heading.h4} ${colors.status.success.text} mb-2`}
+                    >
+                      Recomendações
+                    </h4>
+                    <p className={`${colors.status.success.text}`}>
+                      {plan.aerobicTraining.recommendations}
+                    </p>
+                  </div>
+                )}
+
+                {plan.aerobicTraining.progression && (
+                  <div
+                    className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
+                  >
+                    <h4
+                      className={`${typography.heading.h4} ${colors.status.success.text} mb-2`}
+                    >
+                      Progressão
+                    </h4>
+                    <p className={`${colors.status.success.text}`}>
+                      {plan.aerobicTraining.progression}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

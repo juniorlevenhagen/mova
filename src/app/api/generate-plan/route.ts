@@ -64,6 +64,32 @@ const PLAN_FIELD_SCHEMAS = {
     },
     required: ["overview", "weeklySchedule", "progression"],
   },
+  aerobicTraining: {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      overview: { type: "string" },
+      weeklySchedule: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            day: { type: "string" },
+            activity: { type: "string" },
+            duration: { type: "string" },
+            intensity: { type: "string" },
+            heartRateZone: { type: "string" },
+            notes: { type: "string" },
+          },
+          required: ["day", "activity", "duration", "intensity"],
+        },
+      },
+      recommendations: { type: "string" },
+      progression: { type: "string" },
+    },
+    required: ["overview", "weeklySchedule", "recommendations", "progression"],
+  },
   nutritionPlan: {
     type: "object",
     additionalProperties: false,
@@ -910,7 +936,233 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // 3. Preparar dados para OpenAI (incluindo histórico de planos)
+    // ✅ 3. Buscar dados normalizados das tabelas para reutilização
+    console.log("📊 Buscando dados normalizados para reutilização...");
+
+    interface NormalizedDataInsights {
+      aerobic?: {
+        averageFrequency: number;
+        averageDuration: number;
+        preferredActivities: string[];
+        lastProgression?: string | null;
+        intensityTrend?: string;
+      };
+      nutrition?: {
+        averageCalories: number;
+        averageProtein: number;
+        averageCarbs: number;
+        averageFats: number;
+        calorieTrend?: string;
+      };
+      training?: {
+        commonExercises: string[];
+        averageFrequency: number;
+        lastProgression?: string | null;
+      };
+      analysis?: {
+        commonStrengths: string[];
+        commonImprovements: string[];
+      };
+    }
+
+    const normalizedInsights: NormalizedDataInsights = {};
+
+    // Buscar dados de treino aeróbico
+    const { data: historicalAerobic } = await supabaseUser
+      .from("plan_aerobic")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (historicalAerobic && historicalAerobic.length > 0) {
+      console.log(
+        `✅ Encontrados ${historicalAerobic.length} registro(s) de treino aeróbico`
+      );
+
+      const activities = new Map<string, number>();
+      let totalFrequency = 0;
+      let totalDuration = 0;
+      let totalSessions = 0;
+
+      historicalAerobic.forEach((plan) => {
+        if (plan.weekly_schedule && Array.isArray(plan.weekly_schedule)) {
+          plan.weekly_schedule.forEach((session: any) => {
+            const activity = session.activity || "Não especificado";
+            activities.set(activity, (activities.get(activity) || 0) + 1);
+
+            // Extrair duração (ex: "30-40 minutos" -> média 35)
+            const durationMatch = session.duration?.match(/(\d+)/g);
+            if (durationMatch && durationMatch.length > 0) {
+              const durations = durationMatch.map(Number);
+              const avgDuration =
+                durations.reduce((a: number, b: number) => a + b, 0) /
+                durations.length;
+              totalDuration += avgDuration;
+              totalSessions++;
+            }
+          });
+          totalFrequency += plan.weekly_schedule.length;
+        }
+      });
+
+      normalizedInsights.aerobic = {
+        averageFrequency: totalFrequency / historicalAerobic.length,
+        averageDuration: totalSessions > 0 ? totalDuration / totalSessions : 0,
+        preferredActivities: Array.from(activities.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([activity]) => activity),
+        lastProgression: historicalAerobic[0]?.progression || null,
+        intensityTrend: historicalAerobic.length >= 2 ? "analisar" : undefined,
+      };
+    }
+
+    // Buscar dados nutricionais
+    const { data: historicalNutrition } = await supabaseUser
+      .from("plan_nutrition")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (historicalNutrition && historicalNutrition.length > 0) {
+      console.log(
+        `✅ Encontrados ${historicalNutrition.length} registro(s) nutricionais`
+      );
+
+      const calories = historicalNutrition
+        .map((n) => n.daily_calories)
+        .filter((c): c is number => typeof c === "number" && c > 0);
+      const proteins = historicalNutrition
+        .map((n) => n.protein_grams)
+        .filter((p): p is number => typeof p === "number" && p > 0);
+      const carbs = historicalNutrition
+        .map((n) => n.carbs_grams)
+        .filter((c): c is number => typeof c === "number" && c > 0);
+      const fats = historicalNutrition
+        .map((n) => n.fats_grams)
+        .filter((f): f is number => typeof f === "number" && f > 0);
+
+      const avgCalories =
+        calories.length > 0
+          ? calories.reduce((a, b) => a + b, 0) / calories.length
+          : 0;
+      const avgProtein =
+        proteins.length > 0
+          ? proteins.reduce((a, b) => a + b, 0) / proteins.length
+          : 0;
+      const avgCarbs =
+        carbs.length > 0 ? carbs.reduce((a, b) => a + b, 0) / carbs.length : 0;
+      const avgFats =
+        fats.length > 0 ? fats.reduce((a, b) => a + b, 0) / fats.length : 0;
+
+      normalizedInsights.nutrition = {
+        averageCalories: Math.round(avgCalories),
+        averageProtein: Math.round(avgProtein),
+        averageCarbs: Math.round(avgCarbs),
+        averageFats: Math.round(avgFats),
+        calorieTrend:
+          calories.length >= 2
+            ? calories[0] > calories[calories.length - 1]
+              ? "diminuindo"
+              : "aumentando"
+            : undefined,
+      };
+    }
+
+    // Buscar dados de treino de força
+    const { data: historicalTraining } = await supabaseUser
+      .from("plan_trainings")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (historicalTraining && historicalTraining.length > 0) {
+      console.log(
+        `✅ Encontrados ${historicalTraining.length} registro(s) de treino de força`
+      );
+
+      const exercises = new Map<string, number>();
+      let totalFrequency = 0;
+
+      historicalTraining.forEach((plan) => {
+        if (plan.exercises && Array.isArray(plan.exercises)) {
+          plan.exercises.forEach((day: any) => {
+            if (day.exercises && Array.isArray(day.exercises)) {
+              day.exercises.forEach((exercise: any) => {
+                const name = exercise.name || "Não especificado";
+                exercises.set(name, (exercises.get(name) || 0) + 1);
+              });
+            }
+          });
+          totalFrequency += plan.exercises.length;
+        }
+      });
+
+      normalizedInsights.training = {
+        commonExercises: Array.from(exercises.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([exercise]) => exercise),
+        averageFrequency: totalFrequency / historicalTraining.length,
+        lastProgression: historicalTraining[0]?.progression || null,
+      };
+    }
+
+    // Buscar dados de análise
+    const { data: historicalAnalysis } = await supabaseUser
+      .from("plan_analyses")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (historicalAnalysis && historicalAnalysis.length > 0) {
+      console.log(
+        `✅ Encontrados ${historicalAnalysis.length} registro(s) de análise`
+      );
+
+      const strengths = new Map<string, number>();
+      const improvements = new Map<string, number>();
+
+      historicalAnalysis.forEach((plan) => {
+        if (plan.strengths && Array.isArray(plan.strengths)) {
+          plan.strengths.forEach((strength: string) => {
+            strengths.set(strength, (strengths.get(strength) || 0) + 1);
+          });
+        }
+        if (plan.improvements && Array.isArray(plan.improvements)) {
+          plan.improvements.forEach((improvement: string) => {
+            improvements.set(
+              improvement,
+              (improvements.get(improvement) || 0) + 1
+            );
+          });
+        }
+      });
+
+      normalizedInsights.analysis = {
+        commonStrengths: Array.from(strengths.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([strength]) => strength),
+        commonImprovements: Array.from(improvements.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([improvement]) => improvement),
+      };
+    }
+
+    console.log("📊 Insights normalizados extraídos:", {
+      hasAerobic: !!normalizedInsights.aerobic,
+      hasNutrition: !!normalizedInsights.nutrition,
+      hasTraining: !!normalizedInsights.training,
+      hasAnalysis: !!normalizedInsights.analysis,
+    });
+
+    // 4. Preparar dados para OpenAI (incluindo histórico de planos e insights normalizados)
     // ✅ Garantir que estamos usando os dados mais recentes do perfil
     const userData = {
       // Dados básicos
@@ -954,6 +1206,9 @@ export async function POST(request: NextRequest) {
       // ✅ Histórico de planos anteriores para efeito composto
       previousPlans: planHistory,
       planInsights: planInsights,
+
+      // ✅ Insights normalizados das tabelas (para reutilização)
+      normalizedInsights: normalizedInsights,
     };
 
     // 4. Gerar plano com OpenAI (usando histórico de planos anteriores)
@@ -977,12 +1232,13 @@ IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o 
 
 ⚠️ CAMPOS RECOMENDADOS (temporariamente opcionais para testes):
 1. analysis - análise completa do status atual (RECOMENDADO)
-2. trainingPlan - plano de treino completo com weeklySchedule E progression (RECOMENDADO)
-3. nutritionPlan - plano nutricional completo com dailyCalories, macros, mealPlan E hydration (MUITO IMPORTANTE!)
-4. goals - metas semanais, mensais e indicadores de progresso (RECOMENDADO)
-5. motivation - mensagem personalizada e dicas motivacionais (RECOMENDADO - IMPORTANTE PARA MOTIVAR O USUÁRIO!)
+2. trainingPlan - plano de treino de FORÇA completo com weeklySchedule E progression (RECOMENDADO)
+3. aerobicTraining - plano de TREINO AERÓBICO/CARDIOVASCULAR (OBRIGATÓRIO - ver diretrizes abaixo)
+4. nutritionPlan - plano nutricional completo com dailyCalories, macros, mealPlan E hydration (MUITO IMPORTANTE!)
+5. goals - metas semanais, mensais e indicadores de progresso (RECOMENDADO)
+6. motivation - mensagem personalizada e dicas motivacionais (RECOMENDADO - IMPORTANTE PARA MOTIVAR O USUÁRIO!)
 
-Você pode retornar qualquer combinação desses campos. Tente incluir o máximo possível para oferecer um plano completo ao usuário.
+⚠️ **CRÍTICO: SEMPRE inclua o campo aerobicTraining em TODOS os planos!** Treino aeróbico é essencial para saúde cardiovascular e deve ser tratado com a mesma importância que treino de força.
 
 ## ANÁLISE ESTRATÉGICA BASEADA NO OBJETIVO E IMC:
 
@@ -1039,6 +1295,12 @@ Use esta tabela para definir a estratégia correta:
 - Foco em queima de gordura preservando massa magra
 - Proteína elevada (1.6-2.0g/kg) para preservação muscular
 - Metabolismo acelerado
+- **PRESCRIÇÃO DE FORÇA BASEADA EM IMC:**
+  - IMC < 30: 8-12 repetições, 3-4 séries
+  - IMC 30-34.9: 12-18 repetições, 3-4 séries (priorizar segurança articular)
+  - IMC ≥ 35: 15-20 repetições, 2-3 séries (máxima segurança, técnica perfeita)
+  - ⚠️ NUNCA prescreva menos de 10 repetições para IMC ≥ 30
+  - ⚠️ Para obesidade grau III (IMC ≥ 40): priorizar exercícios seguros, evitar sobrecarga articular
 
 #### 💪 GANHAR MASSA MUSCULAR:
 - **IMC < 25**: Superávit calórico moderado (TDEE + 200-400 kcal)
@@ -1060,6 +1322,11 @@ Use esta tabela para definir a estratégia correta:
 - Alta ingestão de PROTEÍNA (2.2-2.5g/kg de peso)
 - Redução moderada de carboidratos e gorduras
 - Objetivo: Perder GORDURA enquanto mantém/ganha MÚSCULO
+- **PRESCRIÇÃO DE FORÇA PARA RECOMPOSIÇÃO:**
+  - IMC 25-29.9: 8-12 repetições, 3-4 séries ⚠️ NÃO use 6-8 reps
+  - IMC 30-34.9: 10-15 repetições, 3-4 séries ⚠️ NÃO use menos de 10 reps
+  - IMC ≥ 35: 12-18 repetições, 2-3 séries ⚠️ NUNCA use menos de 12 reps
+  - Cargas moderadas (70-80% 1RM estimado), priorizar técnica sobre carga
 
 #### ⚖️ MANUTENÇÃO:
 - Calorias próximas ao TDEE (manutenção ou leve déficit de 100-200 kcal)
@@ -1094,11 +1361,85 @@ Use esta tabela para definir a estratégia correta:
    - Cronograma semanal específico para o objetivo
    - **SEMPRE inclua atividade cardiovascular/aeróbica** (2-5x por semana, dependendo do objetivo)
    - Exercícios selecionados para o objetivo
-   - Séries, repetições e descanso otimizados
+   - Séries, repetições e descanso otimizados BASEADOS NO IMC (ver diretrizes abaixo)
    - Progressão baseada no objetivo
    - Adaptações para local e limitações
    - **Para ganhar massa**: Cardio leve/moderado (2-3x/semana)
    - **Para emagrecer**: Cardio moderado/intenso (3-5x/semana) - etapa fundamental junto à alimentação
+
+### 🏋️ PRESCRIÇÃO DE TREINO DE FORÇA BASEADA EM IMC (ACSM/ESSA):
+
+⚠️ **CRÍTICO: A prescrição de repetições e séries DEVE ser ajustada baseada no IMC para segurança e eficácia!**
+
+#### 📊 DIRETRIZES DE REPETIÇÕES POR IMC:
+
+**IMC < 25 (Peso Normal/Abaixo do Peso):**
+- Ganhar Massa: 6-10 repetições (força/hipertrofia)
+- Emagrecer: 8-12 repetições (hipertrofia/endurance)
+- Manutenção: 8-15 repetições (endurance/força)
+- Séries: 3-4 por exercício
+- Descanso: 60-120 segundos
+
+**IMC 25-29.9 (Sobrepeso):**
+- Ganhar Massa (Recomposição): 8-12 repetições ⚠️ NÃO use 6-8 reps
+- Emagrecer: 10-15 repetições (priorizar endurance e queima calórica)
+- Manutenção: 10-15 repetições
+- Séries: 3-4 por exercício
+- Descanso: 60-90 segundos
+- ⚠️ Priorizar técnica sobre carga
+
+**IMC 30-34.9 (Obesidade Grau I):**
+- Ganhar Massa (Recomposição): 10-15 repetições ⚠️ NÃO use menos de 10 reps
+- Emagrecer: 12-18 repetições (endurance, segurança articular)
+- Manutenção: 12-15 repetições
+- Séries: 3-4 por exercício (começar com 3)
+- Descanso: 60-90 segundos
+- ⚠️ CRÍTICO: Focar em técnica perfeita, cargas moderadas, evitar sobrecarga articular
+
+**IMC ≥ 35 (Obesidade Grau II e III):**
+- Ganhar Massa (Recomposição): 12-18 repetições ⚠️ NUNCA use menos de 12 reps
+- Emagrecer: 15-20 repetições (endurance, segurança máxima)
+- Manutenção: 12-18 repetições
+- Séries: 2-3 por exercício (começar com 2, progredir para 3)
+- Descanso: 60-90 segundos (pode ser maior se necessário)
+- ⚠️ CRÍTICO: 
+  - Priorizar exercícios seguros (máquinas, movimentos controlados)
+  - Evitar exercícios de alto impacto ou sobrecarga articular excessiva
+  - Focar em técnica perfeita antes de aumentar carga
+  - Adaptar exercícios para limitações de mobilidade
+  - Progressão muito gradual (aumentar carga apenas quando técnica estiver perfeita)
+
+#### 🎯 REGRAS ESPECÍFICAS POR OBJETIVO + IMC:
+
+**Para EMAGRECIMENTO com IMC ≥ 30:**
+- ⚠️ NUNCA prescreva menos de 10 repetições
+- Faixa ideal: 12-18 repetições (estudos mostram 9-12 reps eficazes, mas para obesos grau II/III, 12-18 é mais seguro)
+- Objetivo: Endurance muscular + queima calórica + preservação de massa magra
+- Cargas moderadas (60-70% 1RM estimado)
+- Maior volume total (mais exercícios, mais séries) com cargas menores
+
+**Para RECOMPOSIÇÃO (IMC ≥ 25 + Ganhar Massa):**
+- ⚠️ NUNCA prescreva 6-8 repetições (isso é para força máxima, não adequado para recomposição)
+- Faixa ideal: 8-12 repetições (IMC 25-29.9) ou 10-15 repetições (IMC ≥ 30)
+- Objetivo: Hipertrofia + perda de gordura simultânea
+- Cargas moderadas a altas (70-80% 1RM estimado)
+- Volume moderado-alto
+
+**Para GANHAR MASSA com IMC < 25:**
+- Faixa: 6-10 repetições (força/hipertrofia)
+- Cargas altas (75-85% 1RM estimado)
+- Volume moderado
+
+#### ⚠️ VALIDAÇÃO OBRIGATÓRIA ANTES DE RETORNAR:
+
+Antes de retornar o plano de treino, SEMPRE verifique:
+1. ✅ Para IMC ≥ 30: repetições estão entre 10-20? (NUNCA menos de 10)
+2. ✅ Para IMC ≥ 35: repetições estão entre 12-20? (NUNCA menos de 12)
+3. ✅ Para emagrecimento + IMC ≥ 30: repetições estão entre 12-18?
+4. ✅ Exercícios são seguros para o IMC do usuário? (evitar sobrecarga articular excessiva)
+5. ✅ Descanso está adequado? (60-90s para obesos, pode ser maior se necessário)
+
+**Se qualquer validação falhar, ajuste o plano antes de retornar!**
 
 3. **PLANO ALIMENTAR ESTRATÉGICO DETALHADO**
    - Calorias diárias calculadas para o objetivo
@@ -1122,9 +1463,28 @@ Use esta tabela para definir a estratégia correta:
    - Encorajamento específico para o objetivo (emagrecimento, hipertrofia, etc.)
    - Lembre-se: motivação é crucial para o sucesso do plano!
 
-## 🏃‍♂️ ATIVIDADE CARDIOVASCULAR (OBRIGATÓRIA EM TODOS OS PLANOS):
+## 🏃‍♂️ TREINO AERÓBICO/CARDIOVASCULAR (OBRIGATÓRIO - CAMPO SEPARADO aerobicTraining):
 
-⚠️ **REGRA CRÍTICA: SEMPRE inclua atividade aeróbica/cardiovascular em TODOS os planos de treino, independente do objetivo!**
+⚠️ **REGRA CRÍTICA: SEMPRE inclua o campo aerobicTraining em TODOS os planos!** 
+
+Treino aeróbico é de SUMA IMPORTÂNCIA para qualquer prática de atividade física:
+- Essencial para saúde cardiovascular (reduz risco de doenças cardíacas)
+- Fundamental para queima de gordura e déficit calórico
+- Melhora condicionamento físico geral
+- Ajuda na recuperação entre treinos de força
+- Recomendado por órgãos regulamentadores (OMS, ACSM) como parte essencial de qualquer programa de exercícios
+
+### 📋 DIRETRIZES BASEADAS EM OMS E ACSM:
+
+**OMS (Organização Mundial da Saúde):**
+- Mínimo: 150 minutos/semana de atividade moderada OU 75 minutos/semana de atividade intensa
+- Recomendado: 300 minutos/semana de moderada OU 150 minutos/semana de intensa
+- Para benefícios adicionais: combinar com treino de força 2x/semana
+
+**ACSM (American College of Sports Medicine):**
+- Cardio moderado: 30-60 minutos, 5x/semana
+- Cardio intenso: 20-60 minutos, 3x/semana
+- Frequência cardíaca alvo: 64-76% da FCmáx (moderado) ou 77-95% da FCmáx (intenso)
 
 ### 📋 INTENSIDADE BASEADA NO OBJETIVO:
 
@@ -1164,30 +1524,49 @@ Use esta tabela para definir a estratégia correta:
 - Tipos recomendados: caminhada, yoga flow, dança, ciclismo recreativo
 - **Objetivo**: Manter saúde cardiovascular e bem-estar geral
 
-### ✅ REGRAS OBRIGATÓRIAS PARA ATIVIDADE CARDIOVASCULAR:
+### ✅ ESTRUTURA OBRIGATÓRIA DO CAMPO aerobicTraining:
 
-1. **SEMPRE inclua pelo menos 2-3 sessões de cardio por semana** em TODOS os planos
-2. **Especifique duração, intensidade e tipo** de atividade cardiovascular
-3. **Ajuste a intensidade baseado no objetivo** (leve para ganhar massa, moderado/intenso para emagrecer)
-4. **Para emagrecimento**: Cardio é etapa FUNDAMENTAL junto à alimentação - não omita!
-5. **Para ganhar massa**: Cardio leve/moderado é importante para saúde cardiovascular e recuperação
-6. **Inclua opções variadas** de atividades aeróbicas (caminhada, corrida, ciclismo, natação, HIIT, etc.)
-7. **Considere o local de treino** do usuário (academia, casa, ao ar livre)
+SEMPRE retorne o campo aerobicTraining com a seguinte estrutura:
 
-### 📝 EXEMPLOS DE COMO INCLUIR NO PLANO:
+O campo deve conter:
+- overview: descrição geral da importância do treino aeróbico
+- weeklySchedule: array com objetos contendo day, activity, duration, intensity, heartRateZone (opcional), notes (opcional)
+- recommendations: recomendações específicas baseadas em OMS/ACSM
+- progression: como progredir o treino ao longo das semanas
 
-**Exemplo para Ganhar Massa:**
-- "Segunda-feira: Treino de força + 20min cardio leve (caminhada ou elíptico)"
-- "Quarta-feira: Treino de força + 20min cardio leve"
-- "Sábado: 30-40min caminhada ou ciclismo leve"
+Exemplo de estrutura esperada:
+- Dia: Segunda-feira, Atividade: Caminhada rápida, Duração: 30-40min, Intensidade: Moderada (65-75% FCmáx)
+- Dia: Quarta-feira, Atividade: Ciclismo, Duração: 30-45min, Intensidade: Moderada (65-75% FCmáx)
+- Dia: Sábado, Atividade: Caminhada, Duração: 40-60min, Intensidade: Leve a moderada (60-70% FCmáx)
 
-**Exemplo para Emagrecer:**
-- "Segunda-feira: Treino de força + 30min HIIT ou corrida"
-- "Terça-feira: 45min cardio moderado (ciclismo ou esteira)"
-- "Quinta-feira: Treino de força + 30min cardio"
-- "Sábado: 60min caminhada ou corrida moderada"
+### ✅ REGRAS OBRIGATÓRIAS:
 
-⚠️ **NUNCA omita atividade cardiovascular do plano!** Ela é essencial para saúde, independente do objetivo.
+1. **SEMPRE inclua o campo aerobicTraining separado do trainingPlan**
+2. **Mínimo 2-3 sessões por semana** (seguindo diretrizes OMS: mínimo 150min/semana moderado)
+3. **Especifique: dia, atividade, duração, intensidade, zona de FC (quando possível)**
+4. **Ajuste baseado no objetivo:**
+   - Ganhar massa: 2-3x/semana, leve a moderado (30-45min)
+   - Emagrecer: 3-5x/semana, moderado a intenso (30-60min) - ESSENCIAL!
+   - Manutenção: 2-4x/semana, moderado (30-45min)
+   - Condicionamento: 4-6x/semana, moderado a intenso (45-60min)
+5. **Inclua variedade**: caminhada, corrida, ciclismo, natação, elíptico, HIIT, escada, etc.
+6. **Considere local**: academia, casa, ao ar livre
+7. **Siga diretrizes OMS/ACSM** para frequência e intensidade mínimas
+
+### 📝 EXEMPLOS POR OBJETIVO:
+
+**Para Ganhar Massa (2-3x/semana, leve a moderado):**
+- Segunda: 30min caminhada rápida ou elíptico (60-70% FCmáx)
+- Quarta: 30-40min ciclismo leve (60-70% FCmáx)
+- Sábado: 40min caminhada ao ar livre (60-65% FCmáx)
+
+**Para Emagrecer (3-5x/semana, moderado a intenso - ESSENCIAL!):**
+- Segunda: 30min HIIT ou corrida (75-85% FCmáx)
+- Terça: 45min ciclismo moderado (65-75% FCmáx)
+- Quinta: 30min HIIT ou escada (75-85% FCmáx)
+- Sábado: 60min caminhada ou corrida moderada (65-75% FCmáx)
+
+⚠️ **NUNCA omita o campo aerobicTraining!** É tão ou mais importante que o treino de força para saúde cardiovascular e resultados.
 
 ## REGRAS NUTRICIONAIS ESPECÍFICAS:
 - SEMPRE especifique quantidades EXATAS (gramas, xícaras, unidades)
@@ -1411,6 +1790,204 @@ ${idx + 1}º Plano (${
 `
 }
 
+${
+  userData.normalizedInsights?.aerobic
+    ? `
+🏃‍♂️ HISTÓRICO DE TREINOS AERÓBICOS (DADOS NORMALIZADOS):
+- Frequência média histórica: ${userData.normalizedInsights.aerobic.averageFrequency.toFixed(
+        1
+      )}x por semana
+- Duração média: ${userData.normalizedInsights.aerobic.averageDuration.toFixed(
+        0
+      )} minutos por sessão
+- Atividades preferidas do usuário: ${
+        userData.normalizedInsights.aerobic.preferredActivities.join(", ") ||
+        "Nenhuma preferência identificada"
+      }
+${
+  userData.normalizedInsights.aerobic.lastProgression
+    ? `- Última estratégia de progressão: ${userData.normalizedInsights.aerobic.lastProgression}`
+    : ""
+}
+
+💡 RECOMENDAÇÃO: Use esses dados para criar um plano PROGRESSIVO. Se o usuário já fazia ${userData.normalizedInsights.aerobic.averageFrequency.toFixed(
+        1
+      )}x/semana, considere aumentar gradualmente (se o objetivo permitir) ou manter se já está adequado. Priorize as atividades que o usuário já demonstrou preferência: ${
+        userData.normalizedInsights.aerobic.preferredActivities
+          .slice(0, 2)
+          .join(" e ") || "atividades variadas"
+      }.
+`
+    : ""
+}
+
+${
+  userData.normalizedInsights?.nutrition
+    ? `
+🍎 HISTÓRICO NUTRICIONAL (DADOS NORMALIZADOS):
+- Calorias médias históricas: ${
+        userData.normalizedInsights.nutrition.averageCalories
+      } kcal/dia
+- Proteína média: ${userData.normalizedInsights.nutrition.averageProtein}g/dia
+- Carboidratos médios: ${
+        userData.normalizedInsights.nutrition.averageCarbs
+      }g/dia
+- Gorduras médias: ${userData.normalizedInsights.nutrition.averageFats}g/dia
+${
+  userData.normalizedInsights.nutrition.calorieTrend
+    ? `- Tendência calórica: ${userData.normalizedInsights.nutrition.calorieTrend}`
+    : ""
+}
+
+💡 RECOMENDAÇÃO: Use esses dados como referência, mas SEMPRE ajuste baseado no peso atual (${
+        userData.weight
+      } kg) e objetivo atual (${userData.objective}). Se as calorias estavam ${
+        userData.normalizedInsights.nutrition.calorieTrend || "estáveis"
+      }, considere ajustar conforme o progresso do usuário.
+`
+    : ""
+}
+
+${
+  userData.normalizedInsights?.training
+    ? `
+💪 HISTÓRICO DE TREINOS DE FORÇA (DADOS NORMALIZADOS):
+- Frequência média: ${userData.normalizedInsights.training.averageFrequency.toFixed(
+        1
+      )} dias por semana
+- Exercícios mais utilizados: ${
+        userData.normalizedInsights.training.commonExercises.join(", ") ||
+        "Nenhum padrão identificado"
+      }
+${
+  userData.normalizedInsights.training.lastProgression
+    ? `- Última estratégia de progressão: ${userData.normalizedInsights.training.lastProgression}`
+    : ""
+}
+
+💡 RECOMENDAÇÃO: Considere incluir os exercícios que o usuário já está familiarizado (${
+        userData.normalizedInsights.training.commonExercises
+          .slice(0, 3)
+          .join(", ") || "exercícios variados"
+      }) e adicionar variações ou novos exercícios para progressão. Mantenha ou aumente a frequência baseado no objetivo.
+`
+    : ""
+}
+
+${
+  userData.normalizedInsights?.analysis
+    ? `
+📊 ANÁLISE HISTÓRICA (DADOS NORMALIZADOS):
+- Pontos fortes recorrentes: ${
+        userData.normalizedInsights.analysis.commonStrengths.join(", ") ||
+        "Nenhum padrão identificado"
+      }
+- Áreas de melhoria recorrentes: ${
+        userData.normalizedInsights.analysis.commonImprovements.join(", ") ||
+        "Nenhum padrão identificado"
+      }
+
+💡 RECOMENDAÇÃO: Use esses padrões para reforçar os pontos fortes e focar nas áreas que precisam de mais atenção. Se certas melhorias aparecem repetidamente, considere estratégias mais específicas para essas áreas.
+`
+    : ""
+}
+
+### 🎨 VARIAÇÃO DINÂMICA E PREVENÇÃO DE MONOTONIA:
+
+⚠️ **CRÍTICO: Evite repetir exatamente os mesmos exercícios e alimentos dos planos anteriores!**
+
+O usuário precisa de **VARIAÇÃO** para evitar:
+- Efeitos platô (adaptação do corpo)
+- Desânimo e monotonia
+- Perda de motivação
+
+#### 📋 DIRETRIZES PARA VARIAÇÃO DE EXERCÍCIOS:
+
+**Exercícios já utilizados (identificados no histórico):**
+${
+  userData.normalizedInsights?.training?.commonExercises &&
+  userData.normalizedInsights.training.commonExercises.length > 0
+    ? `- ${userData.normalizedInsights.training.commonExercises.join(", ")}`
+    : "- Nenhum exercício identificado no histórico (primeiro plano ou histórico insuficiente)"
+}
+
+**ESTRATÉGIA DE VARIAÇÃO:**
+1. **Substituições Inteligentes**: Se o usuário já fez "Supino Plano", considere:
+   - Variação: Supino Inclinado, Supino Declinado, Supino com Halteres, Supino na Máquina
+   - Exercício equivalente: Flexão de Braço (se treino em casa), Paralelas
+   - **Mantenha o mesmo grupo muscular e padrão de movimento, mas varie o estímulo**
+
+2. **Alternância Livre vs Máquina**: 
+   - Se o histórico mostra muitos exercícios com máquinas → adicione exercícios livres (peso livre, halteres)
+   - Se o histórico mostra muitos exercícios livres → adicione exercícios em máquinas (mais controle, menos risco)
+   - **Exemplo**: Se fez "Leg Press" (máquina), considere "Agachamento Livre" ou "Agachamento com Halteres"
+
+3. **Variações de Grip/Posição**:
+   - Rosca Direta → Rosca Martelo, Rosca Alternada, Rosca Concentrada
+   - Agachamento → Agachamento Sumô, Agachamento Búlgaro, Agachamento Frontal
+   - **Mantém o mesmo exercício base, mas muda o estímulo**
+
+4. **Progressão com Novidades**:
+   - Se o usuário já domina exercícios básicos → adicione exercícios mais complexos ou compostos
+   - **Exemplo**: Se fez "Remada Curvada", considere "Remada Unilateral", "Remada T", "Puxada Frontal"
+   - **Sempre dentro dos parâmetros de segurança para o IMC do usuário**
+
+5. **Regra 70/30**:
+   - **70%**: Exercícios familiares ou variações próximas (para manter progressão e confiança)
+   - **30%**: Exercícios novos ou variações mais diferentes (para novidade e evitar platô)
+   - **NUNCA**: Inventar exercícios malucos ou não testados
+
+#### 🍎 DIRETRIZES PARA VARIAÇÃO DE ALIMENTOS:
+
+**⚠️ IMPORTANTE**: Analise os planos anteriores (dados em previousPlans acima) para identificar alimentos que já foram utilizados nos mealPlan dos planos anteriores. Evite repetir exatamente os mesmos alimentos.
+
+**ESTRATÉGIA DE VARIAÇÃO NUTRICIONAL:**
+1. **Substituições Nutricionalmente Similares**:
+   - Se o histórico mostra muito "Frango grelhado" → Varie com: Peito de peru, Peixe (salmão, tilápia, atum), Carne magra, Ovos
+   - Se o histórico mostra muito "Arroz branco" → Varie com: Arroz integral, Batata doce, Batata inglesa, Quinoa, Aveia
+   - Se o histórico mostra muito "Brócolis" → Varie com: Espinafre, Couve, Abobrinha, Vagem, Aspargos
+   - **Mantenha os mesmos macronutrientes, mas varie o alimento**
+
+2. **Novidades Controladas**:
+   - Adicione 1-2 alimentos novos por refeição (não mais que isso)
+   - **Sempre dentro dos parâmetros nutricionais** (mesmas calorias, macros similares)
+   - **Exemplo**: Se sempre comeu "Iogurte grego", considere "Queijo cottage", "Ricota", "Kefir"
+
+3. **Preparações Diferentes**:
+   - Mesmo alimento, preparação diferente: Frango grelhado → Frango assado → Frango desfiado → Frango ao molho
+   - **Mantém a base nutricional, mas muda o sabor e textura**
+
+4. **Respeitando Restrições**:
+   - Se o usuário tem restrições alimentares: ${
+     userData.dietaryRestrictions || "Nenhuma"
+   }
+   - **NUNCA** sugira alimentos que violem essas restrições
+   - **SEMPRE** mantenha os limites de segurança nutricional (calorias mínimas, proteína, gorduras)
+
+#### ⚠️ REGRAS CRÍTICAS PARA VARIAÇÃO:
+
+1. ✅ **VARIE, mas dentro dos parâmetros**: Não invente coisas malucas ou não testadas
+2. ✅ **MANTENHA progressão**: Variação não significa regressão - sempre evolua
+3. ✅ **RESPEITE segurança**: Para IMC ≥ 30, priorize exercícios seguros mesmo nas variações
+4. ✅ **CONSIDERE histórico**: Use os dados normalizados acima para identificar o que já foi usado
+5. ✅ **BALANCEIE familiaridade e novidade**: 70% familiar, 30% novo (regra geral)
+6. ✅ **NUNCA repita exatamente**: Se o usuário já fez "Supino Plano" nos últimos 2-3 planos, use uma variação
+7. ✅ **MANTENHA objetivos**: Variação não significa mudar o objetivo - sempre alinhado ao objetivo do usuário
+
+#### 📊 EXEMPLO PRÁTICO DE VARIAÇÃO:
+
+**Se o histórico mostra:**
+- Exercícios: Supino Plano, Agachamento, Remada Curvada, Rosca Direta
+- Alimentos: Frango grelhado, Arroz branco, Brócolis, Iogurte grego
+
+**NOVO PLANO DEVE INCLUIR:**
+- **Variações de exercícios**: Supino Inclinado (ou Supino com Halteres), Agachamento Frontal (ou Agachamento Sumô), Remada Unilateral (ou Puxada Frontal), Rosca Martelo (ou Rosca Alternada)
+- **Novos exercícios** (30%): Desenvolvimento com Halteres, Elevação Lateral, Tríceps Francês
+- **Variações de alimentos**: Peito de peru (ou Salmão), Arroz integral (ou Batata doce), Espinafre (ou Couve), Queijo cottage (ou Ricota)
+- **Novos alimentos** (30%): Quinoa, Abacate, Castanhas
+
+**SEMPRE mantendo**: Mesmos grupos musculares, mesmos macronutrientes, mesma progressão, mesma segurança.
+
 ⚠️ IMPORTANTE: Baseie TODO o plano no objetivo "${
               userData.objective
             }". Seja específico e estratégico para atingir esse objetivo específico.
@@ -1441,11 +2018,14 @@ ${
 ⚠️ ATENÇÃO CRÍTICA: Você DEVE retornar pelo menos os campos obrigatórios do JSON:
 - analysis (obrigatório)
 - trainingPlan (obrigatório) 
+- aerobicTraining (OBRIGATÓRIO - ver diretrizes acima sobre treino aeróbico)
 
 Campos altamente recomendados (INCLUA SEMPRE QUE POSSÍVEL):
 - nutritionPlan (recomendado) - incluir dailyCalories, macros, mealPlan, hydration
 - goals (recomendado) - incluir weekly, monthly, tracking
 - motivation (recomendado - MUITO IMPORTANTE!) - incluir personalMessage e tips
+
+⚠️ CRÍTICO: O campo aerobicTraining é OBRIGATÓRIO! Treino aeróbico é essencial para saúde cardiovascular e deve ser tratado com a mesma importância que treino de força. SEMPRE inclua este campo seguindo as diretrizes OMS/ACSM.
 
 ⚠️ IMPORTANTE: O campo motivation é especialmente importante para manter o usuário motivado. Sempre inclua uma mensagem personalizada e dicas motivacionais baseadas no objetivo do usuário!
 
@@ -1504,6 +2084,35 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
                     progression: { type: "string" },
                   },
                   required: ["overview", "weeklySchedule", "progression"],
+                },
+                aerobicTraining: {
+                  type: "object",
+                  properties: {
+                    overview: { type: "string" },
+                    weeklySchedule: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          day: { type: "string" },
+                          activity: { type: "string" },
+                          duration: { type: "string" },
+                          intensity: { type: "string" },
+                          heartRateZone: { type: "string" },
+                          notes: { type: "string" },
+                        },
+                        required: ["day", "activity", "duration", "intensity"],
+                      },
+                    },
+                    recommendations: { type: "string" },
+                    progression: { type: "string" },
+                  },
+                  required: [
+                    "overview",
+                    "weeklySchedule",
+                    "recommendations",
+                    "progression",
+                  ],
                 },
                 nutritionPlan: {
                   type: "object",
@@ -2231,6 +2840,17 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
 
     console.log("✅ Plano validado com sucesso!");
 
+    // ✅ Adicionar metadata do peso no momento da geração ao plan_data
+    // Isso permite exibir o peso histórico correto quando o plano for visualizado depois
+    const planWithMetadata = {
+      ...plan,
+      metadata: {
+        weightAtGeneration: profile?.weight || null, // Peso no momento da geração
+        heightAtGeneration: profile?.height || null, // Altura no momento da geração
+        generatedAt: new Date().toISOString(),
+      },
+    };
+
     // ✅ Salvar o plano na tabela user_plans
     const generatedAt = new Date().toISOString();
     const expiresAt = new Date();
@@ -2269,7 +2889,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       .from("user_plans")
       .insert({
         user_id: user.id,
-        plan_data: plan,
+        plan_data: planWithMetadata, // ✅ Salvar com metadata do peso
         plan_type: "complete",
         generated_at: generatedAt,
         expires_at: expiresAt.toISOString(),
@@ -2283,6 +2903,151 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       // Não falhar aqui - o plano foi gerado com sucesso
     } else {
       console.log("✅ Plano salvo com sucesso na user_plans:", savedPlan?.id);
+    }
+
+    // ✅ Ingestão automática em tabelas normalizadas (idempotente)
+    try {
+      const planId = savedPlan?.id;
+      if (planId) {
+        // plan_analyses
+        if (plan?.analysis) {
+          const { data: existsAnalysis } = await supabaseUser
+            .from("plan_analyses")
+            .select("id")
+            .eq("plan_id", planId)
+            .maybeSingle();
+          if (!existsAnalysis) {
+            const strengths = Array.isArray(plan.analysis.strengths)
+              ? plan.analysis.strengths
+              : [];
+            const improvements = Array.isArray(plan.analysis.improvements)
+              ? plan.analysis.improvements
+              : [];
+            const special = Array.isArray(plan.analysis.specialConsiderations)
+              ? plan.analysis.specialConsiderations
+              : [];
+            const { error: insertAnalysisError } = await supabaseUser
+              .from("plan_analyses")
+              .insert({
+                plan_id: planId,
+                user_id: user.id,
+                current_status: plan.analysis.currentStatus ?? null,
+                strengths,
+                improvements,
+                special_considerations: special,
+              });
+            if (insertAnalysisError) {
+              console.warn(
+                "⚠️ Falha ao inserir plan_analyses:",
+                insertAnalysisError
+              );
+            }
+          }
+        }
+
+        // plan_trainings
+        if (plan?.trainingPlan) {
+          const { data: existsTraining } = await supabaseUser
+            .from("plan_trainings")
+            .select("id")
+            .eq("plan_id", planId)
+            .maybeSingle();
+          if (!existsTraining) {
+            const { error: insertTrainingError } = await supabaseUser
+              .from("plan_trainings")
+              .insert({
+                plan_id: planId,
+                user_id: user.id,
+                overview: plan.trainingPlan.overview ?? null,
+                progression: plan.trainingPlan.progression ?? null,
+                exercises: plan.trainingPlan.weeklySchedule ?? null,
+              });
+            if (insertTrainingError) {
+              console.warn(
+                "⚠️ Falha ao inserir plan_trainings:",
+                insertTrainingError
+              );
+            }
+          }
+        }
+
+        // plan_nutrition
+        if (plan?.nutritionPlan) {
+          const { data: existsNutrition } = await supabaseUser
+            .from("plan_nutrition")
+            .select("id")
+            .eq("plan_id", planId)
+            .maybeSingle();
+          if (!existsNutrition) {
+            const toNumber = (val: any): number | null => {
+              if (val === null || val === undefined) return null;
+              if (typeof val === "number") return val;
+              if (typeof val === "string") {
+                const num = Number(
+                  val.replace(/[^\d.,-]/g, "").replace(",", ".")
+                );
+                return Number.isFinite(num) ? num : null;
+              }
+              return null;
+            };
+            const dailyCalories = toNumber(plan.nutritionPlan.dailyCalories);
+            const protein = toNumber(plan.nutritionPlan.macros?.protein);
+            const carbs = toNumber(plan.nutritionPlan.macros?.carbs);
+            const fats = toNumber(plan.nutritionPlan.macros?.fats);
+            const { error: insertNutritionError } = await supabaseUser
+              .from("plan_nutrition")
+              .insert({
+                plan_id: planId,
+                user_id: user.id,
+                daily_calories: dailyCalories,
+                protein_grams: protein,
+                carbs_grams: carbs,
+                fats_grams: fats,
+                meal_plan: plan.nutritionPlan.mealPlan ?? null,
+              });
+            if (insertNutritionError) {
+              console.warn(
+                "⚠️ Falha ao inserir plan_nutrition:",
+                insertNutritionError
+              );
+            }
+          }
+        }
+
+        // plan_aerobic
+        if (plan?.aerobicTraining) {
+          const { data: existsAerobic } = await supabaseUser
+            .from("plan_aerobic")
+            .select("id")
+            .eq("plan_id", planId)
+            .maybeSingle();
+          if (!existsAerobic) {
+            const { error: insertAerobicError } = await supabaseUser
+              .from("plan_aerobic")
+              .insert({
+                plan_id: planId,
+                user_id: user.id,
+                overview: plan.aerobicTraining.overview ?? null,
+                weekly_schedule: plan.aerobicTraining.weeklySchedule ?? null,
+                recommendations: plan.aerobicTraining.recommendations ?? null,
+                progression: plan.aerobicTraining.progression ?? null,
+              });
+            if (insertAerobicError) {
+              console.warn(
+                "⚠️ Falha ao inserir plan_aerobic:",
+                insertAerobicError
+              );
+            } else {
+              console.log("✅ Treino aeróbico inserido em plan_aerobic");
+            }
+          }
+        }
+      }
+    } catch (ingestionError) {
+      console.warn(
+        "⚠️ Erro na ingestão automática de dados normalizados:",
+        ingestionError
+      );
     }
 
     // 4. Criar marcador de controle mensal simples
@@ -2424,7 +3189,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
     return NextResponse.json({
       success: true,
       message: "Plano personalizado gerado com sucesso!",
-      plan,
+      plan: planWithMetadata, // ✅ Retornar plano com metadata (peso histórico)
       planId: savedPlan?.id || planMarker?.[0]?.id || null,
       isExisting: !isNewPlan, // false se é plano novo, true se é plano existente
       generatedAt: generatedAt,

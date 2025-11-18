@@ -30,6 +30,12 @@ type PlanData = {
   analysis?: PlanAnalysis;
   trainingPlan?: TrainingPlan;
   nutritionPlan?: NutritionPlan;
+  aerobicTraining?: {
+    overview?: string;
+    weeklySchedule?: unknown;
+    recommendations?: string;
+    progression?: string;
+  };
 };
 
 function getSupabaseUserClient(token: string) {
@@ -151,6 +157,7 @@ export async function POST(request: NextRequest) {
       analysesInserted: 0,
       trainingsInserted: 0,
       nutritionInserted: 0,
+      aerobicInserted: 0,
       skipped: 0,
     };
 
@@ -167,8 +174,9 @@ export async function POST(request: NextRequest) {
       const hasAnalysis = !!planData.analysis;
       const hasTraining = !!planData.trainingPlan;
       const hasNutrition = !!planData.nutritionPlan;
+      const hasAerobic = !!planData.aerobicTraining;
 
-      if (!hasAnalysis && !hasTraining && !hasNutrition) {
+      if (!hasAnalysis && !hasTraining && !hasNutrition && !hasAerobic) {
         processed.skipped += 1;
         continue;
       }
@@ -262,6 +270,28 @@ export async function POST(request: NextRequest) {
           });
           if (!error) processed.nutritionInserted += 1;
           else console.warn("⚠️ Falha ao inserir plan_nutrition:", error);
+        }
+      }
+
+      // plan_aerobic
+      if (hasAerobic) {
+        const { data: exists } = await supabaseUser
+          .from("plan_aerobic")
+          .select("id")
+          .eq("plan_id", p.id)
+          .maybeSingle();
+
+        if (!exists && !dryRun) {
+          const { error } = await supabaseUser.from("plan_aerobic").insert({
+            plan_id: p.id,
+            user_id: p.user_id,
+            overview: planData.aerobicTraining?.overview || null,
+            weekly_schedule: planData.aerobicTraining?.weeklySchedule || null,
+            recommendations: planData.aerobicTraining?.recommendations || null,
+            progression: planData.aerobicTraining?.progression || null,
+          });
+          if (!error) processed.aerobicInserted += 1;
+          else console.warn("⚠️ Falha ao inserir plan_aerobic:", error);
         }
       }
     }

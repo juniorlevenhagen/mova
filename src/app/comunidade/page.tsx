@@ -166,8 +166,8 @@ export default function ComunidadePage() {
                       {social.followers
                         ? "seguidores"
                         : social.members
-                        ? "membros"
-                        : "inscritos"}
+                          ? "membros"
+                          : "inscritos"}
                     </p>
                   </div>
                 </div>

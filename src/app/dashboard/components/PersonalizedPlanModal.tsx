@@ -400,10 +400,14 @@ export function PersonalizedPlanModal({
   const tabs = [
     { id: "analysis", label: "Análise" },
     { id: "training", label: "Treino" },
-    ...(hasOptionalFields.aerobicTraining ? [{ id: "aerobic", label: "Aeróbico" }] : []),
+    ...(hasOptionalFields.aerobicTraining
+      ? [{ id: "aerobic", label: "Aeróbico" }]
+      : []),
     { id: "diet", label: "Dieta" },
     ...(hasOptionalFields.goals ? [{ id: "goals", label: "Metas" }] : []),
-    ...(hasOptionalFields.motivation ? [{ id: "motivation", label: "Motivação" }] : []),
+    ...(hasOptionalFields.motivation
+      ? [{ id: "motivation", label: "Motivação" }]
+      : []),
   ];
 
   // Garantir que activeTab seja válido (se a tab atual não existir, usar "analysis")
@@ -424,20 +428,25 @@ export function PersonalizedPlanModal({
       const maxWidth = pageWidth - 2 * margin;
 
       // Função auxiliar para adicionar texto com quebra de linha
-      const addText = (text: string, fontSize: number = 10, isBold: boolean = false, color: string = "#000000") => {
+      const addText = (
+        text: string,
+        fontSize: number = 10,
+        isBold: boolean = false,
+        color: string = "#000000"
+      ) => {
         doc.setFontSize(fontSize);
         doc.setFont("helvetica", isBold ? "bold" : "normal");
         doc.setTextColor(color);
-        
+
         // Quebrar texto em linhas que cabem na largura da página
-        const words = text.split(' ');
+        const words = text.split(" ");
         const lines: string[] = [];
-        let currentLine = '';
-        
+        let currentLine = "";
+
         words.forEach((word) => {
-          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          const testLine = currentLine + (currentLine ? " " : "") + word;
           const testWidth = doc.getTextWidth(testLine);
-          
+
           if (testWidth > maxWidth && currentLine) {
             lines.push(currentLine);
             currentLine = word;
@@ -448,13 +457,13 @@ export function PersonalizedPlanModal({
         if (currentLine) {
           lines.push(currentLine);
         }
-        
+
         // Verificar se precisa de nova página
-        if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
+        if (yPosition + lines.length * lineHeight > pageHeight - margin) {
           doc.addPage();
           yPosition = margin;
         }
-        
+
         // Adicionar linhas ao PDF
         lines.forEach((line: string) => {
           doc.text(line, margin, yPosition);
@@ -470,7 +479,7 @@ export function PersonalizedPlanModal({
       doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
       doc.text("Plano Personalizado", margin, 25);
-      
+
       yPosition = 50;
       doc.setTextColor(0, 0, 0);
 
@@ -515,7 +524,10 @@ export function PersonalizedPlanModal({
           });
         }
 
-        if (plan.analysis.improvements && plan.analysis.improvements.length > 0) {
+        if (
+          plan.analysis.improvements &&
+          plan.analysis.improvements.length > 0
+        ) {
           addText("Áreas de Melhoria:", 11, true);
           plan.analysis.improvements.forEach((improvement) => {
             addText(`• ${improvement}`, 10);
@@ -540,13 +552,19 @@ export function PersonalizedPlanModal({
           addText(plan.trainingPlan.overview, 10);
         }
 
-        if (plan.trainingPlan.weeklySchedule && plan.trainingPlan.weeklySchedule.length > 0) {
+        if (
+          plan.trainingPlan.weeklySchedule &&
+          plan.trainingPlan.weeklySchedule.length > 0
+        ) {
           addText("Cronograma Semanal:", 11, true);
           plan.trainingPlan.weeklySchedule.forEach((day) => {
             addText(`${day.day} - ${day.type}`, 10, true);
             if (day.exercises && day.exercises.length > 0) {
               day.exercises.forEach((exercise) => {
-                addText(`  • ${exercise.name} - ${exercise.sets} séries x ${exercise.reps} reps`, 9);
+                addText(
+                  `  • ${exercise.name} - ${exercise.sets} séries x ${exercise.reps} reps`,
+                  9
+                );
                 if (exercise.rest) {
                   addText(`    Descanso: ${exercise.rest}`, 9);
                 }
@@ -579,7 +597,10 @@ export function PersonalizedPlanModal({
           addText(plan.aerobicTraining.overview, 10);
         }
 
-        if (plan.aerobicTraining.weeklySchedule && plan.aerobicTraining.weeklySchedule.length > 0) {
+        if (
+          plan.aerobicTraining.weeklySchedule &&
+          plan.aerobicTraining.weeklySchedule.length > 0
+        ) {
           addText("Cronograma Semanal de Atividades Aeróbicas:", 11, true);
           plan.aerobicTraining.weeklySchedule.forEach((day) => {
             addText(`${day.day}`, 10, true);
@@ -620,7 +641,11 @@ export function PersonalizedPlanModal({
         doc.setTextColor(0, 0, 0);
 
         if (plan.nutritionPlan.dailyCalories) {
-          addText(`Calorias Diárias: ${plan.nutritionPlan.dailyCalories} kcal`, 11, true);
+          addText(
+            `Calorias Diárias: ${plan.nutritionPlan.dailyCalories} kcal`,
+            11,
+            true
+          );
         }
 
         if (plan.nutritionPlan.macros) {
@@ -636,14 +661,22 @@ export function PersonalizedPlanModal({
           }
         }
 
-        if (plan.nutritionPlan.mealPlan && plan.nutritionPlan.mealPlan.length > 0) {
+        if (
+          plan.nutritionPlan.mealPlan &&
+          plan.nutritionPlan.mealPlan.length > 0
+        ) {
           addText("Plano Alimentar:", 11, true);
           plan.nutritionPlan.mealPlan.forEach((meal) => {
             addText(`${meal.meal} - ${meal.timing}`, 10, true);
             if (meal.options && meal.options.length > 0) {
               meal.options.forEach((option) => {
-                const caloriesText = option.calories ? ` (${option.calories} kcal)` : "";
-                addText(`  • ${option.food} - ${option.quantity}${caloriesText}`, 9);
+                const caloriesText = option.calories
+                  ? ` (${option.calories} kcal)`
+                  : "";
+                addText(
+                  `  • ${option.food} - ${option.quantity}${caloriesText}`,
+                  9
+                );
               });
             }
             yPosition += 2;

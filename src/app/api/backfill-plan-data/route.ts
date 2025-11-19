@@ -65,9 +65,7 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    let authedUser:
-      | { id: string }
-      | null = null;
+    let authedUser: { id: string } | null = null;
     let tokenForUserClient: string | null = null;
 
     // 1) Tentar autenticar via Authorization: Bearer <token>
@@ -133,7 +131,10 @@ export async function POST(request: NextRequest) {
         );
 
     const { searchParams } = new URL(request.url);
-    const limit = Math.max(1, Math.min(200, Number(searchParams.get("limit")) || 50));
+    const limit = Math.max(
+      1,
+      Math.min(200, Number(searchParams.get("limit")) || 50)
+    );
     const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
     const dryRun = (searchParams.get("dryRun") || "false") === "true";
 
@@ -191,14 +192,17 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (!exists && !dryRun) {
-          const strengths =
-            Array.isArray(planData.analysis?.strengths) ? planData.analysis.strengths : [];
-          const improvements =
-            Array.isArray(planData.analysis?.improvements) ? planData.analysis.improvements : [];
-          const special =
-            Array.isArray(planData.analysis?.specialConsiderations)
-              ? planData.analysis.specialConsiderations
-              : [];
+          const strengths = Array.isArray(planData.analysis?.strengths)
+            ? planData.analysis.strengths
+            : [];
+          const improvements = Array.isArray(planData.analysis?.improvements)
+            ? planData.analysis.improvements
+            : [];
+          const special = Array.isArray(
+            planData.analysis?.specialConsiderations
+          )
+            ? planData.analysis.specialConsiderations
+            : [];
 
           const { error } = await supabaseUser.from("plan_analyses").insert({
             plan_id: p.id,
@@ -246,9 +250,12 @@ export async function POST(request: NextRequest) {
           // Extrair números de macros que podem vir como strings "180g"
           const toNumber = (val: unknown): number | null => {
             if (val === null || val === undefined) return null;
-            if (typeof val === "number") return Number.isFinite(val) ? val : null;
+            if (typeof val === "number")
+              return Number.isFinite(val) ? val : null;
             if (typeof val === "string") {
-              const num = Number(val.replace(/[^\d.,-]/g, "").replace(",", "."));
+              const num = Number(
+                val.replace(/[^\d.,-]/g, "").replace(",", ".")
+              );
               return Number.isFinite(num) ? num : null;
             }
             return null;
@@ -313,5 +320,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-

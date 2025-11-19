@@ -66,9 +66,10 @@ async function createEvolutionEntry(
       coxa: summary.thigh ? Number(summary.thigh.toFixed(0)) : null,
       objetivo: summary.goal || "Manter forma física",
       nivel_atividade: summary.trainingFrequency || "Moderado",
-      bem_estar: summary.wellBeing && typeof summary.wellBeing === "number" 
-        ? Math.round(summary.wellBeing) // Arredondar para inteiro
-        : 4, // Valor padrão positivo após avaliação se não houver informação
+      bem_estar:
+        summary.wellBeing && typeof summary.wellBeing === "number"
+          ? Math.round(summary.wellBeing) // Arredondar para inteiro
+          : 4, // Valor padrão positivo após avaliação se não houver informação
       observacoes: `Dados extraídos automaticamente de avaliação física. ${(
         summary.summary || ""
       ).substring(0, 200)}...`,
@@ -302,7 +303,8 @@ export async function POST(request: NextRequest) {
               },
               wellBeing: {
                 type: ["number", "null"],
-                description: "Nível de bem-estar da pessoa (escala de 1 a 5, onde 1 é muito mal e 5 é excelente). Se não houver informação explícita no documento, retorne null.",
+                description:
+                  "Nível de bem-estar da pessoa (escala de 1 a 5, onde 1 é muito mal e 5 é excelente). Se não houver informação explícita no documento, retorne null.",
                 minimum: 1,
                 maximum: 5,
               },

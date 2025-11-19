@@ -33,7 +33,12 @@ export interface UserActivity {
 export interface UserGoal {
   id: string;
   user_id: string;
-  tipo_meta: 'peso' | 'gordura' | 'treinos_semanais' | 'calorias' | 'massa_magra';
+  tipo_meta:
+    | "peso"
+    | "gordura"
+    | "treinos_semanais"
+    | "calorias"
+    | "massa_magra";
   valor_atual?: number;
   valor_meta: number;
   data_inicio: string;
@@ -79,7 +84,12 @@ export interface CreateActivityData {
 }
 
 export interface CreateGoalData {
-  tipo_meta: 'peso' | 'gordura' | 'treinos_semanais' | 'calorias' | 'massa_magra';
+  tipo_meta:
+    | "peso"
+    | "gordura"
+    | "treinos_semanais"
+    | "calorias"
+    | "massa_magra";
   valor_atual?: number;
   valor_meta: number;
   data_inicio?: string;

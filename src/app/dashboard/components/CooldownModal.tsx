@@ -33,10 +33,10 @@ export function CooldownModal({
         const nextDate = new Date(nextPlanAvailable);
         const diffMs = nextDate.getTime() - now.getTime();
         const diffHours = Math.max(0, diffMs / (1000 * 60 * 60));
-        
+
         const hours = Math.floor(diffHours);
         const minutes = Math.floor((diffHours - hours) * 60);
-        
+
         if (diffHours <= 0) {
           setTimeRemaining("0m");
           return false; // Cooldown terminou
@@ -50,7 +50,7 @@ export function CooldownModal({
         // Fallback: usar hoursRemaining se nextPlanAvailable não estiver disponível
         const hours = Math.floor(hoursRemaining);
         const minutes = Math.floor((hoursRemaining - hours) * 60);
-        
+
         if (hours > 0) {
           setTimeRemaining(`${hours}h ${minutes}m`);
         } else {
@@ -161,7 +161,8 @@ export function CooldownModal({
                   </span>
                 </div>
                 <div className="text-4xl font-bold text-amber-600 mb-2">
-                  {timeRemaining || `${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`}
+                  {timeRemaining ||
+                    `${Math.floor(hoursRemaining)}h ${Math.floor((hoursRemaining % 1) * 60)}m`}
                 </div>
                 {nextPlanAvailable && (
                   <div className="text-sm text-gray-500">
@@ -193,10 +194,13 @@ export function CooldownModal({
                   </svg>
                   <div className="flex-1">
                     <p className="text-sm text-blue-800 font-medium mb-1">
-                      Você ainda tem {availablePrompts} prompt{availablePrompts > 1 ? "s" : ""} disponível{availablePrompts > 1 ? "is" : ""}
+                      Você ainda tem {availablePrompts} prompt
+                      {availablePrompts > 1 ? "s" : ""} disponível
+                      {availablePrompts > 1 ? "is" : ""}
                     </p>
                     <p className="text-xs text-blue-600">
-                      Seus prompts estão seguros e aguardando o cooldown para uso responsável.
+                      Seus prompts estão seguros e aguardando o cooldown para
+                      uso responsável.
                     </p>
                   </div>
                 </div>
@@ -206,9 +210,13 @@ export function CooldownModal({
             {/* Explicação do Cooldown */}
             <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
               <p className="text-xs text-gray-600 leading-relaxed">
-                <strong className="font-medium text-gray-700">Por que o cooldown?</strong>
-                <br />
-                O cooldown de 24 horas garante que você tenha tempo adequado para implementar e testar cada plano antes de gerar um novo. Isso maximiza os resultados e garante um acompanhamento mais efetivo.
+                <strong className="font-medium text-gray-700">
+                  Por que o cooldown?
+                </strong>
+                <br />O cooldown de 24 horas garante que você tenha tempo
+                adequado para implementar e testar cada plano antes de gerar um
+                novo. Isso maximiza os resultados e garante um acompanhamento
+                mais efetivo.
               </p>
             </div>
           </div>
@@ -227,4 +235,3 @@ export function CooldownModal({
     </div>
   );
 }
-

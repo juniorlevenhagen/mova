@@ -44,7 +44,9 @@ export function PlanHistoryModal({
   const [plans, setPlans] = useState<PlanHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<PersonalizedPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PersonalizedPlan | null>(
+    null
+  );
   const [showPlanModal, setShowPlanModal] = useState(false);
 
   useEffect(() => {
@@ -134,20 +136,25 @@ export function PlanHistoryModal({
       const maxWidth = pageWidth - 2 * margin;
 
       // Função auxiliar para adicionar texto com quebra de linha
-      const addText = (text: string, fontSize: number = 10, isBold: boolean = false, color: string = "#000000") => {
+      const addText = (
+        text: string,
+        fontSize: number = 10,
+        isBold: boolean = false,
+        color: string = "#000000"
+      ) => {
         doc.setFontSize(fontSize);
         doc.setFont("helvetica", isBold ? "bold" : "normal");
         doc.setTextColor(color);
-        
+
         // Quebrar texto em linhas que cabem na largura da página
-        const words = text.split(' ');
+        const words = text.split(" ");
         const lines: string[] = [];
-        let currentLine = '';
-        
+        let currentLine = "";
+
         words.forEach((word) => {
-          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          const testLine = currentLine + (currentLine ? " " : "") + word;
           const testWidth = doc.getTextWidth(testLine);
-          
+
           if (testWidth > maxWidth && currentLine) {
             lines.push(currentLine);
             currentLine = word;
@@ -158,13 +165,13 @@ export function PlanHistoryModal({
         if (currentLine) {
           lines.push(currentLine);
         }
-        
+
         // Verificar se precisa de nova página
-        if (yPosition + (lines.length * lineHeight) > pageHeight - margin) {
+        if (yPosition + lines.length * lineHeight > pageHeight - margin) {
           doc.addPage();
           yPosition = margin;
         }
-        
+
         // Adicionar linhas ao PDF
         lines.forEach((line: string) => {
           doc.text(line, margin, yPosition);
@@ -180,7 +187,7 @@ export function PlanHistoryModal({
       doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
       doc.text("Plano Personalizado", margin, 25);
-      
+
       yPosition = 50;
       doc.setTextColor(0, 0, 0);
 
@@ -189,7 +196,10 @@ export function PlanHistoryModal({
       if (plan.summary.objective) {
         addText(`Objetivo: ${plan.summary.objective}`, 12, true);
       }
-      addText(`Tipo: ${plan.planType === "complete" ? "Completo" : plan.planType}`, 10);
+      addText(
+        `Tipo: ${plan.planType === "complete" ? "Completo" : plan.planType}`,
+        10
+      );
       if (plan.isActive) {
         addText("Status: Ativo", 10, true, "#10b981");
       }
@@ -211,14 +221,20 @@ export function PlanHistoryModal({
           addText(plan.planData.analysis.currentStatus, 10);
         }
 
-        if (plan.planData.analysis.strengths && plan.planData.analysis.strengths.length > 0) {
+        if (
+          plan.planData.analysis.strengths &&
+          plan.planData.analysis.strengths.length > 0
+        ) {
           addText("Pontos Fortes:", 11, true);
           plan.planData.analysis.strengths.forEach((strength) => {
             addText(`• ${strength}`, 10);
           });
         }
 
-        if (plan.planData.analysis.improvements && plan.planData.analysis.improvements.length > 0) {
+        if (
+          plan.planData.analysis.improvements &&
+          plan.planData.analysis.improvements.length > 0
+        ) {
           addText("Áreas de Melhoria:", 11, true);
           plan.planData.analysis.improvements.forEach((improvement) => {
             addText(`• ${improvement}`, 10);
@@ -243,13 +259,19 @@ export function PlanHistoryModal({
           addText(plan.planData.trainingPlan.overview, 10);
         }
 
-        if (plan.planData.trainingPlan.weeklySchedule && plan.planData.trainingPlan.weeklySchedule.length > 0) {
+        if (
+          plan.planData.trainingPlan.weeklySchedule &&
+          plan.planData.trainingPlan.weeklySchedule.length > 0
+        ) {
           addText("Cronograma Semanal:", 11, true);
           plan.planData.trainingPlan.weeklySchedule.forEach((day) => {
             addText(`${day.day} - ${day.type}`, 10, true);
             if (day.exercises && day.exercises.length > 0) {
               day.exercises.forEach((exercise) => {
-                addText(`  • ${exercise.name} - ${exercise.sets} séries x ${exercise.reps} reps`, 9);
+                addText(
+                  `  • ${exercise.name} - ${exercise.sets} séries x ${exercise.reps} reps`,
+                  9
+                );
                 if (exercise.rest) {
                   addText(`    Descanso: ${exercise.rest}`, 9);
                 }
@@ -278,30 +300,48 @@ export function PlanHistoryModal({
         doc.setTextColor(0, 0, 0);
 
         if (plan.planData.nutritionPlan.dailyCalories) {
-          addText(`Calorias Diárias: ${plan.planData.nutritionPlan.dailyCalories} kcal`, 11, true);
+          addText(
+            `Calorias Diárias: ${plan.planData.nutritionPlan.dailyCalories} kcal`,
+            11,
+            true
+          );
         }
 
         if (plan.planData.nutritionPlan.macros) {
           addText("Macronutrientes:", 11, true);
           if (plan.planData.nutritionPlan.macros.protein) {
-            addText(`Proteínas: ${plan.planData.nutritionPlan.macros.protein}`, 10);
+            addText(
+              `Proteínas: ${plan.planData.nutritionPlan.macros.protein}`,
+              10
+            );
           }
           if (plan.planData.nutritionPlan.macros.carbs) {
-            addText(`Carboidratos: ${plan.planData.nutritionPlan.macros.carbs}`, 10);
+            addText(
+              `Carboidratos: ${plan.planData.nutritionPlan.macros.carbs}`,
+              10
+            );
           }
           if (plan.planData.nutritionPlan.macros.fats) {
             addText(`Gorduras: ${plan.planData.nutritionPlan.macros.fats}`, 10);
           }
         }
 
-        if (plan.planData.nutritionPlan.mealPlan && plan.planData.nutritionPlan.mealPlan.length > 0) {
+        if (
+          plan.planData.nutritionPlan.mealPlan &&
+          plan.planData.nutritionPlan.mealPlan.length > 0
+        ) {
           addText("Plano Alimentar:", 11, true);
           plan.planData.nutritionPlan.mealPlan.forEach((meal) => {
             addText(`${meal.meal} - ${meal.timing}`, 10, true);
             if (meal.options && meal.options.length > 0) {
               meal.options.forEach((option) => {
-                const caloriesText = option.calories ? ` (${option.calories} kcal)` : "";
-                addText(`  • ${option.food} - ${option.quantity}${caloriesText}`, 9);
+                const caloriesText = option.calories
+                  ? ` (${option.calories} kcal)`
+                  : "";
+                addText(
+                  `  • ${option.food} - ${option.quantity}${caloriesText}`,
+                  9
+                );
               });
             }
             yPosition += 2;
@@ -326,14 +366,20 @@ export function PlanHistoryModal({
         yPosition += 10;
         doc.setTextColor(0, 0, 0);
 
-        if (plan.planData.goals.weekly && plan.planData.goals.weekly.length > 0) {
+        if (
+          plan.planData.goals.weekly &&
+          plan.planData.goals.weekly.length > 0
+        ) {
           addText("Metas Semanais:", 11, true);
           plan.planData.goals.weekly.forEach((goal) => {
             addText(`• ${goal}`, 10);
           });
         }
 
-        if (plan.planData.goals.monthly && plan.planData.goals.monthly.length > 0) {
+        if (
+          plan.planData.goals.monthly &&
+          plan.planData.goals.monthly.length > 0
+        ) {
           addText("Metas Mensais:", 11, true);
           plan.planData.goals.monthly.forEach((goal) => {
             addText(`• ${goal}`, 10);
@@ -357,7 +403,10 @@ export function PlanHistoryModal({
           addText(plan.planData.motivation.personalMessage, 10, true);
         }
 
-        if (plan.planData.motivation.tips && plan.planData.motivation.tips.length > 0) {
+        if (
+          plan.planData.motivation.tips &&
+          plan.planData.motivation.tips.length > 0
+        ) {
           addText("Dicas:", 11, true);
           plan.planData.motivation.tips.forEach((tip) => {
             addText(`• ${tip}`, 10);
@@ -475,7 +524,10 @@ export function PlanHistoryModal({
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            Plano {plan.planType === "complete" ? "Completo" : plan.planType}
+                            Plano{" "}
+                            {plan.planType === "complete"
+                              ? "Completo"
+                              : plan.planType}
                           </h3>
                           {plan.isActive && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -575,8 +627,7 @@ export function PlanHistoryModal({
               ? {
                   ...userProfile,
                   // ✅ Usar peso histórico se disponível, senão usar peso atual
-                  peso:
-                    getHistoricalWeight(selectedPlan) ?? userProfile.peso,
+                  peso: getHistoricalWeight(selectedPlan) ?? userProfile.peso,
                 }
               : undefined
           }
@@ -585,4 +636,3 @@ export function PlanHistoryModal({
     </>
   );
 }
-

@@ -49,4 +49,3 @@ export function useAdminAuth() {
 
   return { isAdmin, loading: loading || authLoading, user };
 }
-

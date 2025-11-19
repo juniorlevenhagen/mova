@@ -103,9 +103,7 @@ export function PromptPurchaseModal({
               </div>
             </div>
 
-            <h3 className="text-xl font-bold text-black mb-4">
-              Plano Básico
-            </h3>
+            <h3 className="text-xl font-bold text-black mb-4">Plano Básico</h3>
 
             <div className="mb-4">
               <div className="flex items-baseline gap-2 mb-1">
@@ -137,7 +135,9 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">1 prompt para gerar plano personalizado</span>
+                <span className="text-gray-700">
+                  1 prompt para gerar plano personalizado
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <svg
@@ -151,7 +151,9 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">Acesso ao dashboard completo</span>
+                <span className="text-gray-700">
+                  Acesso ao dashboard completo
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <svg
@@ -165,7 +167,9 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">Acompanhamento de evolução</span>
+                <span className="text-gray-700">
+                  Acompanhamento de evolução
+                </span>
               </li>
             </ul>
 
@@ -236,7 +240,9 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700 font-medium">3 prompts para gerar planos personalizados</span>
+                <span className="text-gray-700 font-medium">
+                  3 prompts para gerar planos personalizados
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <svg
@@ -250,7 +256,9 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">Acesso ao dashboard completo</span>
+                <span className="text-gray-700">
+                  Acesso ao dashboard completo
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <svg
@@ -264,7 +272,9 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">Acompanhamento de evolução</span>
+                <span className="text-gray-700">
+                  Acompanhamento de evolução
+                </span>
               </li>
               <li className="flex items-start gap-2">
                 <svg
@@ -287,7 +297,9 @@ export function PromptPurchaseModal({
               disabled={loading !== null}
               className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto whitespace-nowrap"
             >
-              {loading === "triple" ? "Processando..." : "Comprar Pacote (3 Prompts)"}
+              {loading === "triple"
+                ? "Processando..."
+                : "Comprar Pacote (3 Prompts)"}
             </button>
           </div>
         </div>
@@ -304,4 +316,3 @@ export function PromptPurchaseModal({
     </div>
   );
 }
-

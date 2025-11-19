@@ -127,11 +127,11 @@ function normalizePost(data: SupabasePost): BlogPost | null {
         Boolean(paragraph)
       )
     : typeof data.content === "string"
-    ? data.content
-        .split(/\n{2,}/)
-        .map((paragraph) => paragraph.trim())
-        .filter(Boolean)
-    : [];
+      ? data.content
+          .split(/\n{2,}/)
+          .map((paragraph) => paragraph.trim())
+          .filter(Boolean)
+      : [];
 
   const sections = Array.isArray(data.sections)
     ? data.sections
@@ -147,8 +147,8 @@ function normalizePost(data: SupabasePost): BlogPost | null {
   const keyTakeaways = Array.isArray(data.keyTakeaways)
     ? data.keyTakeaways.filter((item): item is string => Boolean(item))
     : Array.isArray(data.key_takeaways)
-    ? data.key_takeaways.filter((item): item is string => Boolean(item))
-    : [];
+      ? data.key_takeaways.filter((item): item is string => Boolean(item))
+      : [];
 
   return {
     id: String(data.id ?? `fallback-${data.slug}`),

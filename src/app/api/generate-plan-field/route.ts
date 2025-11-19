@@ -113,8 +113,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔧 Gerando ${fieldType}...`);
 
-    const schema =
-      fieldType === "analysis" ? ANALYSIS_SCHEMA : TRAINING_SCHEMA;
+    const schema = fieldType === "analysis" ? ANALYSIS_SCHEMA : TRAINING_SCHEMA;
 
     let systemPrompt = "";
     let userPrompt = "";
@@ -240,4 +239,3 @@ Gere um plano de treino completo, detalhado e personalizado para atingir o objet
     );
   }
 }
-

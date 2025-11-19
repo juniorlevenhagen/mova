@@ -124,7 +124,10 @@ export function UserDataSection({
               message: "Erro de autenticação. Por favor, faça login novamente.",
             });
             setIsUploading(false);
-            setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
+            setTimeout(
+              () => setUploadStatus({ type: null, message: "" }),
+              5000
+            );
             return;
           }
 
@@ -160,14 +163,22 @@ export function UserDataSection({
               }
 
               // Limpar mensagem de sucesso após 8 segundos
-              setTimeout(() => setUploadStatus({ type: null, message: "" }), 8000);
+              setTimeout(
+                () => setUploadStatus({ type: null, message: "" }),
+                8000
+              );
             } else {
               setUploadStatus({
                 type: "error",
-                message: result.error || "Erro ao processar PDF. Verifique se o arquivo contém dados de avaliação física.",
+                message:
+                  result.error ||
+                  "Erro ao processar PDF. Verifique se o arquivo contém dados de avaliação física.",
               });
               setIsUploading(false);
-              setTimeout(() => setUploadStatus({ type: null, message: "" }), 8000);
+              setTimeout(
+                () => setUploadStatus({ type: null, message: "" }),
+                8000
+              );
             }
           } else {
             // Ler o erro apenas uma vez
@@ -190,7 +201,10 @@ export function UserDataSection({
               message: `Erro ao processar PDF: ${errorMessage}`,
             });
             setIsUploading(false);
-            setTimeout(() => setUploadStatus({ type: null, message: "" }), 8000);
+            setTimeout(
+              () => setUploadStatus({ type: null, message: "" }),
+              8000
+            );
           }
         }
 
@@ -208,7 +222,10 @@ export function UserDataSection({
               type: "success",
               message: "Arquivo salvo com sucesso!",
             });
-            setTimeout(() => setUploadStatus({ type: null, message: "" }), 5000);
+            setTimeout(
+              () => setUploadStatus({ type: null, message: "" }),
+              5000
+            );
           }
           // Para PDFs, a mensagem já foi mostrada acima
         } else {
@@ -244,16 +261,17 @@ export function UserDataSection({
 
   const handleGeneratePlan = useCallback(() => {
     // ✅ Verificar se está em modo "Ver Plano Atual" (não deve mostrar modal de avaliação)
-    const isViewingExistingPlan = planStatus?.isExisting && 
-                                   !trialStatus?.canGenerate && 
-                                   (trialStatus?.availablePrompts || 0) === 0;
-    
+    const isViewingExistingPlan =
+      planStatus?.isExisting &&
+      !trialStatus?.canGenerate &&
+      (trialStatus?.availablePrompts || 0) === 0;
+
     // ✅ Se está apenas visualizando plano existente, não mostrar modal de avaliação
     if (isViewingExistingPlan) {
       onGeneratePlan(); // Apenas mostra o plano existente
       return;
     }
-    
+
     // ✅ Se vai gerar novo plano, verificar avaliação apenas se não tiver avaliação
     if (!evaluation) {
       setShowConfirmationModal(true); // Mostra modal de avaliação
@@ -284,7 +302,7 @@ export function UserDataSection({
     if (editingField && editValue.trim()) {
       // ✅ Processar valor antes de salvar (remover unidades e converter para número se necessário)
       let processedValue: string | number = editValue.trim();
-      
+
       // ✅ Remover unidades se presentes
       if (editingField === "peso") {
         processedValue = editValue.replace(/\s*kg\s*/gi, "").trim();
@@ -513,16 +531,30 @@ export function UserDataSection({
                 </select>
               ) : (
                 <input
-                  type={field === "peso" || field === "altura" ? "number" : "text"}
+                  type={
+                    field === "peso" || field === "altura" ? "number" : "text"
+                  }
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
                   onKeyDown={handleKeyPress}
                   onBlur={saveEdit}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   autoFocus
-                  step={field === "peso" ? "0.1" : field === "altura" ? "1" : undefined}
+                  step={
+                    field === "peso"
+                      ? "0.1"
+                      : field === "altura"
+                        ? "1"
+                        : undefined
+                  }
                   min={field === "peso" || field === "altura" ? "0" : undefined}
-                  placeholder={field === "peso" ? "Ex: 75" : field === "altura" ? "Ex: 175" : undefined}
+                  placeholder={
+                    field === "peso"
+                      ? "Ex: 75"
+                      : field === "altura"
+                        ? "Ex: 175"
+                        : undefined
+                  }
                 />
               )}
             </div>
@@ -562,7 +594,9 @@ export function UserDataSection({
   };
 
   return (
-    <div className={`bg-gray-50 rounded-xl shadow-lg border border-gray-200 ${components.card.padding}`}>
+    <div
+      className={`bg-gray-50 rounded-xl shadow-lg border border-gray-200 ${components.card.padding}`}
+    >
       <div className="mb-6">
         <h2
           className={`${typography.heading.h3} ${colors.text.primary} mb-2 flex items-center gap-3`}
@@ -591,38 +625,73 @@ export function UserDataSection({
 
       {/* Mensagens de Status do Upload */}
       {uploadStatus.type && (
-        <div className={`mb-6 rounded-lg border p-4 ${
-          uploadStatus.type === "success"
-            ? "bg-green-50 border-green-200"
-            : uploadStatus.type === "error"
-            ? "bg-red-50 border-red-200"
-            : "bg-blue-50 border-blue-200"
-        }`}>
+        <div
+          className={`mb-6 rounded-lg border p-4 ${
+            uploadStatus.type === "success"
+              ? "bg-green-50 border-green-200"
+              : uploadStatus.type === "error"
+                ? "bg-red-50 border-red-200"
+                : "bg-blue-50 border-blue-200"
+          }`}
+        >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
               {uploadStatus.type === "success" ? (
-                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-green-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               ) : uploadStatus.type === "error" ? (
-                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5 text-red-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               ) : (
-                <svg className="w-5 h-5 text-blue-600 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="w-5 h-5 text-blue-600 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
               )}
             </div>
             <div className="flex-1">
-              <p className={`text-sm font-medium ${
-                uploadStatus.type === "success"
-                  ? "text-green-800"
-                  : uploadStatus.type === "error"
-                  ? "text-red-800"
-                  : "text-blue-800"
-              }`}>
+              <p
+                className={`text-sm font-medium ${
+                  uploadStatus.type === "success"
+                    ? "text-green-800"
+                    : uploadStatus.type === "error"
+                      ? "text-red-800"
+                      : "text-blue-800"
+                }`}
+              >
                 {uploadStatus.message}
               </p>
             </div>
@@ -630,8 +699,18 @@ export function UserDataSection({
               onClick={() => setUploadStatus({ type: null, message: "" })}
               className="flex-shrink-0 text-gray-400 hover:text-gray-600"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -987,21 +1066,23 @@ export function UserDataSection({
                       </svg>
                       Próximo plano disponível em:{" "}
                       <span className="font-semibold">
-                        {planStatus.daysUntilNext !== undefined ? (
-                          planStatus.daysUntilNext === 1
+                        {planStatus.daysUntilNext !== undefined
+                          ? planStatus.daysUntilNext === 1
                             ? "1 dia"
                             : `${planStatus.daysUntilNext} dias`
-                        ) : planStatus.hoursUntilNext ? (
-                          planStatus.hoursUntilNext < 24
-                            ? `${planStatus.hoursUntilNext} horas`
-                            : `${Math.ceil(planStatus.hoursUntilNext / 24)} dias`
-                        ) : (
-                          "7 dias"
-                        )}
+                          : planStatus.hoursUntilNext
+                            ? planStatus.hoursUntilNext < 24
+                              ? `${planStatus.hoursUntilNext} horas`
+                              : `${Math.ceil(planStatus.hoursUntilNext / 24)} dias`
+                            : "7 dias"}
                       </span>
                       {planStatus.nextPlanAvailable && (
                         <span className="text-blue-500 ml-1">
-                          ({new Date(planStatus.nextPlanAvailable).toLocaleDateString("pt-BR")})
+                          (
+                          {new Date(
+                            planStatus.nextPlanAvailable
+                          ).toLocaleDateString("pt-BR")}
+                          )
                         </span>
                       )}
                     </p>
@@ -1019,7 +1100,8 @@ export function UserDataSection({
                             clipRule="evenodd"
                           />
                         </svg>
-                        Para gerar um novo plano, compre prompts adicionais no botão acima.
+                        Para gerar um novo plano, compre prompts adicionais no
+                        botão acima.
                       </p>
                     )
                   )}
@@ -1067,7 +1149,9 @@ export function UserDataSection({
             onClick={handleGeneratePlan}
             disabled={isGeneratingPlan || isCheckingPlanStatus}
             className={`flex-1 ${components.button.base} ${components.button.sizes.lg} ${
-              planStatus?.isExisting && !trialStatus?.canGenerate && (trialStatus?.availablePrompts || 0) === 0
+              planStatus?.isExisting &&
+              !trialStatus?.canGenerate &&
+              (trialStatus?.availablePrompts || 0) === 0
                 ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700"
                 : "bg-black text-white hover:bg-gray-900"
             } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap`}
@@ -1082,7 +1166,9 @@ export function UserDataSection({
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                 <span>Verificando...</span>
               </>
-            ) : planStatus?.isExisting && !trialStatus?.canGenerate && (trialStatus?.availablePrompts || 0) === 0 ? (
+            ) : planStatus?.isExisting &&
+              !trialStatus?.canGenerate &&
+              (trialStatus?.availablePrompts || 0) === 0 ? (
               <>
                 <svg
                   className="w-5 h-5 flex-shrink-0"

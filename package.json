@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "prebuild": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

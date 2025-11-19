@@ -114,7 +114,9 @@ Dados do usuário:
 ${userData.hasPain ? `- Dores/Lesões: Sim` : `- Dores/Lesões: Não`}
 ${userData.dietaryRestrictions ? `- Restrições alimentares: ${userData.dietaryRestrictions}` : `- Restrições alimentares: Nenhuma`}
 
-${userData.latestEvolution ? `
+${
+  userData.latestEvolution
+    ? `
 📊 ÚLTIMA EVOLUÇÃO REGISTRADA:
 - Data: ${userData.latestEvolution.date || "Não informado"}
 - Peso: ${userData.latestEvolution.peso || "Não informado"} kg
@@ -125,18 +127,28 @@ ${userData.latestEvolution ? `
 - Massa Magra: ${userData.latestEvolution.massa_magra || "Não informado"} kg
 - Bem-estar: ${userData.latestEvolution.bem_estar || "Não informado"}/10
 - Observações: ${userData.latestEvolution.observacoes || "Nenhuma"}
-` : ""}
+`
+    : ""
+}
 
-${userData.evolutionHistory && userData.evolutionHistory.length > 1 ? `
+${
+  userData.evolutionHistory && userData.evolutionHistory.length > 1
+    ? `
 📈 HISTÓRICO DE EVOLUÇÃO:
 - Total de evoluções registradas: ${userData.evolutionHistory.length}
 - Use este histórico para identificar tendências e progresso ao longo do tempo
-` : ""}
+`
+    : ""
+}
 
-${existingPlan ? `
+${
+  existingPlan
+    ? `
 Plano parcial existente (para contexto):
 ${JSON.stringify(existingPlan, null, 2)}
-` : ""}
+`
+    : ""
+}
 
 Gere uma análise completa, detalhada e personalizada que ajude o usuário a entender seu estado atual e o que precisa fazer para atingir seu objetivo.`,
         },
@@ -176,4 +188,3 @@ Gere uma análise completa, detalhada e personalizada que ajude o usuário a ent
     );
   }
 }
-

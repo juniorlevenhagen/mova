@@ -18,133 +18,146 @@ export function usePlanGeneration() {
 
   // Função para verificar status do plano (extraída para poder ser chamada externamente)
   const checkExistingPlan = useCallback(async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-        if (!session?.access_token) {
-          setIsCheckingStatus(false);
-          return;
+      if (!session?.access_token) {
+        setIsCheckingStatus(false);
+        return;
+      }
+
+      // ✅ Buscar dados do usuário (trial status + planos)
+      const [{ data: trialData }, { data: planResults }] = await Promise.all([
+        supabase
+          .from("user_trials")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .maybeSingle(),
+        supabase
+          .from("user_plans")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .eq("is_active", true)
+          .order("generated_at", { ascending: false })
+          .limit(1),
+      ]);
+
+      if (planResults && planResults.length > 0) {
+        const planEntry = planResults[0];
+
+        // ✅ Extrair plano diretamente do campo plan_data
+        let existingPlan = null;
+        try {
+          existingPlan = planEntry.plan_data;
+
+          // ✅ Compatibilidade: Se não houver nutritionPlan mas houver dietPlan (legacy), converter
+          if (
+            existingPlan &&
+            !existingPlan.nutritionPlan &&
+            existingPlan.dietPlan
+          ) {
+            try {
+              existingPlan.nutritionPlan =
+                typeof existingPlan.dietPlan === "string"
+                  ? JSON.parse(existingPlan.dietPlan)
+                  : existingPlan.dietPlan;
+              console.log("🔄 Convertido dietPlan (legacy) para nutritionPlan");
+            } catch (e) {
+              console.warn(
+                "⚠️ Erro ao converter dietPlan para nutritionPlan:",
+                e
+              );
+            }
+          }
+
+          console.log("📥 Plano carregado do banco:", {
+            hasAnalysis: !!existingPlan?.analysis,
+            hasTrainingPlan: !!existingPlan?.trainingPlan,
+            hasNutritionPlan: !!existingPlan?.nutritionPlan,
+            hasGoals: !!existingPlan?.goals,
+            hasMotivation: !!existingPlan?.motivation,
+            planKeys: existingPlan ? Object.keys(existingPlan) : [],
+          });
+        } catch (error) {
+          console.warn("Erro ao extrair plano:", error);
         }
 
-        // ✅ Buscar dados do usuário (trial status + planos)
-        const [{ data: trialData }, { data: planResults }] = await Promise.all([
-          supabase
-            .from("user_trials")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .maybeSingle(),
-          supabase
-            .from("user_plans")
-            .select("*")
-            .eq("user_id", session.user.id)
-            .eq("is_active", true)
-            .order("generated_at", { ascending: false })
-            .limit(1),
-        ]);
+        const availablePrompts = trialData?.available_prompts || 0;
+        const maxFreePlans = trialData?.max_plans_allowed || 1;
+        const plansGenerated = trialData?.plans_generated || 0;
+        const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
 
-        if (planResults && planResults.length > 0) {
-          const planEntry = planResults[0];
+        console.log("📊 Status do plano verificado:", {
+          availablePrompts,
+          plansGenerated,
+          freePlansRemaining,
+          hasExistingPlan: true,
+          willAllowNewPlan: availablePrompts > 0 || freePlansRemaining > 0,
+        });
 
-          // ✅ Extrair plano diretamente do campo plan_data
-          let existingPlan = null;
-          try {
-            existingPlan = planEntry.plan_data;
-            
-            // ✅ Compatibilidade: Se não houver nutritionPlan mas houver dietPlan (legacy), converter
-            if (existingPlan && !existingPlan.nutritionPlan && existingPlan.dietPlan) {
-              try {
-                existingPlan.nutritionPlan =
-                  typeof existingPlan.dietPlan === "string"
-                    ? JSON.parse(existingPlan.dietPlan)
-                    : existingPlan.dietPlan;
-                console.log("🔄 Convertido dietPlan (legacy) para nutritionPlan");
-              } catch (e) {
-                console.warn("⚠️ Erro ao converter dietPlan para nutritionPlan:", e);
-              }
-            }
-            
-            console.log("📥 Plano carregado do banco:", {
-              hasAnalysis: !!existingPlan?.analysis,
-              hasTrainingPlan: !!existingPlan?.trainingPlan,
-              hasNutritionPlan: !!existingPlan?.nutritionPlan,
-              hasGoals: !!existingPlan?.goals,
-              hasMotivation: !!existingPlan?.motivation,
-              planKeys: existingPlan ? Object.keys(existingPlan) : [],
-            });
-          } catch (error) {
-            console.warn("Erro ao extrair plano:", error);
-          }
-
-          const availablePrompts = trialData?.available_prompts || 0;
-          const maxFreePlans = trialData?.max_plans_allowed || 1;
-          const plansGenerated = trialData?.plans_generated || 0;
-          const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
-
-          console.log("📊 Status do plano verificado:", {
-            availablePrompts,
-            plansGenerated,
-            freePlansRemaining,
-            hasExistingPlan: true,
-            willAllowNewPlan: availablePrompts > 0 || freePlansRemaining > 0,
+        if (availablePrompts > 0) {
+          // ✅ HÁ PROMPTS DISPONÍVEIS - mostrar plano existente MAS permitir gerar novo
+          // IMPORTANTE: Manter plano existente para o usuário poder visualizar
+          setPlanStatus({
+            isExisting: true, // true = existe plano, mas pode gerar novo se tiver prompts
+            generatedAt: planEntry.generated_at,
           });
-
-          if (availablePrompts > 0) {
-            // ✅ HÁ PROMPTS DISPONÍVEIS - mostrar plano existente MAS permitir gerar novo
-            // IMPORTANTE: Manter plano existente para o usuário poder visualizar
-            setPlanStatus({
-              isExisting: true, // true = existe plano, mas pode gerar novo se tiver prompts
-              generatedAt: planEntry.generated_at,
-            });
-            if (existingPlan) {
-              setPlan(existingPlan); // Manter plano existente no estado
-            }
-            console.log(`✅ ${availablePrompts} prompt(s) disponível(is) - mostrando plano existente (mas pode gerar novo)`);
-          } else if (freePlansRemaining <= 0) {
-            // Não há prompts e não há planos grátis - mostrar plano existente
-            setPlanStatus({
-              isExisting: true,
-              generatedAt: planEntry.generated_at,
-            });
-            if (existingPlan) {
-              setPlan(existingPlan); // Definir plano existente apenas quando não há prompts
-            }
-            console.log("📌 Sem prompts e sem planos grátis - mostrar plano existente");
-          } else {
-            // Há plano grátis disponível - permitir gerar
-            setPlanStatus({
-              isExisting: false,
-            });
-            setPlan(null); // Limpar plano antigo quando há plano grátis disponível
-            console.log("✅ Plano grátis disponível - pode gerar novo plano (plano antigo removido do estado)");
+          if (existingPlan) {
+            setPlan(existingPlan); // Manter plano existente no estado
           }
+          console.log(
+            `✅ ${availablePrompts} prompt(s) disponível(is) - mostrando plano existente (mas pode gerar novo)`
+          );
+        } else if (freePlansRemaining <= 0) {
+          // Não há prompts e não há planos grátis - mostrar plano existente
+          setPlanStatus({
+            isExisting: true,
+            generatedAt: planEntry.generated_at,
+          });
+          if (existingPlan) {
+            setPlan(existingPlan); // Definir plano existente apenas quando não há prompts
+          }
+          console.log(
+            "📌 Sem prompts e sem planos grátis - mostrar plano existente"
+          );
         } else {
-          // Não há plano existente - permitir gerar
-          const availablePrompts = trialData?.available_prompts || 0;
-          const maxFreePlans = trialData?.max_plans_allowed || 1;
-          const plansGenerated = trialData?.plans_generated || 0;
-          const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
-          
-          console.log("📊 Sem plano existente - status:", {
-            availablePrompts,
-            plansGenerated,
-            freePlansRemaining,
-            canGenerate: availablePrompts > 0 || freePlansRemaining > 0,
-          });
-          
+          // Há plano grátis disponível - permitir gerar
           setPlanStatus({
             isExisting: false,
           });
+          setPlan(null); // Limpar plano antigo quando há plano grátis disponível
+          console.log(
+            "✅ Plano grátis disponível - pode gerar novo plano (plano antigo removido do estado)"
+          );
         }
-      } catch (error) {
-        console.error("Erro ao verificar plano existente:", error);
+      } else {
+        // Não há plano existente - permitir gerar
+        const availablePrompts = trialData?.available_prompts || 0;
+        const maxFreePlans = trialData?.max_plans_allowed || 1;
+        const plansGenerated = trialData?.plans_generated || 0;
+        const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
+
+        console.log("📊 Sem plano existente - status:", {
+          availablePrompts,
+          plansGenerated,
+          freePlansRemaining,
+          canGenerate: availablePrompts > 0 || freePlansRemaining > 0,
+        });
+
         setPlanStatus({
           isExisting: false,
         });
-      } finally {
-        setIsCheckingStatus(false);
       }
+    } catch (error) {
+      console.error("Erro ao verificar plano existente:", error);
+      setPlanStatus({
+        isExisting: false,
+      });
+    } finally {
+      setIsCheckingStatus(false);
+    }
   }, []);
 
   // Verificar automaticamente se já existe um plano ao carregar
@@ -186,19 +199,20 @@ export function usePlanGeneration() {
           const hoursRemaining = errorData.hoursRemaining || 0;
           const hours = Math.floor(hoursRemaining);
           const minutes = Math.floor((hoursRemaining - hours) * 60);
-          
-          const message = errorData.message || 
+
+          const message =
+            errorData.message ||
             (hoursRemaining >= 1
               ? `Aguarde ${hours}h ${minutes}m para gerar um novo plano.`
               : `Aguarde ${minutes} minutos para gerar um novo plano.`);
-          
+
           console.log("⏳ Erro de cooldown detectado:", {
             message,
             hoursRemaining,
             nextPlanAvailable: errorData.nextPlanAvailable,
             availablePrompts: errorData.availablePrompts,
           });
-          
+
           // ✅ Criar erro customizado com dados adicionais
           interface CooldownError extends Error {
             type: string;
@@ -206,14 +220,17 @@ export function usePlanGeneration() {
             nextPlanAvailable?: string;
             availablePrompts: number;
           }
-          
+
           const cooldownError = new Error(message) as CooldownError;
           cooldownError.type = "COOLDOWN_ACTIVE";
           cooldownError.hoursRemaining = hoursRemaining;
           cooldownError.nextPlanAvailable = errorData.nextPlanAvailable;
           cooldownError.availablePrompts = errorData.availablePrompts || 0;
-          
-          console.log("📤 Relançando erro de cooldown com dados:", cooldownError);
+
+          console.log(
+            "📤 Relançando erro de cooldown com dados:",
+            cooldownError
+          );
           throw cooldownError;
         }
 
@@ -237,7 +254,7 @@ export function usePlanGeneration() {
           isExisting: result.isExisting,
         });
         // ✅ Atualizar planStatus IMEDIATAMENTE com dados da API
-        // IMPORTANTE: Se um plano foi gerado (mesmo que haja prompts disponíveis), 
+        // IMPORTANTE: Se um plano foi gerado (mesmo que haja prompts disponíveis),
         // devemos mostrar esse plano como existente para que o usuário possa visualizá-lo
         setPlanStatus({
           isExisting: true, // Sempre true quando um plano é gerado (permite visualizar)
@@ -283,12 +300,21 @@ export function usePlanGeneration() {
       setIsGenerating(false);
 
       // ✅ Relançar erros de cooldown para serem tratados no componente
-      if (error && typeof error === 'object' && 'type' in error && error.type === "COOLDOWN_ACTIVE") {
+      if (
+        error &&
+        typeof error === "object" &&
+        "type" in error &&
+        error.type === "COOLDOWN_ACTIVE"
+      ) {
         throw error; // Relançar erro de cooldown
       }
-      
+
       // ✅ Verificar se é erro de cooldown pela mensagem
-      if (errorMessage.includes("Aguarde") || errorMessage.includes("cooldown") || errorMessage.includes("Cooldown")) {
+      if (
+        errorMessage.includes("Aguarde") ||
+        errorMessage.includes("cooldown") ||
+        errorMessage.includes("Cooldown")
+      ) {
         throw error; // Relançar erro de cooldown
       }
 

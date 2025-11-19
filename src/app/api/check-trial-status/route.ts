@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       if (trialData.is_active && !trialData.upgraded_to_premium) {
         const trialEndDate = new Date(trialData.trial_end_date);
         const currentDate = new Date();
-        
+
         hasActiveTrial = trialEndDate > currentDate;
       }
 
@@ -57,14 +57,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       hasActiveTrial,
       hasUsedTrial,
-      trialData: trialData ? {
-        isActive: trialData.is_active,
-        upgradedToPremium: trialData.upgraded_to_premium,
-        plansGenerated: trialData.plans_generated,
-        trialEndDate: trialData.trial_end_date,
-      } : null,
+      trialData: trialData
+        ? {
+            isActive: trialData.is_active,
+            upgradedToPremium: trialData.upgraded_to_premium,
+            plansGenerated: trialData.plans_generated,
+            trialEndDate: trialData.trial_end_date,
+          }
+        : null,
     });
-
   } catch (error) {
     console.error("❌ Erro ao verificar status do trial:", error);
     return NextResponse.json(

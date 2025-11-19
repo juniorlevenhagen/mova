@@ -1,7 +1,6 @@
 import Link from "next/link";
 import LoginForm from "@/components/ui/LoginForm";
 
-
 export default function LoginPage() {
   return (
     <div className="bg-white rounded-[22px] border-2 border-black shadow-2xl p-8">

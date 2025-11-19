@@ -69,7 +69,10 @@ export async function GET(request: NextRequest) {
         hasTrainingPlan: !!plan.plan_data?.trainingPlan,
         hasNutritionPlan: !!plan.plan_data?.nutritionPlan,
         hasAnalysis: !!plan.plan_data?.analysis,
-        objective: plan.plan_data?.goals?.objective || plan.plan_data?.analysis?.objective || null,
+        objective:
+          plan.plan_data?.goals?.objective ||
+          plan.plan_data?.analysis?.objective ||
+          null,
       },
     }));
 
@@ -86,4 +89,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

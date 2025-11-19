@@ -1,5 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=BBH+Sans+Bartle&family=BBH+Sans+Hegarty&family=Zalando+Sans:ital,wght@0,200..900;1,200..900&display=swap");
-@import url('https://fonts.googleapis.com/css2?family=BBH+Sans+Hegarty&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=BBH+Sans+Hegarty&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -232,11 +232,12 @@ body {
 
 @theme inline {
   @keyframes pulse {
-  0%, 100% {
-    boxShadow: 0 0 0 0 var(--pulse-color);
+    0%,
+    100% {
+      boxshadow: 0 0 0 0 var(--pulse-color);
     }
-  50% {
-    boxShadow: 0 0 0 8px var(--pulse-color);
+    50% {
+      boxshadow: 0 0 0 8px var(--pulse-color);
     }
   }
 }

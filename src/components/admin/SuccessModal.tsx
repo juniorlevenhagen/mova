@@ -97,9 +97,7 @@ export function SuccessModal({
 
           {/* Content */}
           <div className="px-6 py-6">
-            <p className="text-base text-gray-700 mb-6">
-              {message}
-            </p>
+            <p className="text-base text-gray-700 mb-6">{message}</p>
 
             {/* Links de ação */}
             <div className="space-y-3">
@@ -116,7 +114,7 @@ export function SuccessModal({
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               )}
-              
+
               <div className="rounded-lg bg-green-50 border border-green-200 p-4">
                 <p className="text-sm text-green-800">
                   O post foi salvo e está disponível na lista de posts.
@@ -146,4 +144,3 @@ export function SuccessModal({
     </div>
   );
 }
-

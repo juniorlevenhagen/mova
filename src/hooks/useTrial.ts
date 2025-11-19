@@ -101,7 +101,7 @@ export function useTrial(user: User | null) {
         const availablePrompts = trialData.available_prompts || 0;
         const maxFreePlans = trialData.max_plans_allowed || 1;
         const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
-        
+
         // ✅ Calcular cooldown APENAS para prompts do pacote de 3
         // Prompts unitários não têm cooldown - podem ser usados imediatamente
         const packagePrompts = trialData.package_prompts || 0;
@@ -110,35 +110,38 @@ export function useTrial(user: User | null) {
         let isInCooldown = false;
         let hoursUntilNextPlan: number | undefined;
         let nextPlanAvailable: string | undefined;
-        
+
         console.log("📊 Debug cooldown:", {
           availablePrompts,
           packagePrompts,
           singlePrompts,
           lastPlanGeneratedAt: trialData.last_plan_generated_at,
         });
-        
+
         // ✅ Calcular cooldown se houver prompts do pacote OU se houver last_plan_generated_at para mostrar informações
         if (trialData.last_plan_generated_at) {
           const lastPlanDate = new Date(trialData.last_plan_generated_at);
           const now = new Date();
-          const hoursSinceLastPlan = (now.getTime() - lastPlanDate.getTime()) / (1000 * 60 * 60);
-          
+          const hoursSinceLastPlan =
+            (now.getTime() - lastPlanDate.getTime()) / (1000 * 60 * 60);
+
           // ✅ Só calcular cooldown se houver prompts do pacote E estiver dentro do período
           if (packagePrompts > 0) {
             const hoursRemaining = promptCooldownHours - hoursSinceLastPlan;
-            
+
             console.log("⏳ Verificando cooldown do pacote:", {
               hoursSinceLastPlan: hoursSinceLastPlan.toFixed(2),
               hoursRemaining: hoursRemaining.toFixed(2),
               hasSinglePrompts: singlePrompts > 0,
             });
-            
+
             if (hoursSinceLastPlan < promptCooldownHours) {
               // ✅ Se tem prompts do pacote e está dentro do período de cooldown, mostrar countdown
               isInCooldown = true; // ✅ Sempre mostrar countdown se tem prompts do pacote em cooldown
               hoursUntilNextPlan = Math.max(0, hoursRemaining);
-              nextPlanAvailable = new Date(now.getTime() + hoursRemaining * 60 * 60 * 1000).toISOString();
+              nextPlanAvailable = new Date(
+                now.getTime() + hoursRemaining * 60 * 60 * 1000
+              ).toISOString();
               console.log("✅ Countdown do pacote ativo:", {
                 isInCooldown,
                 hoursUntilNextPlan,
@@ -156,9 +159,12 @@ export function useTrial(user: User | null) {
             nextPlanAvailable = undefined;
           }
         }
-        
+
         // ✅ Pode gerar se: tem prompts unitários OU (tem prompts do pacote e não está em cooldown) OU tem plano grátis
-        const canGenerate = (singlePrompts > 0 || (packagePrompts > 0 && !isInCooldown)) || freePlansRemaining > 0;
+        const canGenerate =
+          singlePrompts > 0 ||
+          (packagePrompts > 0 && !isInCooldown) ||
+          freePlansRemaining > 0;
 
         let message: string;
         if (availablePrompts > 0) {
@@ -167,7 +173,7 @@ export function useTrial(user: User | null) {
             const hours = Math.floor(hoursUntilNextPlan);
             const minutes = Math.floor((hoursUntilNextPlan - hours) * 60);
             const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-            
+
             if (singlePrompts > 0) {
               message =
                 singlePrompts === 1
@@ -224,7 +230,7 @@ export function useTrial(user: User | null) {
 
       setTrialStatus(status);
       setTrial(trialData || null);
-      
+
       console.log("✅ Trial atualizado:", {
         availablePrompts: status.availablePrompts,
         plansRemaining: status.plansRemaining,

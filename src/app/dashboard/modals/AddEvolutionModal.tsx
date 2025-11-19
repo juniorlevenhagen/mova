@@ -93,10 +93,19 @@ export function AddEvolutionModal({
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 py-8">
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={handleClose}></div>
+        <div
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={handleClose}
+        ></div>
 
         <div className="relative w-full max-w-7xl bg-white rounded-lg shadow-xl transform transition-all">
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[85vh] overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 transparent' }}>
+          <div
+            className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[85vh] overflow-y-auto"
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "#cbd5e1 transparent",
+            }}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className={`${typography.heading.h3} ${colors.text.primary}`}>
                 Adicionar Evolução Manual
@@ -263,7 +272,8 @@ export function AddEvolutionModal({
                       </select>
                     </div>
                     <p className="mt-1 text-xs text-gray-500">
-                      Selecione qual braço foi medido. Use sempre o mesmo para consistência.
+                      Selecione qual braço foi medido. Use sempre o mesmo para
+                      consistência.
                     </p>
                   </div>
 

@@ -102,10 +102,15 @@ export default function DashboardPage() {
     // IMPORTANTE: Se há prompts disponíveis, sempre tentar gerar novo (mesmo com plano existente)
     const hasAvailablePrompts = (trialStatus?.availablePrompts || 0) > 0;
     const canGenerateNew = trialStatus?.canGenerate === true;
-    
+
     // ✅ Se tem prompts disponíveis E pode gerar, sempre gerar novo plano
     // ✅ Se NÃO tem prompts E tem plano existente, mostrar plano existente
-    if (plan && planStatus?.isExisting === true && !hasAvailablePrompts && !canGenerateNew) {
+    if (
+      plan &&
+      planStatus?.isExisting === true &&
+      !hasAvailablePrompts &&
+      !canGenerateNew
+    ) {
       // Apenas mostrar plano existente se NÃO há prompts disponíveis E NÃO pode gerar
       console.log("📌 Mostrando plano existente (sem prompts disponíveis)");
       setShowPlanModal(true);
@@ -113,7 +118,10 @@ export default function DashboardPage() {
     }
 
     // ✅ Gerar novo plano (tem prompts OU pode gerar)
-    console.log("🔄 Gerando novo plano...", { hasAvailablePrompts, canGenerateNew });
+    console.log("🔄 Gerando novo plano...", {
+      hasAvailablePrompts,
+      canGenerateNew,
+    });
     try {
       const result = await generatePlan();
 
@@ -124,8 +132,9 @@ export default function DashboardPage() {
       }
     } catch (error: unknown) {
       // ✅ Capturar erro de cooldown especificamente
-      const errorMessage = error instanceof Error ? error.message : "Erro ao gerar plano";
-      
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro ao gerar plano";
+
       // ✅ Type guard para erro de cooldown
       interface CooldownError extends Error {
         type?: string;
@@ -133,7 +142,7 @@ export default function DashboardPage() {
         nextPlanAvailable?: string;
         availablePrompts?: number;
       }
-      
+
       const isCooldownError = (err: unknown): err is CooldownError => {
         return (
           typeof err === "object" &&
@@ -141,9 +150,9 @@ export default function DashboardPage() {
           ("type" in err || "message" in err)
         );
       };
-      
+
       const cooldownError = isCooldownError(error) ? error : null;
-      
+
       console.log("🔍 Erro capturado no handleGeneratePlan:", {
         error,
         errorMessage,
@@ -152,32 +161,44 @@ export default function DashboardPage() {
         nextPlanAvailable: cooldownError?.nextPlanAvailable,
         availablePrompts: cooldownError?.availablePrompts,
       });
-      
+
       // ✅ Verificar se é erro de cooldown (por tipo ou mensagem)
-      if (cooldownError?.type === "COOLDOWN_ACTIVE" || errorMessage.includes("Aguarde") || errorMessage.includes("cooldown") || errorMessage.includes("Cooldown")) {
+      if (
+        cooldownError?.type === "COOLDOWN_ACTIVE" ||
+        errorMessage.includes("Aguarde") ||
+        errorMessage.includes("cooldown") ||
+        errorMessage.includes("Cooldown")
+      ) {
         // ✅ Usar dados do erro se disponíveis, senão extrair da mensagem
-        const hoursRemaining = cooldownError?.hoursRemaining || (() => {
-          const hoursMatch = errorMessage.match(/(\d+)h/);
-          const minutesMatch = errorMessage.match(/(\d+)m/);
-          const hours = hoursMatch ? parseInt(hoursMatch[1]) : 24;
-          const minutes = minutesMatch ? parseInt(minutesMatch[1]) : 0;
-          return hours + (minutes / 60);
-        })();
-        
-        const nextPlanAvailable = cooldownError?.nextPlanAvailable || (() => {
-          const now = new Date();
-          return new Date(now.getTime() + hoursRemaining * 60 * 60 * 1000).toISOString();
-        })();
-        
-        const availablePrompts = cooldownError?.availablePrompts || trialStatus?.availablePrompts || 0;
-        
+        const hoursRemaining =
+          cooldownError?.hoursRemaining ||
+          (() => {
+            const hoursMatch = errorMessage.match(/(\d+)h/);
+            const minutesMatch = errorMessage.match(/(\d+)m/);
+            const hours = hoursMatch ? parseInt(hoursMatch[1]) : 24;
+            const minutes = minutesMatch ? parseInt(minutesMatch[1]) : 0;
+            return hours + minutes / 60;
+          })();
+
+        const nextPlanAvailable =
+          cooldownError?.nextPlanAvailable ||
+          (() => {
+            const now = new Date();
+            return new Date(
+              now.getTime() + hoursRemaining * 60 * 60 * 1000
+            ).toISOString();
+          })();
+
+        const availablePrompts =
+          cooldownError?.availablePrompts || trialStatus?.availablePrompts || 0;
+
         console.log("✅ Abrindo modal de cooldown com dados:", {
           message: errorMessage,
           hoursRemaining,
           nextPlanAvailable,
           availablePrompts,
         });
-        
+
         setCooldownData({
           message: errorMessage,
           hoursRemaining,
@@ -185,7 +206,7 @@ export default function DashboardPage() {
           availablePrompts,
         });
         setShowCooldownModal(true);
-        
+
         // ✅ Prevenir que o erro apareça no console após ser tratado
         // O erro já foi capturado e o modal será aberto
         return; // Retornar aqui para não propagar o erro
@@ -205,7 +226,10 @@ export default function DashboardPage() {
     const sessionId = urlParams.get("session_id");
 
     // Suporta tanto "purchase" (novo) quanto "upgrade" (antigo)
-    const isSuccess = (purchaseParam === "success" || upgradeParam === "success") && sessionId && user;
+    const isSuccess =
+      (purchaseParam === "success" || upgradeParam === "success") &&
+      sessionId &&
+      user;
 
     if (isSuccess) {
       const verifyPayment = async () => {
@@ -237,25 +261,31 @@ export default function DashboardPage() {
 
             // ✅ Verificar se os prompts já foram adicionados pelo webhook
             const promptsAlreadyAdded = (result.availablePrompts || 0) > 0;
-            
-            console.log(`📊 Prompts já adicionados pelo webhook? ${promptsAlreadyAdded} (availablePrompts: ${result.availablePrompts})`);
+
+            console.log(
+              `📊 Prompts já adicionados pelo webhook? ${promptsAlreadyAdded} (availablePrompts: ${result.availablePrompts})`
+            );
 
             // ✅ Aguardar refetchTrial() terminar antes de refetchPlanStatus()
             // Se os prompts ainda não foram adicionados, aguardar mais tempo e fazer retry
             startTransition(async () => {
               console.log("🔄 Recarregando dados após pagamento...");
-              
+
               // Se os prompts não foram adicionados ainda, aguardar e fazer retry
               if (!promptsAlreadyAdded) {
-                console.log("⏳ Aguardando webhook processar (pode levar alguns segundos)...");
+                console.log(
+                  "⏳ Aguardando webhook processar (pode levar alguns segundos)..."
+                );
                 let retries = 5;
                 let promptsFound = false;
-                
+
                 while (retries > 0 && !promptsFound) {
-                  await new Promise(resolve => setTimeout(resolve, 2000)); // Aguardar 2s entre tentativas
+                  await new Promise((resolve) => setTimeout(resolve, 2000)); // Aguardar 2s entre tentativas
                   await refetchTrial();
                   // Verificar novamente após refetch
-                  const { data: { session: checkSession } } = await supabase.auth.getSession();
+                  const {
+                    data: { session: checkSession },
+                  } = await supabase.auth.getSession();
                   if (checkSession?.access_token) {
                     const checkResponse = await fetch("/api/verify-payment", {
                       method: "POST",
@@ -267,19 +297,24 @@ export default function DashboardPage() {
                     });
                     const checkResult = await checkResponse.json();
                     promptsFound = (checkResult.availablePrompts || 0) > 0;
-                    console.log(`🔄 Tentativa ${6 - retries}/5: availablePrompts=${checkResult.availablePrompts}`, promptsFound ? "✅ Encontrado!" : "⏳ Aguardando...");
+                    console.log(
+                      `🔄 Tentativa ${6 - retries}/5: availablePrompts=${checkResult.availablePrompts}`,
+                      promptsFound ? "✅ Encontrado!" : "⏳ Aguardando..."
+                    );
                   }
                   retries--;
                 }
-                
+
                 if (!promptsFound) {
-                  console.warn("⚠️ Webhook pode não ter processado ainda. Tente recarregar a página.");
+                  console.warn(
+                    "⚠️ Webhook pode não ter processado ainda. Tente recarregar a página."
+                  );
                 }
               } else {
                 // Prompts já foram adicionados, apenas recarregar
                 await refetchTrial();
               }
-              
+
               console.log("🔄 Recarregando status do plano...");
               refetchPlanStatus(); // Recarregar status do plano após compra de prompts
             });
@@ -294,7 +329,10 @@ export default function DashboardPage() {
       };
 
       verifyPayment();
-    } else if ((purchaseParam === "success" || upgradeParam === "success") && user) {
+    } else if (
+      (purchaseParam === "success" || upgradeParam === "success") &&
+      user
+    ) {
       // Fallback sem session_id: tentar ativar premium via /api/verify-payment
       const runFallback = async () => {
         try {
@@ -314,21 +352,23 @@ export default function DashboardPage() {
 
           const res = await response.json();
           console.log("📋 Resultado do verify-payment (fallback):", res);
-          
+
           if (res.success) {
             setShowUpgradeModal(false);
             const promptsAlreadyAdded = (res.availablePrompts || 0) > 0;
-            console.log(`📊 Prompts já adicionados (fallback)? ${promptsAlreadyAdded} (availablePrompts: ${res.availablePrompts})`);
-            
+            console.log(
+              `📊 Prompts já adicionados (fallback)? ${promptsAlreadyAdded} (availablePrompts: ${res.availablePrompts})`
+            );
+
             // ✅ Aguardar refetchTrial terminar antes de refetchPlanStatus
             console.log("🔄 Recarregando dados após pagamento (fallback)...");
-            
+
             if (!promptsAlreadyAdded) {
               console.log("⏳ Aguardando webhook processar (fallback)...");
               // Aguardar mais tempo no fallback
-              await new Promise(resolve => setTimeout(resolve, 3000));
+              await new Promise((resolve) => setTimeout(resolve, 3000));
             }
-            
+
             await refetchTrial();
             console.log("🔄 Recarregando status do plano (fallback)...");
             refetchPlanStatus();
@@ -410,10 +450,10 @@ export default function DashboardPage() {
             {authLoading
               ? "Verificando autenticação..."
               : profileLoading
-              ? "Carregando perfil..."
-              : evolutionLoading
-              ? "Carregando evoluções..."
-              : "Verificando planos..."}
+                ? "Carregando perfil..."
+                : evolutionLoading
+                  ? "Carregando evoluções..."
+                  : "Verificando planos..."}
           </p>
         </div>
       </div>
@@ -430,17 +470,16 @@ export default function DashboardPage() {
   // Log para debug - verificar se os dados estão chegando do hook
 
   // Dados de trial (usando dados reais do hook)
-  const trialStatusForUI =
-    trialStatus ?? {
-      canGenerate: false,
-      plansRemaining: 0,
-      hasUsedFreePlan: true,
-      availablePrompts: 0,
-      message: "Carregando...",
-      isInCooldown: false,
-      hoursUntilNextPlan: undefined,
-      nextPlanAvailable: undefined,
-    };
+  const trialStatusForUI = trialStatus ?? {
+    canGenerate: false,
+    plansRemaining: 0,
+    hasUsedFreePlan: true,
+    availablePrompts: 0,
+    message: "Carregando...",
+    isInCooldown: false,
+    hoursUntilNextPlan: undefined,
+    nextPlanAvailable: undefined,
+  };
 
   // Debug removido - sistema funcionando
 
@@ -449,17 +488,18 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     try {
       setLogoutLoading(true);
-      
+
       // Limpar todos os dados de armazenamento ANTES do logout
       localStorage.clear();
       sessionStorage.clear();
-      
+
       // Limpar cookies do Supabase manualmente antes do logout
       if (typeof document !== "undefined") {
         const cookies = document.cookie.split(";");
         cookies.forEach((cookie) => {
           const eqPos = cookie.indexOf("=");
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          const name =
+            eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
           // Limpar cookies do Supabase
           if (name.includes("supabase") || name.includes("sb-")) {
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
@@ -467,17 +507,17 @@ export default function DashboardPage() {
           }
         });
       }
-      
+
       // Fazer logout do Supabase com scope global para limpar todos os dados
       const { error } = await supabase.auth.signOut({ scope: "global" });
-      
+
       if (error) {
         console.error("Erro ao fazer logout:", error);
       }
-      
+
       // Aguardar um pouco para garantir que o logout foi processado
       await new Promise((resolve) => setTimeout(resolve, 300));
-      
+
       // Redirecionar usando window.location para garantir reload completo
       window.location.href = "/auth/login";
     } catch (error) {

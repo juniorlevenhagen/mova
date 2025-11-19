@@ -1,11 +1,11 @@
-import React from "react"
+import React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface PulsatingButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  pulseColor?: string
-  duration?: string
+  pulseColor?: string;
+  duration?: string;
 }
 
 export const PulsatingButton = React.forwardRef<
@@ -40,8 +40,8 @@ export const PulsatingButton = React.forwardRef<
         <div className="relative z-10">{children}</div>
         <div className="absolute top-1/2 left-1/2 size-full -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-lg bg-inherit" />
       </button>
-    )
+    );
   }
-)
+);
 
-PulsatingButton.displayName = "PulsatingButton"
+PulsatingButton.displayName = "PulsatingButton";

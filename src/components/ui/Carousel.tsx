@@ -5,7 +5,6 @@ import { useCarousel } from "@/hooks/useCarousel";
 import { CarouselDots } from "./CarouselDots";
 import { CarouselSlide } from "./CarouselSlide";
 
-
 // Dados das imagens do carrossel - agora tipado
 const carouselImages: CarouselImage[] = [
   {
@@ -75,7 +74,6 @@ export default function Carousel() {
   return (
     <div className="w-full bg-[#f5f1e8]">
       {/* Navbar */}
-      
 
       {/* Carrossel */}
       <div className="relative w-full h-[60vh] overflow-hidden">

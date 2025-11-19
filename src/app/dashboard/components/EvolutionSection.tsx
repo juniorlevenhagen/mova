@@ -317,8 +317,8 @@ export function EvolutionSection({
       diferenca < 0
         ? "text-green-600"
         : diferenca > 0
-        ? "text-red-600"
-        : "text-gray-600";
+          ? "text-red-600"
+          : "text-gray-600";
 
     return {
       valor: ultimoValor,
@@ -548,8 +548,12 @@ export function EvolutionSection({
         data: `${formattedDate} #${index + 1}`, // Identificador único
         peso: Number(evolution.peso),
         cintura: evolution.cintura ? Number(evolution.cintura) : null,
-        percentualGordura: evolution.percentual_gordura ? Number(evolution.percentual_gordura) : null,
-        massaMagra: evolution.massa_magra ? Number(evolution.massa_magra) : null,
+        percentualGordura: evolution.percentual_gordura
+          ? Number(evolution.percentual_gordura)
+          : null,
+        massaMagra: evolution.massa_magra
+          ? Number(evolution.massa_magra)
+          : null,
         braco: evolution.braco ? Number(evolution.braco) : null,
         coxa: evolution.coxa ? Number(evolution.coxa) : null,
         quadril: evolution.quadril ? Number(evolution.quadril) : null,
@@ -564,7 +568,12 @@ export function EvolutionSection({
     });
 
     return chartData;
-  }, [validEvolutions, evolutionFilter, userProfile?.pesoInicial, initialData.massaMagra]);
+  }, [
+    validEvolutions,
+    evolutionFilter,
+    userProfile?.pesoInicial,
+    initialData.massaMagra,
+  ]);
 
   // Memoizar dados do gráfico de pizza para performance
   const pieChartData = useMemo(() => {
@@ -600,7 +609,7 @@ export function EvolutionSection({
   // Agrupar atividades por data
   const groupedActivities = useMemo(() => {
     const grouped: { [key: string]: typeof activities } = {};
-    
+
     activities.slice(0, 20).forEach((activity) => {
       const dateKey = activity.date;
       if (!grouped[dateKey]) {
@@ -611,13 +620,25 @@ export function EvolutionSection({
 
     // Ordenar por data (mais recente primeiro)
     return Object.entries(grouped)
-      .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+      .sort(
+        ([dateA], [dateB]) =>
+          new Date(dateB).getTime() - new Date(dateA).getTime()
+      )
       .map(([date, activities]) => ({
         date,
         activities,
-        totalTreinos: activities.reduce((sum, a) => sum + (a.treinos_concluidos || 0), 0),
-        totalCalorias: activities.reduce((sum, a) => sum + (a.calorias_queimadas || 0), 0),
-        totalDuracao: activities.reduce((sum, a) => sum + (a.duracao_minutos || 0), 0),
+        totalTreinos: activities.reduce(
+          (sum, a) => sum + (a.treinos_concluidos || 0),
+          0
+        ),
+        totalCalorias: activities.reduce(
+          (sum, a) => sum + (a.calorias_queimadas || 0),
+          0
+        ),
+        totalDuracao: activities.reduce(
+          (sum, a) => sum + (a.duracao_minutos || 0),
+          0
+        ),
       }));
   }, [activities]);
 
@@ -717,7 +738,9 @@ export function EvolutionSection({
   };
 
   return (
-    <div className={`bg-gray-50 rounded-xl shadow-lg border border-gray-200 ${components.card.padding} mt-8`}>
+    <div
+      className={`bg-gray-50 rounded-xl shadow-lg border border-gray-200 ${components.card.padding} mt-8`}
+    >
       <div className="flex items-center justify-between mb-8">
         <h2 className={`${typography.heading.h2} ${colors.text.primary}`}>
           Sua Evolução
@@ -812,10 +835,10 @@ export function EvolutionSection({
                 ? gorduraData.diferenca === null
                   ? "Primeira medição"
                   : gorduraData.diferenca < 0
-                  ? "Redução na gordura"
-                  : gorduraData.diferenca > 0
-                  ? "Aumento na gordura"
-                  : "Sem mudança"
+                    ? "Redução na gordura"
+                    : gorduraData.diferenca > 0
+                      ? "Aumento na gordura"
+                      : "Sem mudança"
                 : "Não medido ainda"}
             </p>
           </div>
@@ -893,8 +916,8 @@ export function EvolutionSection({
                   ? massaGordaVariacao < 0
                     ? "text-green-600"
                     : massaGordaVariacao > 0
-                    ? "text-red-600"
-                    : "text-gray-600"
+                      ? "text-red-600"
+                      : "text-gray-600"
                   : "text-red-600"
               }`}
             >
@@ -902,8 +925,8 @@ export function EvolutionSection({
                 ? massaGordaVariacao < 0
                   ? "Redução na gordura"
                   : massaGordaVariacao > 0
-                  ? "Aumento na gordura"
-                  : "Sem mudança"
+                    ? "Aumento na gordura"
+                    : "Sem mudança"
                 : "Comparado ao início"}
             </p>
           </div>
@@ -1115,12 +1138,12 @@ export function EvolutionSection({
                                 {name === "peso"
                                   ? "Peso"
                                   : name === "cintura"
-                                  ? "Cintura"
-                                  : name === "percentualGordura"
-                                  ? "% Gordura"
-                                  : name === "massaMagra"
-                                  ? "Massa Magra"
-                                  : name}
+                                    ? "Cintura"
+                                    : name === "percentualGordura"
+                                      ? "% Gordura"
+                                      : name === "massaMagra"
+                                        ? "Massa Magra"
+                                        : name}
                                 : {displayValue}
                               </p>
                             );
@@ -1279,7 +1302,9 @@ export function EvolutionSection({
               Evolução das Medidas Corporais
             </h4>
             <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-              <strong>Nota:</strong> Para o braço, sempre meça o mesmo braço (recomendado: braço dominante) para manter consistência nas comparações.
+              <strong>Nota:</strong> Para o braço, sempre meça o mesmo braço
+              (recomendado: braço dominante) para manter consistência nas
+              comparações.
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
@@ -1326,10 +1351,10 @@ export function EvolutionSection({
                                 {name === "braco"
                                   ? "Braço"
                                   : name === "coxa"
-                                  ? "Coxa"
-                                  : name === "quadril"
-                                  ? "Quadril"
-                                  : name}
+                                    ? "Coxa"
+                                    : name === "quadril"
+                                      ? "Quadril"
+                                      : name}
                                 : {Number(value).toFixed(0)} cm
                               </p>
                             );
@@ -1427,7 +1452,10 @@ export function EvolutionSection({
                           <p className="font-medium text-gray-800 mb-2">
                             {label === "inicio" ? "Cadastro Inicial" : label}
                           </p>
-                          <p className="text-sm" style={{ color: payload[0]?.color }}>
+                          <p
+                            className="text-sm"
+                            style={{ color: payload[0]?.color }}
+                          >
                             Bem-estar: {Number(value).toFixed(0)}/5
                           </p>
                         </div>
@@ -1456,7 +1484,8 @@ export function EvolutionSection({
               <div className="text-center py-8 text-gray-500">
                 <p>Nenhum dado de bem-estar disponível.</p>
                 <p className="text-sm">
-                  Adicione evoluções com avaliação de bem-estar para ver o gráfico!
+                  Adicione evoluções com avaliação de bem-estar para ver o
+                  gráfico!
                 </p>
               </div>
             )}
@@ -1982,12 +2011,15 @@ export function EvolutionSection({
           <div className="space-y-3">
             {groupedActivities.map((dayGroup) => {
               const isExpanded = expandedDays.has(dayGroup.date);
-              const formattedDate = new Date(dayGroup.date).toLocaleDateString("pt-BR", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              });
+              const formattedDate = new Date(dayGroup.date).toLocaleDateString(
+                "pt-BR",
+                {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }
+              );
 
               return (
                 <div
@@ -2085,7 +2117,9 @@ export function EvolutionSection({
                               <div className="text-right ml-4">
                                 <p className="text-sm font-semibold text-blue-600">
                                   {activity.treinos_concluidos || 0} treino
-                                  {(activity.treinos_concluidos || 0) > 1 ? "s" : ""}
+                                  {(activity.treinos_concluidos || 0) > 1
+                                    ? "s"
+                                    : ""}
                                 </p>
                                 <p className="text-xs text-red-600">
                                   {activity.calorias_queimadas || 0} kcal
@@ -2093,7 +2127,9 @@ export function EvolutionSection({
                               </div>
                             </div>
                             <div className="flex gap-4 text-xs text-gray-600">
-                              <span>Duração: {activity.duracao_minutos || 0}min</span>
+                              <span>
+                                Duração: {activity.duracao_minutos || 0}min
+                              </span>
                               {activity.observacoes && (
                                 <span className="italic flex-1 truncate">
                                   &ldquo;{activity.observacoes}&rdquo;

@@ -87,15 +87,12 @@ export function DeleteConfirmModal({
 
           {/* Content */}
           <div className="px-6 py-6">
-            <p className="text-base text-gray-700 mb-2">
-              {description}
-            </p>
-            <p className="text-sm font-semibold text-black">
-              {title}
-            </p>
+            <p className="text-base text-gray-700 mb-2">{description}</p>
+            <p className="text-sm font-semibold text-black">{title}</p>
             <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
               <p className="text-sm text-red-800">
-                Esta ação não pode ser desfeita. O post será permanentemente excluído.
+                Esta ação não pode ser desfeita. O post será permanentemente
+                excluído.
               </p>
             </div>
           </div>
@@ -129,4 +126,3 @@ export function DeleteConfirmModal({
     </div>
   );
 }
-

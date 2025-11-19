@@ -75,7 +75,9 @@ export default function AdminBlogPage() {
     try {
       const { data, error } = await supabase
         .from("blog_posts")
-        .select("id, slug, title, excerpt, author, category, read_time, published_at, created_at")
+        .select(
+          "id, slug, title, excerpt, author, category, read_time, published_at, created_at"
+        )
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -106,13 +108,20 @@ export default function AdminBlogPage() {
     setDeletingId(deleteModal.postId);
     try {
       console.log("🗑️ Tentando deletar post ID:", deleteModal.postId);
-      
+
       // Verificar autenticação primeiro
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
       if (!currentUser) {
         console.error("❌ Usuário não autenticado");
         alert("Erro: Você precisa estar autenticado para excluir posts.");
-        setDeleteModal({ isOpen: false, postId: null, postTitle: "", postSlug: "" });
+        setDeleteModal({
+          isOpen: false,
+          postId: null,
+          postTitle: "",
+          postSlug: "",
+        });
         setDeletingId(null);
         return;
       }
@@ -135,9 +144,16 @@ export default function AdminBlogPage() {
           details: error.details,
           hint: error.hint,
         });
-        setDeleteModal({ isOpen: false, postId: null, postTitle: "", postSlug: "" });
+        setDeleteModal({
+          isOpen: false,
+          postId: null,
+          postTitle: "",
+          postSlug: "",
+        });
         setDeletingId(null);
-        alert(`Erro ao excluir post: ${error.message}\n\nCódigo: ${error.code || "N/A"}\n\nVerifique se você tem permissão para excluir posts ou se há políticas RLS bloqueando a ação.`);
+        alert(
+          `Erro ao excluir post: ${error.message}\n\nCódigo: ${error.code || "N/A"}\n\nVerifique se você tem permissão para excluir posts ou se há políticas RLS bloqueando a ação.`
+        );
         return;
       }
 
@@ -145,27 +161,48 @@ export default function AdminBlogPage() {
       if (data && data.length > 0) {
         console.log("✅ Post deletado com sucesso:", data);
       } else {
-        console.warn("⚠️ Nenhum dado retornado na deleção. Pode ter sido deletado ou não existe.");
+        console.warn(
+          "⚠️ Nenhum dado retornado na deleção. Pode ter sido deletado ou não existe."
+        );
       }
 
       // Atualizar lista local
-      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== deleteModal.postId));
-      setDeleteModal({ isOpen: false, postId: null, postTitle: "", postSlug: "" });
+      setPosts((prevPosts) =>
+        prevPosts.filter((post) => post.id !== deleteModal.postId)
+      );
+      setDeleteModal({
+        isOpen: false,
+        postId: null,
+        postTitle: "",
+        postSlug: "",
+      });
       setDeletingId(null);
-      
+
       // Recarregar lista do servidor para garantir sincronização
       await fetchPosts();
     } catch (error) {
       console.error("❌ Erro inesperado:", error);
-      setDeleteModal({ isOpen: false, postId: null, postTitle: "", postSlug: "" });
+      setDeleteModal({
+        isOpen: false,
+        postId: null,
+        postTitle: "",
+        postSlug: "",
+      });
       setDeletingId(null);
-      alert(`Erro inesperado ao excluir post: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
+      alert(
+        `Erro inesperado ao excluir post: ${error instanceof Error ? error.message : "Erro desconhecido"}`
+      );
     }
   };
 
   const handleDeleteCancel = () => {
     if (!deletingId) {
-      setDeleteModal({ isOpen: false, postId: null, postTitle: "", postSlug: "" });
+      setDeleteModal({
+        isOpen: false,
+        postId: null,
+        postTitle: "",
+        postSlug: "",
+      });
     }
   };
 
@@ -291,7 +328,13 @@ export default function AdminBlogPage() {
                               <Edit className="h-5 w-5" />
                             </Link>
                             <button
-                              onClick={() => handleDeleteClick(post.id, post.title, post.slug)}
+                              onClick={() =>
+                                handleDeleteClick(
+                                  post.id,
+                                  post.title,
+                                  post.slug
+                                )
+                              }
                               disabled={deletingId === post.id}
                               className="p-2 text-gray-600 hover:text-red-600 transition-colors disabled:opacity-50"
                               title="Excluir post"
@@ -322,4 +365,3 @@ export default function AdminBlogPage() {
     </AdminProtectedRoute>
   );
 }
-

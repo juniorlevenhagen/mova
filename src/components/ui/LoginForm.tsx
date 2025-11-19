@@ -20,7 +20,7 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Verificar captcha antes de prosseguir
     if (!captchaToken) {
       setError("Por favor, complete a verificação de segurança");

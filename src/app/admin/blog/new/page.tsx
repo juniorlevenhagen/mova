@@ -7,9 +7,21 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { SuccessModal } from "@/components/admin/SuccessModal";
-import { ArrowLeft, Save, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+} from "lucide-react";
 
-const CATEGORIES = ["Treino", "Nutrição", "Motivação", "Recuperação", "Mindset"];
+const CATEGORIES = [
+  "Treino",
+  "Nutrição",
+  "Motivação",
+  "Recuperação",
+  "Mindset",
+];
 
 export default function NewBlogPostPage() {
   const router = useRouter();
@@ -80,9 +92,7 @@ export default function NewBlogPostPage() {
             : null,
       };
 
-      const { error } = await supabase
-        .from("blog_posts")
-        .insert([postData]);
+      const { error } = await supabase.from("blog_posts").insert([postData]);
 
       if (error) {
         console.error("Erro ao criar post:", error);
@@ -153,12 +163,15 @@ export default function NewBlogPostPage() {
                         Título e Slug
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
-                        Preencha o título do post. O slug será gerado automaticamente, mas você pode editá-lo manualmente.
+                        Preencha o título do post. O slug será gerado
+                        automaticamente, mas você pode editá-lo manualmente.
                       </p>
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                         <li>O título deve ser claro e descritivo</li>
                         <li>O slug será usado na URL do post</li>
-                        <li>Apenas letras minúsculas, números e hífens no slug</li>
+                        <li>
+                          Apenas letras minúsculas, números e hífens no slug
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -175,11 +188,14 @@ export default function NewBlogPostPage() {
                         Resumo e Conteúdo Principal
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
-                        Escreva um resumo curto que aparecerá na listagem do blog e o conteúdo completo do artigo.
+                        Escreva um resumo curto que aparecerá na listagem do
+                        blog e o conteúdo completo do artigo.
                       </p>
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                         <li>O resumo deve ter entre 100-200 caracteres</li>
-                        <li>Separe parágrafos do conteúdo com uma linha em branco</li>
+                        <li>
+                          Separe parágrafos do conteúdo com uma linha em branco
+                        </li>
                         <li>Use formatação simples e clara</li>
                       </ul>
                     </div>
@@ -201,7 +217,9 @@ export default function NewBlogPostPage() {
                       </p>
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                         <li>Escolha a categoria mais adequada ao conteúdo</li>
-                        <li>O tempo de leitura ajuda os leitores a planejarem</li>
+                        <li>
+                          O tempo de leitura ajuda os leitores a planejarem
+                        </li>
                         <li>Use o nome completo do autor</li>
                       </ul>
                     </div>
@@ -219,7 +237,8 @@ export default function NewBlogPostPage() {
                         Principais Insights (Key Takeaways)
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
-                        Liste os principais pontos que o leitor deve levar do artigo. Esses aparecerão destacados no post.
+                        Liste os principais pontos que o leitor deve levar do
+                        artigo. Esses aparecerão destacados no post.
                       </p>
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                         <li>Use 3-5 insights principais</li>
@@ -241,7 +260,8 @@ export default function NewBlogPostPage() {
                         Seções do Artigo (Opcional)
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
-                        Se o artigo tiver seções com títulos específicos, adicione-as aqui. Isso ajuda na organização e navegação.
+                        Se o artigo tiver seções com títulos específicos,
+                        adicione-as aqui. Isso ajuda na organização e navegação.
                       </p>
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                         <li>Cada seção precisa de um título e conteúdo</li>
@@ -263,7 +283,8 @@ export default function NewBlogPostPage() {
                         Citação Destacada (Opcional)
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
-                        Se houver uma citação importante no artigo, adicione-a aqui. Ela será destacada visualmente no post.
+                        Se houver uma citação importante no artigo, adicione-a
+                        aqui. Ela será destacada visualmente no post.
                       </p>
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                         <li>Use citações relevantes e impactantes</li>
@@ -285,12 +306,21 @@ export default function NewBlogPostPage() {
                         Data de Publicação e Finalização
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
-                        Escolha quando o post será publicado. Por padrão, é a data atual. Revise tudo antes de salvar.
+                        Escolha quando o post será publicado. Por padrão, é a
+                        data atual. Revise tudo antes de salvar.
                       </p>
                       <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
-                        <li>O post só aparecerá publicamente após a data de publicação</li>
-                        <li>Revise título, conteúdo e metadados antes de salvar</li>
-                        <li>Clique em &quot;Salvar Post&quot; quando estiver pronto</li>
+                        <li>
+                          O post só aparecerá publicamente após a data de
+                          publicação
+                        </li>
+                        <li>
+                          Revise título, conteúdo e metadados antes de salvar
+                        </li>
+                        <li>
+                          Clique em &quot;Salvar Post&quot; quando estiver
+                          pronto
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -304,7 +334,9 @@ export default function NewBlogPostPage() {
                           Dica Final
                         </h3>
                         <p className="text-sm text-gray-600">
-                          Você pode editar o post depois de criado. Após salvar, você será redirecionado para a lista de posts onde poderá visualizar, editar ou excluir o post criado.
+                          Você pode editar o post depois de criado. Após salvar,
+                          você será redirecionado para a lista de posts onde
+                          poderá visualizar, editar ou excluir o post criado.
                         </p>
                       </div>
                     </div>
@@ -465,7 +497,10 @@ export default function NewBlogPostPage() {
                       onChange={(e) => {
                         const newTakeaways = [...formData.key_takeaways];
                         newTakeaways[index] = e.target.value;
-                        setFormData({ ...formData, key_takeaways: newTakeaways });
+                        setFormData({
+                          ...formData,
+                          key_takeaways: newTakeaways,
+                        });
                       }}
                       className="flex-1 px-4 py-2 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       placeholder={`Insight ${index + 1}`}
@@ -509,7 +544,10 @@ export default function NewBlogPostPage() {
                   Seções do Artigo
                 </label>
                 {formData.sections.map((section, index) => (
-                  <div key={index} className="mb-4 p-4 border-2 border-gray-200 rounded-lg">
+                  <div
+                    key={index}
+                    className="mb-4 p-4 border-2 border-gray-200 rounded-lg"
+                  >
                     <input
                       type="text"
                       value={section.heading}
@@ -553,7 +591,10 @@ export default function NewBlogPostPage() {
                   onClick={() => {
                     setFormData({
                       ...formData,
-                      sections: [...formData.sections, { heading: "", body: "" }],
+                      sections: [
+                        ...formData.sections,
+                        { heading: "", body: "" },
+                      ],
                     });
                   }}
                   className="px-4 py-2 border-2 border-black rounded-lg hover:bg-black hover:text-white transition-colors text-sm font-semibold"
@@ -636,4 +677,3 @@ export default function NewBlogPostPage() {
     </AdminProtectedRoute>
   );
 }
-

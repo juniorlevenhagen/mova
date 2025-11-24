@@ -34,8 +34,8 @@ export default function Step2Page() {
   if (!canRender) {
     // Mostra apenas um loading ou nada enquanto verifica
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f1e8]">
-        <span className="text-gray-600">Carregando...</span>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white via-white to-gray-100">
+        <span className="text-black/80 font-zalando">Carregando...</span>
       </div>
     );
   }
@@ -120,7 +120,7 @@ export default function Step2Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 md:p-6 lg:p-8 relative">
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100 flex items-center justify-center p-4 md:p-6 lg:p-8 relative">
       {/* Logo no canto superior esquerdo */}
       <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
         <Image
@@ -132,11 +132,11 @@ export default function Step2Page() {
         />
       </div>
 
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-4 md:p-6 lg:p-8 mt-16 md:mt-0">
+      <div className="w-full max-w-2xl bg-white rounded-[22px] border-2 border-black shadow-xl p-4 md:p-6 lg:p-8 mt-16 md:mt-0">
         {/* Indicador de progresso */}
         <div className="mb-4 md:mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+            <h2 className="text-xl md:text-2xl font-zalando-medium text-black">
               Personalização do perfil
             </h2>
           </div>
@@ -144,9 +144,9 @@ export default function Step2Page() {
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-medium ${
+                  className={`w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-zalando-medium ${
                     step <= 2
-                      ? "bg-gray-800 text-white"
+                      ? "bg-black text-white"
                       : "bg-gray-200 text-gray-600"
                   }`}
                 >
@@ -155,7 +155,7 @@ export default function Step2Page() {
                 {step < 3 && (
                   <div
                     className={`w-6 md:w-12 h-1 mx-2 ${
-                      step <= 2 ? "bg-gray-800" : "bg-gray-200"
+                      step <= 2 ? "bg-black" : "bg-gray-200"
                     }`}
                   />
                 )}
@@ -168,7 +168,7 @@ export default function Step2Page() {
           <div>
             <label
               htmlFor="objective"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-zalando-medium text-black mb-2"
             >
               Qual é o seu objetivo principal?
             </label>
@@ -178,7 +178,7 @@ export default function Step2Page() {
               value={formData.objective}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
+              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
             >
               <option value="">Selecione seu objetivo</option>
               <option value="Ganho de Massa">Ganho de Massa</option>
@@ -193,7 +193,7 @@ export default function Step2Page() {
             <div>
               <label
                 htmlFor="birthDate"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-zalando-medium text-black mb-1"
               >
                 Data de Nascimento
               </label>
@@ -204,14 +204,14 @@ export default function Step2Page() {
                 value={formData.birthDate}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
                 max={new Date().toISOString().split("T")[0]} // Não permite datas futuras
               />
             </div>
             <div>
               <label
                 htmlFor="height"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-zalando-medium text-black mb-1"
               >
                 Altura (cm)
               </label>
@@ -222,14 +222,14 @@ export default function Step2Page() {
                 value={formData.height}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
                 placeholder="170"
               />
             </div>
             <div>
               <label
                 htmlFor="weight"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-zalando-medium text-black mb-1"
               >
                 Peso (kg)
               </label>
@@ -240,7 +240,7 @@ export default function Step2Page() {
                 value={formData.weight}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
                 placeholder="70"
               />
             </div>
@@ -249,7 +249,7 @@ export default function Step2Page() {
           <div>
             <label
               htmlFor="gender"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-zalando-medium text-black mb-2"
             >
               Gênero
             </label>
@@ -259,7 +259,7 @@ export default function Step2Page() {
               value={formData.gender}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
+              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
             >
               <option value="">Selecione o gênero</option>
               <option value="masculino">Masculino</option>
@@ -271,7 +271,7 @@ export default function Step2Page() {
             <div>
               <label
                 htmlFor="trainingFrequency"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-zalando-medium text-black mb-2"
               >
                 Frequência de treino
               </label>
@@ -281,7 +281,7 @@ export default function Step2Page() {
                 value={formData.trainingFrequency}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
               >
                 <option value="">Selecione a frequência</option>
                 <option value="2x por semana">2x por semana</option>
@@ -295,7 +295,7 @@ export default function Step2Page() {
             <div>
               <label
                 htmlFor="trainingLocation"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-zalando-medium text-black mb-2"
               >
                 Local de treino
               </label>
@@ -305,7 +305,7 @@ export default function Step2Page() {
                 value={formData.trainingLocation}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors text-sm md:text-base"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
               >
                 <option value="">Selecione o local</option>
                 <option value="casa">Em casa</option>
@@ -320,7 +320,7 @@ export default function Step2Page() {
             <div>
               <label
                 htmlFor="hasPain"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-zalando-medium text-black mb-2"
               >
                 Limitações físicas (opcional)
               </label>
@@ -330,14 +330,14 @@ export default function Step2Page() {
                 value={formData.hasPain}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors resize-none text-sm md:text-base"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors resize-none text-sm md:text-base font-zalando"
                 placeholder="Descreva suas limitações ou dores"
               />
             </div>
             <div>
               <label
                 htmlFor="dietaryRestrictions"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="block text-sm font-zalando-medium text-black mb-2"
               >
                 Restrições alimentares (opcional)
               </label>
@@ -347,7 +347,7 @@ export default function Step2Page() {
                 value={formData.dietaryRestrictions}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors resize-none text-sm md:text-base"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors resize-none text-sm md:text-base font-zalando"
                 placeholder="Descreva suas restrições alimentares"
               />
             </div>
@@ -357,14 +357,14 @@ export default function Step2Page() {
             <button
               type="button"
               onClick={() => router.push("/register/step1")}
-              className="flex-1 bg-transparent text-gray-600 py-2 px-3 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
+              className="flex-1 bg-white text-black py-2 px-3 rounded-lg font-zalando-medium hover:bg-gray-50 transition-colors border-2 border-black text-sm md:text-base"
             >
               Voltar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-gray-800 text-white py-2.5 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-black text-white py-2.5 px-4 rounded-lg font-zalando-medium hover:bg-black/90 transition-colors text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
             >
               {loading ? "Salvando..." : "Continuar"}
             </button>

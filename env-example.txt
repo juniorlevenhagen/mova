@@ -8,3 +8,10 @@ OPENAI_API_KEY=your_openai_api_key_here
 # Obtenha essas informações no painel do Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Emails de Contato
+# Todos os emails são enviados para o mesmo endereço por padrão
+# Se não configurado, usa: juniorlevenhagen@gmail.com
+NEXT_PUBLIC_CONTACT_EMAIL=juniorlevenhagen@gmail.com
+NEXT_PUBLIC_SUPPORT_EMAIL=juniorlevenhagen@gmail.com
+NEXT_PUBLIC_NEWSLETTER_EMAIL=juniorlevenhagen@gmail.com

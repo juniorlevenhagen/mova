@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { Mail, Phone, MapPin, Send, Clock } from "lucide-react";
+import { config } from "@/lib/config";
 
 export default function ContatoPage() {
   const [formData, setFormData] = useState({
@@ -72,8 +73,8 @@ export default function ContatoPage() {
                   <Mail className="w-6 h-6 text-gray-800 mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-800 mb-1">Email</h3>
-                    <p className="text-gray-600">suporte@movaplus.com</p>
-                    <p className="text-gray-600">contato@movaplus.com</p>
+                    <p className="text-gray-600">{config.supportEmail}</p>
+                    <p className="text-gray-600">{config.contactEmail}</p>
                   </div>
                 </div>
 
@@ -205,7 +206,7 @@ export default function ContatoPage() {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-                      placeholder="seu@email.com"
+                      placeholder={`seu@email.com (ex: ${config.contactEmail})`}
                     />
                   </div>
                 </div>

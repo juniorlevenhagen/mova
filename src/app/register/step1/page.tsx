@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { LogoBlue } from "@/components/ui/LogoBlue";
 import { supabase } from "@/lib/supabase";
 import { useStep1Form } from "@/hooks/useFormValidation";
@@ -208,14 +209,14 @@ export default function Step1Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 relative">
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100 flex items-center justify-center p-4 relative">
       <LogoBlue />
 
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+      <div className="w-full max-w-md bg-white rounded-[22px] border-2 border-black shadow-xl p-8">
         {/* Indicador de progresso */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-zalando-medium text-black">
               Cadastro simples
             </h2>
           </div>
@@ -223,9 +224,9 @@ export default function Step1Page() {
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-zalando-medium ${
                     step === 1
-                      ? "bg-gray-800 text-white"
+                      ? "bg-black text-white"
                       : "bg-gray-200 text-gray-600"
                   }`}
                 >
@@ -234,7 +235,7 @@ export default function Step1Page() {
                 {step < 3 && (
                   <div
                     className={`w-12 h-1 mx-2 ${
-                      step === 1 ? "bg-gray-800" : "bg-gray-200"
+                      step === 1 ? "bg-black" : "bg-gray-200"
                     }`}
                   />
                 )}
@@ -245,11 +246,11 @@ export default function Step1Page() {
 
         {/* Mensagem de erro */}
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="mb-6 bg-red-50 border-2 border-red-500 rounded-lg p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg
-                  className="h-5 w-5 text-red-400"
+                  className="h-5 w-5 text-red-600"
                   viewBox="0 0 20 20"
                   fill="currentColor"
                 >
@@ -261,7 +262,7 @@ export default function Step1Page() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="text-sm text-red-800 font-zalando">{error}</p>
               </div>
             </div>
           </div>
@@ -271,7 +272,7 @@ export default function Step1Page() {
           <div>
             <label
               htmlFor="name"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-zalando-medium text-black mb-2"
             >
               Nome completo *
             </label>
@@ -280,8 +281,8 @@ export default function Step1Page() {
               type="text"
               id="name"
               name="name"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-                errors.name ? "border-red-300" : "border-gray-300"
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
+                errors.name ? "border-red-500" : "border-black"
               }`}
               placeholder="Seu nome completo"
             />
@@ -291,7 +292,7 @@ export default function Step1Page() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-zalando-medium text-black mb-2"
             >
               E-mail *
             </label>
@@ -300,8 +301,8 @@ export default function Step1Page() {
               type="email"
               id="email"
               name="email"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-                errors.email ? "border-red-300" : "border-gray-300"
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
+                errors.email ? "border-red-500" : "border-black"
               }`}
               placeholder="seu@email.com"
             />
@@ -311,7 +312,7 @@ export default function Step1Page() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-zalando-medium text-black mb-2"
             >
               Senha *
             </label>
@@ -320,8 +321,8 @@ export default function Step1Page() {
               type="password"
               id="password"
               name="password"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-                errors.password ? "border-red-300" : "border-gray-300"
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
+                errors.password ? "border-red-500" : "border-black"
               }`}
               placeholder="Mínimo 8 caracteres"
             />
@@ -331,7 +332,7 @@ export default function Step1Page() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-2"
+              className="block text-sm font-zalando-medium text-black mb-2"
             >
               Confirmar senha *
             </label>
@@ -340,8 +341,8 @@ export default function Step1Page() {
               type="password"
               id="confirmPassword"
               name="confirmPassword"
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-transparent transition-colors ${
-                errors.confirmPassword ? "border-red-300" : "border-gray-300"
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
+                errors.confirmPassword ? "border-red-500" : "border-black"
               }`}
               placeholder="Digite a senha novamente"
             />
@@ -356,17 +357,26 @@ export default function Step1Page() {
               checked={true} // This will be handled by Zod
               onChange={() => {}} // This will be handled by Zod
               required
-              className="mt-1 rounded border-gray-300 text-gray-800 focus:ring-gray-800"
+              className="mt-1 rounded border-2 border-black text-black focus:ring-black"
             />
-            <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-600">
+            <label
+              htmlFor="acceptTerms"
+              className="ml-2 text-sm text-black/80 font-zalando"
+            >
               Aceito os{" "}
-              <a href="#" className="text-gray-800 hover:underline">
+              <Link
+                href="/termos-de-uso"
+                className="text-black hover:underline font-zalando-medium"
+              >
                 termos de uso
-              </a>{" "}
+              </Link>{" "}
               e{" "}
-              <a href="#" className="text-gray-800 hover:underline">
+              <Link
+                href="/politica-de-privacidade"
+                className="text-black hover:underline font-zalando-medium"
+              >
                 política de privacidade
-              </a>
+              </Link>
             </label>
           </div>
 
@@ -384,7 +394,7 @@ export default function Step1Page() {
           <button
             type="submit"
             disabled={loading || !isValid || !captchaToken}
-            className="w-full bg-gray-800 text-white py-2.5 px-6 rounded-lg font-semibold text-base md:text-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-black text-white py-2.5 px-6 rounded-lg font-zalando-medium text-base md:text-lg hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
           >
             {loading ? "Criando conta..." : "Continuar Personalização"}
           </button>

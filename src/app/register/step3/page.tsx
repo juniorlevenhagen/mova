@@ -80,10 +80,12 @@ export default function Step3Page() {
   // Mostrar loading enquanto verifica trial
   if (checkingTrial) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f1e8]">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white via-white to-gray-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <span className="text-gray-600">Verificando seu status...</span>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <span className="text-black/80 font-zalando">
+            Verificando seu status...
+          </span>
         </div>
       </div>
     );
@@ -91,14 +93,14 @@ export default function Step3Page() {
 
   if (!canRender) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f1e8]">
-        <span className="text-gray-600">Carregando...</span>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white via-white to-gray-100">
+        <span className="text-black/80 font-zalando">Carregando...</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] flex items-center justify-center p-4 md:p-6 lg:p-8 relative">
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100 flex items-center justify-center p-4 md:p-6 lg:p-8 relative">
       {/* Logo no canto superior esquerdo */}
       <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
         <Image
@@ -110,19 +112,21 @@ export default function Step3Page() {
         />
       </div>
 
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-6 md:p-8 lg:p-10 mt-16 md:mt-0">
+      <div className="w-full max-w-3xl bg-white rounded-[22px] border-2 border-black shadow-xl p-6 md:p-8 lg:p-10 mt-16 md:mt-0">
         {/* Indicador de progresso */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-gray-800">Mova+ Complete</h2>
+            <h2 className="text-3xl font-zalando-medium text-black">
+              Mova+ Complete
+            </h2>
           </div>
           <div className="flex items-center space-x-3">
             {[1, 2, 3].map((step) => (
               <div key={step} className="flex items-center">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium ${
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-zalando-medium ${
                     step <= 3
-                      ? "bg-gray-800 text-white"
+                      ? "bg-black text-white"
                       : "bg-gray-200 text-gray-600"
                   }`}
                 >
@@ -131,7 +135,7 @@ export default function Step3Page() {
                 {step < 3 && (
                   <div
                     className={`w-14 h-1 mx-3 ${
-                      step <= 3 ? "bg-gray-800" : "bg-gray-200"
+                      step <= 3 ? "bg-black" : "bg-gray-200"
                     }`}
                   />
                 )}
@@ -144,18 +148,18 @@ export default function Step3Page() {
           {/* Resumo do plano */}
           <div className="space-y-8">
             <div className="text-center">
-              <h3 className="text-3xl font-bold text-gray-800 mb-4">
+              <h3 className="text-3xl font-zalando-medium text-black mb-4">
                 Mova+ Complete
               </h3>
-              <p className="text-lg text-gray-600 mb-8">
+              <p className="text-lg text-black/80 mb-8 font-zalando">
                 Seu plano personalizado está pronto!
               </p>
             </div>
 
             {/* Banner de teste gratuito */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-5 mb-8">
+            <div className="bg-white border-2 border-black rounded-lg p-5 mb-8">
               <div className="flex items-center justify-center space-x-4">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
                   <svg
                     className="w-6 h-6 text-white"
                     fill="currentColor"
@@ -169,10 +173,10 @@ export default function Step3Page() {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-xl font-semibold text-green-800">
+                  <p className="text-xl font-zalando-medium text-black">
                     7 dias de teste GRATUITO
                   </p>
-                  <p className="text-sm text-green-700">
+                  <p className="text-sm text-black/80 font-zalando">
                     Comece hoje e cancele a qualquer momento
                   </p>
                 </div>
@@ -180,13 +184,13 @@ export default function Step3Page() {
             </div>
 
             <div className="space-y-6">
-              <h4 className="text-2xl font-semibold text-gray-800 text-center">
+              <h4 className="text-2xl font-zalando-medium text-black text-center">
                 O que você receberá:
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
                     <svg
                       className="w-5 h-5 text-white"
                       fill="currentColor"
@@ -199,13 +203,13 @@ export default function Step3Page() {
                       />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-black/80 font-zalando">
                     Plano de treino personalizado
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
                     <svg
                       className="w-5 h-5 text-white"
                       fill="currentColor"
@@ -218,13 +222,13 @@ export default function Step3Page() {
                       />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-black/80 font-zalando">
                     Plano alimentar completo
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
                     <svg
                       className="w-5 h-5 text-white"
                       fill="currentColor"
@@ -237,13 +241,13 @@ export default function Step3Page() {
                       />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-black/80 font-zalando">
                     Acompanhamento com IA
                   </span>
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
                     <svg
                       className="w-5 h-5 text-white"
                       fill="currentColor"
@@ -256,11 +260,13 @@ export default function Step3Page() {
                       />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-700">Suporte 24/7</span>
+                  <span className="text-sm text-black/80 font-zalando">
+                    Suporte 24/7
+                  </span>
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
                     <svg
                       className="w-5 h-5 text-white"
                       fill="currentColor"
@@ -273,7 +279,7 @@ export default function Step3Page() {
                       />
                     </svg>
                   </div>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-black/80 font-zalando">
                     Acesso ilimitado
                   </span>
                 </div>
@@ -284,14 +290,14 @@ export default function Step3Page() {
               <button
                 type="button"
                 onClick={() => router.push("/register/step2")}
-                className="flex-1 bg-transparent text-gray-600 py-3 px-6 rounded-lg font-medium hover:text-gray-800 hover:bg-gray-100 transition-colors border border-gray-300 text-sm md:text-base"
+                className="flex-1 bg-white text-black py-3 px-6 rounded-lg font-zalando-medium hover:bg-gray-50 transition-colors border-2 border-black text-sm md:text-base"
               >
                 Voltar
               </button>
               <ShinyButton
                 onClick={handleStartTrial}
                 disabled={loading}
-                className="flex-1 py-3 px-6 bg-black rounded-lg text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 px-6 bg-black rounded-lg text-sm md:text-base disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black"
               >
                 {loading ? "Redirecionando..." : "Começar Teste Grátis"}
               </ShinyButton>

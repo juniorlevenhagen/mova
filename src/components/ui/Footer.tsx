@@ -134,7 +134,7 @@ export function Footer() {
               <input
                 type="email"
                 name="email"
-                placeholder={`Seu melhor email (ex: ${config.newsletterEmail})`}
+                placeholder="Seu melhor email"
                 className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white transition-colors duration-200 text-center"
                 required
               />

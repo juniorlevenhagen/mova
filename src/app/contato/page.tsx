@@ -206,7 +206,7 @@ export default function ContatoPage() {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
-                      placeholder={`seu@email.com (ex: ${config.contactEmail})`}
+                      placeholder="seu@email.com"
                     />
                   </div>
                 </div>

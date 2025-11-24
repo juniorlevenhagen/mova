@@ -685,7 +685,7 @@ export default function BlogPage() {
                 id="newsletter-email"
                 name="email"
                 type="email"
-                placeholder={`Digite seu melhor email (ex: ${config.newsletterEmail})`}
+                placeholder="Digite seu melhor email"
                 required
                 className="w-full max-w-md rounded-full border border-white/30 bg-transparent px-6 py-4 text-sm text-white placeholder:text-white/40 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60 sm:text-base"
               />

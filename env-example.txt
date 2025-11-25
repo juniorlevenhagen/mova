@@ -15,3 +15,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 NEXT_PUBLIC_CONTACT_EMAIL=juniorlevenhagen@gmail.com
 NEXT_PUBLIC_SUPPORT_EMAIL=juniorlevenhagen@gmail.com
 NEXT_PUBLIC_NEWSLETTER_EMAIL=juniorlevenhagen@gmail.com
+
+# Resend API Key para envio de emails
+# Obtenha sua chave em: https://resend.com/api-keys
+RESEND_API_KEY=re_your_resend_api_key_here
+
+# Email remetente (deve ser um domínio verificado no Resend)
+# Use seu domínio verificado: noreply@movamais.fit
+# Ou use onboarding@resend.dev para testes (domínio de teste do Resend)
+RESEND_FROM_EMAIL=noreply@movamais.fit

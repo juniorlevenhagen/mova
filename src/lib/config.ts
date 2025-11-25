@@ -12,4 +12,7 @@ export const config = {
 
   // Email para newsletter
   newsletterEmail: process.env.NEXT_PUBLIC_NEWSLETTER_EMAIL || DEFAULT_EMAIL,
+
+  // Email remetente (deve ser um domínio verificado no Resend)
+  fromEmail: process.env.RESEND_FROM_EMAIL || "noreply@movamais.fit",
 } as const;

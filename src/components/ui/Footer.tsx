@@ -1,10 +1,45 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { config } from "@/lib/config";
 
 export function Footer() {
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail || newsletterStatus === "loading") return;
+
+    setNewsletterStatus("loading");
+    try {
+      const response = await fetch("/api/subscribe-newsletter", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: newsletterEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao inscrever-se");
+      }
+
+      setNewsletterStatus("success");
+      setNewsletterEmail("");
+      setTimeout(() => setNewsletterStatus("idle"), 3000);
+    } catch (error) {
+      console.error("Erro ao inscrever-se:", error);
+      setNewsletterStatus("error");
+      setTimeout(() => setNewsletterStatus("idle"), 3000);
+    }
+  };
+
   return (
     <footer className="w-full bg-black text-white">
       {/* Seção principal do footer */}
@@ -130,20 +165,36 @@ export function Footer() {
             <p className="text-gray-300 mb-4">
               Receba dicas exclusivas de fitness e novidades do Mova+
             </p>
-            <form className="space-y-3">
+            <form className="space-y-3" onSubmit={handleNewsletterSubmit}>
               <input
                 type="email"
                 name="email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Seu melhor email"
-                className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white transition-colors duration-200 text-center"
+                className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white transition-colors duration-200 text-center disabled:opacity-50"
                 required
+                disabled={newsletterStatus === "loading"}
               />
               <button
                 type="submit"
-                className="w-full bg-white text-gray-800 px-4 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200"
+                disabled={
+                  newsletterStatus === "loading" ||
+                  newsletterStatus === "success"
+                }
+                className="w-full bg-white text-gray-800 px-4 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Inscrever-se
+                {newsletterStatus === "loading"
+                  ? "Enviando..."
+                  : newsletterStatus === "success"
+                    ? "Inscrito!"
+                    : "Inscrever-se"}
               </button>
+              {newsletterStatus === "error" && (
+                <p className="text-sm text-red-400 text-center">
+                  Erro ao inscrever-se. Tente novamente.
+                </p>
+              )}
             </form>
           </div>
         </div>

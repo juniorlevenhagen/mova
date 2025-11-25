@@ -8,7 +8,6 @@ import { Footer } from "@/components/ui/Footer";
 import { Calendar, User, ArrowRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { config } from "@/lib/config";
 
 type BlogPost = {
   id: string;
@@ -146,6 +145,10 @@ export default function BlogPage() {
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const isLoadingRef = useRef(false);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
 
   useEffect(() => {
     let isMounted = true;
@@ -676,7 +679,35 @@ export default function BlogPage() {
             </p>
             <form
               className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
-              onSubmit={(event) => event.preventDefault()}
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (!newsletterEmail || newsletterStatus === "loading") return;
+
+                setNewsletterStatus("loading");
+                try {
+                  const response = await fetch("/api/subscribe-newsletter", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ email: newsletterEmail }),
+                  });
+
+                  const data = await response.json();
+
+                  if (!response.ok) {
+                    throw new Error(data.error || "Erro ao inscrever-se");
+                  }
+
+                  setNewsletterStatus("success");
+                  setNewsletterEmail("");
+                  setTimeout(() => setNewsletterStatus("idle"), 3000);
+                } catch (error) {
+                  console.error("Erro ao inscrever-se:", error);
+                  setNewsletterStatus("error");
+                  setTimeout(() => setNewsletterStatus("idle"), 3000);
+                }
+              }}
             >
               <label htmlFor="newsletter-email" className="sr-only">
                 Endereço de email
@@ -685,17 +716,33 @@ export default function BlogPage() {
                 id="newsletter-email"
                 name="email"
                 type="email"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Digite seu melhor email"
                 required
-                className="w-full max-w-md rounded-full border border-white/30 bg-transparent px-6 py-4 text-sm text-white placeholder:text-white/40 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60 sm:text-base"
+                disabled={newsletterStatus === "loading"}
+                className="w-full max-w-md rounded-full border border-white/30 bg-transparent px-6 py-4 text-sm text-white placeholder:text-white/40 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60 sm:text-base disabled:opacity-50"
               />
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-full bg-white px-8 py-4 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-gray-100"
+                disabled={
+                  newsletterStatus === "loading" ||
+                  newsletterStatus === "success"
+                }
+                className="inline-flex items-center justify-center rounded-full bg-white px-8 py-4 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Quero receber
+                {newsletterStatus === "loading"
+                  ? "Enviando..."
+                  : newsletterStatus === "success"
+                    ? "Inscrito!"
+                    : "Quero receber"}
               </button>
             </form>
+            {newsletterStatus === "error" && (
+              <p className="mt-4 text-sm text-red-300">
+                Erro ao inscrever-se. Tente novamente.
+              </p>
+            )}
           </motion.div>
         </section>
       </main>

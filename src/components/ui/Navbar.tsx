@@ -133,16 +133,18 @@ export function Navbar() {
             menuOpen ? "max-h-72" : "max-h-0"
           }`}
         >
-          <div className="bg-white border border-gray-200 flex flex-col gap-2 px-4 py-4">
-            {navLinks.map((link) => (
-              <button
-                key={link.href}
-                className="text-sm text-left text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200"
-                onClick={() => handleNavigate(link.href)}
-              >
-                {link.label}
-              </button>
-            ))}
+          <div className="bg-white border border-gray-200 flex flex-col gap-3 px-4 py-4">
+            <div className="flex flex-wrap justify-between gap-2">
+              {navLinks.map((link) => (
+                <button
+                  key={link.href}
+                  className="flex-1 min-w-[100px] text-center text-sm text-black font-zalando font-medium hover:text-gray-700 transition-colors duration-200"
+                  onClick={() => handleNavigate(link.href)}
+                >
+                  {link.label}
+                </button>
+              ))}
+            </div>
             <button
               onClick={handleEnter}
               className="w-full text-sm text-black font-zalando font-medium border border-gray-300 rounded-lg px-3 py-2 transition-all duration-200 hover:border-black hover:bg-black hover:text-white"

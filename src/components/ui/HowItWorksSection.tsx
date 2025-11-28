@@ -14,7 +14,6 @@ const steps = [
   {
     number: "02",
     title: "Configure",
-
     description: "Defina seus objetivos e configure seu perfil.",
     instruction:
       "Responda algumas perguntas sobre seus objetivos, características físicas e nível de condicionamento. Essa parte é muito importante para conseguirmos criar um plano específico para você.",
@@ -23,7 +22,6 @@ const steps = [
   {
     number: "03",
     title: "Treine",
-
     description:
       "Acesse treinos personalizados e dieta adaptados ao seu nível.",
     instruction:
@@ -33,7 +31,6 @@ const steps = [
   {
     number: "04",
     title: "Evolua",
-
     description: "Acompanhe seu progresso e veja seus resultados.",
     instruction:
       "Registre seus treinos, tire fotos do progresso e celebre cada conquista alcançada! Estaremos aqui para te apoiar e torcendo por você!",
@@ -45,6 +42,41 @@ export function HowItWorksSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+
+  // Estados para swipe no mobile
+  const [currentStep, setCurrentStep] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Lógica de swipe
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+      setHoveredCard(currentStep + 1);
+    }
+    if (isRightSwipe && currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+      setHoveredCard(currentStep - 1);
+    }
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -69,9 +101,9 @@ export function HowItWorksSection() {
     <section ref={sectionRef} className="w-full bg-white py-20 md:py-32">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Lado esquerdo - Texto motivador */}
+          {/* Lado esquerdo - Texto motivador (apenas desktop) */}
           <div
-            className={`space-y-8 transition-all duration-1000 ease-out ${
+            className={`hidden lg:block space-y-8 transition-all duration-1000 ease-out ${
               isVisible
                 ? "opacity-100 translate-x-0"
                 : "opacity-0 -translate-x-20"
@@ -95,7 +127,7 @@ export function HowItWorksSection() {
                 </p>
               </div>
 
-              {/* Texto de instrução no hover */}
+              {/* Texto de instrução no hover/tap */}
               {steps.map((step, index) => (
                 <div
                   key={index}
@@ -103,16 +135,28 @@ export function HowItWorksSection() {
                     hoveredCard === index ? "opacity-100" : "opacity-0"
                   }`}
                 >
-                  <h2 className="text-4xl md:text-7xl font-zalando-black text-black mb-8">
+                  <h2 className="text-4xl md:text-7xl font-zalando-black text-black mb-8 text-center lg:text-left">
                     {step.title}
                   </h2>
 
-                  <p className="text-2xl roboto-regular text-gray-600 leading-relaxed">
+                  <p className="text-xl md:text-2xl roboto-regular text-gray-600 leading-relaxed text-center lg:text-left">
                     {step.instruction}
                   </p>
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Texto padrão mobile - acima do carrossel */}
+          <div className="lg:hidden text-center mb-8">
+            <h2 className="text-4xl font-zalando-black text-black mb-4">
+              Transforme sua vida em 4 passos simples!
+            </h2>
+            <p className="text-xl text-gray-600 font-zalando">
+              A jornada para um corpo saudável e uma vida com mais qualidade
+              começa aqui. Com o Mova+, cada passo é uma conquista, cada treino
+              é uma evolução.
+            </p>
           </div>
 
           {/* Lado direito - Cards */}
@@ -174,35 +218,71 @@ export function HowItWorksSection() {
               </div>
             </div>
 
-            {/* Versão Mobile - Cards empilhados */}
-            <div className="lg:hidden space-y-6">
-              {steps.map((step, index) => (
+            {/* Versão Mobile - Carrossel com Swipe */}
+            <div className="lg:hidden">
+              <div
+                ref={carouselRef}
+                className="relative overflow-hidden rounded-2xl"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
                 <div
-                  key={index}
-                  className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 
-                             shadow-md transition-all duration-500 hover:scale-105 hover:shadow-xl
-                             ${
-                               isVisible
-                                 ? "opacity-100 translate-y-0"
-                                 : "opacity-0 translate-y-10"
-                             }`}
-                  style={{ transitionDelay: `${index * 0.1}s` }}
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{
+                    transform: `translateX(-${currentStep * 100}%)`,
+                  }}
                 >
-                  <div className="flex items-start space-x-4">
-                    <div className="text-4xl font-zalando-black text-purple-600 flex-shrink-0">
-                      {step.number}
+                  {steps.map((step, index) => (
+                    <div
+                      key={index}
+                      className="min-w-full relative h-[400px] rounded-2xl overflow-hidden shadow-lg"
+                      style={{
+                        backgroundImage: `url(${step.image})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    >
+                      {/* Overlay escuro */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+                      {/* Conteúdo do card com número e título */}
+                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                        <div className="text-5xl font-zalando-black mb-2">
+                          {step.number}
+                        </div>
+                        <h3 className="text-2xl font-zalando-bold">
+                          {step.title}
+                        </h3>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-zalando-bold text-gray-800 mb-2">
-                        {step.title}
-                      </h3>
-                      <p className="text-lg roboto-regular text-gray-600 leading-relaxed">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+
+                {/* Indicadores de slide (dots) */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                  {steps.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCurrentStep(index);
+                        setHoveredCard(index);
+                      }}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                        currentStep === index ? "bg-white w-8" : "bg-white/50"
+                      }`}
+                      aria-label={`Ir para passo ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Texto instruction abaixo do carrossel no mobile */}
+              <div className="mt-6 text-center transition-opacity duration-500">
+                <p className="text-xl text-gray-800 font-zalando bg-gray-100 p-4 rounded-2xl">
+                  {steps[currentStep].instruction}
+                </p>
+              </div>
             </div>
           </div>
         </div>

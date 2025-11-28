@@ -84,11 +84,11 @@ export function HowItWorksSection() {
                   hoveredCard === null ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <h2 className="text-4xl md:text-7xl font-zalando-black text-black mb-8">
+                <h2 className="text-4xl text-center md:text-7xl font-zalando-black text-black lg:text-left lg:mb-8 mb-8 -mt-6">
                   Transforme sua vida em 4 passos simples!
                 </h2>
 
-                <p className="text-2xl roboto-regular text-gray-600 leading-relaxed">
+                <p className="text-xl md:text-2xl text-gray-600 font-zalando max-w-3xl mx-auto mb-12 lg:leading-relaxed text-center lg:text-left">
                   A jornada para um corpo saudável e uma vida com mais qualidade
                   começa aqui. Com o Mova+, cada passo é uma conquista, cada
                   treino é uma evolução.

@@ -15,13 +15,13 @@ export default function Home() {
       {/* Seção Hero com melhor espaçamento */}
       <section className="w-full bg-white py-12 md:py-20 px-4">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl md:text-6xl font-zalando-medium text-black mb-8 leading-tight">
+          <h2 className="text-4xl sm:text-4xl md:text-6xl font-zalando-medium text-black mb-8">
             Tudo que você precisa para desenvolver seu físico e melhorar sua
-            saúde utilizando Inteligência Artificial.
+            saúde utilizando Inteligência Artificial
           </h2>
-          <p className="text-2xl md:text-2xl text-gray-800 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 font-zalando max-w-3xl mx-auto mb-12">
             Descubra como o Mova+ pode acelerar sua jornada fitness com o poder
-            de ferramentas inteligentes e conteúdo de alta qualidade.
+            de ferramentas inteligentes e conteúdo de alta qualidade
           </p>
         </div>
       </section>

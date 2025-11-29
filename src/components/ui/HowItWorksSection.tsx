@@ -111,7 +111,7 @@ export function HowItWorksSection() {
   return (
     <section ref={sectionRef} className="w-full bg-white py-8 md:py-16">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center bg-gray-50 rounded-2xl p-4">
           {/* Lado esquerdo - Texto motivador (apenas desktop) */}
           <div
             className={`hidden lg:block space-y-8 transition-all duration-1000 ease-out ${
@@ -127,7 +127,7 @@ export function HowItWorksSection() {
                   hoveredCard === null ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <h2 className="text-4xl text-center md:text-7xl font-zalando-black text-black lg:text-left lg:mb-8 mb-8 -mt-6">
+                <h2 className="text-4xl text-center md:text-7xl font-zalando-black text-black lg:text-left lg:mb-8 mb-8">
                   Transforme sua vida em 4 passos simples!
                 </h2>
 
@@ -159,7 +159,7 @@ export function HowItWorksSection() {
           </div>
 
           {/* Texto padrão mobile - acima do carrossel */}
-          <div className="lg:hidden text-center mb-8">
+          <div className="lg:hidden text-center mt-10">
             <h2 className="text-4xl font-zalando-black text-black mb-4">
               Transforme sua vida em 4 passos simples!
             </h2>

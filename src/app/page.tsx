@@ -35,7 +35,7 @@ export default function Home() {
       <PricingSection />
 
       {/* Seção com efeito gradiente entre PricingSection e AboutSection */}
-      <section className="w-full bg-gray-50 py-12 md:py-16 px-4 font-bbh-sans-hegarty-regular">
+      <section className="w-full lg:bg-gray-50 bg-gray-500 mt-14 md:py-16 px-4 font-bbh-sans-hegarty-regular">
         <ScrollGradientText
           text="TRANSFORME SEU CORPO. SUPERE SEUS LIMITES. ALCANCE SEUS OBJETIVOS."
           className="mb-8"

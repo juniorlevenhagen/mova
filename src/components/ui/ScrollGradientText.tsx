@@ -76,7 +76,7 @@ export function ScrollGradientText({
       {/* Título com efeito gradiente */}
       <h2
         ref={textRef}
-        className="md:text-[72px]/[1.1] text-[48px]/[1.1] tracking-tight bbh-sans-hegarty-regular w-full text-center mb-8 break-words overflow-hidden"
+        className="md:text-[72px]/[1.1] text-[22px]/[1.1] tracking-tight bbh-sans-hegarty-regular w-full text-center mb-8 break-words overflow-hidden"
         aria-label={text}
       >
         {words.map((word, wordIndex) => {

@@ -36,7 +36,8 @@ export function AboutSection() {
               src="/images/10.webp"
               alt="Mulher fazendo exercício - fique saudável e mais forte"
               fill
-              className="object-cover object-center"
+              className="object-cover"
+              style={{ objectPosition: "right center" }}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
               priority
               quality={100}

@@ -77,6 +77,7 @@ const config: Config = {
       animation: {
         "fade-in": "fadeIn 0.5s ease-in-out",
         "slide-up": "slideUp 0.5s ease-out",
+        shimmer: "shimmer 3s infinite",
       },
       keyframes: {
         fadeIn: {
@@ -95,6 +96,14 @@ const config: Config = {
           "100%": {
             transform: "translateY(0)",
             opacity: "1",
+          },
+        },
+        shimmer: {
+          "0%": {
+            transform: "translateX(-100%)",
+          },
+          "100%": {
+            transform: "translateX(200%)",
           },
         },
       },

@@ -48,6 +48,8 @@ export function HowItWorksSection() {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState<number>(200);
 
   // Lógica de swipe
   const minSwipeDistance = 50;
@@ -97,8 +99,17 @@ export function HowItWorksSection() {
     return () => observer.disconnect();
   }, []);
 
+  // Medir altura do texto do passo 2 (o mais longo) para fixar altura do container
+  useEffect(() => {
+    if (measureRef.current) {
+      const height = measureRef.current.offsetHeight;
+      // altura do texto + padding vertical (p-8 = 32px top + 32px bottom = 64px) + um pouco extra para segurança
+      setContainerHeight(height + 80);
+    }
+  }, []);
+
   return (
-    <section ref={sectionRef} className="w-full bg-white py-20 md:py-32">
+    <section ref={sectionRef} className="w-full bg-white py-8 md:py-16">
       <div className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Lado esquerdo - Texto motivador (apenas desktop) */}
@@ -109,7 +120,7 @@ export function HowItWorksSection() {
                 : "opacity-0 -translate-x-20"
             }`}
           >
-            <div className="relative min-h-[380px]">
+            <div className="relative h-[500px]">
               {/* Texto padrão */}
               <div
                 className={`absolute inset-0 transition-opacity duration-500 ${
@@ -277,11 +288,48 @@ export function HowItWorksSection() {
                 </div>
               </div>
 
+              {/* Elemento invisível para medir altura do passo 2 (texto mais longo) */}
+              <div className="absolute opacity-0 pointer-events-none -z-50 invisible">
+                <div ref={measureRef} className="px-2">
+                  <p className="text-xl md:text-2xl text-gray-800 font-zalando leading-tight text-center w-full">
+                    {steps[1].instruction}
+                  </p>
+                </div>
+              </div>
+
               {/* Texto instruction abaixo do carrossel no mobile */}
-              <div className="mt-6 text-center transition-opacity duration-500">
-                <p className="text-xl text-gray-800 font-zalando bg-gray-100 p-4 rounded-2xl">
-                  {steps[currentStep].instruction}
-                </p>
+              <div className="mt-12 relative z-10">
+                {/* Indicador do passo atual no topo - posicionado acima do card */}
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 z-20">
+                  <div className="flex items-center gap-1 bg-white px-4 py-1.5 rounded-full shadow-lg border border-purple-200">
+                    <span className="text-xs font-semibold text-gray-700">
+                      Passo {currentStep + 1}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card principal com gradiente e efeitos - altura fixa baseada no passo 2 */}
+                <div
+                  className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4 md:p-10 shadow-xl border border-purple-100/50 transition-all duration-500 flex items-center justify-center"
+                  style={{ height: `${containerHeight}px` }}
+                >
+                  {/* Efeito de brilho animado no fundo */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer"></div>
+
+                  {/* Elementos decorativos de fundo */}
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-gradient-to-tr from-blue-400/20 to-cyan-400/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+
+                  {/* Conteúdo do texto */}
+                  <div className="relative z-10 px-2 py-4">
+                    <p className="text-xl md:text-2xl text-gray-800 font-zalando leading-tight text-center">
+                      {steps[currentStep].instruction}
+                    </p>
+                  </div>
+
+                  {/* Borda decorativa inferior */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent opacity-50"></div>
+                </div>
               </div>
             </div>
           </div>

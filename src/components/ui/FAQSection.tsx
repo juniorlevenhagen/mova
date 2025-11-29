@@ -79,7 +79,7 @@ export function FAQSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="max-w-2xl mx-auto py-16 px-4">
+    <section ref={sectionRef} className="max-w-2xl mx-auto py-8 md:py-12 px-4">
       <div
         className={`transition-all duration-700 transform ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"

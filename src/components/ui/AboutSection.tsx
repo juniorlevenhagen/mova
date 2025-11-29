@@ -26,7 +26,7 @@ export function AboutSection() {
   }, []);
 
   return (
-    <section className="w-full bg-white py-20 md:py-32 px-4">
+    <section className="w-full bg-white py-8 md:py-16 px-4">
       <div className="w-full">
         {/* Seção com design dividido - foto superior e texto inferior */}
         <section className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-3xl shadow-2xl">

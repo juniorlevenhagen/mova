@@ -26,19 +26,21 @@ export function PricingSection() {
   }, []);
 
   return (
-    <div className="w-full py-20 md:py-32 px-4">
+    <div className="w-full md:py-32 pt-12 px-4">
       <section className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-3xl shadow-2xl">
         {/* Foto FIXA */}
-        <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px]">
-          <Image
-            src="/images/09.webp"
-            alt="Mulher fazendo exercício"
-            fill
-            className="object-cover object-center"
-            sizes="(max-width: 768px) 100vw, 1200px"
-            priority
-            quality={100}
-          />
+        <div className="flex-shrink-0">
+          <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] flex-shrink-0">
+            <Image
+              src="/images/09.webp"
+              alt="Mulher fazendo exercício"
+              fill
+              className="object-cover object-center"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              priority
+              quality={100}
+            />
+          </div>
         </div>
 
         {/* PARTE ROXA - Gradiente Animado */}

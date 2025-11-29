@@ -80,14 +80,14 @@ export function PricingSection() {
               hábito molda a mente e cada gota de suor te aproxima da tua melhor
               versão. Saiba seu peso ideal.
             </p>
-          </div>
 
-          <div className="mt-6">
-            <Link href="/register/step0">
-              <ShinyButton className="px-12 py-3 bg-black rounded-lg">
-                Calcule seu IMC Gratuito
-              </ShinyButton>
-            </Link>
+            <div className="mt-6">
+              <Link href="/register/step0">
+                <ShinyButton className="px-12 py-3 bg-black rounded-lg">
+                  Calcule seu IMC
+                </ShinyButton>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

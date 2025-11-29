@@ -84,14 +84,14 @@ export function AboutSection() {
                 Entre para o grupo de pessoas que decidiram transformar hábitos
                 diários, conquistando mais disposição, saúde e bem-estar.
               </p>
-            </div>
 
-            <div className="mt-6">
-              <Link href="/register/step0">
-                <ShinyButton className="px-12 py-3 lg:text-md bg-black rounded-lg">
-                  Cadastre-se
-                </ShinyButton>
-              </Link>
+              <div className="mt-6">
+                <Link href="/register/step0">
+                  <ShinyButton className="px-12 py-3 bg-black rounded-lg">
+                    Cadastre-se
+                  </ShinyButton>
+                </Link>
+              </div>
             </div>
           </div>
         </section>

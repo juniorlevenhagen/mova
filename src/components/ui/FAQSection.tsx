@@ -94,8 +94,8 @@ export function FAQSection() {
       </div>
       <div className="divide-y divide-gray-200">
         {faqs.map((faq, idx) => {
-          // Calculate delay for cascade effect (from top to bottom)
-          const delay = idx * 100; // 100ms delay between each item
+          // Calculate delay for cascade effect (from bottom to top)
+          const delay = (faqs.length - 1 - idx) * 100; // 100ms delay between each item
 
           return (
             <div

@@ -81,7 +81,7 @@ export function PricingSection() {
               versão. Saiba seu peso ideal.
             </p>
 
-            <div className="mt-6 md:mt-8">
+            <div className="mt-6 md:mt-8 flex justify-center md:justify-start">
               <Link href="/register/step0">
                 <ShinyButton className="px-12 py-3 bg-black rounded-lg">
                   Calcule seu IMC

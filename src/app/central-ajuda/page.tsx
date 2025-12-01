@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { config } from "@/lib/config";
 
 const helpCategories = [
   {

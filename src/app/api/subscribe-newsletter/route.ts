@@ -64,12 +64,13 @@ export async function POST(request: NextRequest) {
       { success: true, message: "Inscrição realizada com sucesso" },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Erro no envio de email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     return NextResponse.json(
       {
         error: "Erro interno do servidor",
-        details: error.message || "Erro desconhecido",
+        details: errorMessage,
       },
       { status: 500 }
     );

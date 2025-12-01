@@ -14,12 +14,6 @@ export default function AuthLayout({
 
   const isLogin = pathname === "/auth/login";
 
-  const title = isLogin ? "Bem-vindo de volta" : "Transforme sua vida";
-
-  const subtitle = isLogin
-    ? "Continue sua jornada fitness no Mova+"
-    : "Comece sua jornada fitness hoje mesmo";
-
   // Para login, sempre mostrar layout dividido
   if (isLogin) {
     return (

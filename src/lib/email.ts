@@ -56,9 +56,10 @@ export async function sendEmail({
 
     console.log("✅ Email enviado com sucesso:", info.messageId);
     return { success: true, messageId: info.messageId };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ Erro ao enviar email:", error);
-    return { success: false, error: error.message };
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -169,4 +170,3 @@ export async function sendContactConfirmation({
     `,
   });
 }
-

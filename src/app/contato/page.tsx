@@ -87,125 +87,125 @@ export default function ContatoPage() {
               Envie sua Mensagem
             </h2>
 
-              {submitStatus === "success" && (
-                <div className="bg-white rounded-[22px] border-2 border-green-500 p-4 mb-6">
-                  <p className="text-green-800 font-zalando">
-                    ✅ Mensagem enviada com sucesso! Entraremos em contato em
-                    breve.
-                  </p>
-                </div>
-              )}
+            {submitStatus === "success" && (
+              <div className="bg-white rounded-[22px] border-2 border-green-500 p-4 mb-6">
+                <p className="text-green-800 font-zalando">
+                  ✅ Mensagem enviada com sucesso! Entraremos em contato em
+                  breve.
+                </p>
+              </div>
+            )}
 
-              {submitStatus === "error" && (
-                <div className="bg-white rounded-[22px] border-2 border-red-500 p-4 mb-6">
-                  <p className="text-red-800 font-zalando">
-                    ❌ Erro ao enviar mensagem. Tente novamente.
-                  </p>
-                </div>
-              )}
+            {submitStatus === "error" && (
+              <div className="bg-white rounded-[22px] border-2 border-red-500 p-4 mb-6">
+                <p className="text-red-800 font-zalando">
+                  ❌ Erro ao enviar mensagem. Tente novamente.
+                </p>
+              </div>
+            )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-zalando-medium text-black mb-2"
-                    >
-                      Nome *
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
-                      placeholder="Seu nome completo"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-zalando-medium text-black mb-2"
-                    >
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
-                      placeholder="seu@email.com"
-                    />
-                  </div>
-                </div>
-
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label
-                    htmlFor="subject"
+                    htmlFor="name"
                     className="block text-sm font-zalando-medium text-black mb-2"
                   >
-                    Assunto *
+                    Nome *
                   </label>
-                  <select
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
                     onChange={handleInputChange}
                     required
                     className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
-                  >
-                    <option value="">Selecione um assunto</option>
-                    <option value="suporte">Suporte Técnico</option>
-                    <option value="planos">Dúvidas sobre Planos</option>
-                    <option value="conta">Problemas com Conta</option>
-                    <option value="pagamento">Dúvidas sobre Pagamento</option>
-                    <option value="outros">Outros</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="message"
-                    className="block text-sm font-zalando-medium text-black mb-2"
-                  >
-                    Mensagem *
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    required
-                    rows={6}
-                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
-                    placeholder="Descreva sua dúvida ou problema..."
+                    placeholder="Seu nome completo"
                   />
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-black text-white py-4 px-6 rounded-lg font-zalando-medium hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 border-2 border-black"
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-zalando-medium text-black mb-2"
+                  >
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+                    placeholder="seu@email.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="subject"
+                  className="block text-sm font-zalando-medium text-black mb-2"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Enviando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      <span>Enviar Mensagem</span>
-                    </>
-                  )}
-                </button>
-              </form>
+                  Assunto *
+                </label>
+                <select
+                  id="subject"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+                >
+                  <option value="">Selecione um assunto</option>
+                  <option value="suporte">Suporte Técnico</option>
+                  <option value="planos">Dúvidas sobre Planos</option>
+                  <option value="conta">Problemas com Conta</option>
+                  <option value="pagamento">Dúvidas sobre Pagamento</option>
+                  <option value="outros">Outros</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="message"
+                  className="block text-sm font-zalando-medium text-black mb-2"
+                >
+                  Mensagem *
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  required
+                  rows={6}
+                  className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+                  placeholder="Descreva sua dúvida ou problema..."
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-black text-white py-4 px-6 rounded-lg font-zalando-medium hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 border-2 border-black"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Enviar Mensagem</span>
+                  </>
+                )}
+              </button>
+            </form>
           </div>
         </div>
       </section>

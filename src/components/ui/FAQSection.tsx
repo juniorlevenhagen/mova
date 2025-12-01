@@ -85,17 +85,17 @@ export function FAQSection() {
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         }`}
       >
-        <h2 className="text-3xl font-bold text-center mb-2 text-gray-800">
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-center mb-4 md:mb-6 text-black leading-tight">
           Perguntas frequentes
         </h2>
-        <p className="text-gray-600 text-center mb-8">
+        <p className="text-base md:text-lg lg:text-xl text-black/90 text-center mb-8 font-medium leading-relaxed">
           Tudo que você precisa saber sobre o Mova+
         </p>
       </div>
       <div className="divide-y divide-gray-200">
         {faqs.map((faq, idx) => {
-          // Calculate delay for cascade effect (from bottom to top)
-          const delay = (faqs.length - 1 - idx) * 100; // 100ms delay between each item
+          // Calculate delay for cascade effect (from top to bottom)
+          const delay = idx * 100; // 100ms delay between each item
 
           return (
             <div
@@ -113,7 +113,7 @@ export function FAQSection() {
                 className="w-full flex justify-between items-center py-5 text-left focus:outline-none hover:bg-gray-50 transition-colors duration-200 rounded-lg px-2 -mx-2"
                 onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
               >
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-base md:text-lg text-black">
                   {faq.question}
                 </span>
                 <span className="text-2xl text-gray-400 transition-transform duration-200">
@@ -121,7 +121,7 @@ export function FAQSection() {
                 </span>
               </button>
               {openIndex === idx && (
-                <div className="pb-5 text-gray-600 animate-in slide-in-from-top-2 duration-300">
+                <div className="pb-5 text-base md:text-lg text-black/90 leading-relaxed animate-in slide-in-from-top-2 duration-300">
                   {faq.answer}
                 </div>
               )}

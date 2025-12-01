@@ -26,7 +26,7 @@ export function PricingSection() {
   }, []);
 
   return (
-    <div className="w-full md:py-32 pt-12 px-4">
+    <div className="w-full py-8 md:py-16 px-4">
       <section className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-3xl shadow-2xl">
         {/* Foto FIXA */}
         <div className="flex-shrink-0">
@@ -81,7 +81,7 @@ export function PricingSection() {
               versão. Saiba seu peso ideal.
             </p>
 
-            <div className="mt-6">
+            <div className="mt-6 md:mt-8">
               <Link href="/register/step0">
                 <ShinyButton className="px-12 py-3 bg-black rounded-lg">
                   Calcule seu IMC

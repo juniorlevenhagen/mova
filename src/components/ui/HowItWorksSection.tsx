@@ -116,11 +116,11 @@ export function HowItWorksSection() {
                   hoveredCard === null ? "opacity-100" : "opacity-0"
                 }`}
               >
-                <h2 className="text-4xl text-center md:text-7xl font-zalando-black text-black lg:text-left lg:mb-8 mb-8">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-zalando-black text-black lg:text-left lg:mb-8 mb-4 md:mb-6 leading-tight text-center">
                   Transforme sua vida em 4 passos simples!
                 </h2>
 
-                <p className="text-xl md:text-2xl text-gray-600 font-zalando max-w-3xl mx-auto mb-12 lg:leading-relaxed text-center lg:text-left">
+                <p className="text-base md:text-lg lg:text-xl text-black/90 font-zalando max-w-3xl mx-auto mb-12 lg:leading-relaxed text-center lg:text-left leading-relaxed font-medium">
                   A jornada para um corpo saudável e uma vida com mais qualidade
                   começa aqui. Com o Mova+, cada passo é uma conquista, cada
                   treino é uma evolução.
@@ -135,11 +135,11 @@ export function HowItWorksSection() {
                     hoveredCard === index ? "opacity-100" : "opacity-0"
                   }`}
                 >
-                  <h2 className="text-4xl md:text-7xl font-zalando-black text-black mb-8 text-center lg:text-left">
+                  <h2 className="text-3xl md:text-4xl lg:text-5xl font-zalando-black text-black mb-4 md:mb-6 text-center lg:text-left leading-tight">
                     {step.title}
                   </h2>
 
-                  <p className="text-xl md:text-2xl roboto-regular text-gray-600 leading-relaxed text-center lg:text-left">
+                  <p className="text-base md:text-lg lg:text-xl text-black/90 font-medium leading-relaxed text-center lg:text-left">
                     {step.instruction}
                   </p>
                 </div>
@@ -149,10 +149,10 @@ export function HowItWorksSection() {
 
           {/* Texto padrão mobile - acima do carrossel */}
           <div className="lg:hidden text-center mt-6">
-            <h2 className="text-4xl font-zalando-black text-black mb-3">
+            <h2 className="text-3xl md:text-4xl font-zalando-black text-black mb-4 md:mb-6 leading-tight">
               Transforme sua vida em 4 passos simples!
             </h2>
-            <p className="text-xl text-gray-600 font-zalando mb-0">
+            <p className="text-base md:text-lg text-black/90 font-zalando mb-0 leading-relaxed">
               A jornada para um corpo saudável e uma vida com mais qualidade
               começa aqui. Com o Mova+, cada passo é uma conquista, cada treino
               é uma evolução.
@@ -251,10 +251,10 @@ export function HowItWorksSection() {
                         <div className="text-5xl font-zalando-black mb-2">
                           {step.number}
                         </div>
-                        <h3 className="text-2xl font-zalando-bold mb-4">
+                        <h3 className="text-xl md:text-2xl font-zalando-bold mb-4 leading-tight">
                           {step.title}
                         </h3>
-                        <p className="text-lg font-zalando leading-tight opacity-90">
+                        <p className="text-base md:text-lg font-zalando leading-relaxed opacity-90">
                           {step.instruction}
                         </p>
                       </div>

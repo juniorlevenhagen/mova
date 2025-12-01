@@ -71,7 +71,7 @@ export function ScrollGradientText({
 
   return (
     <div
-      className={`w-full px-4 flex flex-col items-center gap-2 mt-10 pt-10 ${className}`}
+      className={`w-full px-4 flex flex-col items-center gap-2 py-4 md:py-8 ${className}`}
     >
       {/* Título com efeito gradiente */}
       <h2

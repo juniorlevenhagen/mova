@@ -434,7 +434,7 @@ export default function CentralAjudaPage() {
                 Envie sua dúvida por email e receba uma resposta em até 24 horas
               </p>
               <a
-                href={`mailto:${config.supportEmail}`}
+                href="/contato"
                 className="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-black/90 transition-colors font-zalando-medium border-2 border-black"
               >
                 Enviar Email

@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
-import { Mail, Phone, MapPin, Send, Clock } from "lucide-react";
-import { config } from "@/lib/config";
+import { Send } from "lucide-react";
 
 export default function ContatoPage() {
   const [formData, setFormData] = useState({
@@ -61,119 +60,36 @@ export default function ContatoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8]">
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="w-full bg-gradient-to-br from-[#f5f1e8] to-white py-16 md:py-24 px-4">
+      <section className="w-full py-16 md:py-24 px-4 bg-gradient-to-b from-white via-white to-gray-100">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">
+          <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-56 mx-auto font-zalando relative overflow-hidden group shadow-lg">
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
+            <span className="relative z-10">Entre em Contato</span>
+          </p>
+          <h1 className="text-3xl md:text-6xl font-zalando-medium text-black mb-6 leading-tight">
             Entre em Contato
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
+          <p className="text-lg md:text-xl text-black/90 mb-8 font-zalando">
             Estamos aqui para ajudar você em sua jornada fitness
           </p>
         </div>
       </section>
 
-      {/* Contact Info & Form */}
+      {/* Contact Form */}
       <section className="w-full bg-white py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact Information */}
-            <div className="space-y-8">
-              <h2 className="text-3xl font-bold text-gray-800 mb-8">
-                Informações de Contato
-              </h2>
-
-              <div className="space-y-6">
-                <div className="flex items-start space-x-4">
-                  <Mail className="w-6 h-6 text-gray-800 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-1">Email</h3>
-                    <p className="text-gray-600">{config.supportEmail}</p>
-                    <p className="text-gray-600">{config.contactEmail}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <Phone className="w-6 h-6 text-gray-800 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-1">
-                      Telefone
-                    </h3>
-                    <p className="text-gray-600">(11) 99999-9999</p>
-                    <p className="text-sm text-gray-500">
-                      Segunda a Sexta, 9h às 18h
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <MapPin className="w-6 h-6 text-gray-800 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-1">
-                      Endereço
-                    </h3>
-                    <p className="text-gray-600">São Paulo, SP - Brasil</p>
-                    <p className="text-sm text-gray-500">
-                      Atendimento 100% online
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <Clock className="w-6 h-6 text-gray-800 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-1">
-                      Horário de Atendimento
-                    </h3>
-                    <p className="text-gray-600">Segunda a Sexta: 9h às 18h</p>
-                    <p className="text-gray-600">Sábado: 9h às 14h</p>
-                    <p className="text-sm text-gray-500">
-                      Resposta em até 24 horas
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Links */}
-              <div className="bg-gray-50 rounded-2xl p-6 mt-8">
-                <h3 className="font-semibold text-gray-800 mb-4">
-                  Links Rápidos
-                </h3>
-                <div className="space-y-2">
-                  <a
-                    href="/central-ajuda"
-                    className="block text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    → Central de Ajuda
-                  </a>
-                  <a
-                    href="/como-funciona"
-                    className="block text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    → Como Funciona
-                  </a>
-                  <a
-                    href="/planos-precos"
-                    className="block text-gray-600 hover:text-gray-800 transition-colors"
-                  >
-                    → Planos e Preços
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Form */}
-            <div>
-              <h2 className="text-3xl font-bold text-gray-800 mb-8">
-                Envie sua Mensagem
-              </h2>
+        <div className="max-w-3xl mx-auto">
+          <div>
+            <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-8 text-center">
+              Envie sua Mensagem
+            </h2>
 
               {submitStatus === "success" && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                  <p className="text-green-800">
+                <div className="bg-white rounded-[22px] border-2 border-green-500 p-4 mb-6">
+                  <p className="text-green-800 font-zalando">
                     ✅ Mensagem enviada com sucesso! Entraremos em contato em
                     breve.
                   </p>
@@ -181,8 +97,8 @@ export default function ContatoPage() {
               )}
 
               {submitStatus === "error" && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                  <p className="text-red-800">
+                <div className="bg-white rounded-[22px] border-2 border-red-500 p-4 mb-6">
+                  <p className="text-red-800 font-zalando">
                     ❌ Erro ao enviar mensagem. Tente novamente.
                   </p>
                 </div>
@@ -193,7 +109,7 @@ export default function ContatoPage() {
                   <div>
                     <label
                       htmlFor="name"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-zalando-medium text-black mb-2"
                     >
                       Nome *
                     </label>
@@ -204,7 +120,7 @@ export default function ContatoPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                      className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
                       placeholder="Seu nome completo"
                     />
                   </div>
@@ -212,7 +128,7 @@ export default function ContatoPage() {
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-sm font-medium text-gray-700 mb-2"
+                      className="block text-sm font-zalando-medium text-black mb-2"
                     >
                       Email *
                     </label>
@@ -223,7 +139,7 @@ export default function ContatoPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                      className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
                       placeholder="seu@email.com"
                     />
                   </div>
@@ -232,7 +148,7 @@ export default function ContatoPage() {
                 <div>
                   <label
                     htmlFor="subject"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-zalando-medium text-black mb-2"
                   >
                     Assunto *
                   </label>
@@ -242,7 +158,7 @@ export default function ContatoPage() {
                     value={formData.subject}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
                   >
                     <option value="">Selecione um assunto</option>
                     <option value="suporte">Suporte Técnico</option>
@@ -256,7 +172,7 @@ export default function ContatoPage() {
                 <div>
                   <label
                     htmlFor="message"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    className="block text-sm font-zalando-medium text-black mb-2"
                   >
                     Mensagem *
                   </label>
@@ -267,7 +183,7 @@ export default function ContatoPage() {
                     onChange={handleInputChange}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent"
+                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
                     placeholder="Descreva sua dúvida ou problema..."
                   />
                 </div>
@@ -275,7 +191,7 @@ export default function ContatoPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gray-800 text-white py-4 px-6 rounded-lg font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  className="w-full bg-black text-white py-4 px-6 rounded-lg font-zalando-medium hover:bg-black/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 border-2 border-black"
                 >
                   {isSubmitting ? (
                     <>
@@ -290,7 +206,6 @@ export default function ContatoPage() {
                   )}
                 </button>
               </form>
-            </div>
           </div>
         </div>
       </section>

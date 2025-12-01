@@ -41,7 +41,7 @@ export const PixelImage = ({
   customGrid,
   className,
 }: PixelImageProps) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [showColor, setShowColor] = useState(!grayscaleAnimation);
 
   const MIN_GRID = 1;
@@ -65,6 +65,7 @@ export const PixelImage = ({
   }, [customGrid, grid]);
 
   useEffect(() => {
+    // Garantir que a imagem esteja visível imediatamente
     setIsVisible(true);
     if (grayscaleAnimation) {
       const colorTimeout = setTimeout(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { Check } from "lucide-react";
@@ -8,6 +9,12 @@ import { BackgroundGradient } from "@/components/ui/shadcn-io/background-gradien
 import { ShinyButton } from "@/components/ui/shiny-button";
 
 export default function PlanosPrecosPage() {
+  const router = useRouter();
+
+  const handleStartNow = () => {
+    router.push("/register/step0");
+  };
+
   const plans = [
     {
       name: "Plano Básico",
@@ -151,7 +158,10 @@ export default function PlanosPrecosPage() {
                   </div>
 
                   {/* CTA Button */}
-                  <ShinyButton className="w-full py-4 px-6 bg-black rounded-lg mt-auto">
+                  <ShinyButton
+                    onClick={handleStartNow}
+                    className="w-full py-4 px-6 bg-black rounded-lg mt-auto cursor-pointer"
+                  >
                     Começar Agora →
                   </ShinyButton>
                 </BackgroundGradient>
@@ -218,7 +228,10 @@ export default function PlanosPrecosPage() {
                   </div>
 
                   {/* CTA Button */}
-                  <ShinyButton className="w-full py-4 px-6 bg-black rounded-lg mt-auto">
+                  <ShinyButton
+                    onClick={handleStartNow}
+                    className="w-full py-4 px-6 bg-black rounded-lg mt-auto cursor-pointer"
+                  >
                     Começar Agora →
                   </ShinyButton>
                 </div>

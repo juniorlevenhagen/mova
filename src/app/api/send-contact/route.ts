@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
+import {
+  sendContactNotification,
+  sendContactConfirmation,
+} from "@/lib/email";
 import { config } from "@/lib/config";
-
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY não configurada");
-  }
-  return new Resend(apiKey);
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,55 +24,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email inválido" }, { status: 400 });
     }
 
-    const resend = getResend();
-
-    // Email para você (destinatário)
-    const emailToYou = await resend.emails.send({
-      from: `Mova+ <${config.fromEmail}>`,
-      to: config.contactEmail,
-      replyTo: email,
-      subject: `[Contato] ${subject}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #000;">Nova mensagem de contato</h2>
-          <p><strong>Nome:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Assunto:</strong> ${subject}</p>
-          <hr style="border: 1px solid #eee; margin: 20px 0;">
-          <p><strong>Mensagem:</strong></p>
-          <p style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px;">${message}</p>
-        </div>
-      `,
+    // Enviar email de notificação para você
+    const notificationResult = await sendContactNotification({
+      name,
+      email,
+      subject,
+      message,
     });
 
-    // Email de confirmação para o usuário
-    const confirmationEmail = await resend.emails.send({
-      from: `Mova+ <${config.fromEmail}>`,
-      to: email,
-      subject: "Recebemos sua mensagem - Mova+",
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #000;">Olá, ${name}!</h2>
-          <p>Recebemos sua mensagem e entraremos em contato em breve.</p>
-          <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Assunto:</strong> ${subject}</p>
-            <p><strong>Sua mensagem:</strong></p>
-            <p style="white-space: pre-wrap;">${message}</p>
-          </div>
-          <p>Nossa equipe responderá em até 24 horas úteis.</p>
-          <hr style="border: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #666; font-size: 12px;">Esta é uma mensagem automática. Por favor, não responda este email.</p>
-        </div>
-      `,
+    // Enviar email de confirmação para o usuário
+    const confirmationResult = await sendContactConfirmation({
+      name,
+      email,
+      subject,
+      message,
     });
 
-    if (emailToYou.error || confirmationEmail.error) {
-      console.error(
-        "Erro ao enviar email:",
-        emailToYou.error || confirmationEmail.error
-      );
+    // Se ambos falharam e não é modo dev, retorna erro
+    if (!notificationResult.success && !confirmationResult.success) {
+      // Se Gmail não estiver configurado, apenas loga e retorna sucesso
+      if (
+        notificationResult.error === "Gmail não configurado" &&
+        confirmationResult.error === "Gmail não configurado"
+      ) {
+        console.log("📧 [DEV MODE] Nova mensagem de contato:", {
+          name,
+          email,
+          subject,
+          message,
+          date: new Date().toLocaleString("pt-BR"),
+          notificationEmail: config.contactEmail,
+        });
+        return NextResponse.json(
+          {
+            success: true,
+            message: "Mensagem recebida com sucesso (modo desenvolvimento)",
+          },
+          { status: 200 }
+        );
+      }
+
       return NextResponse.json(
-        { error: "Erro ao enviar email" },
+        {
+          error: "Erro ao enviar email",
+          details: notificationResult.error || confirmationResult.error,
+        },
         { status: 500 }
       );
     }
@@ -86,10 +77,13 @@ export async function POST(request: NextRequest) {
       { success: true, message: "Email enviado com sucesso" },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro no envio de email:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      {
+        error: "Erro interno do servidor",
+        details: error.message || "Erro desconhecido",
+      },
       { status: 500 }
     );
   }

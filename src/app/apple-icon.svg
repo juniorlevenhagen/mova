@@ -1,0 +1,18 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo preto -->
+  <rect width="180" height="180" rx="40" fill="#000000"/>
+  
+  <!-- Letra M estilizada -->
+  <path d="M45 56 L45 124 M45 56 L90 101 M90 101 L135 56 M135 56 L135 124" 
+        stroke="#FFFFFF" 
+        stroke-width="14" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Sinal + estilizado -->
+  <path d="M101 112 L125 112 M113 100 L113 124" 
+        stroke="#FFFFFF" 
+        stroke-width="14" 
+        stroke-linecap="round"/>
+</svg>
+

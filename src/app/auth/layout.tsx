@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { Logo } from "@/components/ui/Logo";
 import { PixelImage } from "@/components/ui/pixel-image";
 
@@ -23,41 +23,34 @@ export default function AuthLayout({
   // Para login, sempre mostrar layout dividido
   if (isLogin) {
     return (
-      <div className="min-h-screen bg-white flex flex-col lg:flex-row">
-        {/* Imagem Mobile - Acima do formulário */}
-        <div className="lg:hidden w-full h-64 md:h-80 relative">
-          <Image
-            src="/images/jakub-klucky-O3UrNIU1FVQ-unsplash.webp"
-            alt="Fitness motivation - Mova+"
-            fill
-            className="object-cover object-center"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/30"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white px-8">
-              <h1 className="hidden md:block text-3xl font-bold mb-2">
-                {title}
-              </h1>
-              <p className="hidden md:block text-lg opacity-90">{subtitle}</p>
-            </div>
+      <div className="min-h-screen bg-white flex flex-col lg:flex-row relative">
+        {/* Logo - Mobile e Desktop */}
+        <Logo />
+
+        {/* Imagem de fundo - Mobile usa Image normal, Desktop usa PixelImage */}
+        <div className="w-full lg:w-1/2 h-[60vh] md:h-[65vh] lg:h-screen relative bg-white contrast-100 overflow-hidden">
+          {/* Mobile: Image simples para melhor performance */}
+          <div className="lg:hidden absolute inset-0">
+            <Image
+              src="/images/jakub-klucky-O3UrNIU1FVQ-unsplash.webp"
+              alt="Fitness motivation"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+          {/* Desktop: PixelImage com efeito */}
+          <div className="hidden lg:block absolute inset-0">
+            <PixelImage
+              src="/images/jakub-klucky-O3UrNIU1FVQ-unsplash.webp"
+              className="absolute inset-0 w-full h-full"
+              grayscaleAnimation={false}
+            />
           </div>
         </div>
 
-        {/* Imagem Desktop - Lado esquerdo */}
-        <div>
-          <Logo />
-        </div>
-        <div className="hidden lg:block lg:w-1/2 relative bg-white contrast-100">
-          <PixelImage
-            src="/images/jakub-klucky-O3UrNIU1FVQ-unsplash.webp"
-            className="absolute inset-0 w-full h-full"
-            grayscaleAnimation={false}
-          />
-        </div>
-
         {/* Formulário - Lado direito */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-4">
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-4 py-12 lg:py-4">
           <div className="w-full max-w-md">{children}</div>
         </div>
       </div>

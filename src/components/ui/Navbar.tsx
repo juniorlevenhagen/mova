@@ -30,7 +30,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className="relative w-full bg-white px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+      <nav className="relative z-50 w-full bg-white px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
         {/* Logo à esquerda */}
         <div className="flex items-center">
           <button
@@ -129,7 +129,7 @@ export function Navbar() {
 
         {/* Menu mobile */}
         <div
-          className={`lg:hidden absolute left-0 right-0 top-full mt-2 overflow-hidden transition-[max-height] duration-300 ${
+          className={`lg:hidden absolute z-50 left-0 right-0 top-full mt-2 overflow-hidden transition-[max-height] duration-300 ${
             menuOpen ? "max-h-72" : "max-h-0"
           }`}
         >

@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/Logo";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 import { ShinyButton } from "@/components/ui/shiny-button";
-import Image from "next/image";
 import { PixelImage } from "@/components/ui/pixel-image";
 
 export default function WelcomePage() {
@@ -16,33 +16,34 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col lg:flex-row">
-      {/* Imagem Mobile - Acima do conteúdo */}
-      <div className="lg:hidden w-full h-64 md:h-80 relative">
-        <Image
-          src="/images/jakub-klucky-O3UrNIU1FVQ-unsplash.webp"
-          alt="Fitness motivation - Mova+"
-          fill
-          className="object-cover object-center"
-          priority
-        />
-      </div>
+    <div className="min-h-screen bg-white flex flex-col lg:flex-row relative">
+      {/* Logo - Mobile e Desktop */}
+      <Logo />
 
-      {/* Imagem Desktop - Lado esquerdo */}
-      <div>
-        <Logo />
-      </div>
-
-      <div className="hidden lg:block lg:w-1/2 relative bg-white contrast-100">
-        <PixelImage
-          src="/images/logan-weaver-lgnwvr-u76Gd0hP5w4-unsplash.webp"
-          className="absolute inset-0 w-full h-full object-cover"
-          grayscaleAnimation={false}
-        />
+      {/* Imagem de fundo - Mobile usa Image normal, Desktop usa PixelImage */}
+      <div className="w-full lg:w-1/2 h-[60vh] md:h-[65vh] lg:h-screen relative bg-white contrast-100 overflow-hidden">
+        {/* Mobile: Image simples para melhor performance */}
+        <div className="lg:hidden absolute inset-0">
+          <Image
+            src="/images/logan-weaver-lgnwvr-u76Gd0hP5w4-unsplash.webp"
+            alt="Fitness motivation"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
+        {/* Desktop: PixelImage com efeito */}
+        <div className="hidden lg:block absolute inset-0">
+          <PixelImage
+            src="/images/logan-weaver-lgnwvr-u76Gd0hP5w4-unsplash.webp"
+            className="absolute inset-0 w-full h-full object-cover"
+            grayscaleAnimation={false}
+          />
+        </div>
       </div>
 
       {/* Conteúdo - Mobile e Desktop */}
-      <div className="flex-1 flex items-center justify-center lg:absolute lg:w-1/2 lg:h-full lg:right-0 lg:pr-8">
+      <div className="flex-1 flex items-center justify-center lg:absolute lg:w-1/2 lg:h-full lg:right-0 lg:pr-8 py-12 lg:py-0">
         <div className="w-full max-w-lg px-4 lg:px-0">
           <motion.div
             initial={{ opacity: 0, y: 24 }}

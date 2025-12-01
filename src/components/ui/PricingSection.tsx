@@ -7,6 +7,7 @@ import { ShinyButton } from "@/components/ui/shiny-button";
 
 export function PricingSection() {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -23,6 +24,17 @@ export function PricingSection() {
     window.addEventListener("scroll", handleScroll);
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Detecta se está em mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint do Tailwind
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return (
@@ -61,7 +73,7 @@ export function PricingSection() {
             style={{
               // Apenas opacidade e escala (SEM textShadow que embacava)
               color: `rgba(147, 51, 234, ${0.15 + scrollProgress * 0.25})`, // 15% → 40% opacidade
-              transform: `scale(${1 + scrollProgress * 0.1})`, // Cresce 10%
+              transform: `translateX(${isMobile ? "2.5rem" : "0"}) scale(${1 + scrollProgress * 0.1})`, // Move para direita no mobile + cresce 10%
               transition: "all 0.3s ease-out",
             }}
           >

@@ -58,7 +58,7 @@ export function AboutSection() {
           >
             {/* HEALTH - Efeito nítido */}
             <div
-              className="absolute top-0 right-0 text-[8rem] md:text-[12rem] lg:text-[14rem] 
+              className="absolute top-0 right-0 text-[8rem] md:text-[12erm] lg:text-[14rem] 
                          font-black select-none pointer-events-none leading-none"
               style={{
                 // Opacidade e escala (sem blur)

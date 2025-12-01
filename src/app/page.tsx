@@ -15,7 +15,7 @@ export default function Home() {
       {/* Seção Hero com melhor espaçamento */}
       <section className="w-full bg-white py-8 md:py-16 px-4">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-zalando-medium text-black mb-4 md:mb-6 leading-tight">
+          <h2 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-zalando-medium text-black mb-4 md:mb-6 leading-[1.1] md:leading-tight">
             Tudo que você precisa para desenvolver seu físico e melhorar sua
             saúde utilizando Inteligência Artificial
           </h2>

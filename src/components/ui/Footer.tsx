@@ -12,22 +12,33 @@ export function Footer() {
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newsletterEmail || newsletterStatus === "loading") return;
+    
+    // Trim do email para remover espaços (comum no mobile)
+    const trimmedEmail = newsletterEmail.trim();
+    
+    if (!trimmedEmail || newsletterStatus === "loading") return;
 
     setNewsletterStatus("loading");
     try {
+      // Timeout de 30 segundos para evitar que o mobile fique esperando indefinidamente
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await fetch("/api/subscribe-newsletter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: newsletterEmail }),
+        body: JSON.stringify({ email: trimmedEmail }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Erro ao inscrever-se");
+        throw new Error(data.error || data.details || "Erro ao inscrever-se");
       }
 
       setNewsletterStatus("success");
@@ -35,6 +46,12 @@ export function Footer() {
       setTimeout(() => setNewsletterStatus("idle"), 3000);
     } catch (error) {
       console.error("Erro ao inscrever-se:", error);
+      
+      // Tratamento específico para timeout
+      if (error instanceof Error && error.name === "AbortError") {
+        console.error("Timeout ao inscrever-se na newsletter");
+      }
+      
       setNewsletterStatus("error");
       setTimeout(() => setNewsletterStatus("idle"), 3000);
     }
@@ -171,8 +188,11 @@ export function Footer() {
                 name="email"
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
+                onBlur={(e) => setNewsletterEmail(e.target.value.trim())}
                 placeholder="Seu melhor email"
                 className="w-full px-4 py-3 bg-gray-800 rounded-lg text-white placeholder-white/70 focus:outline-none focus:border-white transition-colors duration-200 text-center disabled:opacity-50"
+                autoComplete="email"
+                inputMode="email"
                 required
                 disabled={newsletterStatus === "loading"}
               />

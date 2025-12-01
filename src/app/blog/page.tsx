@@ -681,22 +681,33 @@ export default function BlogPage() {
               className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
               onSubmit={async (event) => {
                 event.preventDefault();
-                if (!newsletterEmail || newsletterStatus === "loading") return;
+                
+                // Trim do email para remover espaços (comum no mobile)
+                const trimmedEmail = newsletterEmail.trim();
+                
+                if (!trimmedEmail || newsletterStatus === "loading") return;
 
                 setNewsletterStatus("loading");
                 try {
+                  // Timeout de 30 segundos para evitar que o mobile fique esperando indefinidamente
+                  const controller = new AbortController();
+                  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
                   const response = await fetch("/api/subscribe-newsletter", {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ email: newsletterEmail }),
+                    body: JSON.stringify({ email: trimmedEmail }),
+                    signal: controller.signal,
                   });
+
+                  clearTimeout(timeoutId);
 
                   const data = await response.json();
 
                   if (!response.ok) {
-                    throw new Error(data.error || "Erro ao inscrever-se");
+                    throw new Error(data.error || data.details || "Erro ao inscrever-se");
                   }
 
                   setNewsletterStatus("success");
@@ -704,6 +715,12 @@ export default function BlogPage() {
                   setTimeout(() => setNewsletterStatus("idle"), 3000);
                 } catch (error) {
                   console.error("Erro ao inscrever-se:", error);
+                  
+                  // Tratamento específico para timeout
+                  if (error instanceof Error && error.name === "AbortError") {
+                    console.error("Timeout ao inscrever-se na newsletter");
+                  }
+                  
                   setNewsletterStatus("error");
                   setTimeout(() => setNewsletterStatus("idle"), 3000);
                 }
@@ -718,7 +735,10 @@ export default function BlogPage() {
                 type="email"
                 value={newsletterEmail}
                 onChange={(e) => setNewsletterEmail(e.target.value)}
+                onBlur={(e) => setNewsletterEmail(e.target.value.trim())}
                 placeholder="Digite seu melhor email"
+                autoComplete="email"
+                inputMode="email"
                 required
                 disabled={newsletterStatus === "loading"}
                 className="w-full max-w-md rounded-full border border-white/30 bg-transparent px-6 py-4 text-sm text-white placeholder:text-white/40 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60 sm:text-base disabled:opacity-50"

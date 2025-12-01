@@ -13,6 +13,7 @@ import {
   ArrowRight,
   ExternalLink,
 } from "lucide-react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const socialLinks = [
   {
@@ -92,12 +93,24 @@ const benefits = [
 ];
 
 export default function ComunidadePage() {
+  const heroReveal = useScrollReveal({ threshold: 0.1 });
+  const benefitsReveal = useScrollReveal({ threshold: 0.1 });
+  const socialReveal = useScrollReveal({ threshold: 0.1 });
+  const testimonialsReveal = useScrollReveal({ threshold: 0.1 });
+
   return (
     <div className="min-h-screen bg-[#f5f1e8]">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="w-full bg-gradient-to-br from-[#f5f1e8] to-white py-16 md:py-24 px-4">
+      <section
+        ref={heroReveal.ref}
+        className={`w-full bg-gradient-to-br from-[#f5f1e8] to-white py-16 md:py-24 px-4 transition-all duration-1000 ease-out ${
+          heroReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-800 mb-6">
             Junte-se à nossa <span className="text-gray-600">Comunidade</span>
@@ -115,7 +128,14 @@ export default function ComunidadePage() {
       </section>
 
       {/* Benefits Section */}
-      <section className="w-full bg-white py-16 sm:py-20 px-4">
+      <section
+        ref={benefitsReveal.ref}
+        className={`w-full bg-white py-16 sm:py-20 px-4 transition-all duration-1000 ease-out ${
+          benefitsReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-10 sm:mb-12 text-center">
             Por que participar da nossa comunidade?
@@ -140,7 +160,14 @@ export default function ComunidadePage() {
       </section>
 
       {/* Social Links Section */}
-      <section className="w-full bg-[#f5f1e8] py-16 sm:py-20 px-4">
+      <section
+        ref={socialReveal.ref}
+        className={`w-full bg-[#f5f1e8] py-16 sm:py-20 px-4 transition-all duration-1000 ease-out ${
+          socialReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-10 sm:mb-12 text-center">
             Conecte-se conosco
@@ -195,7 +222,14 @@ export default function ComunidadePage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="w-full bg-white py-16 sm:py-20 px-4">
+      <section
+        ref={testimonialsReveal.ref}
+        className={`w-full bg-white py-16 sm:py-20 px-4 transition-all duration-1000 ease-out ${
+          testimonialsReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-6xl mx-auto">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-10 sm:mb-12 text-center">
             O que nossos membros dizem

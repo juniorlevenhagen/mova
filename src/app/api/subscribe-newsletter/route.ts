@@ -8,7 +8,7 @@ import { config } from "@/lib/config";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email } = body;
+    let { email } = body;
 
     // Validação básica
     if (!email) {
@@ -18,17 +18,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Trim do email para remover espaços (comum em mobile)
+    email = email.trim();
+
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.error("❌ Email inválido recebido:", email);
       return NextResponse.json({ error: "Email inválido" }, { status: 400 });
     }
 
+    console.log("📧 Processando inscrição na newsletter:", {
+      email,
+      userAgent: request.headers.get("user-agent"),
+      timestamp: new Date().toISOString(),
+    });
+
     // Enviar email de notificação para você
+    console.log("📧 Enviando email de notificação...");
     const notificationResult = await sendNewsletterNotification(email);
+    console.log("📧 Resultado notificação:", notificationResult);
 
     // Enviar email de confirmação para o usuário
+    console.log("📧 Enviando email de confirmação...");
     const confirmationResult = await sendNewsletterConfirmation(email);
+    console.log("📧 Resultado confirmação:", confirmationResult);
 
     // Se ambos falharam e não é modo dev, retorna erro
     if (!notificationResult.success && !confirmationResult.success) {
@@ -60,13 +74,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log de sucesso
+    console.log("✅ Inscrição na newsletter processada com sucesso:", {
+      email,
+      notificationSuccess: notificationResult.success,
+      confirmationSuccess: confirmationResult.success,
+      timestamp: new Date().toISOString(),
+    });
+
     return NextResponse.json(
       { success: true, message: "Inscrição realizada com sucesso" },
       { status: 200 }
     );
   } catch (error: unknown) {
-    console.error("Erro no envio de email:", error);
+    console.error("❌ Erro no envio de email:", error);
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    
+    // Log detalhado do erro
+    console.error("❌ Detalhes do erro:", {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
+    
     return NextResponse.json(
       {
         error: "Erro interno do servidor",

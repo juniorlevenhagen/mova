@@ -96,6 +96,9 @@ export default function ComoFuncionaPage() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const heroReveal = useScrollReveal({ threshold: 0.1 });
+  const videoReveal = useScrollReveal({ threshold: 0.1 });
+  const featuresReveal = useScrollReveal({ threshold: 0.1 });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -133,7 +136,14 @@ export default function ComoFuncionaPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="w-full py-16 md:py-24 px-4 bg-gradient-to-b from-white via-white to-gray-100">
+      <section
+        ref={heroReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 bg-gradient-to-b from-white via-white to-gray-100 transition-all duration-1000 ease-out ${
+          heroReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-64 mx-auto font-zalando relative overflow-hidden group shadow-lg">
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
@@ -150,7 +160,14 @@ export default function ComoFuncionaPage() {
       </section>
 
       {/* Vídeo Passo a Passo */}
-      <section className="w-full py-16 md:py-24 px-4 bg-white">
+      <section
+        ref={videoReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 bg-white transition-all duration-1000 ease-out ${
+          videoReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-4">
@@ -262,7 +279,14 @@ export default function ComoFuncionaPage() {
       </section>
 
       {/* Features Section */}
-      <section className="w-full bg-white py-20 px-4">
+      <section
+        ref={featuresReveal.ref}
+        className={`w-full bg-white py-20 px-4 transition-all duration-1000 ease-out ${
+          featuresReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-4">

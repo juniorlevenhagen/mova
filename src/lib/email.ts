@@ -46,18 +46,36 @@ export async function sendEmail({
   }
 
   try {
+    const emailTo = Array.isArray(to) ? to.join(", ") : to;
+    console.log("📧 Tentando enviar email:", {
+      to: emailTo,
+      subject,
+      from: process.env.GMAIL_USER,
+      timestamp: new Date().toISOString(),
+    });
+
     const info = await transporter.sendMail({
       from: `Mova+ <${process.env.GMAIL_USER}>`,
-      to: Array.isArray(to) ? to.join(", ") : to,
+      to: emailTo,
       replyTo: replyTo || process.env.GMAIL_USER,
       subject,
       html,
     });
 
-    console.log("✅ Email enviado com sucesso:", info.messageId);
+    console.log("✅ Email enviado com sucesso:", {
+      messageId: info.messageId,
+      to: emailTo,
+      accepted: info.accepted,
+      rejected: info.rejected,
+    });
     return { success: true, messageId: info.messageId };
   } catch (error: unknown) {
-    console.error("❌ Erro ao enviar email:", error);
+    console.error("❌ Erro ao enviar email:", {
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+      stack: error instanceof Error ? error.stack : undefined,
+      to: Array.isArray(to) ? to.join(", ") : to,
+      timestamp: new Date().toISOString(),
+    });
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     return { success: false, error: errorMessage };
   }

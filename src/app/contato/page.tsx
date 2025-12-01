@@ -4,8 +4,11 @@ import { useState } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { Send } from "lucide-react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function ContatoPage() {
+  const heroReveal = useScrollReveal({ threshold: 0.1 });
+  const formReveal = useScrollReveal({ threshold: 0.1 });
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -64,7 +67,14 @@ export default function ContatoPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="w-full py-16 md:py-24 px-4 bg-gradient-to-b from-white via-white to-gray-100">
+      <section
+        ref={heroReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 bg-gradient-to-b from-white via-white to-gray-100 transition-all duration-1000 ease-out ${
+          heroReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-4xl mx-auto text-center">
           <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-56 mx-auto font-zalando relative overflow-hidden group shadow-lg">
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
@@ -80,7 +90,14 @@ export default function ContatoPage() {
       </section>
 
       {/* Contact Form */}
-      <section className="w-full bg-white py-20 px-4">
+      <section
+        ref={formReveal.ref}
+        className={`w-full bg-white py-20 px-4 transition-all duration-1000 ease-out ${
+          formReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-3xl mx-auto">
           <div>
             <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-8 text-center">

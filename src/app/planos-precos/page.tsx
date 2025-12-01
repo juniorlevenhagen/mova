@@ -7,9 +7,15 @@ import { Footer } from "@/components/ui/Footer";
 import { Check } from "lucide-react";
 import { BackgroundGradient } from "@/components/ui/shadcn-io/background-gradient";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function PlanosPrecosPage() {
   const router = useRouter();
+  const heroReveal = useScrollReveal({ threshold: 0.1 });
+  const socialReveal = useScrollReveal({ threshold: 0.1 });
+  const pricingReveal = useScrollReveal({ threshold: 0.1 });
+  const videoReveal = useScrollReveal({ threshold: 0.1 });
+  const faqReveal = useScrollReveal({ threshold: 0.1 });
 
   const handleStartNow = () => {
     router.push("/register/step0");
@@ -54,7 +60,14 @@ export default function PlanosPrecosPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="w-full py-16 md:py-20 px-4 bg-gradient-to-b from-white via-white to-gray-100">
+      <section
+        ref={heroReveal.ref}
+        className={`w-full py-16 md:py-20 px-4 bg-gradient-to-b from-white via-white to-gray-100 transition-all duration-1000 ease-out ${
+          heroReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-60 mx-auto font-zalando relative overflow-hidden group shadow-lg">
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
@@ -67,7 +80,14 @@ export default function PlanosPrecosPage() {
       </section>
 
       {/* Social Proof */}
-      <div className="text-center mb-12 max-w-4xl mx-auto px-4">
+      <div
+        ref={socialReveal.ref}
+        className={`text-center mb-12 max-w-4xl mx-auto px-4 transition-all duration-1000 ease-out ${
+          socialReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <p className="text-lg text-gray-700 mb-3 mt-10">
           Junte-se a <span className="font-bold text-black">10.000+</span>{" "}
           pessoas que já transformaram suas vidas
@@ -79,7 +99,14 @@ export default function PlanosPrecosPage() {
       </div>
 
       {/* Pricing Cards Section */}
-      <section className="w-full py-12 md:py-4 md:mb-16 px-4">
+      <section
+        ref={pricingReveal.ref}
+        className={`w-full py-12 md:py-4 md:mb-16 px-4 transition-all duration-1000 ease-out ${
+          pricingReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto">
           <p className="text-xl md:text-2xl text-gray-800 font-zalando max-w-3xl mx-auto mb-14 leading-relaxed text-center py-1 px-6">
             Escolha o plano ideal para sua jornada de transformação fitness
@@ -242,7 +269,14 @@ export default function PlanosPrecosPage() {
       </section>
 
       {/* Video Section */}
-      <section className="w-full bg-gray-100 py-16 md:py-24 px-4">
+      <section
+        ref={videoReveal.ref}
+        className={`w-full bg-gray-100 py-16 md:py-24 px-4 transition-all duration-1000 ease-out ${
+          videoReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="relative w-11/12 mx-auto overflow-hidden shadow-2xl bg-gray-100">
             {/* Layout em grid - Texto e Vídeo lado a lado */}
@@ -283,7 +317,14 @@ export default function PlanosPrecosPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="w-full py-16 md:py-24 px-4">
+      <section
+        ref={faqReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 transition-all duration-1000 ease-out ${
+          faqReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-12 text-center">
             Perguntas Frequentes

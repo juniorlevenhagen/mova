@@ -7,6 +7,7 @@ import { Footer } from "@/components/ui/Footer";
 import { Heart, Target, Users, Zap } from "lucide-react";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import Link from "next/link";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 const values = [
   {
     icon: Heart,
@@ -101,6 +102,10 @@ export default function SobreNosPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const statsSectionRef = useRef<HTMLDivElement>(null);
   const [isStatsVisible, setIsStatsVisible] = useState(false);
+  const heroReveal = useScrollReveal({ threshold: 0.1 });
+  const historiaReveal = useScrollReveal({ threshold: 0.1 });
+  const valoresReveal = useScrollReveal({ threshold: 0.1 });
+  const ctaReveal = useScrollReveal({ threshold: 0.1 });
 
   useEffect(() => {
     const currentSection = statsSectionRef.current;
@@ -142,7 +147,14 @@ export default function SobreNosPage() {
       <Navbar />
 
       {/* Hero Section - Padronizado */}
-      <section className="w-full py-16 md:py-24 px-4 bg-gradient-to-b from-white via-white to-gray-100">
+      <section
+        ref={heroReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 bg-gradient-to-b from-white via-white to-gray-100 transition-all duration-1000 ease-out ${
+          heroReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm font-medium text-gray-600 mb-8 tracking-wide uppercase bg-gradient-to-r from-black to-gray-800 text-white py-2 rounded-full w-52 mx-auto font-zalando relative overflow-hidden group shadow-lg">
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
@@ -160,7 +172,14 @@ export default function SobreNosPage() {
       </section>
 
       {/* Nossa História - Padronizado */}
-      <section className="w-full py-16 md:py-24 px-4">
+      <section
+        ref={historiaReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 transition-all duration-1000 ease-out ${
+          historiaReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Texto */}
@@ -210,7 +229,14 @@ export default function SobreNosPage() {
       </section>
 
       {/* Nossos Valores - Padronizado */}
-      <section className="w-full py-16 md:py-24 px-4">
+      <section
+        ref={valoresReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 transition-all duration-1000 ease-out ${
+          valoresReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-4">
@@ -298,7 +324,14 @@ export default function SobreNosPage() {
       </section>
 
       {/* CTA Section - Padronizado */}
-      <section className="w-full py-16 md:py-24 px-4">
+      <section
+        ref={ctaReveal.ref}
+        className={`w-full py-16 md:py-24 px-4 transition-all duration-1000 ease-out ${
+          ctaReveal.isVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-6">
             Pronto para fazer parte da nossa história?

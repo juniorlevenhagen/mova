@@ -79,7 +79,7 @@ export function FAQSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="max-w-2xl mx-auto py-8 md:py-12 px-4">
+    <section ref={sectionRef} className="max-w-2xl mx-auto py-8 md:py-16 px-4">
       <div
         className={`transition-all duration-700 transform ${
           isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -94,8 +94,8 @@ export function FAQSection() {
       </div>
       <div className="divide-y divide-gray-200">
         {faqs.map((faq, idx) => {
-          // Calculate delay for cascade effect (from bottom to top)
-          const delay = (faqs.length - 1 - idx) * 100; // 100ms delay between each item
+          // Calculate delay for cascade effect (from top to bottom)
+          const delay = idx * 100; // 100ms delay between each item
 
           return (
             <div
@@ -103,7 +103,7 @@ export function FAQSection() {
               className={`transition-all duration-500 transform ${
                 isVisible
                   ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-8"
+                  : "opacity-0 -translate-y-8"
               }`}
               style={{
                 transitionDelay: `${delay}ms`,

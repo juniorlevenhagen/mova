@@ -3,15 +3,18 @@
 import { useEffect, useState, useRef } from "react";
 
 interface ScrollGradientTextProps {
-  text: string;
+  text: string; // Texto para desktop
+  textMobile?: string; // Texto para mobile (opcional)
   className?: string;
 }
 
 export function ScrollGradientText({
   text,
+  textMobile,
   className = "",
 }: ScrollGradientTextProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const textRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -41,6 +44,17 @@ export function ScrollGradientText({
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Detecta se está em mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint do Tailwind
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   // Função para calcular cores baseadas na posição da letra e scroll
   const calculateColor = (index: number, total: number) => {
     const letterPosition = index / total; // 0 a 1
@@ -66,8 +80,15 @@ export function ScrollGradientText({
     }
   };
 
-  const words = text.split(" ");
-  const totalLetters = text.replace(/\s/g, "").length;
+  // Função para esconder pontos dentro do span (mobile e desktop)
+  const shouldHideLetter = (letter: string): boolean => {
+    return letter === ".";
+  };
+
+  // Seleciona o texto apropriado baseado no dispositivo
+  const displayText = isMobile && textMobile ? textMobile : text;
+  const words = displayText.split(" ");
+  const totalLetters = displayText.replace(/\s/g, "").length;
 
   return (
     <div
@@ -76,8 +97,8 @@ export function ScrollGradientText({
       {/* Título com efeito gradiente */}
       <h2
         ref={textRef}
-        className="md:text-[72px]/[1.1] text-[22px]/[1.1] tracking-tight bbh-sans-hegarty-regular w-full text-center mb-8 break-words overflow-hidden"
-        aria-label={text}
+        className="md:text-[72px]/[1.1] text-[40px]/[1.1] tracking-tight bbh-sans-hegarty-regular w-full text-center break-words overflow-hidden"
+        aria-label={displayText}
       >
         {words.map((word, wordIndex) => {
           // Calcula o índice global das letras
@@ -94,6 +115,11 @@ export function ScrollGradientText({
               >
                 {word.split("").map((letter, letterIndex) => {
                   const globalIndex = startIndex + letterIndex;
+
+                  // Esconde pontos usando a função
+                  if (shouldHideLetter(letter)) {
+                    return null;
+                  }
 
                   return (
                     <span

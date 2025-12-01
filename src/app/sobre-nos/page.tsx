@@ -102,10 +102,10 @@ export default function SobreNosPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const statsSectionRef = useRef<HTMLDivElement>(null);
   const [isStatsVisible, setIsStatsVisible] = useState(false);
-  const heroReveal = useScrollReveal({ threshold: 0.1 });
-  const historiaReveal = useScrollReveal({ threshold: 0.1 });
-  const valoresReveal = useScrollReveal({ threshold: 0.1 });
-  const ctaReveal = useScrollReveal({ threshold: 0.1 });
+  const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const historiaReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const valoresReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const ctaReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
 
   useEffect(() => {
     const currentSection = statsSectionRef.current;

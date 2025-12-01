@@ -7,8 +7,8 @@ import { Send } from "lucide-react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function ContatoPage() {
-  const heroReveal = useScrollReveal({ threshold: 0.1 });
-  const formReveal = useScrollReveal({ threshold: 0.1 });
+  const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const formReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
   const [formData, setFormData] = useState({
     name: "",
     email: "",

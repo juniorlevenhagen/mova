@@ -145,8 +145,8 @@ export default function CentralAjudaPage() {
   );
 
   const hasSearchResults = searchTerm.trim().length > 0;
-  const heroReveal = useScrollReveal({ threshold: 0.1 });
-  const contentReveal = useScrollReveal({ threshold: 0.1 });
+  const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const contentReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100">

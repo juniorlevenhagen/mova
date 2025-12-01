@@ -97,9 +97,9 @@ export default function ComoFuncionaPage() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const heroReveal = useScrollReveal({ threshold: 0.1 });
-  const videoReveal = useScrollReveal({ threshold: 0.1 });
-  const featuresReveal = useScrollReveal({ threshold: 0.1 });
+  const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const videoReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const featuresReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
 
   useEffect(() => {
     const observer = new IntersectionObserver(

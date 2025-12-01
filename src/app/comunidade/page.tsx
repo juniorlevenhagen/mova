@@ -93,10 +93,10 @@ const benefits = [
 ];
 
 export default function ComunidadePage() {
-  const heroReveal = useScrollReveal({ threshold: 0.1 });
-  const benefitsReveal = useScrollReveal({ threshold: 0.1 });
-  const socialReveal = useScrollReveal({ threshold: 0.1 });
-  const testimonialsReveal = useScrollReveal({ threshold: 0.1 });
+  const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const benefitsReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const socialReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const testimonialsReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
 
   return (
     <div className="min-h-screen bg-[#f5f1e8]">

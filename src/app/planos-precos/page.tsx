@@ -11,11 +11,11 @@ import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function PlanosPrecosPage() {
   const router = useRouter();
-  const heroReveal = useScrollReveal({ threshold: 0.1 });
-  const socialReveal = useScrollReveal({ threshold: 0.1 });
-  const pricingReveal = useScrollReveal({ threshold: 0.1 });
-  const videoReveal = useScrollReveal({ threshold: 0.1 });
-  const faqReveal = useScrollReveal({ threshold: 0.1 });
+  const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const socialReveal = useScrollReveal<HTMLDivElement>({ threshold: 0.1 });
+  const pricingReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const videoReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
+  const faqReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
 
   const handleStartNow = () => {
     router.push("/register/step0");

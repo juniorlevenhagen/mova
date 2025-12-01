@@ -88,15 +88,16 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: unknown) {
     console.error("❌ Erro no envio de email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-    
+    const errorMessage =
+      error instanceof Error ? error.message : "Erro desconhecido";
+
     // Log detalhado do erro
     console.error("❌ Detalhes do erro:", {
       error: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString(),
     });
-    
+
     return NextResponse.json(
       {
         error: "Erro interno do servidor",

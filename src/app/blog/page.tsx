@@ -681,10 +681,10 @@ export default function BlogPage() {
               className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
               onSubmit={async (event) => {
                 event.preventDefault();
-                
+
                 // Trim do email para remover espaços (comum no mobile)
                 const trimmedEmail = newsletterEmail.trim();
-                
+
                 if (!trimmedEmail || newsletterStatus === "loading") return;
 
                 setNewsletterStatus("loading");
@@ -707,7 +707,9 @@ export default function BlogPage() {
                   const data = await response.json();
 
                   if (!response.ok) {
-                    throw new Error(data.error || data.details || "Erro ao inscrever-se");
+                    throw new Error(
+                      data.error || data.details || "Erro ao inscrever-se"
+                    );
                   }
 
                   setNewsletterStatus("success");
@@ -715,12 +717,12 @@ export default function BlogPage() {
                   setTimeout(() => setNewsletterStatus("idle"), 3000);
                 } catch (error) {
                   console.error("Erro ao inscrever-se:", error);
-                  
+
                   // Tratamento específico para timeout
                   if (error instanceof Error && error.name === "AbortError") {
                     console.error("Timeout ao inscrever-se na newsletter");
                   }
-                  
+
                   setNewsletterStatus("error");
                   setTimeout(() => setNewsletterStatus("idle"), 3000);
                 }

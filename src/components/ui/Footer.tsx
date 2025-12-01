@@ -12,10 +12,10 @@ export function Footer() {
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Trim do email para remover espaços (comum no mobile)
     const trimmedEmail = newsletterEmail.trim();
-    
+
     if (!trimmedEmail || newsletterStatus === "loading") return;
 
     setNewsletterStatus("loading");
@@ -46,12 +46,12 @@ export function Footer() {
       setTimeout(() => setNewsletterStatus("idle"), 3000);
     } catch (error) {
       console.error("Erro ao inscrever-se:", error);
-      
+
       // Tratamento específico para timeout
       if (error instanceof Error && error.name === "AbortError") {
         console.error("Timeout ao inscrever-se na newsletter");
       }
-      
+
       setNewsletterStatus("error");
       setTimeout(() => setNewsletterStatus("idle"), 3000);
     }

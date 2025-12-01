@@ -76,7 +76,8 @@ export async function sendEmail({
       to: Array.isArray(to) ? to.join(", ") : to,
       timestamp: new Date().toISOString(),
     });
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    const errorMessage =
+      error instanceof Error ? error.message : "Erro desconhecido";
     return { success: false, error: errorMessage };
   }
 }

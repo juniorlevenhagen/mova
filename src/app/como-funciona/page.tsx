@@ -15,6 +15,7 @@ import {
   BarChart3,
   Users,
 } from "lucide-react";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 const detailedSteps = [
   {

@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogoBlue } from "@/components/ui/LogoBlue";
+import { LogoBlack } from "@/components/ui/LogoBlack";
 import { supabase } from "@/lib/supabase";
 import { useStep1Form } from "@/hooks/useFormValidation";
 import { FormError } from "@/components/ui/FormError";
@@ -209,10 +209,11 @@ export default function Step1Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100 flex items-center justify-center p-4 relative">
-      <LogoBlue />
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100 flex items-center justify-center p-4 sm:p-6 relative pt-20 sm:pt-6">
+      {/* Logo no canto superior esquerdo */}
+      <LogoBlack />
 
-      <div className="w-full max-w-md bg-white rounded-[22px] border-2 border-black shadow-xl p-8">
+      <div className="w-full max-w-md bg-white rounded-[22px] border-2 border-black shadow-xl p-6 sm:p-8">
         {/* Indicador de progresso */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">

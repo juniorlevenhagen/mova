@@ -19,7 +19,7 @@ export default function Home() {
             Tudo que você precisa para desenvolver seu físico e melhorar sua
             saúde utilizando Inteligência Artificial
           </h2>
-          <p className="text-base md:text-lg lg:text-xl text-black/90 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed font-medium">
+          <p className="text-lg md:text-xl lg:text-2xl text-black/90 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed font-medium">
             Descubra como o Mova+ pode acelerar sua jornada fitness com o poder
             de ferramentas inteligentes e conteúdo de alta qualidade
           </p>

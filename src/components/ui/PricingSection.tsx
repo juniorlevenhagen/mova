@@ -73,12 +73,12 @@ export function PricingSection() {
           {/* Conteúdo */}
           <div className="relative z-10 max-w-xs">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-black mb-4 md:mb-6 leading-tight">
-              Fique saudável e mais forte.
+              Fique saudável e mais forte
             </h2>
-            <p className="text-base md:text-lg lg:text-xl text-black/90 font-medium leading-relaxed max-w-xs">
+            <p className="text-lg md:text-xl lg:text-2xl text-black/90 font-medium leading-relaxed max-w-xs">
               O primeiro passo começa aqui, onde a força vence a dúvida, o
               hábito molda a mente e cada gota de suor te aproxima da tua melhor
-              versão. Saiba seu peso ideal.
+              versão. Saiba seu peso ideal
             </p>
 
             <div className="mt-6 md:mt-8 flex justify-center md:justify-start">

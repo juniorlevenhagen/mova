@@ -100,7 +100,7 @@ export function HowItWorksSection() {
   return (
     <section ref={sectionRef} className="w-full bg-white py-8 md:py-16">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center bg-gray-50 rounded-2xl p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center bg-gray-50 lg:bg-white rounded-2xl p-4">
           {/* Lado esquerdo - Texto motivador (apenas desktop) */}
           <div
             className={`hidden lg:block space-y-8 transition-all duration-1000 ease-out ${
@@ -123,7 +123,7 @@ export function HowItWorksSection() {
                 <p className="text-base md:text-lg lg:text-xl text-black/90 font-zalando max-w-3xl mx-auto mb-12 lg:leading-relaxed text-center lg:text-left leading-relaxed font-medium">
                   A jornada para um corpo saudável e uma vida com mais qualidade
                   começa aqui. Com o Mova+, cada passo é uma conquista, cada
-                  treino é uma evolução.
+                  treino é uma evolução
                 </p>
               </div>
 
@@ -155,7 +155,7 @@ export function HowItWorksSection() {
             <p className="text-base md:text-lg text-black/90 font-zalando mb-0 leading-relaxed">
               A jornada para um corpo saudável e uma vida com mais qualidade
               começa aqui. Com o Mova+, cada passo é uma conquista, cada treino
-              é uma evolução.
+              é uma evolução
             </p>
           </div>
 

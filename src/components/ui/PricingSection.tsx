@@ -8,7 +8,9 @@ import { ShinyButton } from "@/components/ui/shiny-button";
 export function PricingSection() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +28,29 @@ export function PricingSection() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const currentContainer = containerRef.current;
+    if (!currentContainer) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(currentContainer);
+
+    return () => {
+      observer.unobserve(currentContainer);
+    };
+  }, []);
+
   // Detecta se está em mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -38,7 +63,12 @@ export function PricingSection() {
   }, []);
 
   return (
-    <div className="w-full py-8 md:py-16 px-4">
+    <div
+      ref={containerRef}
+      className={`w-full py-8 md:py-16 px-4 transition-all duration-1000 ease-out ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+    >
       <section className="relative w-full max-w-7xl mx-auto overflow-hidden rounded-3xl shadow-2xl">
         {/* Foto FIXA */}
         <div className="flex-shrink-0">

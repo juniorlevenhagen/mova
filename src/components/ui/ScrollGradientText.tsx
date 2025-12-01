@@ -15,7 +15,9 @@ export function ScrollGradientText({
 }: ScrollGradientTextProps) {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const textRef = useRef<HTMLHeadingElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -55,6 +57,30 @@ export function ScrollGradientText({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Intersection Observer para fade in
+  useEffect(() => {
+    const currentContainer = containerRef.current;
+    if (!currentContainer) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(currentContainer);
+
+    return () => {
+      observer.unobserve(currentContainer);
+    };
+  }, []);
+
   // Função para calcular cores baseadas na posição da letra e scroll
   const calculateColor = (index: number, total: number) => {
     const letterPosition = index / total; // 0 a 1
@@ -92,7 +118,10 @@ export function ScrollGradientText({
 
   return (
     <div
-      className={`w-full px-4 flex flex-col items-center gap-2 py-4 md:py-8 ${className}`}
+      ref={containerRef}
+      className={`w-full px-4 flex flex-col items-center gap-2 py-4 md:py-8 transition-all duration-1000 ease-out ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      } ${className}`}
     >
       {/* Título com efeito gradiente */}
       <h2

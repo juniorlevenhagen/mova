@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import { FeaturesSection } from "@/components/ui/FeaturesSection";
 import { HowItWorksSection } from "@/components/ui/HowItWorksSection";
 import { PricingSection } from "@/components/ui/PricingSection";
@@ -8,12 +11,45 @@ import { Navbar } from "@/components/ui/Navbar";
 import { ScrollGradientText } from "@/components/ui/ScrollGradientText";
 
 export default function Home() {
+  const heroRef = useRef<HTMLElement>(null);
+  const [isHeroVisible, setIsHeroVisible] = useState(false);
+
+  useEffect(() => {
+    const currentHero = heroRef.current;
+    if (!currentHero) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsHeroVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(currentHero);
+
+    return () => {
+      observer.unobserve(currentHero);
+    };
+  }, []);
+
   return (
     <div>
       <Navbar />
 
       {/* Seção Hero com melhor espaçamento */}
-      <section className="w-full bg-white py-8 md:py-16 px-4">
+      <section
+        ref={heroRef}
+        className={`w-full bg-white py-8 md:py-16 px-4 transition-all duration-1000 ease-out ${
+          isHeroVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 translate-y-8"
+        }`}
+      >
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-zalando-medium text-black mb-4 md:mb-6 leading-[1.1] md:leading-tight">
             Tudo que você precisa para desenvolver seu físico e melhorar sua

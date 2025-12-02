@@ -54,13 +54,13 @@ export async function POST(request: NextRequest) {
 
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        console.error("❌ Email inválido recebido:", email);
-        return NextResponse.json(
-          { error: "Email inválido" },
-          { status: 400, headers: corsHeaders }
-        );
-      }
+    if (!emailRegex.test(email)) {
+      console.error("❌ Email inválido recebido:", email);
+      return NextResponse.json(
+        { error: "Email inválido" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
 
     // Log detalhado para debug em produção
     const isProduction = process.env.NODE_ENV === "production";
@@ -76,53 +76,65 @@ export async function POST(request: NextRequest) {
     // Enviar email de notificação para você
     console.log("📧 Enviando email de notificação...");
     const notificationResult = await sendNewsletterNotification(email);
-    console.log("📧 Resultado notificação:", notificationResult);
+    console.log(
+      "📧 Resultado notificação:",
+      JSON.stringify(notificationResult, null, 2)
+    );
 
     // Enviar email de confirmação para o usuário
     console.log("📧 Enviando email de confirmação...");
     const confirmationResult = await sendNewsletterConfirmation(email);
-    console.log("📧 Resultado confirmação:", confirmationResult);
+    console.log(
+      "📧 Resultado confirmação:",
+      JSON.stringify(confirmationResult, null, 2)
+    );
 
-    // Se ambos falharam e não é modo dev, retorna erro
-    if (!notificationResult.success && !confirmationResult.success) {
-      // Se Gmail não estiver configurado, apenas loga e retorna sucesso
-      if (
-        notificationResult.error === "Gmail não configurado" &&
-        confirmationResult.error === "Gmail não configurado"
-      ) {
-        console.log("📧 [DEV MODE] Nova inscrição na newsletter:", {
+    // Verificar se Gmail está configurado
+    const gmailNotConfigured =
+      notificationResult.error === "Gmail não configurado" ||
+      confirmationResult.error === "Gmail não configurado";
+
+    // SEMPRE retornar sucesso se a inscrição foi processada
+    // Os emails podem falhar mas a inscrição foi registrada
+    const atLeastOneEmailSent =
+      notificationResult.success || confirmationResult.success;
+
+    if (gmailNotConfigured) {
+      console.warn(
+        "⚠️ Gmail não configurado em produção. Nova inscrição na newsletter:",
+        {
           email,
           date: new Date().toLocaleString("pt-BR"),
           notificationEmail: config.newsletterEmail,
-        });
-        return NextResponse.json(
-          {
-            success: true,
-            message: "Inscrição realizada com sucesso (modo desenvolvimento)",
-          },
-          { status: 200, headers: corsHeaders }
-        );
-      }
-
-      return NextResponse.json(
-        {
-          error: "Erro ao enviar email",
-          details: notificationResult.error || confirmationResult.error,
-        },
-        { status: 500, headers: corsHeaders }
+          notificationSuccess: notificationResult.success,
+          confirmationSuccess: confirmationResult.success,
+        }
       );
+    } else if (!atLeastOneEmailSent) {
+      console.error("❌ Ambos os emails falharam:", {
+        email,
+        notificationError: notificationResult.error,
+        confirmationError: confirmationResult.error,
+      });
     }
 
-    // Log de sucesso
-    console.log("✅ Inscrição na newsletter processada com sucesso:", {
+    // Log de sucesso (inscrição processada, independente do envio de email)
+    console.log("✅ Inscrição na newsletter processada:", {
       email,
       notificationSuccess: notificationResult.success,
       confirmationSuccess: confirmationResult.success,
+      gmailConfigured: !gmailNotConfigured,
       timestamp: new Date().toISOString(),
     });
 
+    // SEMPRE retornar sucesso se chegou até aqui
+    // A inscrição foi processada mesmo que os emails tenham falhado
     return NextResponse.json(
-      { success: true, message: "Inscrição realizada com sucesso" },
+      {
+        success: true,
+        message: "Inscrição realizada com sucesso",
+        emailSent: atLeastOneEmailSent,
+      },
       { status: 200, headers: corsHeaders }
     );
   } catch (error: unknown) {

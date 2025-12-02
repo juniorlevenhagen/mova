@@ -178,7 +178,7 @@ export default function Step2Page() {
               value={formData.objective}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
+              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
             >
               <option value="">Selecione seu objetivo</option>
               <option value="Ganho de Massa">Ganho de Massa</option>
@@ -204,7 +204,7 @@ export default function Step2Page() {
                 value={formData.birthDate}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
                 max={new Date().toISOString().split("T")[0]} // Não permite datas futuras
               />
             </div>
@@ -222,7 +222,7 @@ export default function Step2Page() {
                 value={formData.height}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
                 placeholder="170"
               />
             </div>
@@ -240,7 +240,7 @@ export default function Step2Page() {
                 value={formData.weight}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
                 placeholder="70"
               />
             </div>
@@ -259,7 +259,7 @@ export default function Step2Page() {
               value={formData.gender}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
+              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
             >
               <option value="">Selecione o gênero</option>
               <option value="masculino">Masculino</option>
@@ -281,7 +281,7 @@ export default function Step2Page() {
                 value={formData.trainingFrequency}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
               >
                 <option value="">Selecione a frequência</option>
                 <option value="2x por semana">2x por semana</option>
@@ -305,7 +305,7 @@ export default function Step2Page() {
                 value={formData.trainingLocation}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors text-sm md:text-base font-zalando"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
               >
                 <option value="">Selecione o local</option>
                 <option value="casa">Em casa</option>
@@ -330,7 +330,7 @@ export default function Step2Page() {
                 value={formData.hasPain}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors resize-none text-sm md:text-base font-zalando"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors resize-none text-sm md:text-base font-zalando"
                 placeholder="Descreva suas limitações ou dores"
               />
             </div>
@@ -347,7 +347,7 @@ export default function Step2Page() {
                 value={formData.dietaryRestrictions}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors resize-none text-sm md:text-base font-zalando"
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors resize-none text-sm md:text-base font-zalando"
                 placeholder="Descreva suas restrições alimentares"
               />
             </div>

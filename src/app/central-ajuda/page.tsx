@@ -181,7 +181,7 @@ export default function CentralAjudaPage() {
               placeholder="Digite sua dúvida aqui..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+              className="w-full pl-12 pr-4 py-4 border-2 border-black rounded-lg focus:outline-none focus:border-black font-zalando"
             />
           </div>
         </div>

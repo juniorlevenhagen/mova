@@ -137,7 +137,7 @@ export default function ContatoPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:border-black font-zalando"
                     placeholder="Seu nome completo"
                   />
                 </div>
@@ -156,7 +156,7 @@ export default function ContatoPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+                    className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:border-black font-zalando"
                     placeholder="seu@email.com"
                   />
                 </div>
@@ -175,7 +175,7 @@ export default function ContatoPage() {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+                  className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:border-black font-zalando"
                 >
                   <option value="">Selecione um assunto</option>
                   <option value="suporte">Suporte Técnico</option>
@@ -200,7 +200,7 @@ export default function ContatoPage() {
                   onChange={handleInputChange}
                   required
                   rows={6}
-                  className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent font-zalando"
+                  className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:border-black font-zalando"
                   placeholder="Descreva sua dúvida ou problema..."
                 />
               </div>

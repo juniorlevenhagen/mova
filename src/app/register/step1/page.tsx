@@ -7,6 +7,7 @@ import { LogoBlack } from "@/components/ui/LogoBlack";
 import { supabase } from "@/lib/supabase";
 import { useStep1Form } from "@/hooks/useFormValidation";
 import { FormError } from "@/components/ui/FormError";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Step1Data } from "@/lib/validation";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 
@@ -282,7 +283,7 @@ export default function Step1Page() {
               type="text"
               id="name"
               name="name"
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-black transition-colors font-zalando ${
                 errors.name ? "border-red-500" : "border-black"
               }`}
               placeholder="Seu nome completo"
@@ -302,7 +303,7 @@ export default function Step1Page() {
               type="email"
               id="email"
               name="email"
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
+              className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-black transition-colors font-zalando ${
                 errors.email ? "border-red-500" : "border-black"
               }`}
               placeholder="seu@email.com"
@@ -317,14 +318,11 @@ export default function Step1Page() {
             >
               Senha *
             </label>
-            <input
+            <PasswordInput
               {...register("password")}
-              type="password"
               id="password"
               name="password"
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
-                errors.password ? "border-red-500" : "border-black"
-              }`}
+              error={!!errors.password}
               placeholder="Mínimo 8 caracteres"
             />
             <FormError error={errors.password?.message} />
@@ -337,14 +335,11 @@ export default function Step1Page() {
             >
               Confirmar senha *
             </label>
-            <input
+            <PasswordInput
               {...register("confirmPassword")}
-              type="password"
               id="confirmPassword"
               name="confirmPassword"
-              className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors font-zalando ${
-                errors.confirmPassword ? "border-red-500" : "border-black"
-              }`}
+              error={!!errors.confirmPassword}
               placeholder="Digite a senha novamente"
             />
             <FormError error={errors.confirmPassword?.message} />

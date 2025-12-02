@@ -84,7 +84,7 @@ export function MetaModal({
               name="pesoObjetivo"
               value={modalData.pesoObjetivo}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
               placeholder="Ex: 70"
               step="0.1"
               required
@@ -100,7 +100,7 @@ export function MetaModal({
               name="prazoMeses"
               value={modalData.prazoMeses}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
               required
             >
               <option value="3">3 meses</option>
@@ -119,7 +119,7 @@ export function MetaModal({
               name="observacoes"
               value={modalData.observacoes}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
               placeholder="Alguma observação sobre sua meta?"
               rows={3}
             />

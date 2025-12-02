@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { ShinyButton } from "@/components/ui/shiny-button";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function LoginForm() {
@@ -122,7 +123,7 @@ export default function LoginForm() {
           value={formData.email}
           onChange={handleChange}
           required
-          className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors ${
+          className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:border-black transition-colors ${
             error ? "border-black" : "border-gray-300"
           }`}
           placeholder="seu@email.com"
@@ -136,16 +137,14 @@ export default function LoginForm() {
         >
           Senha
         </label>
-        <input
-          type="password"
+        <PasswordInput
           id="password"
           name="password"
           value={formData.password}
           onChange={handleChange}
           required
-          className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors ${
-            error ? "border-black" : "border-gray-300"
-          }`}
+          error={!!error}
+          className={error ? "border-black" : "border-gray-300"}
           placeholder="Sua senha"
         />
       </div>

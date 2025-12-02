@@ -66,7 +66,7 @@ export function AddActivityModal({
                 onChange={(e) =>
                   setFormData({ ...formData, date: e.target.value })
                 }
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 required
               />
             </div>
@@ -81,7 +81,7 @@ export function AddActivityModal({
                 onChange={(e) =>
                   setFormData({ ...formData, horario: e.target.value })
                 }
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                 required
               />
             </div>
@@ -103,7 +103,7 @@ export function AddActivityModal({
                     : undefined, // Permitir undefined
                 })
               }
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               required
             />
           </div>
@@ -124,7 +124,7 @@ export function AddActivityModal({
                     : undefined, // Permitir undefined
                 })
               }
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
             />
           </div>
 
@@ -144,7 +144,7 @@ export function AddActivityModal({
                     : undefined, // Permitir undefined
                 })
               }
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
             />
           </div>
 
@@ -157,7 +157,7 @@ export function AddActivityModal({
               onChange={(e) =>
                 setFormData({ ...formData, tipo_treino: e.target.value })
               }
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
             >
               <option value="">Selecione...</option>
               <option value="Musculação">Musculação</option>
@@ -182,7 +182,7 @@ export function AddActivityModal({
               onChange={(e) =>
                 setFormData({ ...formData, observacoes: e.target.value })
               }
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               rows={3}
               placeholder="Como foi o treino? Alguma observação?"
             />

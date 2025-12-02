@@ -9,9 +9,11 @@ export function Footer() {
   const [newsletterStatus, setNewsletterStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevenir event bubbling no iPhone
 
     // Trim do email para remover espaços (comum no mobile)
     const trimmedEmail = newsletterEmail.trim();
@@ -19,23 +21,55 @@ export function Footer() {
     if (!trimmedEmail || newsletterStatus === "loading") return;
 
     setNewsletterStatus("loading");
-    try {
-      // Timeout de 30 segundos para evitar que o mobile fique esperando indefinidamente
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+    setErrorMessage(""); // Limpar erro anterior
 
+    // Log para debug no iPhone (Chrome ou Safari)
+    if (typeof window !== "undefined") {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isChromeIOS = /CriOS/.test(navigator.userAgent);
+      if (isIOS) {
+        console.log(`📱 [iOS ${isChromeIOS ? "Chrome" : "Safari"}] Tentando inscrever na newsletter:`, {
+          email: trimmedEmail,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    try {
+      // Timeout reduzido para 20 segundos (Chrome no iOS pode ter problemas com timeouts longos)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+      // Fetch com configurações otimizadas para Chrome no iOS
       const response = await fetch("/api/subscribe-newsletter", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
         },
         body: JSON.stringify({ email: trimmedEmail }),
         signal: controller.signal,
+        cache: "no-store", // Evitar cache no Chrome iOS
+        credentials: "same-origin",
       });
 
       clearTimeout(timeoutId);
 
-      const data = await response.json();
+      // Verificar se a resposta é válida antes de fazer parse
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Resposta inválida do servidor");
+      }
+
+      let data;
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.error("Erro ao fazer parse da resposta:", parseError);
+        throw new Error("Erro ao processar resposta do servidor");
+      }
 
       if (!response.ok) {
         throw new Error(data.error || data.details || "Erro ao inscrever-se");
@@ -47,13 +81,56 @@ export function Footer() {
     } catch (error) {
       console.error("Erro ao inscrever-se:", error);
 
-      // Tratamento específico para timeout
-      if (error instanceof Error && error.name === "AbortError") {
-        console.error("Timeout ao inscrever-se na newsletter");
+      // Tratamento específico para diferentes tipos de erro
+      let errorMessage = "Erro ao inscrever-se. Tente novamente.";
+      
+      if (error instanceof Error) {
+        if (error.name === "AbortError") {
+          errorMessage = "Tempo de espera esgotado. Verifique sua conexão e tente novamente.";
+          console.error("Timeout ao inscrever-se na newsletter");
+        } else if (
+          error.message.includes("Failed to fetch") || 
+          error.message.includes("NetworkError") ||
+          error.message.includes("Network request failed") ||
+          error.message.includes("fetch")
+        ) {
+          errorMessage = "Erro de conexão. Verifique sua internet e tente novamente.";
+        } else if (error.message.includes("Resposta inválida")) {
+          errorMessage = "Erro ao processar resposta. Tente novamente em alguns instantes.";
+        } else {
+          errorMessage = error.message || errorMessage;
+        }
       }
 
+      // Log específico para Chrome no iOS
+      if (typeof window !== "undefined") {
+        const isChromeIOS = /CriOS/.test(navigator.userAgent);
+        if (isChromeIOS) {
+          console.error("❌ [Chrome iOS] Erro na newsletter:", {
+            error: error instanceof Error ? error.message : String(error),
+            errorName: error instanceof Error ? error.name : "Unknown",
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+
+      setErrorMessage(errorMessage);
       setNewsletterStatus("error");
-      setTimeout(() => setNewsletterStatus("idle"), 3000);
+      
+      // Mostrar mensagem de erro no console para debug (iPhone)
+      if (typeof window !== "undefined") {
+        console.error("❌ [Newsletter Error]:", {
+          error: error instanceof Error ? error.message : String(error),
+          errorMessage,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      
+      setTimeout(() => {
+        setNewsletterStatus("idle");
+        setErrorMessage("");
+      }, 5000);
     }
   };
 
@@ -212,7 +289,7 @@ export function Footer() {
               </button>
               {newsletterStatus === "error" && (
                 <p className="text-sm text-red-400 text-center">
-                  Erro ao inscrever-se. Tente novamente.
+                  {errorMessage || "Erro ao inscrever-se. Tente novamente."}
                 </p>
               )}
             </form>

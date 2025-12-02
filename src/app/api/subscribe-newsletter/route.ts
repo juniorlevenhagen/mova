@@ -5,16 +5,47 @@ import {
 } from "@/lib/email";
 import { config } from "@/lib/config";
 
+// Headers CORS para produção
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept",
+};
+
+// Handler para OPTIONS (CORS preflight)
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // Verificar se há body na requisição
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error("❌ Erro ao fazer parse do JSON:", parseError);
+      return NextResponse.json(
+        { error: "Formato de requisição inválido" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
+    if (!body || typeof body !== "object") {
+      console.error("❌ Body inválido ou vazio:", body);
+      return NextResponse.json(
+        { error: "Dados inválidos" },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
     let { email } = body;
 
     // Validação básica
     if (!email) {
       return NextResponse.json(
         { error: "Email é obrigatório" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -23,15 +54,23 @@ export async function POST(request: NextRequest) {
 
     // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.error("❌ Email inválido recebido:", email);
-      return NextResponse.json({ error: "Email inválido" }, { status: 400 });
-    }
+      if (!emailRegex.test(email)) {
+        console.error("❌ Email inválido recebido:", email);
+        return NextResponse.json(
+          { error: "Email inválido" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
 
+    // Log detalhado para debug em produção
+    const isProduction = process.env.NODE_ENV === "production";
     console.log("📧 Processando inscrição na newsletter:", {
       email,
       userAgent: request.headers.get("user-agent"),
+      origin: request.headers.get("origin"),
+      referer: request.headers.get("referer"),
       timestamp: new Date().toISOString(),
+      environment: isProduction ? "production" : "development",
     });
 
     // Enviar email de notificação para você
@@ -61,7 +100,7 @@ export async function POST(request: NextRequest) {
             success: true,
             message: "Inscrição realizada com sucesso (modo desenvolvimento)",
           },
-          { status: 200 }
+          { status: 200, headers: corsHeaders }
         );
       }
 
@@ -70,7 +109,7 @@ export async function POST(request: NextRequest) {
           error: "Erro ao enviar email",
           details: notificationResult.error || confirmationResult.error,
         },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -84,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, message: "Inscrição realizada com sucesso" },
-      { status: 200 }
+      { status: 200, headers: corsHeaders }
     );
   } catch (error: unknown) {
     console.error("❌ Erro no envio de email:", error);
@@ -103,7 +142,7 @@ export async function POST(request: NextRequest) {
         error: "Erro interno do servidor",
         details: errorMessage,
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

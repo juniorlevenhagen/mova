@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import LoginForm from "@/components/ui/LoginForm";
 
@@ -11,7 +12,9 @@ export default function LoginPage() {
         <p className="text-gray-700">Continue sua jornada fitness no Mova+</p>
       </div>
 
-      <LoginForm />
+      <Suspense fallback={<div className="text-center py-4">Carregando...</div>}>
+        <LoginForm />
+      </Suspense>
 
       <div className="text-center mt-6">
         <p className="text-gray-700">

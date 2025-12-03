@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
@@ -367,5 +367,21 @@ export default function ResetPasswordPage() {
         </form>
       )}
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-white rounded-[22px] border-2 border-black shadow-2xl p-8">
+          <div className="text-center">
+            <p className="text-gray-700">Carregando...</p>
+          </div>
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

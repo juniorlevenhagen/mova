@@ -14,8 +14,12 @@ export default function AuthLayout({
 
   const isLogin = pathname === "/auth/login";
 
-  // Para login, sempre mostrar layout dividido
-  if (isLogin) {
+  // Para login, forgot-password e reset-password, sempre mostrar layout dividido
+  if (
+    isLogin ||
+    pathname === "/auth/forgot-password" ||
+    pathname === "/auth/reset-password"
+  ) {
     return (
       <div className="min-h-screen bg-white flex flex-col lg:flex-row relative">
         {/* Logo - Mobile e Desktop */}

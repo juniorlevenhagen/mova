@@ -5,7 +5,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-interface PasswordInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
+interface PasswordInputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "type"> {
   showToggle?: boolean;
   error?: boolean;
 }
@@ -25,7 +26,11 @@ export function PasswordInput({
         type={showPassword ? "text" : "password"}
         className={cn(
           "w-full px-4 py-3 pr-12 border-2 rounded-lg focus:outline-none focus:border-black transition-colors font-zalando",
-          error ? "border-red-500" : className.includes("border-") ? "" : "border-black",
+          error
+            ? "border-red-500"
+            : className.includes("border-")
+              ? ""
+              : "border-black",
           className
         )}
       />
@@ -46,4 +51,3 @@ export function PasswordInput({
     </div>
   );
 }
-

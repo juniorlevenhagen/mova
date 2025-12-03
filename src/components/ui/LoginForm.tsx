@@ -1,16 +1,24 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
+import {
+  saveRememberMe,
+  getRememberedEmail,
+  wasRememberMeActive,
+} from "@/lib/rememberMe";
 
 export default function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
   const [formData, setFormData] = useState({
@@ -18,6 +26,31 @@ export default function LoginForm() {
     password: "",
     rememberMe: false,
   });
+
+  // Verificar se veio de reset de senha bem-sucedido e restaurar email
+  useEffect(() => {
+    if (searchParams?.get("passwordReset") === "success") {
+      setSuccessMessage(
+        "Senha redefinida com sucesso! Faça login com sua nova senha."
+      );
+    }
+  }, [searchParams]);
+
+  // Restaurar email salvo se "Lembrar de Mim" estava ativo
+  // Este useEffect roda apenas uma vez quando o componente monta
+  useEffect(() => {
+    const rememberedEmail = getRememberedEmail();
+    const isRememberMeActive = wasRememberMeActive();
+
+    if (rememberedEmail && isRememberMeActive) {
+      console.log("🔄 Restaurando email salvo:", rememberedEmail);
+      setFormData((prev) => ({
+        ...prev,
+        email: rememberedEmail,
+        rememberMe: true,
+      }));
+    }
+  }, []); // Array vazio = roda apenas uma vez ao montar
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +65,15 @@ export default function LoginForm() {
     setError(""); // Limpar erros anteriores
 
     try {
+      // Configurar persistência da sessão baseado em "Lembrar de Mim"
+      // Se "Lembrar de Mim" estiver marcado, a sessão será persistida por mais tempo
       const { error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
         options: {
           captchaToken,
+          // O Supabase já persiste a sessão por padrão usando cookies
+          // Mas podemos salvar a preferência do usuário
         },
       });
 
@@ -56,8 +93,16 @@ export default function LoginForm() {
         } else {
           setError(`Erro ao fazer login: ${error.message}`);
         }
+        setLoading(false);
         return;
       }
+
+      // ✅ Login bem-sucedido - agora salvar preferência de "Lembrar de Mim"
+      saveRememberMe(formData.email, formData.rememberMe);
+      console.log(
+        "💾 Preferência 'Lembrar de Mim' salva:",
+        formData.rememberMe ? "SIM" : "NÃO"
+      );
 
       // Aguardar um pouco para garantir que a sessão foi salva
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -85,6 +130,32 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Mensagem de sucesso */}
+      {successMessage && (
+        <div className="bg-green-50 border-2 border-green-500 rounded-lg p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-green-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-800 font-medium">
+                {successMessage}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mensagem de erro */}
       {error && (
         <div className="bg-gray-100 border-2 border-black rounded-lg p-4">
@@ -163,9 +234,12 @@ export default function LoginForm() {
             Lembrar de mim
           </span>
         </div>
-        <a href="#" className="text-sm text-black font-bold hover:underline">
+        <Link
+          href="/auth/forgot-password"
+          className="text-sm text-black font-bold hover:underline"
+        >
           Esqueceu a senha?
-        </a>
+        </Link>
       </div>
 
       {/* Adicionar hCaptcha */}

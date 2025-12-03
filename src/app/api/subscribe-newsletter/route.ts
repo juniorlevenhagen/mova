@@ -4,6 +4,7 @@ import {
   sendNewsletterConfirmation,
 } from "@/lib/email";
 import { config } from "@/lib/config";
+import { createClient } from "@supabase/supabase-js";
 
 // Headers CORS para produção
 const corsHeaders = {
@@ -64,14 +65,161 @@ export async function POST(request: NextRequest) {
 
     // Log detalhado para debug em produção
     const isProduction = process.env.NODE_ENV === "production";
+    const userAgent = request.headers.get("user-agent");
+    const origin = request.headers.get("origin");
+    const referer = request.headers.get("referer");
+
     console.log("📧 Processando inscrição na newsletter:", {
       email,
-      userAgent: request.headers.get("user-agent"),
-      origin: request.headers.get("origin"),
-      referer: request.headers.get("referer"),
+      userAgent,
+      origin,
+      referer,
       timestamp: new Date().toISOString(),
       environment: isProduction ? "production" : "development",
     });
+
+    // Verificar se as variáveis de ambiente estão configuradas
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("❌ Variáveis do Supabase não configuradas:", {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseAnonKey,
+      });
+      // Continuar mesmo assim, mas logar o erro
+    }
+
+    // Criar cliente Supabase (anon key é suficiente pois a política RLS permite INSERT sem auth)
+    const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "");
+
+    // Determinar origem da inscrição baseado no referer
+    let source = "unknown";
+    if (referer) {
+      if (referer.includes("/blog")) source = "blog";
+      else if (referer.includes("/")) source = "homepage";
+    }
+
+    // Verificar se o email já existe
+    const { data: existingSubscriber, error: selectError } = await supabase
+      .from("newsletter_subscribers")
+      .select("id, email, is_active, unsubscribed_at")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (selectError) {
+      console.error("❌ Erro ao verificar email existente:", {
+        error: selectError,
+        code: selectError.code,
+        message: selectError.message,
+        details: selectError.details,
+        hint: selectError.hint,
+      });
+      // Se for erro de tabela não encontrada, pode ser que a migration não foi executada
+      if (selectError.code === "42P01") {
+        console.error(
+          "❌ Tabela 'newsletter_subscribers' não encontrada. Execute a migration primeiro!"
+        );
+      }
+    }
+
+    let subscriberData;
+    let dbError;
+    let isNewSubscription = false;
+    let wasReactivated = false;
+
+    if (existingSubscriber) {
+      // Email já existe
+      if (existingSubscriber.is_active) {
+        // Já está ativo, não precisa fazer nada além de atualizar metadata
+        console.log("ℹ️ Email já está inscrito e ativo:", email);
+        subscriberData = existingSubscriber;
+      } else {
+        // Reativar inscrição cancelada
+        wasReactivated = true;
+        const { data: updated, error: updateError } = await supabase
+          .from("newsletter_subscribers")
+          .update({
+            is_active: true,
+            unsubscribed_at: null,
+            source,
+            user_agent: userAgent,
+            metadata: {
+              origin,
+              referer,
+              reactivated_at: new Date().toISOString(),
+              original_subscribed_at: existingSubscriber.unsubscribed_at
+                ? null
+                : new Date().toISOString(),
+            },
+          })
+          .eq("email", email)
+          .select()
+          .single();
+
+        subscriberData = updated;
+        dbError = updateError;
+        console.log("✅ Inscrição reativada:", email);
+      }
+    } else {
+      // Novo email, inserir
+      isNewSubscription = true;
+      const { data: inserted, error: insertError } = await supabase
+        .from("newsletter_subscribers")
+        .insert({
+          email,
+          is_active: true,
+          source,
+          user_agent: userAgent,
+          metadata: {
+            origin,
+            referer,
+            subscribed_at: new Date().toISOString(),
+          },
+        })
+        .select()
+        .single();
+
+      subscriberData = inserted;
+      dbError = insertError;
+    }
+
+    if (dbError) {
+      console.error("❌ Erro ao salvar inscrição no banco:", {
+        error: dbError,
+        code: dbError.code,
+        message: dbError.message,
+        details: dbError.details,
+        hint: dbError.hint,
+        email,
+        isNewSubscription,
+        wasReactivated,
+      });
+
+      // Se for erro de tabela não encontrada
+      if (dbError.code === "42P01") {
+        console.error(
+          "❌ Tabela 'newsletter_subscribers' não encontrada. Execute a migration primeiro!"
+        );
+      }
+
+      // Se for erro de política RLS
+      if (dbError.code === "42501") {
+        console.error(
+          "❌ Erro de permissão RLS. Verifique se a política de INSERT está configurada corretamente."
+        );
+      }
+
+      // Continuar mesmo se falhar o banco, para não quebrar o fluxo
+    } else if (subscriberData) {
+      console.log("✅ Inscrição salva no banco de dados:", {
+        id: subscriberData.id,
+        email: subscriberData.email,
+        source: subscriberData.source,
+        isNew: isNewSubscription,
+        wasReactivated,
+      });
+    }
 
     // Enviar email de notificação para você
     console.log("📧 Enviando email de notificação...");

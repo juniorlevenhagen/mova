@@ -28,11 +28,14 @@ export function Footer() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const isChromeIOS = /CriOS/.test(navigator.userAgent);
       if (isIOS) {
-        console.log(`📱 [iOS ${isChromeIOS ? "Chrome" : "Safari"}] Tentando inscrever na newsletter:`, {
-          email: trimmedEmail,
-          userAgent: navigator.userAgent,
-          timestamp: new Date().toISOString(),
-        });
+        console.log(
+          `📱 [iOS ${isChromeIOS ? "Chrome" : "Safari"}] Tentando inscrever na newsletter:`,
+          {
+            email: trimmedEmail,
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+          }
+        );
       }
     }
 
@@ -46,7 +49,7 @@ export function Footer() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
         },
         body: JSON.stringify({ email: trimmedEmail }),
         signal: controller.signal,
@@ -83,20 +86,23 @@ export function Footer() {
 
       // Tratamento específico para diferentes tipos de erro
       let errorMessage = "Erro ao inscrever-se. Tente novamente.";
-      
+
       if (error instanceof Error) {
         if (error.name === "AbortError") {
-          errorMessage = "Tempo de espera esgotado. Verifique sua conexão e tente novamente.";
+          errorMessage =
+            "Tempo de espera esgotado. Verifique sua conexão e tente novamente.";
           console.error("Timeout ao inscrever-se na newsletter");
         } else if (
-          error.message.includes("Failed to fetch") || 
+          error.message.includes("Failed to fetch") ||
           error.message.includes("NetworkError") ||
           error.message.includes("Network request failed") ||
           error.message.includes("fetch")
         ) {
-          errorMessage = "Erro de conexão. Verifique sua internet e tente novamente.";
+          errorMessage =
+            "Erro de conexão. Verifique sua internet e tente novamente.";
         } else if (error.message.includes("Resposta inválida")) {
-          errorMessage = "Erro ao processar resposta. Tente novamente em alguns instantes.";
+          errorMessage =
+            "Erro ao processar resposta. Tente novamente em alguns instantes.";
         } else {
           errorMessage = error.message || errorMessage;
         }
@@ -116,7 +122,7 @@ export function Footer() {
 
       setErrorMessage(errorMessage);
       setNewsletterStatus("error");
-      
+
       // Mostrar mensagem de erro no console para debug (iPhone)
       if (typeof window !== "undefined") {
         console.error("❌ [Newsletter Error]:", {
@@ -126,7 +132,7 @@ export function Footer() {
           timestamp: new Date().toISOString(),
         });
       }
-      
+
       setTimeout(() => {
         setNewsletterStatus("idle");
         setErrorMessage("");

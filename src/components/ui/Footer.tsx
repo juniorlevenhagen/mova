@@ -314,7 +314,15 @@ export function Footer() {
 
             {/* Desenvolvido por ELEVEN - Centralizado */}
             <div className="text-white text-sm text-center">
-              Desenvolvido por ELEVEN
+              Desenvolvido por{" "}
+              <Link
+                href="https://www.elevenweb.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-white hover:text-white/80 transition-colors duration-200 underline"
+              >
+                ELEVEN
+              </Link>
             </div>
 
             {/* Links legais */}

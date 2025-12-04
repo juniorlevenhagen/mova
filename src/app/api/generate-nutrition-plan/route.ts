@@ -110,15 +110,26 @@ O plano nutricional DEVE incluir:
 2. macros - distribuição de macronutrientes (protein, carbs, fats) em gramas
 3. mealPlan - plano alimentar completo com pelo menos 5 refeições por dia
    - Cada refeição deve ter: meal (nome), timing (horário), options (array de alimentos)
-   - Cada alimento deve ter: food (nome), quantity (quantidade específica, ex: "1 banana média", "200ml leite", "40g whey"), calories (calorias)
+   - Cada alimento deve ter: food (nome), quantity (quantidade SEMPRE em GRAMAS), calories (calorias)
 4. hydration - orientações de hidratação
 5. supplements (opcional) - suplementos recomendados
 
-⚠️ CRÍTICO: Sempre inclua quantidades específicas para cada alimento. Exemplos:
-- "1 banana média" (não apenas "banana")
-- "200ml leite" (não apenas "leite")
-- "40g whey protein" (não apenas "whey")
-- "100g frango grelhado" (não apenas "frango")
+⚠️ CRÍTICO: Sempre inclua quantidades específicas para cada alimento APENAS em GRAMAS (g):
+- ⚠️ NUNCA use xícaras, colheres, unidades, ml ou outras medidas
+- ⚠️ SEMPRE use GRAMAS (g) para todos os alimentos
+- Exemplos CORRETOS:
+  - "150g de frango grelhado" (não "frango" ou "1 unidade")
+  - "200g de arroz cozido" (não "1 xícara de arroz" ou "arroz cru")
+  - "100g de batata doce cozida" (não "1 batata média" ou "batata crua")
+  - "120g de banana" (não "1 banana média")
+  - "250g de leite" (não "200ml leite")
+  - "40g de whey protein" (correto - já está em gramas)
+- ⚠️ CRÍTICO: Informações nutricionais (calorias, macros) devem ser de alimentos JÁ PREPARADOS quando o preparo altera significativamente os valores nutricionais:
+  - Sempre especifique o método de preparo no nome do alimento quando necessário (grelhado, cozido, assado, etc.)
+  - Exemplo: "150g de frango grelhado" (calorias do frango grelhado, não cru)
+  - Exemplo: "200g de arroz cozido" (calorias do arroz cozido, não cru)
+  - Exemplo: "100g de batata doce cozida" (calorias da batata cozida, não crua)
+  - Alimentos que podem ser consumidos crus sem alteração nutricional significativa (como aveia, frutas, vegetais crus, iogurte) não precisam especificar preparo
 
 O objetivo do usuário é: ${userData.objective || "Não informado"}
 Peso: ${userData.weight || "Não informado"} kg

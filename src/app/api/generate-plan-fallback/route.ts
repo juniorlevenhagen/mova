@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
           {
             meal: "Café da manhã",
             options: [
-              { food: "Aveia com frutas", quantity: "1 tigela", calories: 300 },
+              { food: "Aveia com frutas", quantity: "80g", calories: 300 },
               { food: "Iogurte grego", quantity: "200g", calories: 150 },
             ],
             timing: "7:00-8:00",
@@ -213,8 +213,8 @@ export async function POST(request: NextRequest) {
                 quantity: "150g",
                 calories: 250,
               },
-              { food: "Arroz integral", quantity: "1/2 xícara", calories: 110 },
-              { food: "Salada verde", quantity: "1 prato", calories: 50 },
+              { food: "Arroz integral cozido", quantity: "150g", calories: 180 },
+              { food: "Salada verde", quantity: "100g", calories: 20 },
             ],
             timing: "12:00-13:00",
           },
@@ -222,8 +222,8 @@ export async function POST(request: NextRequest) {
             meal: "Jantar",
             options: [
               { food: "Salmão grelhado", quantity: "120g", calories: 280 },
-              { food: "Batata doce", quantity: "1 média", calories: 100 },
-              { food: "Brócolis", quantity: "1 xícara", calories: 30 },
+              { food: "Batata doce cozida", quantity: "150g", calories: 130 },
+              { food: "Brócolis cozido", quantity: "100g", calories: 25 },
             ],
             timing: "19:00-20:00",
           },

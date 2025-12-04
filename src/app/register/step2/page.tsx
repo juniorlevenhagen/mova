@@ -18,6 +18,7 @@ export default function Step2Page() {
     gender: "",
     hasPain: "",
     dietaryRestrictions: "",
+    foodBudget: "", // Novo campo para orçamento alimentar
   });
   const [canRender, setCanRender] = useState(false);
 
@@ -65,7 +66,13 @@ export default function Step2Page() {
       }
 
       // 3. Salvar perfil do usuário
-      const birthDate = new Date(formData.birthDate);
+      // Converte dd/mm/aaaa para aaaa-mm-dd (formato ISO)
+      const isoDate = convertToISO(formData.birthDate);
+      if (!isoDate) {
+        throw new Error("Data de nascimento inválida");
+      }
+
+      const birthDate = new Date(isoDate);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -80,7 +87,7 @@ export default function Step2Page() {
         .from("user_profiles")
         .insert({
           user_id: userData.id,
-          birth_date: formData.birthDate,
+          birth_date: isoDate, // Salva no formato ISO (aaaa-mm-dd)
           age: calculatedAge,
           height: parseFloat(formData.height), // Altura com uma casa decimal
           weight: parseFloat(formData.weight), // Peso atual com decimais
@@ -91,6 +98,7 @@ export default function Step2Page() {
           training_location: formData.trainingLocation,
           has_pain: formData.hasPain,
           dietary_restrictions: formData.dietaryRestrictions,
+          food_budget: formData.foodBudget,
         });
 
       if (profileError) throw profileError;
@@ -116,6 +124,68 @@ export default function Step2Page() {
     setFormData({
       ...formData,
       [name]: value,
+    });
+  };
+
+  // Função para formatar data no formato dd/mm/aaaa
+  const formatDateInput = (value: string): string => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, "");
+
+    // Aplica a máscara dd/mm/aaaa
+    if (numbers.length <= 2) {
+      return numbers;
+    } else if (numbers.length <= 4) {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2)}`;
+    } else {
+      return `${numbers.slice(0, 2)}/${numbers.slice(2, 4)}/${numbers.slice(4, 8)}`;
+    }
+  };
+
+  // Função para converter dd/mm/aaaa para aaaa-mm-dd (formato ISO para o banco)
+  const convertToISO = (dateStr: string): string => {
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      const [day, month, year] = parts;
+      if (
+        day &&
+        month &&
+        year &&
+        day.length === 2 &&
+        month.length === 2 &&
+        year.length === 4
+      ) {
+        const dayNum = parseInt(day, 10);
+        const monthNum = parseInt(month, 10);
+        const yearNum = parseInt(year, 10);
+
+        // Valida se a data é válida
+        const date = new Date(yearNum, monthNum - 1, dayNum);
+        if (
+          date.getDate() === dayNum &&
+          date.getMonth() === monthNum - 1 &&
+          date.getFullYear() === yearNum
+        ) {
+          // Verifica se não é uma data futura
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (date <= today) {
+            return `${year}-${month}-${day}`;
+          }
+        }
+      }
+    }
+    return "";
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    const formatted = formatDateInput(value);
+
+    // Atualiza o estado com o valor formatado (dd/mm/aaaa)
+    setFormData({
+      ...formData,
+      birthDate: formatted,
     });
   };
 
@@ -198,14 +268,16 @@ export default function Step2Page() {
                 Data de Nascimento
               </label>
               <input
-                type="date"
+                type="text"
                 id="birthDate"
                 name="birthDate"
                 value={formData.birthDate}
-                onChange={handleChange}
+                onChange={handleDateChange}
                 required
                 className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
-                max={new Date().toISOString().split("T")[0]} // Não permite datas futuras
+                placeholder="dd/mm/aaaa"
+                maxLength={10}
+                pattern="\d{2}/\d{2}/\d{4}"
               />
             </div>
             <div>
@@ -351,6 +423,38 @@ export default function Step2Page() {
                 placeholder="Descreva suas restrições alimentares"
               />
             </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="foodBudget"
+              className="block text-sm font-zalando-medium text-black mb-2"
+            >
+              Orçamento para alimentação *
+            </label>
+            <select
+              id="foodBudget"
+              name="foodBudget"
+              value={formData.foodBudget}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
+            >
+              <option value="">Selecione seu orçamento</option>
+              <option value="economico">
+                Econômico - Frango, ovos, iogurte comum
+              </option>
+              <option value="moderado">
+                Moderado - Frango, peixe mais barato, iogurte grego
+                ocasionalmente
+              </option>
+              <option value="premium">
+                Premium - Salmão, iogurte grego, alimentos mais caros
+              </option>
+            </select>
+            <p className="text-xs text-gray-600 mt-1 font-zalando">
+              Isso ajuda a sugerir alimentos adequados ao seu orçamento
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-3">

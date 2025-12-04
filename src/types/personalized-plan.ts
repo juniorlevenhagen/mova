@@ -16,6 +16,7 @@ export interface PersonalizedPlan {
         reps: string;
         rest: string;
         notes?: string;
+        muscleGroups?: string;
       }>;
     }>;
     progression: string;

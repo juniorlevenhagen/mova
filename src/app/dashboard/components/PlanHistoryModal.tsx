@@ -125,8 +125,48 @@ export function PlanHistoryModal({
     });
   };
 
-  const exportToPDF = (plan: PlanHistoryItem) => {
+  const exportToPDF = async (plan: PlanHistoryItem) => {
     try {
+      // Buscar informações adicionais do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userData } = await supabase
+        .from("users")
+        .select("full_name")
+        .eq("id", user?.id)
+        .maybeSingle();
+      
+      // Buscar avaliação mais recente
+      const { data: evaluation } = await supabase
+        .from("user_evaluations")
+        .select("created_at")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Calcular idade
+      let idade = "Não informado";
+      if (userProfile?.birthDate) {
+        const birthDate = new Date(userProfile.birthDate);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        idade = `${age} anos`;
+      }
+
+      // Formatar data da avaliação
+      let dataAvaliacao = "Não informado";
+      if (evaluation?.created_at) {
+        dataAvaliacao = new Date(evaluation.created_at).toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -182,20 +222,27 @@ export function PlanHistoryModal({
 
       // Cabeçalho
       doc.setFillColor(59, 130, 246); // Azul
-      doc.rect(0, 0, pageWidth, 40, "F");
+      doc.rect(0, 0, pageWidth, 50, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
       doc.text("Plano Personalizado", margin, 25);
 
-      yPosition = 50;
+      // Informações do usuário no cabeçalho
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      const userName = userData?.full_name || user?.user_metadata?.full_name || "Usuário";
+      doc.text(`Nome: ${userName}`, margin, 35);
+      doc.text(`Idade: ${idade}`, margin + 80, 35);
+      doc.text(`Data da Avaliação: ${dataAvaliacao}`, margin, 42);
+      const objetivo = plan.summary.objective || userProfile?.objetivo || "Não informado";
+      doc.text(`Objetivo: ${objetivo}`, margin + 80, 42);
+
+      yPosition = 60;
       doc.setTextColor(0, 0, 0);
 
       // Informações do plano
-      addText(`Gerado em: ${formatDate(plan.generatedAt)}`, 12, true);
-      if (plan.summary.objective) {
-        addText(`Objetivo: ${plan.summary.objective}`, 12, true);
-      }
+      addText(`Gerado em: ${formatDate(plan.generatedAt)}`, 10);
       addText(
         `Tipo: ${plan.planType === "complete" ? "Completo" : plan.planType}`,
         10

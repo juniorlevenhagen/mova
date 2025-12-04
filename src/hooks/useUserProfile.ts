@@ -17,6 +17,7 @@ interface UserProfile {
   has_pain: string;
   nivel_atividade: string;
   dietary_restrictions: string;
+  food_budget?: string;
   created_at: string;
   updated_at: string;
 }

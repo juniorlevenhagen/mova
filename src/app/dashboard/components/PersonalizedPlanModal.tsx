@@ -174,6 +174,211 @@ function extractSupplements(text: string): string[] {
   return supplements;
 }
 
+// Função para capitalizar palavras
+function capitalizeWords(text: string): string {
+  if (!text) return "";
+  return text
+    .split(", ")
+    .map((group) => {
+      return group
+        .split(" ")
+        .map((word) => {
+          if (word.length === 0) return word;
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join(" ");
+    })
+    .join(", ");
+}
+
+// Função para identificar grupos musculares trabalhados por um exercício
+function getMuscleGroups(exerciseName: string): string {
+  if (!exerciseName) return "";
+
+  const name = exerciseName.toLowerCase();
+  const groups: string[] = [];
+
+  // Peitoral
+  if (
+    name.includes("supino") ||
+    name.includes("peito") ||
+    name.includes("peitoral") ||
+    name.includes("crucifixo") ||
+    name.includes("flexão") ||
+    name.includes("push-up") ||
+    name.includes("crossover")
+  ) {
+    groups.push("peitoral");
+  }
+
+  // Bíceps
+  if (
+    name.includes("rosca") ||
+    name.includes("bíceps") ||
+    name.includes("biceps") ||
+    name.includes("curl") ||
+    name.includes("martelo")
+  ) {
+    groups.push("bíceps");
+  }
+
+  // Tríceps
+  if (
+    name.includes("tríceps") ||
+    name.includes("triceps") ||
+    name.includes("francês") ||
+    name.includes("pulley") ||
+    name.includes("coice")
+  ) {
+    groups.push("tríceps");
+  }
+
+  // Antebraço
+  if (
+    name.includes("antebraço") ||
+    name.includes("punho") ||
+    name.includes("martelo") ||
+    name.includes("rosca inversa")
+  ) {
+    groups.push("antebraço");
+  }
+
+  // Ombros/Deltoides
+  if (
+    name.includes("ombro") ||
+    name.includes("deltoide") ||
+    name.includes("desenvolvimento") ||
+    name.includes("elevação") ||
+    name.includes("lateral") ||
+    name.includes("frontal") ||
+    name.includes("posterior") ||
+    name.includes("arnold")
+  ) {
+    groups.push("ombros");
+  }
+
+  // Costas
+  if (
+    name.includes("remada") ||
+    name.includes("puxada") ||
+    name.includes("costas") ||
+    name.includes("dorsal") ||
+    name.includes("pull") ||
+    name.includes("barra") ||
+    name.includes("serrote") ||
+    name.includes("crucifixo inverso")
+  ) {
+    groups.push("costas");
+  }
+
+  // Pernas - Quadríceps
+  if (
+    name.includes("agachamento") ||
+    name.includes("leg press") ||
+    name.includes("extensão") ||
+    name.includes("quadríceps") ||
+    name.includes("quadriceps") ||
+    name.includes("afundo") ||
+    name.includes("lunge") ||
+    name.includes("passada") ||
+    name.includes("hack squat") ||
+    name.includes("bulgaro")
+  ) {
+    groups.push("quadríceps");
+  }
+
+  // Pernas - Posterior
+  if (
+    name.includes("flexão de perna") ||
+    name.includes("stiff") ||
+    name.includes("posterior") ||
+    name.includes("glúteo") ||
+    name.includes("gluteo") ||
+    name.includes("glute") ||
+    name.includes("elevação pélvica") ||
+    name.includes("hip thrust")
+  ) {
+    groups.push("posterior de coxa");
+  }
+
+  // Glúteos
+  if (
+    name.includes("glúteo") ||
+    name.includes("gluteo") ||
+    name.includes("glute") ||
+    name.includes("quadril") ||
+    name.includes("elevação pélvica") ||
+    name.includes("hip thrust") ||
+    name.includes("abdução") ||
+    name.includes("agachamento sumô")
+  ) {
+    if (!groups.includes("glúteos")) {
+      groups.push("glúteos");
+    }
+  }
+
+  // Panturrilhas
+  if (
+    name.includes("panturrilha") ||
+    name.includes("gêmeos") ||
+    name.includes("gastrocnêmio") ||
+    name.includes("calf") ||
+    name.includes("elevação")
+  ) {
+    groups.push("panturrilhas");
+  }
+
+  // Abdômen/Core
+  if (
+    name.includes("abdominal") ||
+    name.includes("abdomem") ||
+    name.includes("core") ||
+    name.includes("prancha") ||
+    name.includes("plank") ||
+    name.includes("oblíquo") ||
+    name.includes("obliquo") ||
+    name.includes("crunch") ||
+    name.includes("sit-up") ||
+    name.includes("russian twist")
+  ) {
+    groups.push("abdômen");
+  }
+
+  // Exercícios compostos que trabalham múltiplos grupos
+  if (name.includes("agachamento")) {
+    if (!groups.includes("quadríceps")) groups.push("quadríceps");
+    if (!groups.includes("glúteos")) groups.push("glúteos");
+    if (!groups.includes("posterior de coxa")) groups.push("posterior de coxa");
+  }
+
+  if (name.includes("terra") || name.includes("deadlift")) {
+    groups.push("costas", "posterior de coxa", "glúteos", "trapézio");
+  }
+
+  if (name.includes("desenvolvimento") || name.includes("military press")) {
+    if (!groups.includes("ombros")) groups.push("ombros");
+    if (!groups.includes("tríceps")) groups.push("tríceps");
+  }
+
+  // Remove duplicatas e retorna
+  const uniqueGroups = Array.from(new Set(groups));
+
+  if (uniqueGroups.length === 0) {
+    return "";
+  }
+
+  // Se houver múltiplos grupos, destaca o principal
+  let result = "";
+  if (uniqueGroups.length > 1) {
+    result = uniqueGroups.join(", ");
+  } else {
+    result = uniqueGroups[0];
+  }
+
+  // Capitaliza as palavras
+  return capitalizeWords(result);
+}
+
 interface MealOption {
   food?: string;
   name?: string;
@@ -415,10 +620,50 @@ export function PersonalizedPlanModal({
     ? activeTab
     : "analysis";
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (!plan) return;
 
     try {
+      // Buscar informações adicionais do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userData } = await supabase
+        .from("users")
+        .select("full_name")
+        .eq("id", user?.id)
+        .maybeSingle();
+      
+      // Buscar avaliação mais recente
+      const { data: evaluation } = await supabase
+        .from("user_evaluations")
+        .select("created_at")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      // Calcular idade
+      let idade = "Não informado";
+      if (userProfile?.birthDate) {
+        const birthDate = new Date(userProfile.birthDate);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        idade = `${age} anos`;
+      }
+
+      // Formatar data da avaliação
+      let dataAvaliacao = "Não informado";
+      if (evaluation?.created_at) {
+        dataAvaliacao = new Date(evaluation.created_at).toLocaleDateString("pt-BR", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+      }
+
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -474,13 +719,22 @@ export function PersonalizedPlanModal({
 
       // Cabeçalho
       doc.setFillColor(59, 130, 246); // Azul
-      doc.rect(0, 0, pageWidth, 40, "F");
+      doc.rect(0, 0, pageWidth, 50, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
       doc.text("Plano Personalizado", margin, 25);
 
-      yPosition = 50;
+      // Informações do usuário no cabeçalho
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      const userName = userData?.full_name || user?.user_metadata?.full_name || "Usuário";
+      doc.text(`Nome: ${userName}`, margin, 35);
+      doc.text(`Idade: ${idade}`, margin + 80, 35);
+      doc.text(`Data da Avaliação: ${dataAvaliacao}`, margin, 42);
+      doc.text(`Objetivo: ${userProfile?.objetivo || "Não informado"}`, margin + 80, 42);
+
+      yPosition = 60;
       doc.setTextColor(0, 0, 0);
 
       // Informações do plano
@@ -491,10 +745,7 @@ export function PersonalizedPlanModal({
         hour: "2-digit",
         minute: "2-digit",
       });
-      addText(`Gerado em: ${currentDate}`, 12, true);
-      if (userProfile?.objetivo) {
-        addText(`Objetivo: ${userProfile.objetivo}`, 12, true);
-      }
+      addText(`Gerado em: ${currentDate}`, 10);
       if (userProfile?.peso) {
         // ✅ Usar peso do userProfile (que já pode ser histórico se veio do histórico)
         addText(`Peso atual: ${userProfile.peso} kg`, 10);
@@ -1004,7 +1255,16 @@ export function PersonalizedPlanModal({
                                 key={exerciseIndex}
                                 className="bg-gray-50 border border-gray-100 rounded p-3"
                               >
-                                <div className="flex flex-wrap items-center gap-4">
+                                {(exercise?.muscleGroups ||
+                                  getMuscleGroups(exercise?.name || "")) && (
+                                  <p className="text-sm font-semibold text-blue-600 mb-2">
+                                    {capitalizeWords(
+                                      exercise?.muscleGroups ||
+                                        getMuscleGroups(exercise?.name || "")
+                                    )}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-4 mb-2">
                                   <h6 className="font-medium text-gray-900 flex-1">
                                     {exercise?.name ||
                                       "Exercício não especificado"}

@@ -52,6 +52,7 @@ const PLAN_FIELD_SCHEMAS = {
                   reps: { type: "string" },
                   rest: { type: "string" },
                   notes: { type: "string" },
+                  muscleGroups: { type: "string" },
                 },
                 required: ["name", "sets", "reps", "rest"],
               },
@@ -1182,6 +1183,7 @@ export async function POST(request: NextRequest) {
       // Restrições
       hasPain: profile?.has_pain || false,
       dietaryRestrictions: profile?.dietary_restrictions || "Nenhuma",
+      foodBudget: profile?.food_budget || "moderado",
 
       // Histórico de evolução
       latestEvolution: evolutions?.[0] || null,
@@ -1444,8 +1446,13 @@ Antes de retornar o plano de treino, SEMPRE verifique:
 3. **PLANO ALIMENTAR ESTRATÉGICO DETALHADO**
    - Calorias diárias calculadas para o objetivo
    - Macronutrientes específicos (proteínas, carbos, gorduras)
-   - Quantidades EXATAS para cada alimento (ex: "100g de frango", "1 xícara de arroz")
-   - Calorias por porção de cada alimento
+   - Quantidades EXATAS para cada alimento SEMPRE em GRAMAS (ex: "150g de frango grelhado", "200g de arroz cozido", "100g de batata doce cozida")
+   - ⚠️ CRÍTICO: NUNCA use xícaras, colheres ou outras medidas. SEMPRE use GRAMAS (g)
+   - ⚠️ CRÍTICO: Informações nutricionais devem ser de alimentos JÁ PREPARADOS (cozido, grelhado, assado, etc.)
+     - Exemplo: "150g de frango grelhado" (não "frango cru")
+     - Exemplo: "200g de arroz cozido" (não "arroz cru")
+     - Exemplo: "100g de batata doce cozida" (não "batata doce crua")
+   - Calorias por porção de cada alimento (baseadas no alimento preparado)
    - Timing das refeições otimizado
    - Cardápio semanal com porções calculadas
    - Suplementação estratégica baseada no objetivo
@@ -1550,7 +1557,13 @@ Exemplo de estrutura esperada:
    - Manutenção: 2-4x/semana, moderado (30-45min)
    - Condicionamento: 4-6x/semana, moderado a intenso (45-60min)
 5. **Inclua variedade**: caminhada, corrida, ciclismo, natação, elíptico, HIIT, escada, etc.
-6. **Considere local**: academia, casa, ao ar livre
+6. **⚠️ CRÍTICO - Considere o local de treino do usuário ao sugerir atividades:**
+   - Se local = "casa": NÃO sugira natação, elíptico de academia, escada de academia
+   - Se local = "casa": Sugira caminhada, corrida, ciclismo, HIIT em casa, polichinelo, burpee, step
+   - Se local = "academia": Pode sugerir elíptico, esteira, escada, bicicleta ergométrica, natação (se houver piscina)
+   - Se local = "ar_livre": Sugira caminhada, corrida, ciclismo, corrida na praia
+   - Se local = "ambos": Pode sugerir qualquer atividade, mas priorize as mais acessíveis
+   - **NUNCA sugira atividades que requerem equipamentos ou locais que o usuário não tem acesso**
 7. **Siga diretrizes OMS/ACSM** para frequência e intensidade mínimas
 
 ### 📝 EXEMPLOS POR OBJETIVO:
@@ -1569,9 +1582,24 @@ Exemplo de estrutura esperada:
 ⚠️ **NUNCA omita o campo aerobicTraining!** É tão ou mais importante que o treino de força para saúde cardiovascular e resultados.
 
 ## REGRAS NUTRICIONAIS ESPECÍFICAS:
-- SEMPRE especifique quantidades EXATAS (gramas, xícaras, unidades)
-- Calcule calorias por porção de cada alimento
+- ⚠️ CRÍTICO: SEMPRE especifique quantidades EXATAS APENAS em GRAMAS (g)
+  - NUNCA use xícaras, colheres, unidades ou outras medidas
+  - Exemplos corretos: "150g de frango grelhado", "200g de arroz cozido", "100g de batata doce cozida"
+  - Exemplos INCORRETOS: "1 xícara de arroz", "2 colheres de azeite", "1 unidade de banana"
+- ⚠️ CRÍTICO: Informações nutricionais (calorias, macros) devem ser de alimentos JÁ PREPARADOS quando o preparo altera significativamente os valores nutricionais:
+  - Frango: "frango grelhado" ou "frango cozido" (não "frango cru")
+  - Arroz: "arroz cozido" (não "arroz cru")
+  - Batata: "batata doce cozida" ou "batata assada" (não "batata crua")
+  - Peixe: "salmão grelhado" ou "tilápia grelhada" (não "peixe cru")
+  - Ovos: "ovo cozido" ou "ovo mexido" (não "ovo cru")
+  - Sempre especifique o método de preparo no nome do alimento quando necessário
+  - Alimentos que podem ser consumidos crus sem alteração nutricional significativa (como aveia, frutas, vegetais crus) não precisam especificar preparo
+- Calcule calorias por porção de cada alimento baseado no alimento PREPARADO
 - ⚠️ CRÍTICO: Use a TABELA DE DECISÃO acima para definir estratégia baseada em IMC + Objetivo
+- ⚠️ CRÍTICO - Considere o ORÇAMENTO ALIMENTAR do usuário ao sugerir alimentos:
+  - **Econômico**: Use apenas frango, ovos, iogurte comum, atum enlatado, feijão, arroz, batata, banana, maçã. NUNCA sugira salmão, iogurte grego, queijos caros, frutas exóticas.
+  - **Moderado**: Pode incluir ocasionalmente iogurte grego, peixes mais baratos (tilápia, sardinha), mas priorize frango, ovos, alimentos básicos. Evite salmão e alimentos muito caros.
+  - **Premium**: Pode usar salmão, iogurte grego, queijos especiais, frutas exóticas, alimentos orgânicos. Priorize qualidade e variedade.
 - ⚠️ CRÍTICO: Se IMC ≥ 25 e objetivo é "ganhar massa", use RECOMPOSIÇÃO (déficit calórico), não superávit!
 - Distribua macronutrientes de acordo com a estratégia definida na tabela
 - Seja específico com horários das refeições
@@ -1661,10 +1689,31 @@ Lembre-se: O objetivo do usuário é importante, mas a SAÚDE vem primeiro! Use 
 🏋️ PREFERÊNCIAS DE TREINO:
 - Frequência: ${userData.trainingFrequency}
 - Local: ${userData.trainingLocation}
+  ⚠️ IMPORTANTE: Considere este local ao sugerir atividades aeróbicas:
+  ${
+    userData.trainingLocation === "casa"
+      ? "- Local: CASA - Sugira apenas atividades que podem ser feitas em casa (caminhada, corrida, ciclismo, HIIT em casa, polichinelo, burpee). NÃO sugira natação, elíptico de academia ou escada de academia."
+      : userData.trainingLocation === "academia"
+        ? "- Local: ACADEMIA - Pode sugerir elíptico, esteira, escada, bicicleta ergométrica. Natação apenas se houver piscina disponível."
+        : userData.trainingLocation === "ar_livre"
+          ? "- Local: AR LIVRE - Sugira caminhada, corrida, ciclismo, corrida na praia. NÃO sugira equipamentos de academia."
+          : userData.trainingLocation === "ambos"
+            ? "- Local: CASA E ACADEMIA - Pode sugerir qualquer atividade, mas priorize as mais acessíveis."
+            : "- Local: Não especificado - Priorize atividades acessíveis como caminhada, corrida e ciclismo."
+  }
 
 ⚠️ RESTRIÇÕES:
 - Dores: ${userData.hasPain ? "Sim" : "Não"}
 - Restrições alimentares: ${userData.dietaryRestrictions || "Nenhuma"}
+
+💰 ORÇAMENTO ALIMENTAR: ${userData.foodBudget || "moderado"}
+  ${
+    userData.foodBudget === "economico"
+      ? "- ORÇAMENTO ECONÔMICO: Use apenas alimentos acessíveis e baratos. Exemplos: frango, ovos, iogurte comum, atum enlatado, feijão, arroz, batata, banana, maçã. NUNCA sugira salmão, iogurte grego, queijos caros, frutas exóticas ou alimentos premium."
+      : userData.foodBudget === "moderado"
+        ? "- ORÇAMENTO MODERADO: Use alimentos de preço médio. Pode incluir ocasionalmente iogurte grego, peixes mais baratos (tilápia, sardinha), mas priorize frango, ovos, alimentos básicos. Evite salmão e alimentos muito caros."
+        : "- ORÇAMENTO PREMIUM: Pode usar alimentos mais caros como salmão, iogurte grego, queijos especiais, frutas exóticas, alimentos orgânicos. Priorize qualidade e variedade."
+  }
 
 📈 HISTÓRICO DE EVOLUÇÃO:
 ${
@@ -2029,6 +2078,17 @@ Campos altamente recomendados (INCLUA SEMPRE QUE POSSÍVEL):
 
 ⚠️ IMPORTANTE: O campo motivation é especialmente importante para manter o usuário motivado. Sempre inclua uma mensagem personalizada e dicas motivacionais baseadas no objetivo do usuário!
 
+💪 GRUPOS MUSCULARES NOS EXERCÍCIOS:
+- Para cada exercício no trainingPlan.weeklySchedule, inclua o campo "muscleGroups" (opcional mas recomendado)
+- Este campo deve listar os grupos musculares principais trabalhados pelo exercício
+- Para exercícios compostos (ex: agachamento), liste todos os grupos com mais ênfase, separados por vírgula
+- Exemplos:
+  * "Supino Inclinado com Halteres" → muscleGroups: "peitoral"
+  * "Rosca Martelo" → muscleGroups: "bíceps, antebraço"
+  * "Agachamento" → muscleGroups: "quadríceps, glúteos, posterior de coxa"
+  * "Terra" → muscleGroups: "costas, posterior de coxa, glúteos, trapézio"
+- Use termos em português: peitoral, bíceps, tríceps, ombros, costas, quadríceps, posterior de coxa, glúteos, panturrilhas, abdômen, antebraço, trapézio
+
 O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar incluí-los sempre, especialmente motivation!`,
           },
         ],
@@ -2073,6 +2133,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
                                 reps: { type: "string" },
                                 rest: { type: "string" },
                                 notes: { type: "string" },
+                                muscleGroups: { type: "string" },
                               },
                               required: ["name", "sets", "reps", "rest"],
                             },

@@ -342,9 +342,6 @@ export default function ComoFuncionaPage() {
               </ShinyButton>
             </Link>
           </div>
-          <p className="text-black/60 text-sm mt-4 font-zalando">
-            7 dias grátis • Cancele a qualquer momento
-          </p>
         </div>
       </section>
 

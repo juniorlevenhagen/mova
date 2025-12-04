@@ -26,9 +26,9 @@ const helpCategories = [
           "Para criar sua conta, clique em 'Cadastre-se' no canto superior direito e preencha os dados solicitados. Você receberá um email de confirmação para ativar sua conta.",
       },
       {
-        title: "Como funciona o período de teste?",
+        title: "Como começar a usar o Mova+?",
         content:
-          "Oferecemos 7 dias grátis para você experimentar todos os recursos do Mova+. Não é necessário cartão de crédito para começar. Após o período, você pode escolher um de nossos planos.",
+          "Após criar sua conta e configurar seu perfil, você pode comprar prompts para gerar planos personalizados. Oferecemos o Plano Básico (1 prompt) ou o Pacote Premium (3 prompts) para você escolher conforme sua necessidade.",
       },
       {
         title: "Como configurar meu perfil?",
@@ -45,17 +45,37 @@ const helpCategories = [
       {
         title: "Quais são os planos disponíveis?",
         content:
-          "Atualmente oferecemos o Mova+ Complete, que inclui treinos personalizados, plano nutricional gerado por IA, acompanhamento de progresso e acesso à comunidade.",
-      },
-      {
-        title: "Posso cancelar a qualquer momento?",
-        content:
-          "Sim! Você pode cancelar sua assinatura a qualquer momento, sem taxas ou multas. Seu acesso continuará até o final do período pago.",
+          "Oferecemos dois tipos de compra: Plano Básico (R$ 17,99 por 1 prompt) e Pacote Premium (R$ 39,99 por 3 prompts). Cada prompt permite gerar um plano personalizado completo com treinos e nutrição.",
       },
       {
         title: "Como funciona a cobrança?",
         content:
-          "A cobrança é mensal e automática. Você pode gerenciar sua assinatura e forma de pagamento a qualquer momento em sua conta.",
+          "A cobrança é única e acontece apenas quando você compra prompts. Não há assinatura mensal ou cobrança automática. Você paga somente pelo que usar, sem compromisso. Os prompts comprados têm validade de 1 ano para uso.",
+      },
+      {
+        title: "Posso comprar mais prompts depois?",
+        content:
+          "Sim! Você pode comprar prompts adicionais a qualquer momento pelo dashboard, conforme sua necessidade. Não há limite de compras e você pode acumular prompts para usar quando quiser.",
+      },
+      {
+        title: "Há alguma restrição para gerar planos?",
+        content:
+          "Prompts unitários podem ser usados imediatamente. Prompts do Pacote Premium (3 prompts) têm um intervalo de 24 horas entre cada geração de plano. Isso garante que você tenha tempo para seguir o plano antes de gerar um novo.",
+      },
+      {
+        title: "O que está incluído em cada plano gerado?",
+        content:
+          "Cada plano inclui: treinos personalizados conforme seu objetivo e nível (casa ou academia), plano alimentar gerado por IA com base em suas necessidades, alergias e preferências, e acesso completo ao dashboard para acompanhamento de evolução e registro de atividades.",
+      },
+      {
+        title: "Quais métodos de pagamento são aceitos?",
+        content:
+          "Aceitamos cartões de crédito e débito. O pagamento é processado de forma segura e instantânea através do Stripe. Seu pagamento é processado imediatamente e os prompts são liberados assim que a compra é confirmada.",
+      },
+      {
+        title: "O que acontece se eu não usar todos os prompts?",
+        content:
+          "Os prompts comprados têm validade de 1 ano. Se você não usar todos os prompts dentro desse período, eles expirarão. Recomendamos usar seus prompts conforme sua necessidade para aproveitar ao máximo seu investimento.",
       },
     ],
   },
@@ -355,15 +375,17 @@ export default function CentralAjudaPage() {
                           <div
                             key={index}
                             className="border-l-4 border-black pl-4"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <button
-                              onClick={() =>
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setExpandedArticle(
                                   expandedArticle === `${category.id}-${index}`
                                     ? null
                                     : `${category.id}-${index}`
-                                )
-                              }
+                                );
+                              }}
                               className="text-left w-full"
                             >
                               <h4 className="font-zalando-medium text-black hover:text-black/80 transition-colors">

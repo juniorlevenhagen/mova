@@ -244,11 +244,11 @@ export function useTrial(user: User | null) {
       // Fallback em caso de erro
       setTrialStatus({
         isNewUser: true,
-        canGenerate: true,
-        plansRemaining: 1,
+        canGenerate: false,
+        plansRemaining: 0,
         hasUsedFreePlan: false,
         availablePrompts: 0,
-        message: "Você pode gerar 1 plano grátis!",
+        message: "Você precisa comprar um pacote para gerar planos",
         plansGenerated: 0,
         isInCooldown: false,
       });

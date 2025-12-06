@@ -56,11 +56,11 @@ export function useTrial(user: User | null) {
       setTrial(null);
       setTrialStatus({
         isNewUser: true,
-        canGenerate: true,
-        plansRemaining: 1,
+        canGenerate: false,
+        plansRemaining: 0,
         hasUsedFreePlan: false,
         availablePrompts: 0,
-        message: "Você pode gerar 1 plano grátis!",
+        message: "Você precisa comprar um pacote para gerar planos",
       });
       setLoading(false);
       fetchingRef.current = false;
@@ -88,18 +88,18 @@ export function useTrial(user: User | null) {
       if (!trialData) {
         status = {
           isNewUser: true,
-          canGenerate: true,
-          plansRemaining: 1,
+          canGenerate: false,
+          plansRemaining: 0,
           hasUsedFreePlan: false,
           availablePrompts: 0,
-          message: "Você pode gerar 1 plano grátis!",
+          message: "Você precisa comprar um pacote para gerar planos",
           plansGenerated: 0,
           isInCooldown: false,
         };
       } else {
         const plansGenerated = trialData.plans_generated || 0;
         const availablePrompts = trialData.available_prompts || 0;
-        const maxFreePlans = trialData.max_plans_allowed || 1;
+        const maxFreePlans = trialData.max_plans_allowed || 0;
         const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
 
         // ✅ Calcular cooldown APENAS para prompts do pacote de 3

@@ -290,7 +290,7 @@ export function useTrial(user: User | null) {
             ).toISOString(),
             is_active: true,
             upgraded_to_premium: false,
-            max_plans_allowed: 1,
+            max_plans_allowed: 0,
             available_prompts: 0,
           });
 
@@ -298,7 +298,7 @@ export function useTrial(user: User | null) {
       } else {
         const availablePrompts = currentTrial.available_prompts || 0;
         const plansGenerated = currentTrial.plans_generated || 0;
-        const maxFreePlans = currentTrial.max_plans_allowed || 1;
+        const maxFreePlans = currentTrial.max_plans_allowed || 0;
 
         const updateData: Record<string, number | string> = {
           last_plan_generated_at: now,

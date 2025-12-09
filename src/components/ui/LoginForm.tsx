@@ -259,7 +259,7 @@ export default function LoginForm() {
       <ShinyButton
         type="submit"
         disabled={loading || !captchaToken}
-        className="w-full py-4 px-6 bg-black rounded-lg text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-2.5 px-5 bg-black rounded-lg text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Entrando..." : "Entrar"}
       </ShinyButton>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
-import { supabase } from "@/lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Helper para criar cliente do Mercado Pago
 const getClient = () => {
@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
       // Se foi aprovado, adicionar prompts ao usuário
       if (newStatus === "approved" && pixPayment.status !== "approved") {
         await addPromptsToUser(
+          supabaseUser,
           user.id,
           pixPayment.prompts_amount,
           pixPayment.purchase_type
@@ -161,6 +162,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function addPromptsToUser(
+  supabaseClient: SupabaseClient,
   userId: string,
   promptsAmount: number,
   purchaseType: string
@@ -169,7 +171,7 @@ async function addPromptsToUser(
     const now = new Date().toISOString();
 
     // Buscar trial existente
-    const { data: existingTrial } = await supabase
+    const { data: existingTrial } = await supabaseClient
       .from("user_trials")
       .select("*")
       .eq("user_id", userId)
@@ -190,7 +192,7 @@ async function addPromptsToUser(
         updateData.package_prompts = newPackagePrompts;
       }
 
-      await supabase
+      await supabaseClient
         .from("user_trials")
         .update(updateData)
         .eq("user_id", userId);
@@ -217,7 +219,7 @@ async function addPromptsToUser(
         insertData.package_prompts = promptsAmount;
       }
 
-      await supabase.from("user_trials").insert(insertData);
+      await supabaseClient.from("user_trials").insert(insertData);
 
       console.log(
         `✅ Trial criado com ${promptsAmount} prompt(s) via PIX para usuário:`,

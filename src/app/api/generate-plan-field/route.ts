@@ -152,17 +152,23 @@ Gere uma análise completa, detalhada e personalizada.`;
 
 IMPORTANTE: Você DEVE retornar um plano de treino completo e detalhado baseado nos dados do usuário e objetivo.
 
-⚠️ REGRA CRÍTICA: SEMPRE inclua atividade cardiovascular/aeróbica em TODOS os planos de treino, independente do objetivo!
+⚠️ REGRA CRÍTICA: O treino aeróbico é OBRIGATÓRIO mas deve ser um campo SEPARADO do trainingPlan!
 
-O plano de treino DEVE incluir:
+O plano de treino DE FORÇA/MUSCULAÇÃO DEVE incluir:
 1. overview - visão geral do plano de treino e estratégia
-2. weeklySchedule - cronograma semanal completo com pelo menos 5 dias de treino
+2. weeklySchedule - cronograma semanal de TREINO DE FORÇA/MUSCULAÇÃO
+   ⚠️ IMPORTANTE: A frequência informada pelo usuário (${userData.trainingFrequency || "não informado"}) se refere APENAS aos dias de musculação.
+   - O weeklySchedule deve conter EXATAMENTE o número de dias de musculação informado pelo usuário
    - Cada dia deve ter: day (nome do dia), type (tipo de treino), exercises (array de exercícios)
    - Cada exercício deve ter: name, sets, reps, rest, notes (opcional)
-   - **SEMPRE inclua dias ou exercícios de atividade cardiovascular** (caminhada, corrida, ciclismo, HIIT, etc.)
+   - ⚠️ NÃO inclua treino aeróbico no weeklySchedule - o aeróbico é um campo separado (aerobicTraining)
+   - ⚠️ CRÍTICO: Ajuste a quantidade de exercícios e séries baseado no NÍVEL DE ATIVIDADE:
+     * Sedentário/Moderado: máximo 4-5 exercícios por treino, máximo 3 séries por exercício, exercícios básicos multiarticulares
+     * Atleta: 5-7 exercícios por treino, 3-5 séries por exercício, exercícios intermediários a avançados
+     * Alto Rendimento: 6-8 exercícios por treino, 4-6 séries por exercício, exercícios avançados e técnicas avançadas
 3. progression - estratégia de progressão ao longo do tempo
 
-### ATIVIDADE CARDIOVASCULAR OBRIGATÓRIA:
+### ATIVIDADE CARDIOVASCULAR OBRIGATÓRIA (CAMPO SEPARADO):
 - **Para ganhar massa**: Cardio LEVE a MODERADO (2-3x por semana, 30-45min) - caminhada, ciclismo leve, elíptico
 - **Para emagrecer**: Cardio MODERADO a INTENSO (3-5x por semana, 30-60min) - HIIT, corrida, ciclismo, natação
 - **Para manter**: Cardio MODERADO (2-4x por semana, 30-45min)
@@ -170,7 +176,48 @@ O plano de treino DEVE incluir:
 
 ⚠️ NUNCA omita atividade cardiovascular do plano! Ela é essencial para saúde, independente do objetivo.
 
-Seja específico, detalhado e adaptado ao objetivo do usuário.`;
+### 🏋️ PRESCRIÇÃO BASEADA EM NÍVEL DE ATIVIDADE:
+
+⚠️ **CRÍTICO: A prescrição de treino DEVE considerar o nível de atividade do usuário!**
+
+**SEDENTÁRIO:**
+- ⚠️ Foco em exercícios BÁSICOS e EFICIENTES
+- Priorizar exercícios MULTIARTICULARES (agachamento, supino, remada, desenvolvimento)
+- Volume moderado: 2-3 séries por exercício
+- Máximo 4-5 exercícios por treino
+- Exercícios simples e seguros (evitar movimentos complexos)
+- ⚠️ NUNCA prescrever exercícios avançados ou isolados complexos
+
+**MODERADO:**
+- Exercícios BÁSICOS a INTERMEDIÁRIOS
+- Priorizar exercícios MULTIARTICULARES com alguns isolados estratégicos
+- Volume moderado: 3 séries por exercício
+- Máximo 4-5 exercícios por treino
+- Pode incluir alguns exercícios isolados complementares
+
+**ATLETA:**
+- Exercícios INTERMEDIÁRIOS a AVANÇADOS
+- Maior QUANTIDADE: 5-7 exercícios por treino
+- Maior VOLUME: 3-5 séries por exercício
+- Exercícios COMPOSTOS e avançados são adequados
+- Maior FADIGA MUSCULAR (volume total maior)
+- Pode incluir técnicas avançadas
+
+**ATLETA ALTO RENDIMENTO:**
+- Exercícios AVANÇADOS e ESPECIALIZADOS
+- MÁXIMA QUANTIDADE: 6-8 exercícios por treino
+- MÁXIMO VOLUME: 4-6 séries por exercício
+- Exercícios COMPOSTOS complexos e isolados avançados
+- MÁXIMA FADIGA MUSCULAR (volume total muito alto)
+- Técnicas avançadas são esperadas (supersets, drop sets, etc.)
+
+⚠️ **REGRAS CRÍTICAS:**
+- Sedentário/Moderado: NUNCA prescrever mais de 4-5 exercícios por treino
+- Sedentário/Moderado: NUNCA prescrever mais de 3 séries por exercício
+- Atleta/Alto Rendimento: NUNCA prescrever menos de 5 exercícios por treino
+- SEMPRE considerar o objetivo do usuário junto com o nível de atividade
+
+Seja específico, detalhado e adaptado ao objetivo e nível de atividade do usuário.`;
 
       userPrompt = `Gere um plano de treino completo para este usuário:
 
@@ -180,7 +227,7 @@ Dados do usuário:
 - Altura: ${userData.height || "Não informado"} cm
 - IMC: ${userData.imc || "Não calculado"}
 - Sexo: ${userData.sexo || "Não informado"}
-- Frequência de treino: ${userData.trainingFrequency || "Não informado"}
+- Frequência de MUSCULAÇÃO: ${userData.trainingFrequency || "Não informado"} (⚠️ Esta frequência se refere APENAS aos dias de treino de força/musculação)
 - Nível de atividade: ${userData.nivelAtividade || "Moderado"}
 - Local de treino: ${userData.trainingLocation || "Academia"}
 ${userData.injuries ? `- Lesões/limitações: ${userData.injuries}` : ""}

@@ -83,6 +83,28 @@ export function CooldownModal({
     return () => clearInterval(interval);
   }, [isOpen, hoursRemaining, nextPlanAvailable, onClose]);
 
+  useEffect(() => {
+    if (isOpen) {
+      // Salvar a posição atual do scroll
+      const scrollY = window.scrollY;
+      
+      // Bloquear scroll do body
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      
+      return () => {
+        // Restaurar scroll do body
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const formatDate = (dateString?: string) => {
@@ -113,7 +135,7 @@ export function CooldownModal({
         {/* Modal */}
         <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white shadow-xl transition-all">
           {/* Header */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-5 border-b border-amber-200">
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-5 border-b border-amber-200 relative pr-12">
             <div className="flex items-center gap-4">
               <div className="flex-shrink-0">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
@@ -141,6 +163,26 @@ export function CooldownModal({
                 </p>
               </div>
             </div>
+            {/* Botão X no canto superior direito */}
+            <button
+              onClick={onClose}
+              className="absolute top-5 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Fechar"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
           </div>
 
           {/* Body */}

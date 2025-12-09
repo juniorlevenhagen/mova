@@ -465,10 +465,15 @@ export function UserDataSection({
       // Fatores de atividade
       const fatoresAtividade = {
         Sedentário: 1.2,
-        Leve: 1.375,
         Moderado: 1.55,
-        Ativo: 1.725,
-        "Muito Ativo": 1.9,
+        Atleta: 1.725,
+        "Atleta Alto Rendimento": 1.9,
+        // Compatibilidade com valores antigos
+        Leve: 1.55, // Mapear para Moderado
+        Ativo: 1.725, // Mapear para Atleta
+        "Muito Ativo": 1.9, // Mapear para Atleta Alto Rendimento
+        Intenso: 1.725, // Mapear para Atleta
+        "Muito intenso": 1.9, // Mapear para Atleta Alto Rendimento
       };
 
       const fator =
@@ -720,9 +725,9 @@ export function UserDataSection({
       {/* Indicador permanente de avaliação */}
       {evaluation && (
         <div className="mb-6 relative overflow-hidden">
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 sm:p-5 shadow-sm">
             {/* Decorative background pattern */}
-            <div className="absolute top-0 right-0 w-24 h-24 opacity-10">
+            <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 opacity-10">
               <svg
                 viewBox="0 0 100 100"
                 fill="currentColor"
@@ -733,29 +738,29 @@ export function UserDataSection({
               </svg>
             </div>
 
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 relative z-10">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
                 {/* Status indicator with animation */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
                   <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full animate-ping"></div>
                 </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-green-900">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                    <h4 className="text-xs sm:text-sm font-semibold text-green-900">
                       Avaliação física disponível
                     </h4>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit">
                       ✓ Ativa
                     </span>
                   </div>
-                  <p className="text-sm text-green-700 font-medium mb-1">
+                  <p className="text-xs sm:text-sm text-green-700 font-medium mb-1 break-words">
                     {evaluation.file_name}
                   </p>
-                  <p className="text-xs text-green-600 flex items-center gap-1">
+                  <p className="text-xs text-green-600 flex items-center gap-1 flex-wrap">
                     <svg
-                      className="w-3 h-3"
+                      className="w-3 h-3 flex-shrink-0"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -765,18 +770,18 @@ export function UserDataSection({
                         clipRule="evenodd"
                       />
                     </svg>
-                    Upload em: {formatDate(evaluation.upload_date)}
+                    <span className="break-words">Upload em: {formatDate(evaluation.upload_date)}</span>
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 w-full sm:w-auto justify-end sm:justify-start">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors duration-200"
+                  className="inline-flex items-center justify-center flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors duration-200 whitespace-nowrap"
                 >
                   <svg
-                    className="w-3 h-3 mr-1"
+                    className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -792,10 +797,10 @@ export function UserDataSection({
                 </button>
                 <button
                   onClick={handleRemoveFile}
-                  className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200"
+                  className="inline-flex items-center justify-center flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200 whitespace-nowrap"
                 >
                   <svg
-                    className="w-3 h-3 mr-1"
+                    className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -834,7 +839,7 @@ export function UserDataSection({
             </svg>
             Dados Básicos
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <span className="block text-gray-500 text-sm mb-1">Altura</span>
               <span className="block text-gray-800 font-bold text-lg">
@@ -905,7 +910,7 @@ export function UserDataSection({
             </svg>
             Dados de Treino
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <span className="block text-gray-500 text-sm mb-1">Idade</span>
               <span className="block text-gray-800 font-bold text-lg">
@@ -965,7 +970,7 @@ export function UserDataSection({
             </svg>
             Metabolismo
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-1">
                 <span className="block text-gray-500 text-sm">
@@ -998,7 +1003,7 @@ export function UserDataSection({
                 "nivelAtividade",
                 "Nível de Atividade",
                 userProfile.nivelAtividade || "Moderado",
-                ["Sedentário", "Leve", "Moderado", "Ativo", "Muito Ativo"]
+                ["Sedentário", "Moderado", "Atleta", "Atleta Alto Rendimento"]
               )}
             </div>
           </div>
@@ -1008,9 +1013,9 @@ export function UserDataSection({
       {/* Status do Plano Personalizado */}
       {planStatus && planStatus.isExisting && (
         <div className="mt-6 relative overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-3 sm:p-5 shadow-sm">
             {/* Decorative background pattern */}
-            <div className="absolute top-0 right-0 w-24 h-24 opacity-10">
+            <div className="absolute top-0 right-0 w-16 h-16 sm:w-24 sm:h-24 opacity-10">
               <svg
                 viewBox="0 0 100 100"
                 fill="currentColor"
@@ -1021,28 +1026,28 @@ export function UserDataSection({
               </svg>
             </div>
 
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 relative z-10">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
                 {/* Status indicator with animation */}
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
                   <div className="absolute inset-0 w-4 h-4 bg-blue-400 rounded-full animate-ping"></div>
                 </div>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-blue-900">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                    <h4 className="text-xs sm:text-sm font-semibold text-blue-900 break-words">
                       {isPremium && planStatus.isPremiumCooldown
                         ? "Plano Premium - Próximo Disponível"
                         : "Plano Personalizado Ativo"}
                     </h4>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit">
                       {isPremium && planStatus.isPremiumCooldown
                         ? "⏰ Cooldown"
                         : "✓ Ativo"}
                     </span>
                   </div>
-                  <p className="text-sm text-blue-700 font-medium mb-1">
+                  <p className="text-xs sm:text-sm text-blue-700 font-medium mb-1 break-words">
                     {isPremium && planStatus.isPremiumCooldown
                       ? `Último plano gerado em: ${new Date(
                           planStatus.generatedAt!
@@ -1052,9 +1057,9 @@ export function UserDataSection({
                         ).toLocaleDateString("pt-BR")}`}
                   </p>
                   {isPremium && planStatus.isPremiumCooldown ? (
-                    <p className="text-xs text-blue-600 flex items-center gap-1">
+                    <p className="text-xs text-blue-600 flex items-start sm:items-center gap-1 flex-wrap">
                       <svg
-                        className="w-3 h-3"
+                        className="w-3 h-3 flex-shrink-0 mt-0.5 sm:mt-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -1064,33 +1069,35 @@ export function UserDataSection({
                           clipRule="evenodd"
                         />
                       </svg>
-                      Próximo plano disponível em:{" "}
-                      <span className="font-semibold">
-                        {planStatus.daysUntilNext !== undefined
-                          ? planStatus.daysUntilNext === 1
-                            ? "1 dia"
-                            : `${planStatus.daysUntilNext} dias`
-                          : planStatus.hoursUntilNext
-                            ? planStatus.hoursUntilNext < 24
-                              ? `${planStatus.hoursUntilNext} horas`
-                              : `${Math.ceil(planStatus.hoursUntilNext / 24)} dias`
-                            : "7 dias"}
-                      </span>
-                      {planStatus.nextPlanAvailable && (
-                        <span className="text-blue-500 ml-1">
-                          (
-                          {new Date(
-                            planStatus.nextPlanAvailable
-                          ).toLocaleDateString("pt-BR")}
-                          )
+                      <span className="break-words">
+                        Próximo plano disponível em:{" "}
+                        <span className="font-semibold">
+                          {planStatus.daysUntilNext !== undefined
+                            ? planStatus.daysUntilNext === 1
+                              ? "1 dia"
+                              : `${planStatus.daysUntilNext} dias`
+                            : planStatus.hoursUntilNext
+                              ? planStatus.hoursUntilNext < 24
+                                ? `${planStatus.hoursUntilNext} horas`
+                                : `${Math.ceil(planStatus.hoursUntilNext / 24)} dias`
+                              : "7 dias"}
                         </span>
-                      )}
+                        {planStatus.nextPlanAvailable && (
+                          <span className="text-blue-500 ml-1">
+                            (
+                            {new Date(
+                              planStatus.nextPlanAvailable
+                            ).toLocaleDateString("pt-BR")}
+                            )
+                          </span>
+                        )}
+                      </span>
                     </p>
                   ) : (
                     !isPremium && (
-                      <p className="text-xs text-blue-600 flex items-center gap-1">
+                      <p className="text-xs text-blue-600 flex items-start sm:items-center gap-1 flex-wrap">
                         <svg
-                          className="w-3 h-3"
+                          className="w-3 h-3 flex-shrink-0 mt-0.5 sm:mt-0"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -1100,17 +1107,19 @@ export function UserDataSection({
                             clipRule="evenodd"
                           />
                         </svg>
-                        Para gerar um novo plano, compre prompts adicionais no
-                        botão acima.
+                        <span className="break-words">
+                          Para gerar um novo plano, compre prompts adicionais no
+                          botão acima.
+                        </span>
                       </p>
                     )
                   )}
                 </div>
               </div>
 
-              <div className="text-blue-600">
+              <div className="text-blue-600 flex-shrink-0 self-start sm:self-center">
                 <svg
-                  className="w-8 h-8"
+                  className="w-6 h-6 sm:w-8 sm:h-8"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -1144,7 +1153,7 @@ export function UserDataSection({
           Ações
         </h4>
 
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button
             onClick={handleGeneratePlan}
             disabled={isGeneratingPlan || isCheckingPlanStatus}
@@ -1306,7 +1315,7 @@ export function UserDataSection({
               Deseja gerar seu plano personalizado sem adicionar avaliação
               física?
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full">
               <button
                 onClick={() => setShowConfirmationModal(false)}
                 className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.md} bg-gray-200 text-gray-800 hover:bg-gray-300 transition-all duration-200 shadow-md hover:shadow-lg`}

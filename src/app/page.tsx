@@ -38,7 +38,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
+    <div className="w-full overflow-x-hidden">
       <Navbar />
 
       {/* Seção Hero com melhor espaçamento */}

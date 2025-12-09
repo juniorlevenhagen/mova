@@ -9,8 +9,16 @@
   --font-zalando-sans: "Zalando Sans", sans-serif;
 }
 
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   font-family: "Zalando Sans", Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
 }
 
 @keyframes slideIn {
@@ -240,4 +248,25 @@ body {
       boxshadow: 0 0 0 8px var(--pulse-color);
     }
   }
+}
+
+/* Estilos para barras de scroll visíveis em modais */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 5px;
+  border: 1px solid #cbd5e1;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 5px;
+  border: 1px solid #475569;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }

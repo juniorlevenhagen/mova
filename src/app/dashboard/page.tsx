@@ -578,8 +578,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-      <div className="min-h-screen bg-white p-4">
-        <div className="max-w-3xl mx-auto space-y-8">
+      <div className="min-h-screen bg-white p-4 sm:p-6">
+        <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
           {/* ✅ Alerta de erro ao gerar plano */}
           {planError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">

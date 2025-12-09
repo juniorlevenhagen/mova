@@ -21,7 +21,7 @@ export default function WelcomePage() {
       <Logo />
 
       {/* Imagem de fundo - Mobile usa Image normal, Desktop usa PixelImage */}
-      <div className="w-full lg:w-1/2 h-[60vh] md:h-[65vh] lg:h-screen relative bg-white contrast-100 overflow-hidden">
+      <div className="w-full lg:w-2/5 h-[50vh] md:h-[55vh] lg:h-screen relative bg-white contrast-100 overflow-hidden">
         {/* Mobile: Image simples para melhor performance */}
         <div className="lg:hidden absolute inset-0">
           <Image
@@ -43,7 +43,7 @@ export default function WelcomePage() {
       </div>
 
       {/* Conteúdo - Mobile e Desktop */}
-      <div className="flex-1 flex items-center justify-center lg:absolute lg:w-1/2 lg:h-full lg:right-0 lg:pr-8 py-12 lg:py-0">
+      <div className="flex-1 flex items-center justify-center lg:absolute lg:w-3/5 lg:h-full lg:right-0 lg:pr-8 py-12 lg:py-0">
         <div className="w-full max-w-lg px-4 lg:px-0">
           <motion.div
             initial={{ opacity: 0, y: 24 }}

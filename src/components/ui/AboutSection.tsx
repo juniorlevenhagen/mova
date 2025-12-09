@@ -77,7 +77,7 @@ export function AboutSection() {
           {/* Seção inferior - Gradiente Animado */}
           <div
             ref={sectionRef}
-            className="relative px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 overflow-hidden"
+            className="relative px-8 md:px-12 lg:px-16 py-12 md:py-16 lg:py-20 overflow-hidden max-w-full"
             style={{
               // Gradiente rotativo + posição das cores
               background: `linear-gradient(${90 + scrollProgress * 180}deg, 
@@ -89,12 +89,14 @@ export function AboutSection() {
             {/* HEALTH - Efeito nítido */}
             <div
               className="absolute top-0 right-0 text-[8rem] md:text-[12erm] lg:text-[14rem] 
-                         font-black select-none pointer-events-none leading-none"
+                         font-black select-none pointer-events-none leading-none overflow-hidden"
               style={{
                 // Opacidade e escala (sem blur)
                 color: `rgba(34, 197, 94, ${0.15 + scrollProgress * 0.25})`, // Verde com 15% → 40% opacidade
                 transform: `scale(${1 + scrollProgress * 0.1})`, // Cresce 10%
                 transition: "all 0.3s ease-out",
+                maxWidth: "100%",
+                wordBreak: "break-word",
               }}
             >
               HEAL

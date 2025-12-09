@@ -741,13 +741,13 @@ export function EvolutionSection({
     <div
       className={`bg-gray-50 rounded-xl shadow-lg border border-gray-200 ${components.card.padding} mt-8`}
     >
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <h2 className={`${typography.heading.h2} ${colors.text.primary}`}>
           Sua Evolução
         </h2>
 
         {/* Filtros de período */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             className={`${components.button.base} ${components.button.sizes.sm} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-md hover:shadow-lg whitespace-nowrap`}
           >
@@ -800,7 +800,7 @@ export function EvolutionSection({
         <h3 className="text-md font-semibold text-gray-800 mb-3">
           Peso e Composição Corporal
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg text-center border border-blue-200">
             <h4 className="text-sm text-gray-600 mb-1">Peso Atual</h4>
             <p className="text-2xl font-bold text-blue-800">
@@ -879,7 +879,7 @@ export function EvolutionSection({
         <h3 className={`${typography.heading.h4} ${colors.text.primary} mb-4`}>
           Massa Gorda
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           <div className="bg-gradient-to-br from-red-50 to-red-100 p-4 rounded-lg text-center border border-red-200">
             <h4 className="text-sm text-gray-600 mb-1">Massa Gorda (kg)</h4>
             <p className="text-2xl font-bold text-red-800">
@@ -938,7 +938,7 @@ export function EvolutionSection({
         <h3 className={`${typography.heading.h4} ${colors.text.primary} mb-4`}>
           Medidas Corporais
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 p-4 rounded-lg text-center border border-yellow-200">
             <h4 className="text-sm text-gray-600 mb-1">Cintura</h4>
             <p className="text-2xl font-bold text-yellow-800">
@@ -979,16 +979,16 @@ export function EvolutionSection({
 
       {/* Seção: Atividade */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
           <h3 className="text-md font-semibold text-gray-800">Atividade</h3>
           <button
             onClick={() => setShowActivityModal(true)}
-            className="text-sm bg-black text-white px-3 py-1 rounded-lg hover:bg-gray-900 transition-colors duration-200"
+            className="text-sm sm:text-base bg-black text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg hover:bg-gray-900 transition-colors duration-200 w-full sm:w-auto font-medium shadow-md hover:shadow-lg"
           >
             Adicionar Atividade
           </button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-lg text-center border border-indigo-200">
             <h4 className="text-sm text-gray-600 mb-1">Treinos Concluídos</h4>
             <p className="text-2xl font-bold text-indigo-800">
@@ -1017,13 +1017,13 @@ export function EvolutionSection({
 
       {/* Gráficos Interativos */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
           <h3 className="text-md font-semibold text-gray-800">
             Gráficos de Evolução
           </h3>
 
           {/* Filtros de período para gráficos de evolução */}
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             <button
               onClick={() => setEvolutionFilter("10")}
               className={`px-2 py-1 text-xs rounded ${
@@ -1067,45 +1067,51 @@ export function EvolutionSection({
 
         <div className="grid grid-cols-1 gap-6">
           {/* Gráfico de Linha: Evolução do Peso e Cintura */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-4 shadow-sm overflow-hidden">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
               Evolução do Peso, Cintura e Composição
             </h4>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="uniqueKey"
-                  stroke="#6b7280"
-                  fontSize={10}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                  tick={{ fontSize: 10 }}
-                />
+            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="uniqueKey"
+                    stroke="#6b7280"
+                    fontSize={8}
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    tick={{ fontSize: 8 }}
+                    interval="preserveStartEnd"
+                  />
                 <YAxis
                   yAxisId="left"
                   stroke="#6b7280"
-                  fontSize={10}
+                  fontSize={8}
+                  width={40}
                   domain={["dataMin - 2", "dataMax + 2"]}
+                  tick={{ fontSize: 8 }}
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
                   stroke="#6b7280"
-                  fontSize={10}
+                  fontSize={8}
+                  width={40}
                   domain={[0, 100]}
+                  tick={{ fontSize: 8 }}
                 />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                          <p className="font-medium text-gray-800 mb-2">
+                        <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
+                          <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
                             {label === "inicio" ? "Cadastro Inicial" : label}
                           </p>
                           {payload.map((entry, index) => {
@@ -1132,7 +1138,7 @@ export function EvolutionSection({
                             return (
                               <p
                                 key={index}
-                                className="text-sm"
+                                className="text-xs sm:text-sm"
                                 style={{ color: entry.color }}
                               >
                                 {name === "peso"
@@ -1154,7 +1160,10 @@ export function EvolutionSection({
                     return null;
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                  iconSize={8}
+                />
                 <Line
                   yAxisId="left"
                   type="monotone"
@@ -1206,6 +1215,7 @@ export function EvolutionSection({
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
 
             {/* Mensagem quando não há dados */}
             {chartData.length === 0 && (
@@ -1219,34 +1229,48 @@ export function EvolutionSection({
           </div>
 
           {/* Gráfico de Pizza: Composição Corporal */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-4 shadow-sm overflow-hidden">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
               Composição Corporal Atual
             </h4>
-            <ResponsiveContainer width="100%" height={300}>
+            <div className="w-full" style={{ minHeight: '250px', height: '250px' }}>
+              <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={pieChartData}
                   cx="50%"
                   cy="50%"
-                  outerRadius={70}
+                  outerRadius={65}
                   innerRadius={30}
                   dataKey="value"
-                  label={({ name, percentage }) => `${name} ${percentage}%`}
+                  label={({ percentage }) => `${percentage}%`}
                   labelLine={false}
                   isAnimationActive={false}
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                  }}
                 >
                   {pieChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value, entry: any) => (
+                    <span style={{ color: entry.color, fontSize: '13px', fontWeight: '500' }}>
+                      {value}
+                    </span>
+                  )}
+                />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                          <p className="font-medium text-gray-800 mb-2">
+                        <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
+                          <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
                             Composição Corporal
                           </p>
                           {payload.map((entry, index) => {
@@ -1268,7 +1292,7 @@ export function EvolutionSection({
                             return (
                               <p
                                 key={index}
-                                className="text-sm"
+                                className="text-xs sm:text-sm"
                                 style={{ color: entry.color }}
                               >
                                 {name}: {displayValue}
@@ -1283,6 +1307,7 @@ export function EvolutionSection({
                 />
               </PieChart>
             </ResponsiveContainer>
+            </div>
 
             {/* Mensagem quando não há dados de composição corporal */}
             {pieChartData.every((item) => item.value === 0) && (
@@ -1296,9 +1321,9 @@ export function EvolutionSection({
           </div>
 
           {/* Gráfico de Linha: Medidas Corporais */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-4 shadow-sm overflow-hidden">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-yellow-500 rounded-full"></div>
               Evolução das Medidas Corporais
             </h4>
             <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
@@ -1306,32 +1331,36 @@ export function EvolutionSection({
               (recomendado: braço dominante) para manter consistência nas
               comparações.
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="uniqueKey"
-                  stroke="#6b7280"
-                  fontSize={10}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  fontSize={10}
-                  domain={["dataMin - 2", "dataMax + 2"]}
-                />
+            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="uniqueKey"
+                    stroke="#6b7280"
+                    fontSize={8}
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    tick={{ fontSize: 8 }}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    fontSize={8}
+                    width={40}
+                    domain={["dataMin - 2", "dataMax + 2"]}
+                    tick={{ fontSize: 8 }}
+                  />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                          <p className="font-medium text-gray-800 mb-2">
+                        <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
+                          <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
                             {label === "inicio" ? "Cadastro Inicial" : label}
                           </p>
                           {payload.map((entry, index) => {
@@ -1345,7 +1374,7 @@ export function EvolutionSection({
                             return (
                               <p
                                 key={index}
-                                className="text-sm"
+                                className="text-xs sm:text-sm"
                                 style={{ color: entry.color }}
                               >
                                 {name === "braco"
@@ -1365,7 +1394,10 @@ export function EvolutionSection({
                     return null;
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                  iconSize={8}
+                />
                 <Line
                   type="monotone"
                   dataKey="braco"
@@ -1401,6 +1433,7 @@ export function EvolutionSection({
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
 
             {/* Mensagem quando não há dados */}
             {chartData.filter(
@@ -1416,32 +1449,36 @@ export function EvolutionSection({
           </div>
 
           {/* Gráfico de Linha: Bem-estar */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-4 shadow-sm overflow-hidden">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-pink-500 rounded-full"></div>
               Evolução do Bem-estar
             </h4>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="uniqueKey"
-                  stroke="#6b7280"
-                  fontSize={10}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  fontSize={10}
-                  domain={[0, 5]}
-                  ticks={[0, 1, 2, 3, 4, 5]}
-                />
+            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="uniqueKey"
+                    stroke="#6b7280"
+                    fontSize={8}
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    tick={{ fontSize: 8 }}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    fontSize={8}
+                    width={40}
+                    domain={[0, 5]}
+                    ticks={[0, 1, 2, 3, 4, 5]}
+                    tick={{ fontSize: 8 }}
+                  />
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
@@ -1464,7 +1501,10 @@ export function EvolutionSection({
                     return null;
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                  iconSize={8}
+                />
                 <Line
                   type="monotone"
                   dataKey="bemEstar"
@@ -1478,6 +1518,7 @@ export function EvolutionSection({
                 />
               </LineChart>
             </ResponsiveContainer>
+            </div>
 
             {/* Mensagem quando não há dados */}
             {chartData.filter((d) => d.bemEstar !== null).length === 0 && (
@@ -1492,28 +1533,35 @@ export function EvolutionSection({
           </div>
 
           {/* Gráfico de Barras: Treinos Concluídos por Semana */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <h4 className="text-sm font-medium text-gray-800 mb-3 flex items-center gap-2">
-              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-4 shadow-sm overflow-hidden">
+            <h4 className="text-xs sm:text-sm font-medium text-gray-800 mb-2 sm:mb-3 flex items-center gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-purple-500 rounded-full"></div>
               Treinos Concluídos por Semana
             </h4>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={weeklyData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis
-                  dataKey="semana"
-                  stroke="#6b7280"
-                  fontSize={10}
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis
-                  stroke="#6b7280"
-                  fontSize={10}
-                  domain={[0, "dataMax + 1"]}
-                />
+            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={weeklyData}
+                  margin={{ top: 5, right: 10, left: 0, bottom: 40 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis
+                    dataKey="semana"
+                    stroke="#6b7280"
+                    fontSize={8}
+                    angle={-45}
+                    textAnchor="end"
+                    height={50}
+                    tick={{ fontSize: 8 }}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    stroke="#6b7280"
+                    fontSize={8}
+                    width={40}
+                    domain={[0, "dataMax + 1"]}
+                    tick={{ fontSize: 8 }}
+                  />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "white",
@@ -1529,7 +1577,10 @@ export function EvolutionSection({
                     return [value, name];
                   }}
                 />
-                <Legend />
+                <Legend 
+                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                  iconSize={8}
+                />
                 <Bar
                   dataKey="treinos"
                   fill="#8B5CF6"
@@ -1546,6 +1597,7 @@ export function EvolutionSection({
                 />
               </BarChart>
             </ResponsiveContainer>
+            </div>
 
             {/* Mensagem quando não há dados de atividade */}
             {weeklyData.length === 0 && (
@@ -1559,15 +1611,15 @@ export function EvolutionSection({
           </div>
 
           {/* Gráfico de Área: Progresso em Relação à Meta */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium text-gray-800 flex items-center gap-2">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-4 shadow-sm overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+              <h4 className="text-xs sm:text-sm font-medium text-gray-800 flex items-center gap-2">
+                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-orange-500 rounded-full"></div>
                 Progresso em Relação às Metas
               </h4>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 {/* Filtros de período */}
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   <button
                     onClick={() => setProgressFilter("10")}
                     className={`px-2 py-1 text-xs rounded ${
@@ -1601,7 +1653,7 @@ export function EvolutionSection({
                 </div>
                 <button
                   onClick={() => setShowMetaModal(true)}
-                  className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
+                  className="text-sm sm:text-base bg-orange-100 text-orange-700 px-3 sm:px-4 py-1.5 sm:py-2 rounded hover:bg-orange-200 transition-colors whitespace-nowrap font-medium"
                 >
                   {goals.length > 0 ? "Adicionar Meta" : "Definir Meta"}
                 </button>
@@ -1641,23 +1693,30 @@ export function EvolutionSection({
                 }
 
                 return (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart
-                      data={progressData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis
-                        dataKey="mes"
-                        stroke="#6b7280"
-                        fontSize={12}
-                        tick={{ fontSize: 10 }}
-                      />
-                      <YAxis
-                        stroke="#6b7280"
-                        fontSize={12}
-                        domain={["dataMin - 2", "dataMax + 2"]}
-                      />
+                  <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={progressData}
+                        margin={{ top: 5, right: 10, left: 0, bottom: 40 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis
+                          dataKey="mes"
+                          stroke="#6b7280"
+                          fontSize={8}
+                          angle={-45}
+                          textAnchor="end"
+                          height={50}
+                          tick={{ fontSize: 8 }}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          stroke="#6b7280"
+                          fontSize={8}
+                          width={40}
+                          domain={["dataMin - 2", "dataMax + 2"]}
+                          tick={{ fontSize: 8 }}
+                        />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: "white",
@@ -1678,7 +1737,10 @@ export function EvolutionSection({
                           return [value, name];
                         }}
                       />
-                      <Legend />
+                      <Legend 
+                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+                  iconSize={8}
+                />
                       <Area
                         type="monotone"
                         dataKey="atual"
@@ -1700,8 +1762,9 @@ export function EvolutionSection({
                         connectNulls={false}
                         isAnimationActive={false}
                       />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                 );
               })()
             )}
@@ -1798,58 +1861,58 @@ export function EvolutionSection({
 
       {/* Histórico Detalhado */}
       <div className="mb-4">
-        <h3 className="text-md font-semibold text-gray-800 mb-3">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
           Histórico Detalhado
         </h3>
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Dados do cadastro inicial */}
-          <div className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-lg">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-medium text-blue-800">
+          <div className="border-l-4 border-blue-500 bg-blue-50 p-4 sm:p-5 rounded-r-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <h4 className="font-medium text-blue-800 text-sm sm:text-base lg:text-lg break-words">
                 {initialData.date} (Cadastro Inicial)
               </h4>
-              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
+              <span className="text-xs sm:text-sm text-blue-600 bg-blue-100 px-2 sm:px-3 py-1 rounded flex-shrink-0">
                 Início
               </span>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-              <div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 text-sm sm:text-base">
+              <div className="break-words">
                 <span className="text-gray-600">Peso:</span>
                 <span className="font-medium ml-1">
                   {formatValue(initialData.peso, "kg")}
                 </span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-600">% Gordura:</span>
                 <span className="font-medium ml-1">
                   {formatValue(initialData.percentualGordura, "%")}
                 </span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-600">Massa Magra:</span>
                 <span className="font-medium ml-1">
                   {formatValue(initialData.massaMagra, "kg")}
                 </span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-600">Cintura:</span>
                 <span className="font-medium ml-1">
                   {formatValue(initialData.cintura, "cm")}
                 </span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-600">Objetivo:</span>
                 <span className="font-medium ml-1">
                   {initialData.objetivo || "-"}
                 </span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-600">Nível:</span>
                 <span className="font-medium ml-1">
                   {initialData.nivelAtividade || "-"}
                 </span>
               </div>
-              <div>
+              <div className="break-words">
                 <span className="text-gray-600">Bem-estar:</span>
                 <span className="font-medium ml-1">
                   {initialData.bemEstar ? `${initialData.bemEstar}/5` : "-"}
@@ -1857,7 +1920,7 @@ export function EvolutionSection({
               </div>
             </div>
             {initialData.observacoes && (
-              <p className="text-sm text-gray-700 mt-2 italic">
+              <p className="text-sm sm:text-base text-gray-700 mt-3 sm:mt-4 italic break-words">
                 &ldquo;{initialData.observacoes}&rdquo;
               </p>
             )}
@@ -1876,18 +1939,18 @@ export function EvolutionSection({
               return (
                 <div
                   key={evolution.id}
-                  className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg mb-4"
+                  className="border-l-4 border-green-500 bg-green-50 p-4 sm:p-5 rounded-r-lg mb-3 sm:mb-4"
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-semibold text-gray-800">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-start gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base lg:text-lg break-words">
                         Evolução #{index + 1}
                       </h4>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs sm:text-sm text-gray-600 break-words">
                         {new Date(evolution.date).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                    <span className="text-xs sm:text-sm bg-green-100 text-green-800 px-2 sm:px-3 py-1 rounded-full flex-shrink-0 whitespace-nowrap">
                       {index === 0
                         ? calculateDifference(
                             normalizedRef.peso,
@@ -1902,8 +1965,8 @@ export function EvolutionSection({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 text-sm sm:text-base">
+                    <div className="break-words">
                       <span className="text-gray-600">Peso:</span>
                       <span className="font-medium ml-1">
                         {calculateDifference(
@@ -1914,7 +1977,7 @@ export function EvolutionSection({
                       </span>
                     </div>
                     {evolution.percentual_gordura && (
-                      <div>
+                      <div className="break-words">
                         <span className="text-gray-600">% Gordura:</span>
                         <span className="font-medium ml-1">
                           {index === 0
@@ -1932,7 +1995,7 @@ export function EvolutionSection({
                       </div>
                     )}
                     {evolution.massa_magra && (
-                      <div>
+                      <div className="break-words">
                         <span className="text-gray-600">Massa Magra:</span>
                         <span className="font-medium ml-1">
                           {calculateDifference(
@@ -1944,7 +2007,7 @@ export function EvolutionSection({
                       </div>
                     )}
                     {evolution.cintura && (
-                      <div>
+                      <div className="break-words">
                         <span className="text-gray-600">Cintura:</span>
                         <span className="font-medium ml-1">
                           {calculateDifference(
@@ -1956,7 +2019,7 @@ export function EvolutionSection({
                       </div>
                     )}
                     {evolution.objetivo && (
-                      <div>
+                      <div className="break-words">
                         <span className="text-gray-600">Objetivo:</span>
                         <span className="font-medium ml-1">
                           {evolution.objetivo}
@@ -1964,14 +2027,14 @@ export function EvolutionSection({
                       </div>
                     )}
                     {evolution.nivel_atividade && (
-                      <div>
+                      <div className="break-words">
                         <span className="text-gray-600">Nível:</span>
                         <span className="font-medium ml-1">
                           {evolution.nivel_atividade}
                         </span>
                       </div>
                     )}
-                    <div>
+                    <div className="break-words">
                       <span className="text-gray-600">Bem-estar:</span>
                       <span className="font-medium ml-1">
                         {evolution.bem_estar}/5
@@ -1980,8 +2043,8 @@ export function EvolutionSection({
                   </div>
 
                   {evolution.observacoes && (
-                    <div className="mt-3 p-3 bg-white rounded-lg">
-                      <p className="text-sm text-gray-700">
+                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-white rounded-lg">
+                      <p className="text-sm sm:text-base text-gray-700 break-words">
                         {evolution.observacoes}
                       </p>
                     </div>
@@ -2213,7 +2276,7 @@ export function EvolutionSection({
             </div>
             <button
               onClick={() => setShowMetaModal(true)}
-              className="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700 transition-colors"
+              className="bg-yellow-600 text-white px-4 py-2 rounded text-sm sm:text-base hover:bg-yellow-700 transition-colors font-medium"
             >
               Definir Meta
             </button>

@@ -114,16 +114,29 @@ O plano nutricional DEVE incluir:
 4. hydration - orientações de hidratação
 5. supplements (opcional) - suplementos recomendados
 
-⚠️ CRÍTICO: Sempre inclua quantidades específicas para cada alimento APENAS em GRAMAS (g):
-- ⚠️ NUNCA use xícaras, colheres, unidades, ml ou outras medidas
-- ⚠️ SEMPRE use GRAMAS (g) para todos os alimentos
-- Exemplos CORRETOS:
-  - "150g de frango grelhado" (não "frango" ou "1 unidade")
-  - "200g de arroz cozido" (não "1 xícara de arroz" ou "arroz cru")
-  - "100g de batata doce cozida" (não "1 batata média" ou "batata crua")
-  - "120g de banana" (não "1 banana média")
-  - "250g de leite" (não "200ml leite")
-  - "40g de whey protein" (correto - já está em gramas)
+⚠️ CRÍTICO: Use a unidade de medida apropriada para cada tipo de alimento:
+
+📏 ALIMENTOS QUE DEVEM SER PESADOS (usar GRAMAS ou KG):
+- TODOS os alimentos devem ser pesados, EXCETO ovos
+- Arroz, feijão, lentilha, grão-de-bico e outros grãos/leguminosas
+- Aveia, quinoa, chia e outros cereais
+- Massas (macarrão, etc.)
+- Carnes, peixes, frangos (sempre em gramas)
+- Legumes e verduras (brócolis, couve-flor, abobrinha, etc.)
+- Tubérculos (batata, batata-doce, mandioca)
+- Frutas (banana, maçã, laranja, pêra, etc.) - SEMPRE em gramas
+- Laticínios (queijo, iogurte, leite, etc.)
+- O campo "quantity" deve conter: número + "g" (ex: "150g") ou número + "kg" (ex: "1.5kg" para >= 1000g)
+- Exemplos CORRETOS: "200g de arroz cozido", "150g de frango grelhado", "100g de aveia", "80g de feijão cozido", "120g de banana", "150g de maçã"
+
+🥚 ÚNICO ALIMENTO QUE DEVE SER CONTADO EM UNIDADES:
+- APENAS OVOS devem ser contados em unidades (não podem ser pesados facilmente)
+- O campo "quantity" deve conter: número + "unidade" ou "unidades" (ex: "2 unidades", "1 unidade")
+- Exemplos CORRETOS: "2 unidades de ovos", "1 unidade de ovo"
+
+❌ NUNCA use:
+- Xícaras, colheres, copos, ml (medidas volumétricas)
+- "1 porção", "1 peito", "1 fatia" (use peso ou unidade específica)
 - ⚠️ CRÍTICO: Informações nutricionais (calorias, macros) devem ser de alimentos JÁ PREPARADOS quando o preparo altera significativamente os valores nutricionais:
   - Sempre especifique o método de preparo no nome do alimento quando necessário (grelhado, cozido, assado, etc.)
   - Exemplo: "150g de frango grelhado" (calorias do frango grelhado, não cru)
@@ -135,6 +148,7 @@ O objetivo do usuário é: ${userData.objective || "Não informado"}
 Peso: ${userData.weight || "Não informado"} kg
 Altura: ${userData.height || "Não informado"} cm
 IMC: ${userData.imc || "Não informado"}
+Nível de Atividade: ${userData.nivelAtividade || "Moderado"} (⚠️ IMPORTANTE: Use este nível para calcular TDEE - Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
 Frequência de treino: ${userData.trainingFrequency || "Não informado"}
 Restrições alimentares: ${userData.dietaryRestrictions || "Nenhuma"}
 

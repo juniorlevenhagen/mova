@@ -26,7 +26,7 @@ export default function AuthLayout({
         <Logo />
 
         {/* Imagem de fundo - Mobile usa Image normal, Desktop usa PixelImage */}
-        <div className="w-full lg:w-1/2 h-[60vh] md:h-[65vh] lg:h-screen relative bg-white contrast-100 overflow-hidden">
+        <div className="w-full lg:w-2/5 h-[50vh] md:h-[55vh] lg:h-screen relative bg-white contrast-100 overflow-hidden">
           {/* Mobile: Image simples para melhor performance */}
           <div className="lg:hidden absolute inset-0">
             <Image
@@ -48,7 +48,7 @@ export default function AuthLayout({
         </div>
 
         {/* Formulário - Lado direito */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-4 py-12 lg:py-4">
+        <div className="w-full lg:w-3/5 flex items-center justify-center p-4 py-12 lg:py-4">
           <div className="w-full max-w-md">{children}</div>
         </div>
       </div>

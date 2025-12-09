@@ -52,6 +52,93 @@ function extractMacros(text: string): Array<{ name: string; value: string }> {
   return macros;
 }
 
+// Lista de alimentos que devem ser contados em unidades (não pesados)
+// Apenas ovos devem ser contados em unidades, todos os outros alimentos devem ser pesados
+const UNIT_FOODS = [
+  'ovo', 'ovos'
+];
+
+// Função para verificar se um alimento deve ser contado em unidades
+function shouldUseUnits(foodName: string): boolean {
+  const foodLower = foodName.toLowerCase();
+  return UNIT_FOODS.some(unitFood => foodLower.includes(unitFood));
+}
+
+// Função para normalizar e formatar quantidades
+// Se o alimento deve ser contado em unidades, mantém unidades
+// Se o alimento deve ser pesado, converte para gramas/kg
+function formatQuantity(quantity: string | undefined, foodName?: string): string | null {
+  if (!quantity) return null;
+  
+  const qty = quantity.trim();
+  const useUnits = foodName ? shouldUseUnits(foodName) : false;
+  
+  // Se já está em formato de unidade (un, unidades, etc.), manter se for alimento de unidade
+  const unitMatch = qty.match(/(\d+(?:[.,]\d+)?)\s*(un|unidade|unidades|un\.)/i);
+  if (unitMatch && useUnits) {
+    const num = parseFloat(unitMatch[1].replace(',', '.'));
+    const un = num === 1 ? 'unidade' : 'unidades';
+    return `${Math.round(num)} ${un}`;
+  }
+  
+  // Se já está em formato de peso (g, kg, gramas, etc.)
+  const weightMatch = qty.match(/(\d+(?:[.,]\d+)?)\s*(g|kg|gramas?|quilogramas?)/i);
+  if (weightMatch) {
+    const num = parseFloat(weightMatch[1].replace(',', '.'));
+    const unit = weightMatch[2].toLowerCase();
+    
+    // Se é alimento de unidade (ovo) mas veio em peso, tentar converter para unidade aproximada
+    if (useUnits && unit.includes('g')) {
+      // Aproximação: 1 ovo ~50g
+      if (foodName?.toLowerCase().includes('ovo')) {
+        const units = Math.round(num / 50);
+        return units === 1 ? '1 unidade' : `${units} unidades`;
+      }
+    }
+    
+    // Se está em kg, manter em kg
+    if (unit.includes('kg') || unit.includes('quilograma')) {
+      const kg = num.toFixed(num % 1 === 0 ? 0 : 1).replace('.', ',');
+      return `${kg}kg`;
+    }
+    
+    // Se está em gramas e >= 1000, converter para kg
+    if (num >= 1000) {
+      const kg = (num / 1000).toFixed(1).replace('.', ',');
+      return `${kg}kg`;
+    }
+    
+    // Caso contrário, manter em gramas
+    const g = Math.round(num);
+    return `${g}g`;
+  }
+  
+  // Tentar extrair apenas números (sem unidade)
+  const numberMatch = qty.match(/(\d+(?:[.,]\d+)?)/);
+  if (numberMatch) {
+    const num = parseFloat(numberMatch[1].replace(',', '.'));
+    
+    // Se é alimento de unidade, usar unidades
+    if (useUnits) {
+      const un = Math.round(num) === 1 ? 'unidade' : 'unidades';
+      return `${Math.round(num)} ${un}`;
+    }
+    
+    // Se o número for >= 1000, converter para kg
+    if (num >= 1000) {
+      const kg = (num / 1000).toFixed(1).replace('.', ',');
+      return `${kg}kg`;
+    }
+    
+    // Caso contrário, adicionar "g" para alimentos pesáveis
+    const g = Math.round(num);
+    return `${g}g`;
+  }
+  
+  // Se não conseguir normalizar, retornar como está
+  return qty;
+}
+
 function extractMeals(text: string): Array<{
   name: string;
   timing?: string;
@@ -510,6 +597,7 @@ export function PersonalizedPlanModal({
             weight: weight,
             height: userProfile.altura || 0,
             imc: imc.toFixed(2),
+            nivelAtividade: userProfile.nivelAtividade || "Moderado", // ✅ Nível de atividade do perfil
             trainingFrequency: userProfile.frequenciaTreinos || "Não informado",
             dietaryRestrictions: "Nenhuma", // Adicionar se disponível no perfil
           };
@@ -580,6 +668,28 @@ export function PersonalizedPlanModal({
       });
     }
   }, [activeTab, openAIMessage, isLoadingOpenAI, userProfile, plan]);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Salvar a posição atual do scroll
+      const scrollY = window.scrollY;
+      
+      // Bloquear scroll do body
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      
+      return () => {
+        // Restaurar scroll do body
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen || !plan) return null;
 
@@ -1020,18 +1130,18 @@ export function PersonalizedPlanModal({
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
         <div
-          className={`${components.card.base} relative inline-block align-bottom text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl w-full max-h-[90vh]`}
+          className={`${components.card.base} relative inline-block align-bottom text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh]`}
         >
           {/* Header */}
-          <div className="bg-gray-800 px-6 py-4 text-white">
-            <div className="flex items-center justify-between">
-              <h3 className={`${typography.heading.h2} text-white`}>
+          <div className="bg-gray-800 px-4 sm:px-6 py-4 text-white relative">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pr-8 sm:pr-0">
+              <h3 className={`${typography.heading.h2} text-white text-lg sm:text-xl`}>
                 Seu Plano Personalizado
               </h3>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={exportToPDF}
-                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg transition-all duration-200 shadow-md hover:shadow-lg text-xs sm:text-sm font-medium whitespace-nowrap"
                   title="Exportar para PDF"
                 >
                   <svg
@@ -1049,29 +1159,31 @@ export function PersonalizedPlanModal({
                   </svg>
                   PDF
                 </button>
-                <button
-                  onClick={onClose}
-                  className="text-white hover:text-gray-200 transition-colors"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
               </div>
             </div>
+            {/* Botão X no canto superior direito */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors"
+              aria-label="Fechar"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
 
             {/* Tabs */}
-            <div className="flex space-x-1 mt-4">
+            <div className="mt-4 flex flex-wrap gap-2">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -1088,7 +1200,7 @@ export function PersonalizedPlanModal({
                   }
                   className={`${components.button.base} ${
                     components.button.sizes.sm
-                  } ${
+                  } flex-1 sm:flex-none min-w-[calc(33.333%-0.5rem)] sm:min-w-0 ${
                     validActiveTab === tab.id
                       ? "bg-white text-gray-800"
                       : "bg-gray-700 text-white hover:bg-gray-600"
@@ -1101,7 +1213,7 @@ export function PersonalizedPlanModal({
           </div>
 
           {/* Content */}
-          <div className="p-6 max-h-[70vh] overflow-y-auto">
+          <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#94a3b8 #f1f5f9" }}>
             {/* Análise */}
             {validActiveTab === "analysis" && (
               <div className="space-y-6">
@@ -1534,9 +1646,9 @@ export function PersonalizedPlanModal({
                                             <span className="text-gray-900 font-medium">
                                               {option.food || option.name}
                                             </span>
-                                            {option.quantity && (
-                                              <span className="text-gray-600 ml-2">
-                                                ({option.quantity})
+                                            {option.quantity && formatQuantity(option.quantity, option.food || option.name) && (
+                                              <span className="text-gray-600 ml-2 font-medium">
+                                                ({formatQuantity(option.quantity, option.food || option.name)})
                                               </span>
                                             )}
                                             {option.calories && (
@@ -1700,9 +1812,9 @@ export function PersonalizedPlanModal({
                                       <span className="text-gray-900 font-medium">
                                         {food.name}
                                       </span>
-                                      {food.quantity && (
-                                        <span className="text-gray-600 ml-2">
-                                          ({food.quantity})
+                                      {food.quantity && formatQuantity(food.quantity, food.name) && (
+                                        <span className="text-gray-600 ml-2 font-medium">
+                                          ({formatQuantity(food.quantity, food.name)})
                                         </span>
                                       )}
                                       {food.calories && (
@@ -1780,9 +1892,9 @@ export function PersonalizedPlanModal({
 
             {/* Metas */}
             {validActiveTab === "goals" && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
                     <h4
                       className={`${typography.heading.h4} ${colors.status.success.text} mb-3`}
                     >
@@ -1798,7 +1910,7 @@ export function PersonalizedPlanModal({
                     </ul>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                     <h4
                       className={`${typography.heading.h4} ${colors.status.info.text} mb-3`}
                     >
@@ -1816,7 +1928,7 @@ export function PersonalizedPlanModal({
                 </div>
 
                 <div
-                  className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
+                  className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-3 sm:p-4`}
                 >
                   <h4
                     className={`${typography.heading.h4} ${colors.status.info.text} mb-3`}

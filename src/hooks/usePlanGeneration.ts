@@ -85,7 +85,7 @@ export function usePlanGeneration() {
         }
 
         const availablePrompts = trialData?.available_prompts || 0;
-        const maxFreePlans = trialData?.max_plans_allowed || 1;
+        const maxFreePlans = trialData?.max_plans_allowed || 0;
         const plansGenerated = trialData?.plans_generated || 0;
         const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
 
@@ -135,7 +135,7 @@ export function usePlanGeneration() {
       } else {
         // Não há plano existente - permitir gerar
         const availablePrompts = trialData?.available_prompts || 0;
-        const maxFreePlans = trialData?.max_plans_allowed || 1;
+        const maxFreePlans = trialData?.max_plans_allowed || 0;
         const plansGenerated = trialData?.plans_generated || 0;
         const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
 

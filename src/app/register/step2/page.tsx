@@ -16,6 +16,7 @@ export default function Step2Page() {
     height: "",
     weight: "",
     gender: "",
+    nivelAtividade: "", // Novo campo para nível de atividade
     hasPain: "",
     dietaryRestrictions: "",
     foodBudget: "", // Novo campo para orçamento alimentar
@@ -96,6 +97,7 @@ export default function Step2Page() {
           objective: formData.objective,
           training_frequency: formData.trainingFrequency,
           training_location: formData.trainingLocation,
+          nivel_atividade: formData.nivelAtividade || "Moderado", // Salvar nível de atividade
           has_pain: formData.hasPain,
           dietary_restrictions: formData.dietaryRestrictions,
           food_budget: formData.foodBudget,
@@ -336,6 +338,29 @@ export default function Step2Page() {
               <option value="">Selecione o gênero</option>
               <option value="masculino">Masculino</option>
               <option value="feminino">Feminino</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="nivelAtividade"
+              className="block text-sm font-zalando-medium text-black mb-2"
+            >
+              Nível de Atividade
+            </label>
+            <select
+              id="nivelAtividade"
+              name="nivelAtividade"
+              value={formData.nivelAtividade}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
+            >
+              <option value="">Selecione seu nível de atividade</option>
+              <option value="Sedentário">Sedentário</option>
+              <option value="Moderado">Moderado</option>
+              <option value="Atleta">Atleta</option>
+              <option value="Atleta Alto Rendimento">Atleta Alto Rendimento</option>
             </select>
           </div>
 

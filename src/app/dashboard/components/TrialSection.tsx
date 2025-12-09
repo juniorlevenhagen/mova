@@ -53,7 +53,7 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
   ]);
 
   return (
-    <div className="bg-gray-50 rounded-2xl shadow-lg border border-gray-200 p-6 mb-4">
+    <div className="bg-gray-50 rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 mb-4">
       <h2 className="text-lg font-semibold text-gray-800 mb-4">
         Planos Personalizados
       </h2>
@@ -184,7 +184,7 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
         </div>
 
         {showBuyButton && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-start gap-3">
             <div className="flex-shrink-0">
               <svg
                 className="w-6 h-6 text-blue-500"
@@ -210,7 +210,7 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
               </p>
               <button
                 onClick={onBuyPrompts}
-                className="bg-black hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap"
+                className="bg-black hover:bg-gray-900 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap w-full sm:w-auto"
               >
                 Comprar Prompts
               </button>

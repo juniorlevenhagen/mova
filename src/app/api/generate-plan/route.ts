@@ -606,14 +606,14 @@ export async function POST(request: NextRequest) {
     let availablePrompts = 0; // Declarar no escopo global para usar depois
 
     if (!trialData) {
-      // Usuário novo - pode gerar 1 plano grátis
-      canGenerate = true;
-      trialMessage = "Plano grátis disponível";
+      // Usuário novo - não pode gerar plano grátis, precisa comprar prompts
+      canGenerate = false;
+      trialMessage = "Você precisa comprar um pacote para gerar planos";
       availablePrompts = 0;
     } else {
       const plansGenerated = trialData.plans_generated || 0;
       availablePrompts = trialData.available_prompts || 0;
-      const maxFreePlans = trialData.max_plans_allowed || 1;
+      const maxFreePlans = trialData.max_plans_allowed || 0;
       const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
 
       if (availablePrompts > 0) {
@@ -1179,6 +1179,7 @@ export async function POST(request: NextRequest) {
       objective: profile?.objective || "Não informado",
       trainingFrequency: profile?.training_frequency || "Não informado",
       trainingLocation: profile?.training_location || "Academia",
+      nivelAtividade: profile?.nivel_atividade || "Moderado", // ✅ Nível de atividade do perfil
 
       // Restrições
       hasPain: profile?.has_pain || false,
@@ -1234,8 +1235,11 @@ IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o 
 
 ⚠️ CAMPOS RECOMENDADOS (temporariamente opcionais para testes):
 1. analysis - análise completa do status atual (RECOMENDADO)
-2. trainingPlan - plano de treino de FORÇA completo com weeklySchedule E progression (RECOMENDADO)
+2. trainingPlan - plano de treino de FORÇA/MUSCULAÇÃO completo com weeklySchedule E progression (RECOMENDADO)
+   ⚠️ IMPORTANTE: A frequência de treinos informada pelo usuário (${userData.trainingFrequency}) se refere APENAS aos dias de musculação/força.
+   O weeklySchedule do trainingPlan deve conter EXATAMENTE ${userData.trainingFrequency} dias de treino de força.
 3. aerobicTraining - plano de TREINO AERÓBICO/CARDIOVASCULAR (OBRIGATÓRIO - ver diretrizes abaixo)
+   ⚠️ IMPORTANTE: O treino aeróbico é INDEPENDENTE do treino de musculação e pode ser feito no mesmo dia quando apropriado.
 4. nutritionPlan - plano nutricional completo com dailyCalories, macros, mealPlan E hydration (MUITO IMPORTANTE!)
 5. goals - metas semanais, mensais e indicadores de progresso (RECOMENDADO)
 6. motivation - mensagem personalizada e dicas motivacionais (RECOMENDADO - IMPORTANTE PARA MOTIVAR O USUÁRIO!)
@@ -1359,17 +1363,77 @@ Use esta tabela para definir a estratégia correta:
    - Pontos fortes e limitações
    - Considerações especiais
 
-2. **PLANO DE TREINO ALINHADO AO OBJETIVO**
-   - Cronograma semanal específico para o objetivo
-   - **SEMPRE inclua atividade cardiovascular/aeróbica** (2-5x por semana, dependendo do objetivo)
+2. **PLANO DE TREINO DE FORÇA/MUSCULAÇÃO ALINHADO AO OBJETIVO**
+   ⚠️ CRÍTICO: A frequência informada pelo usuário (${userData.trainingFrequency}) se refere APENAS aos dias de musculação.
+   - Cronograma semanal de FORÇA com EXATAMENTE ${userData.trainingFrequency} dias de treino de musculação
+   - O weeklySchedule do trainingPlan deve conter ${userData.trainingFrequency} dias de treino de força
    - Exercícios selecionados para o objetivo
    - Séries, repetições e descanso otimizados BASEADOS NO IMC (ver diretrizes abaixo)
    - Progressão baseada no objetivo
+   - ⚠️ NÃO inclua treino aeróbico no trainingPlan.weeklySchedule - o aeróbico é um campo separado (aerobicTraining)
    - Adaptações para local e limitações
    - **Para ganhar massa**: Cardio leve/moderado (2-3x/semana)
    - **Para emagrecer**: Cardio moderado/intenso (3-5x/semana) - etapa fundamental junto à alimentação
 
-### 🏋️ PRESCRIÇÃO DE TREINO DE FORÇA BASEADA EM IMC (ACSM/ESSA):
+### 🏋️ PRESCRIÇÃO DE TREINO DE FORÇA BASEADA EM NÍVEL DE ATIVIDADE E IMC:
+
+⚠️ **CRÍTICO: A prescrição de treino DEVE considerar TANTO o nível de atividade quanto o IMC para segurança e eficácia!**
+
+#### 📊 DIRETRIZES POR NÍVEL DE ATIVIDADE:
+
+**SEDENTÁRIO:**
+- ⚠️ Foco em exercícios BÁSICOS e EFICIENTES
+- Priorizar exercícios MULTIARTICULARES (agachamento, supino, remada, desenvolvimento)
+- Volume moderado: 2-3 séries por exercício
+- Repetições: 8-15 (foco em técnica e adaptação)
+- Exercícios simples e seguros (evitar movimentos complexos)
+- Descanso: 60-90 segundos entre séries
+- Progressão gradual e conservadora
+- ⚠️ NÃO prescrever exercícios avançados ou isolados complexos
+- Exemplos adequados: Agachamento livre, Supino reto, Remada curvada, Desenvolvimento com halteres
+
+**MODERADO:**
+- Exercícios BÁSICOS a INTERMEDIÁRIOS
+- Priorizar exercícios MULTIARTICULARES com alguns isolados estratégicos
+- Volume moderado: 3-4 séries por exercício
+- Repetições: 8-12 (hipertrofia/força)
+- Exercícios seguros com progressão moderada
+- Descanso: 60-120 segundos entre séries
+- Pode incluir alguns exercícios isolados complementares
+- Exemplos adequados: Agachamento, Supino, Remada, Desenvolvimento, Rosca direta, Tríceps pulley
+
+**ATLETA:**
+- Exercícios INTERMEDIÁRIOS a AVANÇADOS
+- Maior QUANTIDADE de exercícios (5-7 exercícios por treino)
+- Maior VOLUME: 3-5 séries por exercício
+- Repetições variadas: 6-12 (força/hipertrofia)
+- Exercícios COMPOSTOS e avançados são adequados
+- Maior FADIGA MUSCULAR (volume total maior)
+- Descanso: 90-180 segundos entre séries
+- Pode incluir técnicas avançadas (drop set, rest-pause, etc.)
+- Exercícios isolados para hipertrofia específica
+- Exemplos adequados: Agachamento frontal, Supino inclinado, Remada curvada, Desenvolvimento militar, Elevação lateral, Rosca scott, Tríceps francês
+
+**ATLETA ALTO RENDIMENTO:**
+- Exercícios AVANÇADOS e ESPECIALIZADOS
+- MÁXIMA QUANTIDADE de exercícios (6-8 exercícios por treino)
+- MÁXIMO VOLUME: 4-6 séries por exercício
+- Repetições variadas: 4-12 (força máxima/hipertrofia)
+- Exercícios COMPOSTOS complexos e isolados avançados
+- MÁXIMA FADIGA MUSCULAR (volume total muito alto)
+- Descanso: 120-240 segundos entre séries (para recuperação adequada)
+- Técnicas avançadas são esperadas (supersets, tri-sets, drop sets, rest-pause, etc.)
+- Especialização por grupo muscular
+- Exemplos adequados: Agachamento com barra alta, Supino declinado, Remada T-bar, Desenvolvimento Arnold, Elevação lateral com rotação, Rosca concentrada, Tríceps testa com barra W, Extensão de perna, Flexão de perna
+
+⚠️ **REGRAS CRÍTICAS:**
+- Sedentário/Moderado: NUNCA prescrever mais de 4-5 exercícios por treino
+- Sedentário/Moderado: NUNCA prescrever mais de 3 séries por exercício
+- Atleta/Alto Rendimento: NUNCA prescrever menos de 5 exercícios por treino
+- Atleta/Alto Rendimento: Volume total deve ser significativamente maior
+- SEMPRE considerar o objetivo do usuário (emagrecimento, ganho de massa, etc.) junto com o nível de atividade
+
+#### 📊 PRESCRIÇÃO DE TREINO DE FORÇA BASEADA EM IMC (ACSM/ESSA):
 
 ⚠️ **CRÍTICO: A prescrição de repetições e séries DEVE ser ajustada baseada no IMC para segurança e eficácia!**
 
@@ -1411,26 +1475,35 @@ Use esta tabela para definir a estratégia correta:
   - Adaptar exercícios para limitações de mobilidade
   - Progressão muito gradual (aumentar carga apenas quando técnica estiver perfeita)
 
-#### 🎯 REGRAS ESPECÍFICAS POR OBJETIVO + IMC:
+#### 🎯 REGRAS ESPECÍFICAS POR OBJETIVO + IMC + NÍVEL DE ATIVIDADE:
 
 **Para EMAGRECIMENTO com IMC ≥ 30:**
 - ⚠️ NUNCA prescreva menos de 10 repetições
 - Faixa ideal: 12-18 repetições (estudos mostram 9-12 reps eficazes, mas para obesos grau II/III, 12-18 é mais seguro)
 - Objetivo: Endurance muscular + queima calórica + preservação de massa magra
 - Cargas moderadas (60-70% 1RM estimado)
-- Maior volume total (mais exercícios, mais séries) com cargas menores
+- **Ajuste por nível de atividade:**
+  - Sedentário/Moderado: 3-4 exercícios, 2-3 séries cada, exercícios básicos multiarticulares
+  - Atleta: 5-6 exercícios, 3-4 séries cada, pode incluir alguns isolados
+  - Alto Rendimento: 6-7 exercícios, 4-5 séries cada, maior variedade e volume
 
 **Para RECOMPOSIÇÃO (IMC ≥ 25 + Ganhar Massa):**
 - ⚠️ NUNCA prescreva 6-8 repetições (isso é para força máxima, não adequado para recomposição)
 - Faixa ideal: 8-12 repetições (IMC 25-29.9) ou 10-15 repetições (IMC ≥ 30)
 - Objetivo: Hipertrofia + perda de gordura simultânea
 - Cargas moderadas a altas (70-80% 1RM estimado)
-- Volume moderado-alto
+- **Ajuste por nível de atividade:**
+  - Sedentário/Moderado: 4-5 exercícios, 3 séries cada, foco em multiarticulares
+  - Atleta: 5-6 exercícios, 3-4 séries cada, multiarticulares + isolados estratégicos
+  - Alto Rendimento: 6-8 exercícios, 4-5 séries cada, volume alto com variedade
 
 **Para GANHAR MASSA com IMC < 25:**
 - Faixa: 6-10 repetições (força/hipertrofia)
 - Cargas altas (75-85% 1RM estimado)
-- Volume moderado
+- **Ajuste por nível de atividade:**
+  - Sedentário/Moderado: 4-5 exercícios, 3 séries cada, exercícios básicos eficientes
+  - Atleta: 5-7 exercícios, 3-5 séries cada, exercícios compostos e isolados
+  - Alto Rendimento: 6-8 exercícios, 4-6 séries cada, máximo volume e fadiga muscular
 
 #### ⚠️ VALIDAÇÃO OBRIGATÓRIA ANTES DE RETORNAR:
 
@@ -1440,6 +1513,15 @@ Antes de retornar o plano de treino, SEMPRE verifique:
 3. ✅ Para emagrecimento + IMC ≥ 30: repetições estão entre 12-18?
 4. ✅ Exercícios são seguros para o IMC do usuário? (evitar sobrecarga articular excessiva)
 5. ✅ Descanso está adequado? (60-90s para obesos, pode ser maior se necessário)
+6. ✅ **Nível de atividade está sendo respeitado?**
+   - Sedentário/Moderado: máximo 4-5 exercícios por treino, máximo 3 séries por exercício?
+   - Sedentário/Moderado: exercícios são básicos e multiarticulares?
+   - Atleta/Alto Rendimento: mínimo 5 exercícios por treino, mínimo 3 séries por exercício?
+   - Atleta/Alto Rendimento: volume total é significativamente maior que Sedentário/Moderado?
+   - Atleta/Alto Rendimento: exercícios incluem compostos avançados e isolados?
+7. ✅ **Objetivo + Nível de atividade estão alinhados?**
+   - Sedentário com objetivo de ganhar massa: exercícios básicos eficientes, não avançados
+   - Atleta com objetivo de ganhar massa: exercícios avançados, alto volume, técnicas avançadas
 
 **Se qualquer validação falhar, ajuste o plano antes de retornar!**
 
@@ -1500,7 +1582,7 @@ Treino aeróbico é de SUMA IMPORTÂNCIA para qualquer prática de atividade fí
 - Intensidade: 60-70% da frequência cardíaca máxima
 - Tipos recomendados: caminhada rápida, ciclismo leve, esteira inclinada, elíptico
 - **Objetivo**: Melhorar saúde cardiovascular sem interferir na recuperação e ganho de massa
-- **Timing**: Preferencialmente após treino de força ou em dias separados
+- **Timing**: Pode ser feito no mesmo dia após treino de força (recomendado) ou em dias separados
 - **Importância**: Mantém saúde cardiovascular, melhora recuperação e metabolismo
 
 #### 🎯 EMAGRECIMENTO:
@@ -1549,14 +1631,23 @@ Exemplo de estrutura esperada:
 ### ✅ REGRAS OBRIGATÓRIAS:
 
 1. **SEMPRE inclua o campo aerobicTraining separado do trainingPlan**
+   ⚠️ CRÍTICO: O treino aeróbico é INDEPENDENTE do treino de musculação. Pode ser feito no mesmo dia que a musculação quando apropriado.
+   
 2. **Mínimo 2-3 sessões por semana** (seguindo diretrizes OMS: mínimo 150min/semana moderado)
+   ⚠️ IMPORTANTE: A frequência de aeróbico é independente da frequência de musculação informada pelo usuário.
+   
 3. **Especifique: dia, atividade, duração, intensidade, zona de FC (quando possível)**
+   ⚠️ PODE SER NO MESMO DIA: Quando apropriado, você pode agendar treino aeróbico no mesmo dia que treino de musculação.
+   Exemplo: Segunda-feira pode ter "Treino de Força (Peito/Tríceps)" E "Caminhada 30min" no mesmo dia.
+   
 4. **Ajuste baseado no objetivo:**
-   - Ganhar massa: 2-3x/semana, leve a moderado (30-45min)
-   - Emagrecer: 3-5x/semana, moderado a intenso (30-60min) - ESSENCIAL!
-   - Manutenção: 2-4x/semana, moderado (30-45min)
-   - Condicionamento: 4-6x/semana, moderado a intenso (45-60min)
+   - Ganhar massa: 2-3x/semana, leve a moderado (30-45min) - pode ser no mesmo dia após musculação
+   - Emagrecer: 3-5x/semana, moderado a intenso (30-60min) - ESSENCIAL! Pode ser no mesmo dia ou separado
+   - Manutenção: 2-4x/semana, moderado (30-45min) - pode ser no mesmo dia ou separado
+   - Condicionamento: 4-6x/semana, moderado a intenso (45-60min) - pode ser no mesmo dia ou separado
+   
 5. **Inclua variedade**: caminhada, corrida, ciclismo, natação, elíptico, HIIT, escada, etc.
+   
 6. **⚠️ CRÍTICO - Considere o local de treino do usuário ao sugerir atividades:**
    - Se local = "casa": NÃO sugira natação, elíptico de academia, escada de academia
    - Se local = "casa": Sugira caminhada, corrida, ciclismo, HIIT em casa, polichinelo, burpee, step
@@ -1564,7 +1655,13 @@ Exemplo de estrutura esperada:
    - Se local = "ar_livre": Sugira caminhada, corrida, ciclismo, corrida na praia
    - Se local = "ambos": Pode sugerir qualquer atividade, mas priorize as mais acessíveis
    - **NUNCA sugira atividades que requerem equipamentos ou locais que o usuário não tem acesso**
+   
 7. **Siga diretrizes OMS/ACSM** para frequência e intensidade mínimas
+   
+8. **⚠️ REGRA DE OURO:**
+   - A frequência de treinos informada (${userData.trainingFrequency}) = dias de MUSCULAÇÃO apenas
+   - O treino aeróbico é INDEPENDENTE e pode ser agendado nos mesmos dias da musculação quando apropriado
+   - Exemplo: Se usuário treina 5x/semana de musculação, você pode agendar aeróbico em 3-4 desses mesmos dias (após musculação) ou em dias separados
 
 ### 📝 EXEMPLOS POR OBJETIVO:
 
@@ -1615,10 +1712,9 @@ Exemplo de estrutura esperada:
 
 2. **Calcule TDEE (Gasto Energético Total)** multiplicando TMB pelo fator de atividade:
    - Sedentário: TMB × 1.2
-   - Leve: TMB × 1.375
    - Moderado: TMB × 1.55
-   - Ativo: TMB × 1.725
-   - Muito Ativo: TMB × 1.9
+   - Atleta: TMB × 1.725
+   - Atleta Alto Rendimento: TMB × 1.9
 
 3. **Aplique déficit/superávit baseado no TDEE (NÃO no TMB)**
 
@@ -1687,7 +1783,8 @@ Lembre-se: O objetivo do usuário é importante, mas a SAÚDE vem primeiro! Use 
 - Variação de peso: ${userData.weightChange} kg
 
 🏋️ PREFERÊNCIAS DE TREINO:
-- Frequência: ${userData.trainingFrequency}
+- Frequência de MUSCULAÇÃO: ${userData.trainingFrequency} (⚠️ IMPORTANTE: Esta frequência se refere APENAS aos dias de treino de força/musculação)
+- Nível de Atividade: ${userData.nivelAtividade || "Moderado"} (⚠️ IMPORTANTE: Use este nível para calcular TDEE e ajustar intensidade do treino)
 - Local: ${userData.trainingLocation}
   ⚠️ IMPORTANTE: Considere este local ao sugerir atividades aeróbicas:
   ${
@@ -2531,7 +2628,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           imc: imc.toFixed(2),
           sexo: userData.gender || "Não informado",
           trainingFrequency: userData.trainingFrequency || "Não informado",
-          nivelAtividade: "Moderado",
+          nivelAtividade: userData.nivelAtividade || "Moderado",
           trainingLocation: userData.trainingLocation || "Academia",
           dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
           injuries: userData.hasPain ? "Sim" : null,
@@ -2635,7 +2732,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           weightChange: userData.weightChange || null,
           trainingFrequency: userData.trainingFrequency || "Não informado",
           trainingLocation: userData.trainingLocation || "Não informado",
-          nivelAtividade: "Moderado", // Valor padrão
+          nivelAtividade: userData.nivelAtividade || "Moderado", // Valor padrão
           hasPain: userData.hasPain || false,
           dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
           latestEvolution: userData.latestEvolution || null,
@@ -3178,7 +3275,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           ).toISOString(), // 1 ano
           is_active: true,
           upgraded_to_premium: false,
-          max_plans_allowed: 1, // Usuários grátis só podem gerar 1 plano
+          max_plans_allowed: 0, // Usuários precisam comprar prompts para gerar planos
           available_prompts: 0,
         });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { typography, components, colors } from "@/lib/design-tokens";
 
 interface EvolutionData {
@@ -88,31 +88,55 @@ export function AddEvolutionModal({
     onClose();
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      // Salvar a posição atual do scroll
+      const scrollY = window.scrollY;
+      
+      // Bloquear scroll do body
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      
+      return () => {
+        // Restaurar scroll do body
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex items-center justify-center min-h-screen px-4 py-8">
+      <div className="flex items-center justify-center min-h-screen px-2 sm:px-4 py-4 sm:py-8">
         <div
           className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
           onClick={handleClose}
         ></div>
 
-        <div className="relative w-full max-w-7xl bg-white rounded-lg shadow-xl transform transition-all">
+        <div className="relative w-full max-w-7xl bg-white rounded-lg shadow-xl transform transition-all max-h-[95vh] sm:max-h-[90vh] flex flex-col">
           <div
-            className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 max-h-[85vh] overflow-y-auto"
+            className="bg-white px-3 sm:px-4 md:px-6 pt-4 sm:pt-5 pb-4 sm:pb-4 flex-1 overflow-y-auto"
             style={{
               scrollbarWidth: "thin",
-              scrollbarColor: "#cbd5e1 transparent",
+              scrollbarColor: "#94a3b8 #f1f5f9",
             }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={`${typography.heading.h3} ${colors.text.primary}`}>
+            <div className="relative mb-4 pr-8 sm:pr-0">
+              <h3 className={`${typography.heading.h3} ${colors.text.primary} text-lg sm:text-xl md:text-2xl`}>
                 Adicionar Evolução Manual
               </h3>
+              {/* Botão X no canto superior direito */}
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600"
+                className="absolute top-0 right-0 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Fechar"
               >
                 <svg
                   className="w-6 h-6"
@@ -130,8 +154,8 @@ export function AddEvolutionModal({
               </button>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+              <p className="text-xs sm:text-sm text-blue-800 break-words">
                 <strong>Update rápido:</strong> Preencha apenas os campos que
                 mudaram. Para avaliação completa com PDF, use o upload em
                 &quot;Seus Dados&quot;.
@@ -140,13 +164,13 @@ export function AddEvolutionModal({
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Dados Físicos */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                 <h4
-                  className={`${typography.heading.h4} ${colors.text.primary} mb-3`}
+                  className={`${typography.heading.h4} ${colors.text.primary} mb-3 text-base sm:text-lg`}
                 >
                   Dados Físicos (Opcionais)
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                   <div>
                     <label
                       htmlFor="peso"
@@ -240,14 +264,14 @@ export function AddEvolutionModal({
                     />
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-2 md:col-span-1">
                     <label
                       htmlFor="braco"
                       className="block text-sm font-medium text-gray-700"
                     >
                       Braço (cm)
                     </label>
-                    <div className="mt-1 flex gap-2">
+                    <div className="mt-1 flex flex-col sm:flex-row gap-2">
                       <input
                         type="number"
                         id="braco"
@@ -262,7 +286,7 @@ export function AddEvolutionModal({
                         name="bracoLado"
                         value={modalData.bracoLado}
                         onChange={handleInputChange}
-                        className="w-32 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                        className="w-full sm:w-32 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                         title="Selecione qual braço foi medido"
                       >
                         <option value="dominante">Dominante</option>
@@ -271,7 +295,7 @@ export function AddEvolutionModal({
                         <option value="media">Média</option>
                       </select>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 break-words">
                       Selecione qual braço foi medido. Use sempre o mesmo para
                       consistência.
                     </p>
@@ -298,13 +322,13 @@ export function AddEvolutionModal({
               </div>
 
               {/* Dados Subjetivos */}
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
                 <h4
-                  className={`${typography.heading.h4} ${colors.text.primary} mb-3`}
+                  className={`${typography.heading.h4} ${colors.text.primary} mb-3 text-base sm:text-lg`}
                 >
                   Atividade & Bem-estar
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label
                       htmlFor="nivelAtividade"
@@ -321,10 +345,9 @@ export function AddEvolutionModal({
                     >
                       <option value="">Selecione...</option>
                       <option value="Sedentário">Sedentário</option>
-                      <option value="Leve">Leve</option>
                       <option value="Moderado">Moderado</option>
-                      <option value="Intenso">Intenso</option>
-                      <option value="Muito intenso">Muito intenso</option>
+                      <option value="Atleta">Atleta</option>
+                      <option value="Atleta Alto Rendimento">Atleta Alto Rendimento</option>
                     </select>
                   </div>
 
@@ -353,7 +376,7 @@ export function AddEvolutionModal({
                     </select>
                   </div>
 
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <label
                       htmlFor="bemEstar"
                       className="block text-sm font-medium text-gray-700"
@@ -397,18 +420,18 @@ export function AddEvolutionModal({
               </div>
 
               {/* Botões */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 mt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-200 mt-4">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className={`${components.button.base} ${components.button.sizes.md} bg-gray-200 text-gray-700 hover:bg-gray-300`}
+                  className={`${components.button.base} ${components.button.sizes.md} bg-gray-200 text-gray-700 hover:bg-gray-300 w-full sm:w-auto`}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50`}
+                  className={`${components.button.base} ${components.button.sizes.md} bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 w-full sm:w-auto`}
                 >
                   {isLoading ? "Salvando..." : "Salvar Evolução"}
                 </button>

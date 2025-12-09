@@ -484,20 +484,44 @@ export function PlanHistoryModal({
     }
   };
 
+  useEffect(() => {
+    if (isOpen) {
+      // Salvar a posição atual do scroll
+      const scrollY = window.scrollY;
+      
+      // Bloquear scroll do body
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      
+      return () => {
+        // Restaurar scroll do body
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        document.body.style.overflow = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900">
+          <div className="relative p-4 sm:p-6 border-b border-gray-200 pr-12 sm:pr-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
               Histórico de Planos
             </h2>
+            {/* Botão X no canto superior direito */}
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute top-4 right-4 sm:right-6 text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Fechar"
             >
               <svg
                 className="w-6 h-6"
@@ -516,7 +540,7 @@ export function PlanHistoryModal({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ scrollbarWidth: "thin", scrollbarColor: "#94a3b8 #f1f5f9" }}>
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -561,40 +585,40 @@ export function PlanHistoryModal({
                 {plans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`border rounded-lg p-4 transition-all hover:shadow-md ${
+                    className={`border rounded-lg p-3 sm:p-4 transition-all hover:shadow-md ${
                       plan.isActive
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200 bg-white"
                     }`}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 sm:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
                             Plano{" "}
                             {plan.planType === "complete"
                               ? "Completo"
                               : plan.planType}
                           </h3>
                           {plan.isActive && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
                               Ativo
                             </span>
                           )}
                         </div>
 
-                        <p className="text-sm text-gray-600 mb-3">
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 break-words">
                           Gerado em: {formatDate(plan.generatedAt)}
                         </p>
 
                         {plan.summary.objective && (
-                          <p className="text-sm text-gray-700 mb-3">
+                          <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3 break-words">
                             <span className="font-medium">Objetivo:</span>{" "}
                             {plan.summary.objective}
                           </p>
                         )}
 
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="flex flex-wrap gap-2 mb-2 sm:mb-3">
                           {plan.summary.hasTrainingPlan && (
                             <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
                               Treino
@@ -613,16 +637,16 @@ export function PlanHistoryModal({
                         </div>
                       </div>
 
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-4">
                         <button
                           onClick={() => handleViewPlan(plan)}
-                          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap"
+                          className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg text-xs sm:text-sm font-medium whitespace-nowrap w-full sm:w-auto"
                         >
                           Ver Plano
                         </button>
                         <button
                           onClick={() => exportToPDF(plan)}
-                          className="px-4 py-2 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg hover:from-gray-800 hover:to-gray-900 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap flex items-center gap-2"
+                          className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-lg hover:from-gray-800 hover:to-gray-900 transition-all duration-200 shadow-md hover:shadow-lg text-xs sm:text-sm font-medium whitespace-nowrap flex items-center justify-center gap-2 w-full sm:w-auto"
                           title="Exportar para PDF"
                         >
                           <svg
@@ -649,10 +673,10 @@ export function PlanHistoryModal({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 p-4 flex justify-end">
+          <div className="border-t border-gray-200 p-3 sm:p-4 flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 shadow-md hover:shadow-lg text-sm font-medium whitespace-nowrap"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 shadow-md hover:shadow-lg text-xs sm:text-sm font-medium whitespace-nowrap w-full sm:w-auto"
             >
               Fechar
             </button>

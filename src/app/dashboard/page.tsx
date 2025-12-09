@@ -430,6 +430,9 @@ export default function DashboardPage() {
       objetivo: profile?.objective || "Não informado",
       birthDate: profile?.birth_date || null,
       nivelAtividade: profile?.nivel_atividade || "Moderado",
+      tempoTreino: profile?.training_time || "",
+      dietaryRestrictions: profile?.dietary_restrictions || "Nenhuma",
+      foodBudget: profile?.food_budget || "moderado",
     }),
     [profile]
   );

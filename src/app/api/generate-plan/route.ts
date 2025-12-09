@@ -1179,6 +1179,7 @@ export async function POST(request: NextRequest) {
       objective: profile?.objective || "Não informado",
       trainingFrequency: profile?.training_frequency || "Não informado",
       trainingLocation: profile?.training_location || "Academia",
+      trainingTime: profile?.training_time || null, // Tempo disponível por treino
       nivelAtividade: profile?.nivel_atividade || "Moderado", // ✅ Nível de atividade do perfil
 
       // Restrições
@@ -1788,6 +1789,7 @@ Lembre-se: O objetivo do usuário é importante, mas a SAÚDE vem primeiro! Use 
 
 🏋️ PREFERÊNCIAS DE TREINO:
 - Frequência de MUSCULAÇÃO: ${userData.trainingFrequency} (⚠️ IMPORTANTE: Esta frequência se refere APENAS aos dias de treino de força/musculação)
+- Tempo disponível por treino: ${userData.trainingTime || "Não informado"} (use este tempo para ajustar número de exercícios, séries e se o cardio será feito no mesmo dia)
 - Nível de Atividade: ${userData.nivelAtividade || "Moderado"} (⚠️ IMPORTANTE: Use este nível para calcular TDEE e ajustar intensidade do treino)
 - Local: ${userData.trainingLocation}
   ⚠️ IMPORTANTE: Considere este local ao sugerir atividades aeróbicas:
@@ -2626,7 +2628,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
 
         const fieldUserData = {
           objective: userData.objective || "Não informado",
-          weight: weight,
+          weight,
           pesoInicial: userData.initialWeight || weight,
           height: userData.height || 0,
           imc: imc.toFixed(2),
@@ -2634,6 +2636,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           trainingFrequency: userData.trainingFrequency || "Não informado",
           nivelAtividade: userData.nivelAtividade || "Moderado",
           trainingLocation: userData.trainingLocation || "Academia",
+          trainingTime: userData.trainingTime || null,
           dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
           injuries: userData.hasPain ? "Sim" : null,
         };

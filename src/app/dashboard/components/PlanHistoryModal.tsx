@@ -33,6 +33,9 @@ interface PlanHistoryModalProps {
     objetivo: string;
     birthDate: string | null;
     nivelAtividade: string;
+    tempoTreino?: string;
+    dietaryRestrictions?: string;
+    foodBudget?: string;
   };
 }
 

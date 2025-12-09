@@ -14,6 +14,7 @@ interface UserProfile {
   objective: string;
   training_frequency: string;
   training_location: string;
+  training_time?: string;
   has_pain: string;
   nivel_atividade: string;
   dietary_restrictions: string;

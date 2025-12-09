@@ -19,6 +19,9 @@ interface PersonalizedPlanModalProps {
     objetivo: string;
     birthDate: string | null;
     nivelAtividade: string;
+    tempoTreino?: string;
+    dietaryRestrictions?: string;
+    foodBudget?: string;
   };
 }
 
@@ -498,6 +501,21 @@ export function PersonalizedPlanModal({
   const [openAIMessage, setOpenAIMessage] = useState<string>("");
   const [isLoadingOpenAI, setIsLoadingOpenAI] = useState<boolean>(false);
 
+  // Helper para exibir o orçamento alimentar em formato amigável
+  const getFoodBudgetLabel = (budget?: string) => {
+    if (!budget) return "Moderado";
+    switch (budget) {
+      case "economico":
+        return "Econômico";
+      case "moderado":
+        return "Moderado";
+      case "premium":
+        return "Premium";
+      default:
+        return budget;
+    }
+  };
+
   // Campos opcionais do plano
   const hasOptionalFields = {
     aerobicTraining: !!plan?.aerobicTraining,
@@ -597,14 +615,38 @@ export function PersonalizedPlanModal({
           const imc =
             heightInMeters > 0 ? weight / (heightInMeters * heightInMeters) : 0;
 
+          // Calcular idade a partir da data de nascimento, se disponível
+          let age: number | null = null;
+          if (userProfile.birthDate) {
+            const birthDate = new Date(userProfile.birthDate);
+            if (!isNaN(birthDate.getTime())) {
+              const today = new Date();
+              let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+              const monthDiff = today.getMonth() - birthDate.getMonth();
+              if (
+                monthDiff < 0 ||
+                (monthDiff === 0 && today.getDate() < birthDate.getDate())
+              ) {
+                calculatedAge--;
+              }
+              age = calculatedAge;
+            }
+          }
+
           const userDataForAPI = {
             objective: userProfile.objetivo || "Não informado",
-            weight: weight,
+            weight,
             height: userProfile.altura || 0,
             imc: imc.toFixed(2),
+            age,
+            gender: userProfile.sexo || "Não informado",
             nivelAtividade: userProfile.nivelAtividade || "Moderado", // ✅ Nível de atividade do perfil
-            trainingFrequency: userProfile.frequenciaTreinos || "Não informado",
-            dietaryRestrictions: "Nenhuma", // Adicionar se disponível no perfil
+            trainingFrequency:
+              userProfile.frequenciaTreinos || "Não informado",
+            trainingTime: userProfile.tempoTreino || null,
+            dietaryRestrictions:
+              userProfile.dietaryRestrictions || "Nenhuma",
+            foodBudget: userProfile.foodBudget || "moderado",
           };
 
           fetch("/api/generate-nutrition-plan", {
@@ -1240,6 +1282,156 @@ export function PersonalizedPlanModal({
               scrollbarColor: "#94a3b8 #f1f5f9",
             }}
           >
+            {/* Resumo do perfil do usuário */}
+            {userProfile && (
+              <div className="mb-5 sm:mb-6">
+                <h4
+                  className={`${typography.heading.h4} text-gray-900 mb-1 sm:mb-2`}
+                >
+                  Resumo do seu perfil
+                </h4>
+                <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+                  Essas informações foram usadas para personalizar seu treino,
+                  dieta e plano aeróbico.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Objetivo
+                    </p>
+                    <p className="mt-1 text-sm sm:text-base text-gray-900 font-semibold break-words">
+                      {userProfile.objetivo || "Não informado"}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Nível de atividade
+                    </p>
+                    <p className="mt-1 text-sm sm:text-base text-gray-900 font-semibold break-words">
+                      {userProfile.nivelAtividade || "Moderado"}
+                    </p>
+                  </div>
+
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                    <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Frequência de musculação
+                    </p>
+                    <p className="mt-1 text-sm sm:text-base text-gray-900 font-semibold break-words">
+                      {userProfile.frequenciaTreinos || "Não informado"}
+                    </p>
+                  </div>
+
+                  {userProfile.tempoTreino && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Tempo disponível por treino
+                      </p>
+                      <p className="mt-1 text-sm sm:text-base text-gray-900 font-semibold break-words">
+                        {userProfile.tempoTreino}
+                      </p>
+                    </div>
+                  )}
+
+                  {userProfile.dietaryRestrictions &&
+                    userProfile.dietaryRestrictions !== "Nenhuma" && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                        <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
+                          Restrições alimentares
+                        </p>
+                        <p className="mt-1 text-sm sm:text-base text-gray-900 font-semibold break-words">
+                          {userProfile.dietaryRestrictions}
+                        </p>
+                      </div>
+                    )}
+
+                  {userProfile.foodBudget && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
+                      <p className="text-[11px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Orçamento alimentar
+                      </p>
+                      <p className="mt-1 text-sm sm:text-base text-gray-900 font-semibold break-words">
+                        {getFoodBudgetLabel(userProfile.foodBudget)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Resumo do plano gerado */}
+            <div className="mb-5 sm:mb-6">
+              <h4
+                className={`${typography.heading.h4} text-gray-900 mb-1 sm:mb-2`}
+              >
+                Resumo do plano
+              </h4>
+              <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+                Visão rápida de como seu treino, dieta e cardio foram montados
+                com base no seu objetivo.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                {/* Treino de força */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                  <p className="text-[11px] sm:text-xs font-medium text-blue-700 uppercase tracking-wide">
+                    Treino de força
+                  </p>
+                  <p className="mt-1 text-sm sm:text-base text-blue-900 font-semibold">
+                    {plan.trainingPlan?.weeklySchedule?.length
+                      ? `${plan.trainingPlan.weeklySchedule.length} dia${
+                          plan.trainingPlan.weeklySchedule.length > 1 ? "s" : ""
+                        } de musculação/sem`
+                      : userProfile?.frequenciaTreinos || "Frequência não definida"}
+                  </p>
+                  {plan.trainingPlan?.overview && (
+                    <p className="mt-1 text-xs sm:text-[13px] text-blue-800 line-clamp-2">
+                      {plan.trainingPlan.overview}
+                    </p>
+                  )}
+                </div>
+
+                {/* Cardio / aeróbico */}
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 sm:p-4">
+                  <p className="text-[11px] sm:text-xs font-medium text-emerald-700 uppercase tracking-wide">
+                    Cardio / aeróbico
+                  </p>
+                  <p className="mt-1 text-sm sm:text-base text-emerald-900 font-semibold">
+                    {plan.aerobicTraining?.weeklySchedule?.length
+                      ? `${plan.aerobicTraining.weeklySchedule.length} sessão${
+                          plan.aerobicTraining.weeklySchedule.length > 1
+                            ? "s"
+                            : ""
+                        } de cardio/sem`
+                      : "Frequência não definida"}
+                  </p>
+                  {plan.aerobicTraining?.overview && (
+                    <p className="mt-1 text-xs sm:text-[13px] text-emerald-800 line-clamp-2">
+                      {plan.aerobicTraining.overview}
+                    </p>
+                  )}
+                </div>
+
+                {/* Nutrição */}
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 sm:p-4">
+                  <p className="text-[11px] sm:text-xs font-medium text-orange-700 uppercase tracking-wide">
+                    Nutrição
+                  </p>
+                  <p className="mt-1 text-sm sm:text-base text-orange-900 font-semibold">
+                    {plan.nutritionPlan?.dailyCalories
+                      ? `${plan.nutritionPlan.dailyCalories} kcal/dia`
+                      : "Calorias ainda não definidas"}
+                  </p>
+                  {plan.nutritionPlan?.macros && (
+                    <p className="mt-1 text-xs sm:text-[13px] text-orange-800">
+                      Prot: {plan.nutritionPlan.macros.protein || "N/A"} · Carb:{" "}
+                      {plan.nutritionPlan.macros.carbs || "N/A"} · Gord:{" "}
+                      {plan.nutritionPlan.macros.fats || "N/A"}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Análise */}
             {validActiveTab === "analysis" && (
               <div className="space-y-6">

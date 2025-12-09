@@ -15,6 +15,7 @@ interface UserDataSectionProps {
     objetivo: string;
     nivelAtividade?: string;
     birthDate?: string | null; // Permitir null
+    tempoTreino?: string;
   };
   onGeneratePlan: () => void;
   isGeneratingPlan: boolean;
@@ -356,6 +357,7 @@ export function UserDataSection({
           frequenciaTreinos: "training_frequency",
           objetivo: "objective",
           nivelAtividade: "nivel_atividade",
+          tempoTreino: "training_time",
         };
 
         const dbField = fieldMapping[editingField] || editingField;
@@ -912,7 +914,7 @@ export function UserDataSection({
             </svg>
             Dados de Treino
           </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
               <span className="block text-gray-500 text-sm mb-1">Idade</span>
               <span className="block text-gray-800 font-bold text-lg">
@@ -948,6 +950,21 @@ export function UserDataSection({
                   "Força",
                   "Resistência",
                   "Definição",
+                ]
+              )}
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              {renderEditableField(
+                "tempoTreino",
+                "Tempo disponível por treino",
+                userProfile.tempoTreino || "",
+                [
+                  "30 minutos",
+                  "45 minutos",
+                  "60 minutos",
+                  "75 minutos",
+                  "90 minutos",
                 ]
               )}
             </div>

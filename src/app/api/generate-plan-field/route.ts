@@ -142,6 +142,7 @@ Dados do usuário:
 - Sexo: ${userData.sexo || "Não informado"}
 - Frequência de treino: ${userData.trainingFrequency || "Não informado"}
 - Nível de atividade: ${userData.nivelAtividade || "Moderado"}
+${userData.trainingTime ? `- Tempo disponível por treino: ${userData.trainingTime}` : ""}
 ${userData.dietaryRestrictions ? `- Restrições alimentares: ${userData.dietaryRestrictions}` : ""}
 
 ${existingPlan ? `Plano parcial existente:\n${JSON.stringify(existingPlan, null, 2)}` : ""}
@@ -171,6 +172,7 @@ Você deve sempre considerar:
 - Nível (inferido a partir dos dados): iniciante, intermediário ou avançado.
 - Frequência semanal informada pelo aluno (${userData.trainingFrequency || "não informado"}).
 - Nível de atividade (${userData.nivelAtividade || "Moderado"}) para ajustar volume e intensidade.
+- Tempo disponível por treino (${userData.trainingTime || "não informado"}) para limitar o número de exercícios e séries por sessão.
 - Divisão muscular mais eficiente para a frequência e objetivo.
 - Volume semanal ideal baseado em estudos.
 - Técnicas adequadas ao nível.
@@ -286,6 +288,7 @@ Dados do usuário:
 - Frequência de MUSCULAÇÃO: ${userData.trainingFrequency || "Não informado"} (⚠️ Esta frequência se refere APENAS aos dias de treino de força/musculação)
 - Nível de atividade: ${userData.nivelAtividade || "Moderado"}
 - Local de treino: ${userData.trainingLocation || "Academia"}
+${userData.trainingTime ? `- Tempo disponível por treino: ${userData.trainingTime}` : ""}
 ${userData.injuries ? `- Lesões/limitações: ${userData.injuries}` : ""}
 
 ${existingPlan ? `Plano parcial existente:\n${JSON.stringify(existingPlan, null, 2)}` : ""}

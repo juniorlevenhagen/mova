@@ -12,6 +12,7 @@ export default function Step2Page() {
     objective: "",
     trainingFrequency: "",
     trainingLocation: "",
+    trainingTime: "", // Tempo disponível por treino
     birthDate: "", // Mudou de age para birthDate
     height: "",
     weight: "",
@@ -97,6 +98,7 @@ export default function Step2Page() {
           objective: formData.objective,
           training_frequency: formData.trainingFrequency,
           training_location: formData.trainingLocation,
+          training_time: formData.trainingTime || null,
           nivel_atividade: formData.nivelAtividade || "Moderado", // Salvar nível de atividade
           has_pain: formData.hasPain,
           dietary_restrictions: formData.dietaryRestrictions,
@@ -366,7 +368,7 @@ export default function Step2Page() {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
               <label
                 htmlFor="trainingFrequency"
@@ -411,6 +413,29 @@ export default function Step2Page() {
                 <option value="academia">Na academia</option>
                 <option value="ambos">Casa e academia</option>
                 <option value="ar_livre">Ar livre</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="trainingTime"
+                className="block text-sm font-zalando-medium text-black mb-2"
+              >
+                Tempo disponível por treino
+              </label>
+              <select
+                id="trainingTime"
+                name="trainingTime"
+                value={formData.trainingTime}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border-2 border-black rounded-lg focus:outline-none focus:border-black transition-colors text-sm md:text-base font-zalando"
+              >
+                <option value="">Selecione o tempo</option>
+                <option value="30 minutos">30 minutos</option>
+                <option value="45 minutos">45 minutos</option>
+                <option value="60 minutos">60 minutos</option>
+                <option value="75 minutos">75 minutos</option>
+                <option value="90 minutos">90 minutos</option>
               </select>
             </div>
           </div>

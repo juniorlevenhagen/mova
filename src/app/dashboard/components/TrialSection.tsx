@@ -7,8 +7,8 @@ interface TrialSectionProps {
 }
 
 export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
-  // ✅ Botão sempre visível após usar plano grátis (independente de ter prompts disponíveis)
-  const showBuyButton = status.hasUsedFreePlan;
+  // ✅ Botão sempre visível quando não há prompts disponíveis
+  const showBuyButton = status.availablePrompts === 0;
 
   // ✅ Atualizar tempo de cooldown em tempo real
   const [timeRemaining, setTimeRemaining] = useState<{
@@ -59,93 +59,75 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
       </h2>
 
       <div className="space-y-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-gray-800">{status.message}</p>
-          <div className="mt-3 space-y-2">
-            <p className="text-sm text-gray-500">
-              Planos disponíveis agora:{" "}
-              <span className="font-semibold text-gray-900">
-                {status.plansRemaining}
-              </span>
-            </p>
-            {status.availablePrompts > 0 && (
-              <p className="text-sm text-gray-500">
-                Prompts comprados:{" "}
-                <span className="font-semibold text-gray-900">
-                  {status.availablePrompts}
-                </span>
-              </p>
+        <div
+          className={`border rounded-lg p-4 ${
+            status.availablePrompts > 0
+              ? "bg-green-50 border-green-200"
+              : "bg-red-50 border-red-200"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            {status.availablePrompts > 0 ? (
+              <svg
+                className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
             )}
-
-            {/* ✅ Informação de cooldown - mostrar quando há cooldown ativo */}
-            {status.isInCooldown === true &&
-              status.hoursUntilNextPlan !== undefined &&
-              status.hoursUntilNextPlan > 0 &&
-              status.nextPlanAvailable && (
-                <div className="mt-3 pt-3 border-t border-gray-200 bg-amber-50 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <svg
-                      className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <div className="flex-1">
-                      <p className="text-sm text-amber-800 font-semibold mb-1">
-                        Próximo plano disponível em:
-                      </p>
-                      <p className="text-lg font-bold text-amber-700 mb-1">
-                        {timeRemaining
-                          ? timeRemaining.hours > 0
-                            ? `${timeRemaining.hours}h ${timeRemaining.minutes}m`
-                            : `${timeRemaining.minutes}m`
-                          : status.hoursUntilNextPlan !== undefined
-                            ? (() => {
-                                const hours = Math.floor(
-                                  status.hoursUntilNextPlan
-                                );
-                                const minutes = Math.floor(
-                                  (status.hoursUntilNextPlan - hours) * 60
-                                );
-                                return hours > 0
-                                  ? `${hours}h ${minutes}m`
-                                  : `${minutes}m`;
-                              })()
-                            : "Calculando..."}
-                      </p>
-                      {status.nextPlanAvailable && (
-                        <p className="text-xs text-amber-600">
-                          Disponível em:{" "}
-                          {new Date(status.nextPlanAvailable).toLocaleString(
-                            "pt-BR",
-                            {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+            <div className="flex-1">
+              <p
+                className={`font-medium ${
+                  status.availablePrompts > 0
+                    ? "text-green-800"
+                    : "text-red-800"
+                }`}
+              >
+                {status.message}
+              </p>
+              {status.availablePrompts > 0 && (
+                <div className="mt-3">
+                  <p className="text-sm text-green-700">
+                    Prompts disponíveis:{" "}
+                    <span className="font-semibold">
+                      {status.availablePrompts}
+                    </span>
+                  </p>
                 </div>
               )}
+            </div>
+          </div>
 
-            {/* ✅ Feedback informativo quando tem prompts mas sem cooldown */}
-            {status.availablePrompts > 0 && status.isInCooldown !== true && (
-              <div className="mt-3 pt-3 border-t border-gray-200 bg-green-50 rounded-lg p-3">
+          {/* ✅ Informação de cooldown - mostrar quando há cooldown ativo */}
+          {status.isInCooldown === true &&
+            status.hoursUntilNextPlan !== undefined &&
+            status.hoursUntilNextPlan > 0 &&
+            status.nextPlanAvailable && (
+              <div className="mt-3 pt-3 border-t border-amber-200 bg-amber-50 rounded-lg p-3">
                 <div className="flex items-start gap-2">
                   <svg
-                    className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+                    className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -154,33 +136,51 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-green-800 font-semibold">
-                      ✅ Você pode gerar um novo plano agora!
+                    <p className="text-sm text-amber-800 font-semibold mb-1">
+                      Próximo plano disponível em:
                     </p>
-                    <p className="text-xs text-green-600 mt-1">
-                      Seus prompts estão disponíveis sem cooldown.
+                    <p className="text-lg font-bold text-amber-700 mb-1">
+                      {timeRemaining
+                        ? timeRemaining.hours > 0
+                          ? `${timeRemaining.hours}h ${timeRemaining.minutes}m`
+                          : `${timeRemaining.minutes}m`
+                        : status.hoursUntilNextPlan !== undefined
+                          ? (() => {
+                              const hours = Math.floor(
+                                status.hoursUntilNextPlan
+                              );
+                              const minutes = Math.floor(
+                                (status.hoursUntilNextPlan - hours) * 60
+                              );
+                              return hours > 0
+                                ? `${hours}h ${minutes}m`
+                                : `${minutes}m`;
+                            })()
+                          : "Calculando..."}
                     </p>
+                    {status.nextPlanAvailable && (
+                      <p className="text-xs text-amber-600">
+                        Disponível em:{" "}
+                        {new Date(status.nextPlanAvailable).toLocaleString(
+                          "pt-BR",
+                          {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }
+                        )}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             )}
-
-            {/* ✅ Feedback quando não há prompts mas pode comprar */}
-            {!status.availablePrompts &&
-              status.hasUsedFreePlan &&
-              !status.isInCooldown && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">
-                    Você pode comprar prompts adicionais para gerar novos planos
-                    a qualquer momento.
-                  </p>
-                </div>
-              )}
-          </div>
         </div>
 
         {showBuyButton && (
@@ -205,8 +205,7 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
                 Quer gerar novos planos?
               </h3>
               <p className="text-blue-700 text-sm mb-3">
-                Compre prompts adicionais para liberar novas gerações a qualquer
-                momento.
+                Adquira prompts para liberar novas gerações a qualquer momento.
               </p>
               <button
                 onClick={onBuyPrompts}

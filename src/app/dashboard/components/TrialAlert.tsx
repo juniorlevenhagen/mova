@@ -24,11 +24,11 @@ export function TrialAlert({ trialStatus, onUpgrade }: TrialAlertProps) {
   };
 
   return (
-    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0">
           <svg
-            className="w-6 h-6 text-orange-500"
+            className="w-6 h-6 text-red-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -42,12 +42,11 @@ export function TrialAlert({ trialStatus, onUpgrade }: TrialAlertProps) {
           </svg>
         </div>
         <div className="flex-1">
-          <h3 className="text-orange-800 font-medium mb-1">
-            Plano Grátis Utilizado
+          <h3 className="text-red-800 font-medium mb-1">
+            Sem prompts disponíveis
           </h3>
-          <p className="text-orange-700 text-sm mb-3">
-            Você já utilizou seu plano personalizado gratuito. Compre prompts
-            para gerar novos planos quando quiser.
+          <p className="text-red-700 text-sm mb-3">
+            Você não possui prompts disponíveis. Adquira prompts para gerar novos planos personalizados quando quiser.
           </p>
           <button
             onClick={handleUpgrade}

@@ -204,11 +204,9 @@ export function useTrial(user: User | null) {
                   : `Você tem ${packagePrompts} prompts disponíveis para gerar planos!`;
             }
           }
-        } else if (freePlansRemaining > 0) {
-          message = "Você pode gerar 1 plano grátis!";
         } else {
-          message =
-            "Plano gratuito utilizado. Compre prompts para gerar novos planos.";
+          // Não há prompts disponíveis - sempre mostrar mensagem para comprar
+          message = "Compre prompts para gerar novos planos.";
         }
 
         const plansRemaining =

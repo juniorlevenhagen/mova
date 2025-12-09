@@ -1556,72 +1556,76 @@ Antes de retornar o plano de treino, SEMPRE verifique:
 
 ⚠️ **REGRA CRÍTICA: SEMPRE inclua o campo aerobicTraining em TODOS os planos!** 
 
-Treino aeróbico é de SUMA IMPORTÂNCIA para qualquer prática de atividade física:
-- Essencial para saúde cardiovascular (reduz risco de doenças cardíacas)
-- Fundamental para queima de gordura e déficit calórico
-- Melhora condicionamento físico geral
-- Ajuda na recuperação entre treinos de força
-- Recomendado por órgãos regulamentadores (OMS, ACSM) como parte essencial de qualquer programa de exercícios
+Treino aeróbico é FUNDAMENTAL para saúde cardiovascular, controle de gordura, condicionamento e performance.
 
-### 📋 DIRETRIZES BASEADAS EM OMS E ACSM:
+### 📌 PRINCÍPIOS CIENTÍFICOS PARA CARDIO
 
-**OMS (Organização Mundial da Saúde):**
-- Mínimo: 150 minutos/semana de atividade moderada OU 75 minutos/semana de atividade intensa
-- Recomendado: 300 minutos/semana de moderada OU 150 minutos/semana de intensa
-- Para benefícios adicionais: combinar com treino de força 2x/semana
+1. Calcule a FC máxima aproximada usando a fórmula baseada em evidência:
+   - FCmáx = 208 – (0,7 × idade).
+   - Se a idade não estiver disponível, use uma estimativa padrão (ex.: 190–200 bpm) e deixe claro nas notas.
 
-**ACSM (American College of Sports Medicine):**
-- Cardio moderado: 30-60 minutos, 5x/semana
-- Cardio intenso: 20-60 minutos, 3x/semana
-- Frequência cardíaca alvo: 64-76% da FCmáx (moderado) ou 77-95% da FCmáx (intenso)
+2. Utilize zonas de treino baseadas em % da FCmáx:
+   - Z1: 50–60% FCmáx (recuperação, muito leve).
+   - Z2: 60–70% FCmáx (melhor para perda de gordura e base aeróbica).
+   - Z3: 70–80% FCmáx (condicionamento geral, moderado a vigoroso).
+   - Z4: 80–90% FCmáx (VO2máx e limiar anaeróbio, intenso).
+   - Z5: 90–100% FCmáx (treinos intervalados muito intensos – SIT/HIIT pesado).
 
-### 📋 INTENSIDADE BASEADA NO OBJETIVO:
+3. Escolha o protocolo ideal segundo o OBJETIVO do usuário:
+   - Emagrecimento:
+     • Priorizar treinos contínuos em Z2 (base aeróbica, 30–60min).
+     • HIIT leve (Z3–Z4) apenas se o aluno NÃO for iniciante e não tiver limitações importantes.
+   - Perda de gordura preservando massa:
+     • Combinar musculação com Z2 e Z3 (cardio moderado), 2–4 sessões/semana.
+   - Condicionamento físico geral:
+     • Usar protocolos intervalados (ex.: 4×4 min em Z4 com recuperações em Z2–Z3).
+     • Incluir progressivamente treinos em Z3, Z4 e alguns blocos em Z5 (apenas quando adequado).
+   - Saúde geral:
+     • 2–4 sessões/semana em Z2 e Z3, 20–45min por sessão.
+   - Performance (apenas avançados):
+     • Combinar Z4 + Z5 + SIT (sprints muito intensos) com volume bem controlado.
 
-#### 💪 GANHAR MASSA MUSCULAR:
-- **Cardio LEVE a MODERADO** (30-45 minutos, 2-3x por semana)
-- Intensidade: 60-70% da frequência cardíaca máxima
-- Tipos recomendados: caminhada rápida, ciclismo leve, esteira inclinada, elíptico
-- **Objetivo**: Melhorar saúde cardiovascular sem interferir na recuperação e ganho de massa
-- **Timing**: Pode ser feito no mesmo dia após treino de força (recomendado) ou em dias separados
-- **Importância**: Mantém saúde cardiovascular, melhora recuperação e metabolismo
+4. PARA CADA SESSÃO DE CARDIO no weeklySchedule, SEMPRE indique:
+   - Zona de treino em % da FCmáx (ex.: “Z2 – 60–70% FCmáx”).
+   - BPM alvo aproximado (ex.: “FC alvo ≈ 130–145 bpm”). Use a fórmula FCmáx = 208 – (0,7 × idade).
+   - Tipo de treino: contínuo, intervalado, HIIT ou SIT.
+   - Duração total da sessão.
+   - Frequência semanal prevista (ex.: “3x/semana” – pode aparecer no overview ou recommendations).
 
-#### 🎯 EMAGRECIMENTO:
-- **Cardio MODERADO a INTENSO** (30-60 minutos, 3-5x por semana)
-- Intensidade: 65-85% da frequência cardíaca máxima
-- Tipos recomendados: HIIT, corrida, ciclismo, natação, elíptico, escada
-- **Objetivo**: Maximizar queima calórica e gordura, acelerar metabolismo
-- **Timing**: Pode ser combinado com treino de força (antes ou depois) ou em dias separados
-- **Importância**: Essencial para déficit calórico e perda de gordura - etapa fundamental junto à alimentação
+5. NUNCA prescreva HIIT pesado ou SIT para iniciantes:
+   - Iniciantes: foco em Z1–Z2 (talvez Z3 leve) com treinos contínuos, 20–40min.
+   - Intermediários: podem usar intervalados moderados (Z2–Z3 e Z3–Z4).
+   - Avançados: podem usar Z4 e Z5, HIIT e SIT, sempre com volume e recuperação adequados.
 
-#### ⚖️ MANUTENÇÃO:
-- **Cardio MODERADO** (30-45 minutos, 2-4x por semana)
-- Intensidade: 65-75% da frequência cardíaca máxima
-- Tipos recomendados: caminhada, corrida leve, ciclismo, natação
-- **Objetivo**: Manter saúde cardiovascular e equilíbrio físico
-- **Timing**: Distribuído ao longo da semana
+6. SEMPRE combine o cardio com o treino de musculação do mesmo plano:
+   - Especifique quando o cardio deve ser feito (ex.: “após treino de força”, “em dias alternados”).
+   - Evite sobrecarregar o aluno em dias de treinos muito pesados de pernas.
 
-#### 🏃‍♂️ CONDICIONAMENTO/RESISTÊNCIA:
-- **Cardio INTENSO** (45-60 minutos, 4-6x por semana)
-- Intensidade: 70-85% da frequência cardíaca máxima
-- Tipos recomendados: corrida, ciclismo, natação, HIIT, treinos de endurance
-- **Objetivo**: Melhorar capacidade cardiovascular e resistência
-- **Timing**: Foco principal do plano, combinado com treino de força
+### ✅ ESTRUTURA OBRIGATÓRIA DO CAMPO aerobicTraining
 
-#### 🧘‍♀️ SAÚDE E BEM-ESTAR:
-- **Cardio LEVE a MODERADO** (20-40 minutos, 2-3x por semana)
-- Intensidade: 60-70% da frequência cardíaca máxima
-- Tipos recomendados: caminhada, yoga flow, dança, ciclismo recreativo
-- **Objetivo**: Manter saúde cardiovascular e bem-estar geral
-
-### ✅ ESTRUTURA OBRIGATÓRIA DO CAMPO aerobicTraining:
-
-SEMPRE retorne o campo aerobicTraining com a seguinte estrutura:
+SEMPRE retorne o campo aerobicTraining com a seguinte estrutura (respeitando o schema JSON):
 
 O campo deve conter:
-- overview: descrição geral da importância do treino aeróbico
-- weeklySchedule: array com objetos contendo day, activity, duration, intensity, heartRateZone (opcional), notes (opcional)
-- recommendations: recomendações específicas baseadas em OMS/ACSM
-- progression: como progredir o treino ao longo das semanas
+- overview: descrição geral da importância do treino aeróbico e um resumo do protocolo escolhido.
+- weeklySchedule: array com objetos contendo day, activity, duration, intensity, heartRateZone (opcional), notes (opcional).
+- recommendations: recomendações específicas (incluindo objetivo, orientações de aplicação e resumo em bloco JSON de cardio).
+- progression: como progredir o treino ao longo das semanas.
+
+📦 NO FINAL DO CAMPO `recommendations`, inclua SEMPRE um bloco JSON de resumo no seguinte formato (como texto, mas JSON válido):
+
+{
+  "cardio": {
+    "objetivo": "<descrever objetivo principal do cardio (ex.: emagrecimento, condicionamento, saúde geral, performance)>",
+    "protocolo": "<descrever o protocolo principal (ex.: contínuo em Z2 40min 4x/sem, HIIT 4x4 em Z4, etc.)>",
+    "bpm_alvo": "<faixa de FC alvo em bpm com base na FCmáx calculada (ex.: 130-145 bpm – Z2)>",
+    "frequencia": "<frequência semanal do cardio (ex.: 3x/semana, 4x/semana)>",
+    "descricao": "<resumo em 1–3 frases explicando como o aluno deve aplicar esse cardio junto com a musculação>"
+  }
+}
+
+⚠️ IMPORTANTE:
+- Esse bloco deve estar DENTRO do campo `recommendations` (como texto), não como campo novo fora de aerobicTraining.
+- O JSON deve ser bem formatado para que o sistema possa extraí-lo facilmente se necessário.
 
 Exemplo de estrutura esperada:
 - Dia: Segunda-feira, Atividade: Caminhada rápida, Duração: 30-40min, Intensidade: Moderada (65-75% FCmáx)

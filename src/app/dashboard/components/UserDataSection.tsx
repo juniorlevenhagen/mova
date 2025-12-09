@@ -1172,11 +1172,11 @@ export function UserDataSection({
           Ações
         </h4>
 
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 min-w-0">
           <button
             onClick={handleGeneratePlan}
             disabled={isGeneratingPlan || isCheckingPlanStatus}
-            className={`flex-1 ${components.button.base} ${components.button.sizes.lg} ${
+            className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.lg} ${
               planStatus?.isExisting &&
               !trialStatus?.canGenerate &&
               (trialStatus?.availablePrompts || 0) === 0
@@ -1242,7 +1242,7 @@ export function UserDataSection({
           {onViewHistory && (
             <button
               onClick={onViewHistory}
-              className={`${components.button.base} ${
+              className={`flex-1 sm:flex-none min-w-0 ${components.button.base} ${
                 components.button.sizes.lg
               } flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 whitespace-nowrap`}
             >
@@ -1266,7 +1266,7 @@ export function UserDataSection({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className={`${components.button.base} ${
+            className={`flex-1 sm:flex-none min-w-0 ${components.button.base} ${
               components.button.sizes.lg
             } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap ${
               evaluation

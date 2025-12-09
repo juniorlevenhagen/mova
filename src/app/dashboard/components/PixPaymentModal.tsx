@@ -30,6 +30,7 @@ export function PixPaymentModal({
   >("pending");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<string>("");
 
   // Criar pagamento ao abrir o modal
   useEffect(() => {
@@ -55,6 +56,26 @@ export function PixPaymentModal({
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentData, paymentStatus]);
+
+  // Atualizar contador de expiração a cada segundo
+  useEffect(() => {
+    if (!paymentData || paymentStatus !== "pending") {
+      setTimeRemaining("");
+      return;
+    }
+
+    const updateTimer = () => {
+      setTimeRemaining(formatExpirationTime(paymentData.expires_at));
+    };
+
+    // Atualizar imediatamente
+    updateTimer();
+
+    // Atualizar a cada segundo
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
   }, [paymentData, paymentStatus]);
 
   const createPayment = async () => {
@@ -128,7 +149,7 @@ export function PixPaymentModal({
           onPaymentSuccess();
           setTimeout(() => {
             onClose();
-          }, 2000);
+          }, 4000);
         } else if (data.status === "expired") {
           setError("O pagamento expirou. Por favor, gere um novo QR Code.");
         }
@@ -263,7 +284,8 @@ export function PixPaymentModal({
                   Tempo restante para pagamento:
                 </p>
                 <p className="text-lg font-semibold text-red-600">
-                  {formatExpirationTime(paymentData.expires_at)}
+                  {timeRemaining ||
+                    formatExpirationTime(paymentData.expires_at)}
                 </p>
               </div>
 

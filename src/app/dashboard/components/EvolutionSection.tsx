@@ -14,6 +14,7 @@ import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  type LegendPayload,
 } from "recharts";
 import { useState, useMemo } from "react";
 import { MetaModal } from "../modals/MetaModal";
@@ -1265,7 +1266,7 @@ export function EvolutionSection({
                   <Legend
                     verticalAlign="bottom"
                     height={36}
-                    formatter={(value, entry: any) => (
+                    formatter={(value: string, entry: LegendPayload) => (
                       <span
                         style={{
                           color: entry.color,

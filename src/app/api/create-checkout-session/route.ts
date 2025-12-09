@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
               name: "Mova+ - 1 Prompt",
               description: "1 prompt para gerar plano personalizado",
             },
-            unit_amount: 1799, // R$ 17,99 em centavos
+            unit_amount: 1, // R$ 17,99 em centavos
           },
           quantity: 1,
         },

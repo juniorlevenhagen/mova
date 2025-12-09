@@ -302,7 +302,7 @@ export function PromptPurchaseModal({
                 </span>
               </div>
               <div className="flex items-baseline">
-                <span className="text-4xl font-bold text-black">R$ 17,99</span>
+                <span className="text-4xl font-bold text-black">R$ 0,01</span>
                 <span className="text-gray-600 text-sm ml-2">por prompt</span>
               </div>
             </div>

@@ -51,13 +51,13 @@ export function AddActivityModal({
     if (isOpen) {
       // Salvar a posição atual do scroll
       const scrollY = window.scrollY;
-      
+
       // Bloquear scroll do body
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
-      
+
       return () => {
         // Restaurar scroll do body
         document.body.style.position = "";
@@ -73,7 +73,10 @@ export function AddActivityModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md mx-2 sm:mx-4 relative max-h-[95vh] sm:max-h-[90vh] overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#94a3b8 #f1f5f9" }}>
+      <div
+        className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md mx-2 sm:mx-4 relative max-h-[95vh] sm:max-h-[90vh] overflow-y-auto"
+        style={{ scrollbarWidth: "thin", scrollbarColor: "#94a3b8 #f1f5f9" }}
+      >
         {/* Botão X no canto superior direito */}
         <button
           onClick={onClose}
@@ -94,7 +97,9 @@ export function AddActivityModal({
             />
           </svg>
         </button>
-        <h2 className="text-lg sm:text-xl font-semibold mb-4 pr-8 sm:pr-0">Adicionar Atividade</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 pr-8 sm:pr-0">
+          Adicionar Atividade
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-md sm:max-w-full mx-auto sm:mx-0">

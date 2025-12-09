@@ -12,7 +12,9 @@ export default function LoginPage() {
         <p className="text-gray-700">Continue sua jornada fitness no Mova+</p>
       </div>
 
-      <Suspense fallback={<div className="text-center py-4">Carregando...</div>}>
+      <Suspense
+        fallback={<div className="text-center py-4">Carregando...</div>}
+      >
         <LoginForm />
       </Suspense>
 

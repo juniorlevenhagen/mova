@@ -1072,7 +1072,10 @@ export function EvolutionSection({
               <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
               Evolução do Peso, Cintura e Composição
             </h4>
-            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+            <div
+              className="w-full"
+              style={{ minHeight: "200px", height: "200px" }}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
@@ -1089,132 +1092,132 @@ export function EvolutionSection({
                     tick={{ fontSize: 8 }}
                     interval="preserveStartEnd"
                   />
-                <YAxis
-                  yAxisId="left"
-                  stroke="#6b7280"
-                  fontSize={8}
-                  width={40}
-                  domain={["dataMin - 2", "dataMax + 2"]}
-                  tick={{ fontSize: 8 }}
-                />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  stroke="#6b7280"
-                  fontSize={8}
-                  width={40}
-                  domain={[0, 100]}
-                  tick={{ fontSize: 8 }}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
-                          <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
-                            {label === "inicio" ? "Cadastro Inicial" : label}
-                          </p>
-                          {payload.map((entry, index) => {
-                            const value = entry.value;
-                            const name = entry.name;
+                  <YAxis
+                    yAxisId="left"
+                    stroke="#6b7280"
+                    fontSize={8}
+                    width={40}
+                    domain={["dataMin - 2", "dataMax + 2"]}
+                    tick={{ fontSize: 8 }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#6b7280"
+                    fontSize={8}
+                    width={40}
+                    domain={[0, 100]}
+                    tick={{ fontSize: 8 }}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
+                            <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
+                              {label === "inicio" ? "Cadastro Inicial" : label}
+                            </p>
+                            {payload.map((entry, index) => {
+                              const value = entry.value;
+                              const name = entry.name;
 
-                            if (value === null || value === undefined) {
-                              return null;
-                            }
+                              if (value === null || value === undefined) {
+                                return null;
+                              }
 
-                            let displayValue = "";
-                            if (name === "peso") {
-                              displayValue = `${Number(value).toFixed(1)} kg`;
-                            } else if (name === "cintura") {
-                              displayValue = `${Number(value).toFixed(0)} cm`;
-                            } else if (name === "percentualGordura") {
-                              displayValue = `${Number(value).toFixed(1)}%`;
-                            } else if (name === "massaMagra") {
-                              displayValue = `${Number(value).toFixed(1)} kg`;
-                            } else {
-                              displayValue = String(value);
-                            }
+                              let displayValue = "";
+                              if (name === "peso") {
+                                displayValue = `${Number(value).toFixed(1)} kg`;
+                              } else if (name === "cintura") {
+                                displayValue = `${Number(value).toFixed(0)} cm`;
+                              } else if (name === "percentualGordura") {
+                                displayValue = `${Number(value).toFixed(1)}%`;
+                              } else if (name === "massaMagra") {
+                                displayValue = `${Number(value).toFixed(1)} kg`;
+                              } else {
+                                displayValue = String(value);
+                              }
 
-                            return (
-                              <p
-                                key={index}
-                                className="text-xs sm:text-sm"
-                                style={{ color: entry.color }}
-                              >
-                                {name === "peso"
-                                  ? "Peso"
-                                  : name === "cintura"
-                                    ? "Cintura"
-                                    : name === "percentualGordura"
-                                      ? "% Gordura"
-                                      : name === "massaMagra"
-                                        ? "Massa Magra"
-                                        : name}
-                                : {displayValue}
-                              </p>
-                            );
-                          })}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
-                  iconSize={8}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="peso"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  name="Peso (kg)"
-                  dot={{ fill: "#3B82F6", strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: "#3B82F6", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="cintura"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  name="Cintura (cm)"
-                  dot={{ fill: "#10B981", strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: "#10B981", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="percentualGordura"
-                  stroke="#EF4444"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  name="% Gordura"
-                  dot={{ fill: "#EF4444", strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: "#EF4444", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  yAxisId="left"
-                  type="monotone"
-                  dataKey="massaMagra"
-                  stroke="#8B5CF6"
-                  strokeWidth={2}
-                  name="Massa Magra (kg)"
-                  dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: "#8B5CF6", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+                              return (
+                                <p
+                                  key={index}
+                                  className="text-xs sm:text-sm"
+                                  style={{ color: entry.color }}
+                                >
+                                  {name === "peso"
+                                    ? "Peso"
+                                    : name === "cintura"
+                                      ? "Cintura"
+                                      : name === "percentualGordura"
+                                        ? "% Gordura"
+                                        : name === "massaMagra"
+                                          ? "Massa Magra"
+                                          : name}
+                                  : {displayValue}
+                                </p>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: "10px", paddingTop: "10px" }}
+                    iconSize={8}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="peso"
+                    stroke="#3B82F6"
+                    strokeWidth={2}
+                    name="Peso (kg)"
+                    dot={{ fill: "#3B82F6", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, stroke: "#3B82F6", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="cintura"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    name="Cintura (cm)"
+                    dot={{ fill: "#10B981", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, stroke: "#10B981", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="percentualGordura"
+                    stroke="#EF4444"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="% Gordura"
+                    dot={{ fill: "#EF4444", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, stroke: "#EF4444", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="massaMagra"
+                    stroke="#8B5CF6"
+                    strokeWidth={2}
+                    name="Massa Magra (kg)"
+                    dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, stroke: "#8B5CF6", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
 
             {/* Mensagem quando não há dados */}
@@ -1234,79 +1237,88 @@ export function EvolutionSection({
               <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
               Composição Corporal Atual
             </h4>
-            <div className="w-full" style={{ minHeight: '250px', height: '250px' }}>
+            <div
+              className="w-full"
+              style={{ minHeight: "250px", height: "250px" }}
+            >
               <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={65}
-                  innerRadius={30}
-                  dataKey="value"
-                  label={({ percentage }) => `${percentage}%`}
-                  labelLine={false}
-                  isAnimationActive={false}
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: '600',
-                  }}
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  formatter={(value, entry: any) => (
-                    <span style={{ color: entry.color, fontSize: '13px', fontWeight: '500' }}>
-                      {value}
-                    </span>
-                  )}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
-                          <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
-                            Composição Corporal
-                          </p>
-                          {payload.map((entry, index) => {
-                            const value = entry.value;
-                            const name = entry.name;
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={65}
+                    innerRadius={30}
+                    dataKey="value"
+                    label={({ percentage }) => `${percentage}%`}
+                    labelLine={false}
+                    isAnimationActive={false}
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value, entry: any) => (
+                      <span
+                        style={{
+                          color: entry.color,
+                          fontSize: "13px",
+                          fontWeight: "500",
+                        }}
+                      >
+                        {value}
+                      </span>
+                    )}
+                  />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
+                            <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
+                              Composição Corporal
+                            </p>
+                            {payload.map((entry, index) => {
+                              const value = entry.value;
+                              const name = entry.name;
 
-                            if (
-                              value === null ||
-                              value === undefined ||
-                              value === 0
-                            ) {
-                              return null;
-                            }
+                              if (
+                                value === null ||
+                                value === undefined ||
+                                value === 0
+                              ) {
+                                return null;
+                              }
 
-                            const displayValue = `${Number(value).toFixed(
-                              1
-                            )} kg`;
+                              const displayValue = `${Number(value).toFixed(
+                                1
+                              )} kg`;
 
-                            return (
-                              <p
-                                key={index}
-                                className="text-xs sm:text-sm"
-                                style={{ color: entry.color }}
-                              >
-                                {name}: {displayValue}
-                              </p>
-                            );
-                          })}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                              return (
+                                <p
+                                  key={index}
+                                  className="text-xs sm:text-sm"
+                                  style={{ color: entry.color }}
+                                >
+                                  {name}: {displayValue}
+                                </p>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
 
             {/* Mensagem quando não há dados de composição corporal */}
@@ -1331,7 +1343,10 @@ export function EvolutionSection({
               (recomendado: braço dominante) para manter consistência nas
               comparações.
             </div>
-            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+            <div
+              className="w-full"
+              style={{ minHeight: "200px", height: "200px" }}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
@@ -1355,84 +1370,84 @@ export function EvolutionSection({
                     domain={["dataMin - 2", "dataMax + 2"]}
                     tick={{ fontSize: 8 }}
                   />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
-                          <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
-                            {label === "inicio" ? "Cadastro Inicial" : label}
-                          </p>
-                          {payload.map((entry, index) => {
-                            const value = entry.value;
-                            const name = entry.name;
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-2 sm:p-3 shadow-lg max-w-[90vw] sm:max-w-none">
+                            <p className="font-medium text-gray-800 mb-1 sm:mb-2 text-xs sm:text-sm">
+                              {label === "inicio" ? "Cadastro Inicial" : label}
+                            </p>
+                            {payload.map((entry, index) => {
+                              const value = entry.value;
+                              const name = entry.name;
 
-                            if (value === null || value === undefined) {
-                              return null;
-                            }
+                              if (value === null || value === undefined) {
+                                return null;
+                              }
 
-                            return (
-                              <p
-                                key={index}
-                                className="text-xs sm:text-sm"
-                                style={{ color: entry.color }}
-                              >
-                                {name === "braco"
-                                  ? "Braço"
-                                  : name === "coxa"
-                                    ? "Coxa"
-                                    : name === "quadril"
-                                      ? "Quadril"
-                                      : name}
-                                : {Number(value).toFixed(0)} cm
-                              </p>
-                            );
-                          })}
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
-                  iconSize={8}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="braco"
-                  stroke="#F59E0B"
-                  strokeWidth={2}
-                  name="Braço (cm) - sempre o mesmo braço"
-                  dot={{ fill: "#F59E0B", strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: "#F59E0B", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="coxa"
-                  stroke="#EC4899"
-                  strokeWidth={2}
-                  name="Coxa (cm)"
-                  dot={{ fill: "#EC4899", strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: "#EC4899", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="quadril"
-                  stroke="#14B8A6"
-                  strokeWidth={2}
-                  name="Quadril (cm)"
-                  dot={{ fill: "#14B8A6", strokeWidth: 2, r: 3 }}
-                  activeDot={{ r: 5, stroke: "#14B8A6", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+                              return (
+                                <p
+                                  key={index}
+                                  className="text-xs sm:text-sm"
+                                  style={{ color: entry.color }}
+                                >
+                                  {name === "braco"
+                                    ? "Braço"
+                                    : name === "coxa"
+                                      ? "Coxa"
+                                      : name === "quadril"
+                                        ? "Quadril"
+                                        : name}
+                                  : {Number(value).toFixed(0)} cm
+                                </p>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: "10px", paddingTop: "10px" }}
+                    iconSize={8}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="braco"
+                    stroke="#F59E0B"
+                    strokeWidth={2}
+                    name="Braço (cm) - sempre o mesmo braço"
+                    dot={{ fill: "#F59E0B", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, stroke: "#F59E0B", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="coxa"
+                    stroke="#EC4899"
+                    strokeWidth={2}
+                    name="Coxa (cm)"
+                    dot={{ fill: "#EC4899", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, stroke: "#EC4899", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="quadril"
+                    stroke="#14B8A6"
+                    strokeWidth={2}
+                    name="Quadril (cm)"
+                    dot={{ fill: "#14B8A6", strokeWidth: 2, r: 3 }}
+                    activeDot={{ r: 5, stroke: "#14B8A6", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
 
             {/* Mensagem quando não há dados */}
@@ -1454,7 +1469,10 @@ export function EvolutionSection({
               <div className="w-2 h-2 sm:w-3 sm:h-3 bg-pink-500 rounded-full"></div>
               Evolução do Bem-estar
             </h4>
-            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+            <div
+              className="w-full"
+              style={{ minHeight: "200px", height: "200px" }}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={chartData}
@@ -1479,45 +1497,45 @@ export function EvolutionSection({
                     ticks={[0, 1, 2, 3, 4, 5]}
                     tick={{ fontSize: 8 }}
                   />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (active && payload && payload.length) {
-                      const value = payload[0]?.value;
-                      if (value === null || value === undefined) return null;
-                      return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                          <p className="font-medium text-gray-800 mb-2">
-                            {label === "inicio" ? "Cadastro Inicial" : label}
-                          </p>
-                          <p
-                            className="text-sm"
-                            style={{ color: payload[0]?.color }}
-                          >
-                            Bem-estar: {Number(value).toFixed(0)}/5
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
-                  iconSize={8}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="bemEstar"
-                  stroke="#EC4899"
-                  strokeWidth={2}
-                  name="Bem-estar (1-5)"
-                  dot={{ fill: "#EC4899", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: "#EC4899", strokeWidth: 2 }}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const value = payload[0]?.value;
+                        if (value === null || value === undefined) return null;
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                            <p className="font-medium text-gray-800 mb-2">
+                              {label === "inicio" ? "Cadastro Inicial" : label}
+                            </p>
+                            <p
+                              className="text-sm"
+                              style={{ color: payload[0]?.color }}
+                            >
+                              Bem-estar: {Number(value).toFixed(0)}/5
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: "10px", paddingTop: "10px" }}
+                    iconSize={8}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="bemEstar"
+                    stroke="#EC4899"
+                    strokeWidth={2}
+                    name="Bem-estar (1-5)"
+                    dot={{ fill: "#EC4899", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: "#EC4899", strokeWidth: 2 }}
+                    connectNulls={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
 
             {/* Mensagem quando não há dados */}
@@ -1538,7 +1556,10 @@ export function EvolutionSection({
               <div className="w-2 h-2 sm:w-3 sm:h-3 bg-purple-500 rounded-full"></div>
               Treinos Concluídos por Semana
             </h4>
-            <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+            <div
+              className="w-full"
+              style={{ minHeight: "200px", height: "200px" }}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={weeklyData}
@@ -1562,41 +1583,41 @@ export function EvolutionSection({
                     domain={[0, "dataMax + 1"]}
                     tick={{ fontSize: 8 }}
                   />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                  }}
-                  formatter={(value, name) => {
-                    if (name === "treinos")
-                      return [`${value} treinos`, "Treinos Realizados"];
-                    if (name === "meta")
-                      return [`${value} treinos`, "Meta Semanal"];
-                    return [value, name];
-                  }}
-                />
-                <Legend 
-                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
-                  iconSize={8}
-                />
-                <Bar
-                  dataKey="treinos"
-                  fill="#8B5CF6"
-                  radius={[4, 4, 0, 0]}
-                  name="Treinos Realizados"
-                  isAnimationActive={false}
-                />
-                <Bar
-                  dataKey="meta"
-                  fill="#E5E7EB"
-                  radius={[4, 4, 0, 0]}
-                  name="Meta Semanal"
-                  isAnimationActive={false}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }}
+                    formatter={(value, name) => {
+                      if (name === "treinos")
+                        return [`${value} treinos`, "Treinos Realizados"];
+                      if (name === "meta")
+                        return [`${value} treinos`, "Meta Semanal"];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: "10px", paddingTop: "10px" }}
+                    iconSize={8}
+                  />
+                  <Bar
+                    dataKey="treinos"
+                    fill="#8B5CF6"
+                    radius={[4, 4, 0, 0]}
+                    name="Treinos Realizados"
+                    isAnimationActive={false}
+                  />
+                  <Bar
+                    dataKey="meta"
+                    fill="#E5E7EB"
+                    radius={[4, 4, 0, 0]}
+                    name="Meta Semanal"
+                    isAnimationActive={false}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
 
             {/* Mensagem quando não há dados de atividade */}
@@ -1693,7 +1714,10 @@ export function EvolutionSection({
                 }
 
                 return (
-                  <div className="w-full" style={{ minHeight: '200px', height: '200px' }}>
+                  <div
+                    className="w-full"
+                    style={{ minHeight: "200px", height: "200px" }}
+                  >
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={progressData}
@@ -1717,51 +1741,54 @@ export function EvolutionSection({
                           domain={["dataMin - 2", "dataMax + 2"]}
                           tick={{ fontSize: 8 }}
                         />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                        }}
-                        formatter={(value, name) => {
-                          if (value === null || value === undefined)
-                            return ["-", name];
-                          if (name === "atual")
-                            return [
-                              `${Number(value).toFixed(1)} kg`,
-                              "Peso Atual",
-                            ];
-                          if (name === "meta")
-                            return [`${Number(value).toFixed(1)} kg`, "Meta"];
-                          return [value, name];
-                        }}
-                      />
-                      <Legend 
-                  wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
-                  iconSize={8}
-                />
-                      <Area
-                        type="monotone"
-                        dataKey="atual"
-                        stroke="#F59E0B"
-                        fill="#FEF3C7"
-                        strokeWidth={2}
-                        name="Peso Atual"
-                        connectNulls={false}
-                        isAnimationActive={false}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="meta"
-                        stroke="#10B981"
-                        fill="#D1FAE5"
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                        name="Meta"
-                        connectNulls={false}
-                        isAnimationActive={false}
-                      />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "8px",
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                          }}
+                          formatter={(value, name) => {
+                            if (value === null || value === undefined)
+                              return ["-", name];
+                            if (name === "atual")
+                              return [
+                                `${Number(value).toFixed(1)} kg`,
+                                "Peso Atual",
+                              ];
+                            if (name === "meta")
+                              return [`${Number(value).toFixed(1)} kg`, "Meta"];
+                            return [value, name];
+                          }}
+                        />
+                        <Legend
+                          wrapperStyle={{
+                            fontSize: "10px",
+                            paddingTop: "10px",
+                          }}
+                          iconSize={8}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="atual"
+                          stroke="#F59E0B"
+                          fill="#FEF3C7"
+                          strokeWidth={2}
+                          name="Peso Atual"
+                          connectNulls={false}
+                          isAnimationActive={false}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="meta"
+                          stroke="#10B981"
+                          fill="#D1FAE5"
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          name="Meta"
+                          connectNulls={false}
+                          isAnimationActive={false}
+                        />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>

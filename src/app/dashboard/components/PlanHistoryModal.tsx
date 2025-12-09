@@ -128,13 +128,15 @@ export function PlanHistoryModal({
   const exportToPDF = async (plan: PlanHistoryItem) => {
     try {
       // Buscar informações adicionais do usuário
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       const { data: userData } = await supabase
         .from("users")
         .select("full_name")
         .eq("id", user?.id)
         .maybeSingle();
-      
+
       // Buscar avaliação mais recente
       const { data: evaluation } = await supabase
         .from("user_evaluations")
@@ -151,7 +153,10 @@ export function PlanHistoryModal({
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
           age--;
         }
         idade = `${age} anos`;
@@ -160,11 +165,14 @@ export function PlanHistoryModal({
       // Formatar data da avaliação
       let dataAvaliacao = "Não informado";
       if (evaluation?.created_at) {
-        dataAvaliacao = new Date(evaluation.created_at).toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
+        dataAvaliacao = new Date(evaluation.created_at).toLocaleDateString(
+          "pt-BR",
+          {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }
+        );
       }
 
       const doc = new jsPDF();
@@ -231,11 +239,13 @@ export function PlanHistoryModal({
       // Informações do usuário no cabeçalho
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      const userName = userData?.full_name || user?.user_metadata?.full_name || "Usuário";
+      const userName =
+        userData?.full_name || user?.user_metadata?.full_name || "Usuário";
       doc.text(`Nome: ${userName}`, margin, 35);
       doc.text(`Idade: ${idade}`, margin + 80, 35);
       doc.text(`Data da Avaliação: ${dataAvaliacao}`, margin, 42);
-      const objetivo = plan.summary.objective || userProfile?.objetivo || "Não informado";
+      const objetivo =
+        plan.summary.objective || userProfile?.objetivo || "Não informado";
       doc.text(`Objetivo: ${objetivo}`, margin + 80, 42);
 
       yPosition = 60;
@@ -488,13 +498,13 @@ export function PlanHistoryModal({
     if (isOpen) {
       // Salvar a posição atual do scroll
       const scrollY = window.scrollY;
-      
+
       // Bloquear scroll do body
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
-      
+
       return () => {
         // Restaurar scroll do body
         document.body.style.position = "";
@@ -540,7 +550,13 @@ export function PlanHistoryModal({
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ scrollbarWidth: "thin", scrollbarColor: "#94a3b8 #f1f5f9" }}>
+          <div
+            className="flex-1 overflow-y-auto p-4 sm:p-6"
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "#94a3b8 #f1f5f9",
+            }}
+          >
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

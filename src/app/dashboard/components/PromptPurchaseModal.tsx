@@ -58,13 +58,13 @@ export function PromptPurchaseModal({
     if (isOpen) {
       // Salvar a posição atual do scroll
       const scrollY = window.scrollY;
-      
+
       // Bloquear scroll do body
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
-      
+
       return () => {
         // Restaurar scroll do body
         document.body.style.position = "";

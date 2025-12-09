@@ -54,87 +54,92 @@ function extractMacros(text: string): Array<{ name: string; value: string }> {
 
 // Lista de alimentos que devem ser contados em unidades (não pesados)
 // Apenas ovos devem ser contados em unidades, todos os outros alimentos devem ser pesados
-const UNIT_FOODS = [
-  'ovo', 'ovos'
-];
+const UNIT_FOODS = ["ovo", "ovos"];
 
 // Função para verificar se um alimento deve ser contado em unidades
 function shouldUseUnits(foodName: string): boolean {
   const foodLower = foodName.toLowerCase();
-  return UNIT_FOODS.some(unitFood => foodLower.includes(unitFood));
+  return UNIT_FOODS.some((unitFood) => foodLower.includes(unitFood));
 }
 
 // Função para normalizar e formatar quantidades
 // Se o alimento deve ser contado em unidades, mantém unidades
 // Se o alimento deve ser pesado, converte para gramas/kg
-function formatQuantity(quantity: string | undefined, foodName?: string): string | null {
+function formatQuantity(
+  quantity: string | undefined,
+  foodName?: string
+): string | null {
   if (!quantity) return null;
-  
+
   const qty = quantity.trim();
   const useUnits = foodName ? shouldUseUnits(foodName) : false;
-  
+
   // Se já está em formato de unidade (un, unidades, etc.), manter se for alimento de unidade
-  const unitMatch = qty.match(/(\d+(?:[.,]\d+)?)\s*(un|unidade|unidades|un\.)/i);
+  const unitMatch = qty.match(
+    /(\d+(?:[.,]\d+)?)\s*(un|unidade|unidades|un\.)/i
+  );
   if (unitMatch && useUnits) {
-    const num = parseFloat(unitMatch[1].replace(',', '.'));
-    const un = num === 1 ? 'unidade' : 'unidades';
+    const num = parseFloat(unitMatch[1].replace(",", "."));
+    const un = num === 1 ? "unidade" : "unidades";
     return `${Math.round(num)} ${un}`;
   }
-  
+
   // Se já está em formato de peso (g, kg, gramas, etc.)
-  const weightMatch = qty.match(/(\d+(?:[.,]\d+)?)\s*(g|kg|gramas?|quilogramas?)/i);
+  const weightMatch = qty.match(
+    /(\d+(?:[.,]\d+)?)\s*(g|kg|gramas?|quilogramas?)/i
+  );
   if (weightMatch) {
-    const num = parseFloat(weightMatch[1].replace(',', '.'));
+    const num = parseFloat(weightMatch[1].replace(",", "."));
     const unit = weightMatch[2].toLowerCase();
-    
+
     // Se é alimento de unidade (ovo) mas veio em peso, tentar converter para unidade aproximada
-    if (useUnits && unit.includes('g')) {
+    if (useUnits && unit.includes("g")) {
       // Aproximação: 1 ovo ~50g
-      if (foodName?.toLowerCase().includes('ovo')) {
+      if (foodName?.toLowerCase().includes("ovo")) {
         const units = Math.round(num / 50);
-        return units === 1 ? '1 unidade' : `${units} unidades`;
+        return units === 1 ? "1 unidade" : `${units} unidades`;
       }
     }
-    
+
     // Se está em kg, manter em kg
-    if (unit.includes('kg') || unit.includes('quilograma')) {
-      const kg = num.toFixed(num % 1 === 0 ? 0 : 1).replace('.', ',');
+    if (unit.includes("kg") || unit.includes("quilograma")) {
+      const kg = num.toFixed(num % 1 === 0 ? 0 : 1).replace(".", ",");
       return `${kg}kg`;
     }
-    
+
     // Se está em gramas e >= 1000, converter para kg
     if (num >= 1000) {
-      const kg = (num / 1000).toFixed(1).replace('.', ',');
+      const kg = (num / 1000).toFixed(1).replace(".", ",");
       return `${kg}kg`;
     }
-    
+
     // Caso contrário, manter em gramas
     const g = Math.round(num);
     return `${g}g`;
   }
-  
+
   // Tentar extrair apenas números (sem unidade)
   const numberMatch = qty.match(/(\d+(?:[.,]\d+)?)/);
   if (numberMatch) {
-    const num = parseFloat(numberMatch[1].replace(',', '.'));
-    
+    const num = parseFloat(numberMatch[1].replace(",", "."));
+
     // Se é alimento de unidade, usar unidades
     if (useUnits) {
-      const un = Math.round(num) === 1 ? 'unidade' : 'unidades';
+      const un = Math.round(num) === 1 ? "unidade" : "unidades";
       return `${Math.round(num)} ${un}`;
     }
-    
+
     // Se o número for >= 1000, converter para kg
     if (num >= 1000) {
-      const kg = (num / 1000).toFixed(1).replace('.', ',');
+      const kg = (num / 1000).toFixed(1).replace(".", ",");
       return `${kg}kg`;
     }
-    
+
     // Caso contrário, adicionar "g" para alimentos pesáveis
     const g = Math.round(num);
     return `${g}g`;
   }
-  
+
   // Se não conseguir normalizar, retornar como está
   return qty;
 }
@@ -673,13 +678,13 @@ export function PersonalizedPlanModal({
     if (isOpen) {
       // Salvar a posição atual do scroll
       const scrollY = window.scrollY;
-      
+
       // Bloquear scroll do body
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
-      
+
       return () => {
         // Restaurar scroll do body
         document.body.style.position = "";
@@ -735,13 +740,15 @@ export function PersonalizedPlanModal({
 
     try {
       // Buscar informações adicionais do usuário
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       const { data: userData } = await supabase
         .from("users")
         .select("full_name")
         .eq("id", user?.id)
         .maybeSingle();
-      
+
       // Buscar avaliação mais recente
       const { data: evaluation } = await supabase
         .from("user_evaluations")
@@ -758,7 +765,10 @@ export function PersonalizedPlanModal({
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
           age--;
         }
         idade = `${age} anos`;
@@ -767,11 +777,14 @@ export function PersonalizedPlanModal({
       // Formatar data da avaliação
       let dataAvaliacao = "Não informado";
       if (evaluation?.created_at) {
-        dataAvaliacao = new Date(evaluation.created_at).toLocaleDateString("pt-BR", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        });
+        dataAvaliacao = new Date(evaluation.created_at).toLocaleDateString(
+          "pt-BR",
+          {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          }
+        );
       }
 
       const doc = new jsPDF();
@@ -838,11 +851,16 @@ export function PersonalizedPlanModal({
       // Informações do usuário no cabeçalho
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      const userName = userData?.full_name || user?.user_metadata?.full_name || "Usuário";
+      const userName =
+        userData?.full_name || user?.user_metadata?.full_name || "Usuário";
       doc.text(`Nome: ${userName}`, margin, 35);
       doc.text(`Idade: ${idade}`, margin + 80, 35);
       doc.text(`Data da Avaliação: ${dataAvaliacao}`, margin, 42);
-      doc.text(`Objetivo: ${userProfile?.objetivo || "Não informado"}`, margin + 80, 42);
+      doc.text(
+        `Objetivo: ${userProfile?.objetivo || "Não informado"}`,
+        margin + 80,
+        42
+      );
 
       yPosition = 60;
       doc.setTextColor(0, 0, 0);
@@ -1135,7 +1153,9 @@ export function PersonalizedPlanModal({
           {/* Header */}
           <div className="bg-gray-800 px-4 sm:px-6 py-4 text-white relative">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pr-8 sm:pr-0">
-              <h3 className={`${typography.heading.h2} text-white text-lg sm:text-xl`}>
+              <h3
+                className={`${typography.heading.h2} text-white text-lg sm:text-xl`}
+              >
                 Seu Plano Personalizado
               </h3>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -1213,7 +1233,13 @@ export function PersonalizedPlanModal({
           </div>
 
           {/* Content */}
-          <div className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#94a3b8 #f1f5f9" }}>
+          <div
+            className="p-4 sm:p-6 max-h-[70vh] overflow-y-auto"
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "#94a3b8 #f1f5f9",
+            }}
+          >
             {/* Análise */}
             {validActiveTab === "analysis" && (
               <div className="space-y-6">
@@ -1646,11 +1672,20 @@ export function PersonalizedPlanModal({
                                             <span className="text-gray-900 font-medium">
                                               {option.food || option.name}
                                             </span>
-                                            {option.quantity && formatQuantity(option.quantity, option.food || option.name) && (
-                                              <span className="text-gray-600 ml-2 font-medium">
-                                                ({formatQuantity(option.quantity, option.food || option.name)})
-                                              </span>
-                                            )}
+                                            {option.quantity &&
+                                              formatQuantity(
+                                                option.quantity,
+                                                option.food || option.name
+                                              ) && (
+                                                <span className="text-gray-600 ml-2 font-medium">
+                                                  (
+                                                  {formatQuantity(
+                                                    option.quantity,
+                                                    option.food || option.name
+                                                  )}
+                                                  )
+                                                </span>
+                                              )}
                                             {option.calories && (
                                               <span className="text-gray-500 text-sm ml-2">
                                                 - {option.calories} kcal
@@ -1812,11 +1847,20 @@ export function PersonalizedPlanModal({
                                       <span className="text-gray-900 font-medium">
                                         {food.name}
                                       </span>
-                                      {food.quantity && formatQuantity(food.quantity, food.name) && (
-                                        <span className="text-gray-600 ml-2 font-medium">
-                                          ({formatQuantity(food.quantity, food.name)})
-                                        </span>
-                                      )}
+                                      {food.quantity &&
+                                        formatQuantity(
+                                          food.quantity,
+                                          food.name
+                                        ) && (
+                                          <span className="text-gray-600 ml-2 font-medium">
+                                            (
+                                            {formatQuantity(
+                                              food.quantity,
+                                              food.name
+                                            )}
+                                            )
+                                          </span>
+                                        )}
                                       {food.calories && (
                                         <span className="text-gray-500 text-sm ml-2">
                                           - {food.calories} kcal

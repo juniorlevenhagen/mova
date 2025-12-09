@@ -17,7 +17,9 @@ export function DashboardHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
       <div className="flex-1 min-w-0">
-        <h1 className={`${typography.heading.h1} ${colors.text.primary} mb-2 break-words`}>
+        <h1
+          className={`${typography.heading.h1} ${colors.text.primary} mb-2 break-words`}
+        >
           Olá, {user.full_name}!
         </h1>
         <p className={`${typography.body.normal} ${colors.text.secondary}`}>

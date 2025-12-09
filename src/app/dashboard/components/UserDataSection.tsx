@@ -770,7 +770,9 @@ export function UserDataSection({
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="break-words">Upload em: {formatDate(evaluation.upload_date)}</span>
+                    <span className="break-words">
+                      Upload em: {formatDate(evaluation.upload_date)}
+                    </span>
                   </p>
                 </div>
               </div>

@@ -1611,20 +1611,20 @@ O campo deve conter:
 - recommendations: recomendações específicas (incluindo objetivo, orientações de aplicação e resumo em bloco JSON de cardio).
 - progression: como progredir o treino ao longo das semanas.
 
-📦 NO FINAL DO CAMPO `recommendations`, inclua SEMPRE um bloco JSON de resumo no seguinte formato (como texto, mas JSON válido):
+NO FINAL DO CAMPO recommendations, inclua SEMPRE um bloco JSON de resumo no seguinte formato (como texto, mas JSON válido):
 
 {
   "cardio": {
     "objetivo": "<descrever objetivo principal do cardio (ex.: emagrecimento, condicionamento, saúde geral, performance)>",
     "protocolo": "<descrever o protocolo principal (ex.: contínuo em Z2 40min 4x/sem, HIIT 4x4 em Z4, etc.)>",
-    "bpm_alvo": "<faixa de FC alvo em bpm com base na FCmáx calculada (ex.: 130-145 bpm – Z2)>",
+    "bpm_alvo": "<faixa de FC alvo em bpm com base na FCmáx calculada (ex.: 130-145 bpm em Z2)>",
     "frequencia": "<frequência semanal do cardio (ex.: 3x/semana, 4x/semana)>",
-    "descricao": "<resumo em 1–3 frases explicando como o aluno deve aplicar esse cardio junto com a musculação>"
+    "descricao": "<resumo em 1-3 frases explicando como o aluno deve aplicar esse cardio junto com a musculação>"
   }
 }
 
 ⚠️ IMPORTANTE:
-- Esse bloco deve estar DENTRO do campo `recommendations` (como texto), não como campo novo fora de aerobicTraining.
+- Esse bloco deve estar DENTRO do campo recommendations (como texto), não como campo novo fora de aerobicTraining.
 - O JSON deve ser bem formatado para que o sistema possa extraí-lo facilmente se necessário.
 
 Exemplo de estrutura esperada:

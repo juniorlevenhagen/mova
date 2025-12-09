@@ -213,7 +213,11 @@ export async function POST(request: NextRequest) {
                 quantity: "150g",
                 calories: 250,
               },
-              { food: "Arroz integral cozido", quantity: "150g", calories: 180 },
+              {
+                food: "Arroz integral cozido",
+                quantity: "150g",
+                calories: 180,
+              },
               { food: "Salada verde", quantity: "100g", calories: 20 },
             ],
             timing: "12:00-13:00",

@@ -46,7 +46,8 @@ export function TrialAlert({ trialStatus, onUpgrade }: TrialAlertProps) {
             Sem prompts disponíveis
           </h3>
           <p className="text-red-700 text-sm mb-3">
-            Você não possui prompts disponíveis. Adquira prompts para gerar novos planos personalizados quando quiser.
+            Você não possui prompts disponíveis. Adquira prompts para gerar
+            novos planos personalizados quando quiser.
           </p>
           <button
             onClick={handleUpgrade}

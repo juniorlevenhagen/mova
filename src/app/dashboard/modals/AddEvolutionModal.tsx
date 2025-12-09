@@ -92,13 +92,13 @@ export function AddEvolutionModal({
     if (isOpen) {
       // Salvar a posição atual do scroll
       const scrollY = window.scrollY;
-      
+
       // Bloquear scroll do body
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
       document.body.style.overflow = "hidden";
-      
+
       return () => {
         // Restaurar scroll do body
         document.body.style.position = "";
@@ -129,7 +129,9 @@ export function AddEvolutionModal({
             }}
           >
             <div className="relative mb-4 pr-8 sm:pr-0">
-              <h3 className={`${typography.heading.h3} ${colors.text.primary} text-lg sm:text-xl md:text-2xl`}>
+              <h3
+                className={`${typography.heading.h3} ${colors.text.primary} text-lg sm:text-xl md:text-2xl`}
+              >
                 Adicionar Evolução Manual
               </h3>
               {/* Botão X no canto superior direito */}
@@ -347,7 +349,9 @@ export function AddEvolutionModal({
                       <option value="Sedentário">Sedentário</option>
                       <option value="Moderado">Moderado</option>
                       <option value="Atleta">Atleta</option>
-                      <option value="Atleta Alto Rendimento">Atleta Alto Rendimento</option>
+                      <option value="Atleta Alto Rendimento">
+                        Atleta Alto Rendimento
+                      </option>
                     </select>
                   </div>
 

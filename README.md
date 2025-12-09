@@ -87,6 +87,9 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=sua_chave_publica
 STRIPE_SECRET_KEY=sua_chave_secreta
 STRIPE_WEBHOOK_SECRET=sua_chave_webhook
 
+# Mercado Pago (para pagamentos PIX)
+MERCADOPAGO_ACCESS_TOKEN=sua_access_token_mercadopago
+
 # Gmail (para envio de emails)
 GMAIL_USER=seu_email@gmail.com
 GMAIL_APP_PASSWORD=sua_senha_de_app

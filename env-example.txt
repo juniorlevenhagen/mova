@@ -9,6 +9,17 @@ OPENAI_API_KEY=your_openai_api_key_here
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
 
+# Stripe Configuration
+# Obtenha essas informações no painel do Stripe
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=sua_chave_publica_stripe
+STRIPE_SECRET_KEY=sua_chave_secreta_stripe
+STRIPE_WEBHOOK_SECRET=sua_chave_webhook_stripe
+
+# Mercado Pago Configuration
+# Obtenha essas informações no painel do Mercado Pago
+# Acesse: https://www.mercadopago.com.br/developers/panel/app
+MERCADOPAGO_ACCESS_TOKEN=sua_access_token_mercadopago
+
 # Emails de Contato
 # Todos os emails são enviados para o mesmo endereço por padrão
 # Se não configurado, usa: juniorlevenhagen@gmail.com

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { PixPaymentModal } from "./PixPaymentModal";
 
 interface PromptPurchaseModalProps {
   isOpen: boolean;
@@ -13,10 +14,31 @@ export function PromptPurchaseModal({
   onClose,
 }: PromptPurchaseModalProps) {
   const [loading, setLoading] = useState<string | null>(null); // 'single' | 'triple' | null
+  const [selectedType, setSelectedType] = useState<"single" | "triple" | null>(
+    null
+  );
+  const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+  const [showPixModal, setShowPixModal] = useState(false);
 
   const handlePurchase = async (type: "single" | "triple") => {
+    setSelectedType(type);
+    setShowPaymentMethod(true);
+  };
+
+  const handlePaymentMethod = async (method: "card" | "pix") => {
+    if (method === "card") {
+      await handleCardPayment();
+    } else {
+      setShowPixModal(true);
+      setShowPaymentMethod(false);
+    }
+  };
+
+  const handleCardPayment = async () => {
+    if (!selectedType) return;
+
     try {
-      setLoading(type);
+      setLoading(selectedType);
 
       // Obter token de autenticação
       const {
@@ -35,7 +57,7 @@ export function PromptPurchaseModal({
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          type: type === "single" ? "prompt_single" : "prompt_triple",
+          type: selectedType === "single" ? "prompt_single" : "prompt_triple",
         }),
       });
 
@@ -51,7 +73,19 @@ export function PromptPurchaseModal({
       console.error("Erro ao iniciar checkout:", error);
       alert("Erro ao processar pagamento. Tente novamente.");
       setLoading(null);
+      setShowPaymentMethod(false);
+      setSelectedType(null);
     }
+  };
+
+  const handlePixSuccess = () => {
+    // Recarregar a página ou atualizar estado
+    window.location.reload();
+  };
+
+  const handleBack = () => {
+    setShowPaymentMethod(false);
+    setSelectedType(null);
   };
 
   useEffect(() => {
@@ -72,11 +106,140 @@ export function PromptPurchaseModal({
         document.body.style.width = "";
         document.body.style.overflow = "";
         window.scrollTo(0, scrollY);
+        // Resetar estado ao fechar
+        setShowPaymentMethod(false);
+        setSelectedType(null);
       };
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // Modal de seleção de método de pagamento
+  if (showPaymentMethod && selectedType) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative">
+          <button
+            onClick={handleBack}
+            className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Voltar"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+
+          <h3 className="text-2xl font-semibold text-gray-900 mb-6">
+            Escolha a forma de pagamento
+          </h3>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => handlePaymentMethod("card")}
+              disabled={loading !== null}
+              className="w-full px-6 py-4 border-2 border-gray-200 rounded-lg hover:border-black transition-all duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">Cartão de Crédito/Débito</p>
+                  <p className="text-sm text-gray-600">Via Stripe</p>
+                </div>
+              </div>
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => handlePaymentMethod("pix")}
+              disabled={loading !== null}
+              className="w-full px-6 py-4 border-2 border-gray-200 rounded-lg hover:border-black transition-all duration-200 flex items-center justify-between disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold text-gray-900">PIX</p>
+                  <p className="text-sm text-gray-600">Aprovação instantânea</p>
+                </div>
+              </div>
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={handleBack}
+              className="text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -337,6 +500,17 @@ export function PromptPurchaseModal({
           </button>
         </div>
       </div>
+      {showPixModal && selectedType && (
+        <PixPaymentModal
+          isOpen={showPixModal}
+          onClose={() => {
+            setShowPixModal(false);
+            onClose();
+          }}
+          purchaseType={selectedType}
+          onPaymentSuccess={handlePixSuccess}
+        />
+      )}
     </div>
   );
 }

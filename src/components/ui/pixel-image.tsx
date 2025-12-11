@@ -41,7 +41,7 @@ export const PixelImage = ({
   customGrid,
   className,
 }: PixelImageProps) => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
   const [showColor, setShowColor] = useState(!grayscaleAnimation);
 
   const MIN_GRID = 1;
@@ -65,14 +65,23 @@ export const PixelImage = ({
   }, [customGrid, grid]);
 
   useEffect(() => {
-    // Garantir que a imagem esteja visível imediatamente
-    setIsVisible(true);
+    // Disparar animação após o componente montar usando requestAnimationFrame
+    // para garantir que o DOM esteja pronto e permitir a transição
+    const frame = requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
+    
     if (grayscaleAnimation) {
       const colorTimeout = setTimeout(() => {
         setShowColor(true);
       }, colorRevealDelay);
-      return () => clearTimeout(colorTimeout);
+      return () => {
+        cancelAnimationFrame(frame);
+        clearTimeout(colorTimeout);
+      };
     }
+    
+    return () => cancelAnimationFrame(frame);
   }, [colorRevealDelay, grayscaleAnimation]);
 
   // Função determinística para gerar valores pseudo-aleatórios consistentes entre servidor e cliente

@@ -61,17 +61,26 @@ export function PromptPurchaseModal({
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        throw new Error("Erro ao criar sessão de checkout");
+        const errorMessage = data.error || "Erro ao criar sessão de checkout";
+        console.error("Erro na resposta da API:", errorMessage, data);
+        throw new Error(errorMessage);
       }
 
-      const { url } = await response.json();
+      if (!data.url) {
+        console.error("URL não encontrada na resposta:", data);
+        throw new Error("URL de checkout não disponível");
+      }
 
       // Redirecionar para Stripe Checkout
-      window.location.href = url;
+      window.location.href = data.url;
     } catch (error) {
       console.error("Erro ao iniciar checkout:", error);
-      alert("Erro ao processar pagamento. Tente novamente.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Erro desconhecido";
+      alert(`Erro ao processar pagamento: ${errorMessage}. Tente novamente.`);
       setLoading(null);
       setShowPaymentMethod(false);
       setSelectedType(null);
@@ -168,7 +177,7 @@ export function PromptPurchaseModal({
                 </div>
                 <div className="text-left">
                   <p className="font-semibold text-gray-900">
-                    Cartão·de·Crédito/Débito
+                    Cartão de Crédito/Débito
                   </p>
                   <p className="text-sm text-gray-600">Via Stripe</p>
                 </div>
@@ -304,7 +313,7 @@ export function PromptPurchaseModal({
                 </span>
               </div>
               <div className="flex items-baseline">
-                <span className="text-4xl font-bold text-black">R$ 0,01</span>
+                <span className="text-4xl font-bold text-black">R$ 0,50</span>
                 <span className="text-gray-600 text-sm ml-2">por prompt</span>
               </div>
             </div>

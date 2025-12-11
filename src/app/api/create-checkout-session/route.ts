@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (purchaseType === "prompt_single") {
-      // Compra de 1 prompt - R$ 17,99
+      // Compra de 1 prompt - R$ 0,01 (valor mínimo do Stripe é 50 centavos, usando 50)
       lineItems = [
         {
           price_data: {
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
               name: "Mova+ - 1 Prompt",
               description: "1 prompt para gerar plano personalizado",
             },
-            unit_amount: 1, // R$ 17,99 em centavos
+            unit_amount: 50, // Valor mínimo do Stripe (50 centavos)
           },
           quantity: 1,
         },

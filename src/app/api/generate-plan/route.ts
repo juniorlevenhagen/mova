@@ -1270,19 +1270,23 @@ Use esta tabela para definir a estratégia correta:
 | < 18.5 | Manter | Manutenção (TDEE) | Equilíbrio força/cardio | 1.2-1.6g/kg |
 | < 18.5 | Condicionamento | Manutenção ou leve superávit | Endurance + força | 1.4-1.8g/kg |
 | 18.5-24.9 | Ganhar Massa | Superávit leve (TDEE + 200-400 kcal) | Força progressiva | 1.6-2.2g/kg |
-| 18.5-24.9 | Emagrecer | Déficit moderado (TDEE - 300-500 kcal) | HIIT + força | 1.6-2.0g/kg |
+| 18.5-24.9 | Emagrecer | Déficit moderado a alto (TDEE - 400-600 kcal) | HIIT + força | 1.6-2.0g/kg |
+| 18.5-24.9 | Definição | Déficit leve (TDEE - 250-350 kcal) | Força volume alto | 2.0-2.5g/kg |
 | 18.5-24.9 | Manter | Manutenção (TDEE) | Equilíbrio força/cardio | 1.2-1.6g/kg |
 | 18.5-24.9 | Condicionamento | Manutenção ou leve déficit | Endurance + força | 1.4-1.8g/kg |
 | 25-29.9 | Ganhar Massa | 🔄 RECOMPOSIÇÃO: Déficit (TDEE - 300-500 kcal) | Força progressiva | 2.2-2.5g/kg |
-| 25-29.9 | Emagrecer | Déficit moderado (TDEE - 300-500 kcal) | HIIT + força | 1.6-2.0g/kg |
+| 25-29.9 | Emagrecer | Déficit moderado a alto (TDEE - 400-600 kcal) | HIIT + força | 1.6-2.0g/kg |
+| 25-29.9 | Definição | Déficit leve (TDEE - 250-350 kcal) | Força volume alto | 2.0-2.5g/kg |
 | 25-29.9 | Manter | Manutenção ou leve déficit (TDEE - 100-200 kcal) | Força + cardio | 1.4-1.8g/kg |
 | 25-29.9 | Condicionamento | Déficit leve (TDEE - 200-300 kcal) | Endurance + força | 1.6-2.0g/kg |
 | 30-34.9 | Ganhar Massa | 🔄 RECOMPOSIÇÃO: Déficit (TDEE - 20-25%) | Força progressiva | 2.2-2.5g/kg |
-| 30-34.9 | Emagrecer | Déficit moderado (TDEE - 20-25%) | HIIT + força | 1.6-2.0g/kg |
+| 30-34.9 | Emagrecer | Déficit moderado a alto (TDEE - 400-600 kcal ou 20-25%) | HIIT + força | 1.6-2.0g/kg |
+| 30-34.9 | Definição | Déficit leve (TDEE - 250-350 kcal) | Força volume alto | 2.0-2.5g/kg |
 | 30-34.9 | Manter | Déficit leve (TDEE - 10-15%) | Força + cardio | 1.6-2.0g/kg |
 | 30-34.9 | Condicionamento | Déficit moderado (TDEE - 20-25%) | Endurance + força | 1.6-2.0g/kg |
 | ≥ 35 | Ganhar Massa | 🔄 RECOMPOSIÇÃO: Déficit (TDEE - 20-25%) | Força progressiva | 2.2-2.5g/kg |
-| ≥ 35 | Emagrecer | Déficit conservador (TDEE - 20-25%) | Força + cardio moderado | 1.6-2.0g/kg |
+| ≥ 35 | Emagrecer | Déficit conservador a moderado (TDEE - 400-600 kcal ou 20-25%) | Força + cardio moderado | 1.6-2.0g/kg |
+| ≥ 35 | Definição | Déficit leve (TDEE - 250-350 kcal) | Força volume moderado | 2.0-2.5g/kg |
 | ≥ 35 | Manter | Déficit leve (TDEE - 15-20%) | Força + cardio leve | 1.6-2.0g/kg |
 | ≥ 35 | Condicionamento | Déficit conservador (TDEE - 20-25%) | Endurance + força | 1.6-2.0g/kg |
 
@@ -1295,8 +1299,9 @@ Use esta tabela para definir a estratégia correta:
 ### 🎯 ESTRATÉGIAS DETALHADAS POR OBJETIVO:
 
 #### 🎯 EMAGRECIMENTO:
-- Déficit calórico controlado (respeitando limites de segurança)
+- Déficit calórico moderado a alto (TDEE - 400-600 kcal)
 - **ATIVIDADE CARDIOVASCULAR OBRIGATÓRIA**: 3-5x por semana, moderada a intensa (30-60min)
+- Treinos com volume moderado
 - Treinos de alta intensidade (HIIT, cardio) + força para preservar massa
 - **Cardio é etapa FUNDAMENTAL junto à alimentação** - essencial para déficit calórico e perda de gordura
 - Foco em queima de gordura preservando massa magra
@@ -1308,6 +1313,19 @@ Use esta tabela para definir a estratégia correta:
   - IMC ≥ 35: 15-20 repetições, 2-3 séries (máxima segurança, técnica perfeita)
   - ⚠️ NUNCA prescreva menos de 10 repetições para IMC ≥ 30
   - ⚠️ Para obesidade grau III (IMC ≥ 40): priorizar exercícios seguros, evitar sobrecarga articular
+
+#### 🎯 DEFINIÇÃO (diferente de emagrecimento):
+- Déficit calórico leve (TDEE - 250-350 kcal)
+- Proteína mais alta (2.0-2.5g/kg) para preservação máxima de massa magra
+- Treinos com volume ALTO e intensidade controlada
+- **ATIVIDADE CARDIOVASCULAR**: leve a moderada, 2-3x por semana (30-45min)
+- Foco em preservar/aumentar massa magra enquanto reduz gordura corporal
+- Progressão de força mantida (não reduzir carga)
+- **PRESCRIÇÃO DE FORÇA BASEADA EM IMC:**
+  - IMC < 30: 8-12 repetições, 3-5 séries (volume alto)
+  - IMC 30-34.9: 10-15 repetições, 3-4 séries (volume moderado-alto)
+  - IMC ≥ 35: 12-18 repetições, 3-4 séries (volume moderado)
+  - ⚠️ Volume semanal maior que emagrecimento para preservar massa
 
 #### 💪 GANHAR MASSA MUSCULAR:
 - **IMC < 25**: Superávit calórico moderado (TDEE + 200-400 kcal)
@@ -1376,24 +1394,193 @@ Use esta tabela para definir a estratégia correta:
    - **Para ganhar massa**: Cardio leve/moderado (2-3x/semana)
    - **Para emagrecer**: Cardio moderado/intenso (3-5x/semana) - etapa fundamental junto à alimentação
 
-### 🏋️ PRESCRIÇÃO DE TREINO DE FORÇA BASEADA EM NÍVEL DE ATIVIDADE E IMC:
+=====================================================================
+### INTERPRETAÇÃO AUTOMÁTICA DO NÍVEL DE MUSCULAÇÃO (OBRIGATÓRIO)
 
-⚠️ **CRÍTICO: A prescrição de treino DEVE considerar TANTO o nível de atividade quanto o IMC para segurança e eficácia!**
+⚠️ **CRÍTICO: Nível de Atividade ≠ Nível de Musculação**
 
-#### 📊 DIRETRIZES POR NÍVEL DE ATIVIDADE:
+**NÍVEL DE ATIVIDADE** (Sedentário, Moderado, Atleta, Alto Rendimento):
+- Usado APENAS para calcular TDEE (gasto energético total)
+- Reflete atividade física geral do usuário
 
-**SEDENTÁRIO:**
+**NÍVEL DE MUSCULAÇÃO** (Iniciante, Intermediário, Avançado):
+- Usado APENAS para prescrição de exercícios, volume e complexidade
+- Deve ser determinado automaticamente pelos critérios abaixo
+
+**DEFINA AUTOMATICAMENTE O NÍVEL DE MUSCULAÇÃO:**
+
+**INICIANTE:**
+- nível de atividade = Sedentário ou Moderado
+- OU frequência <= 3x/semana
+- OU muito tempo parado (sem treino há mais de 3 meses)
+- OU limitações/dor significativas
+- OU primeira vez treinando musculação
+- OU idade >= 60 anos (IDOSO - sempre iniciante/moderado mesmo com experiência)
+
+**INTERMEDIÁRIO:**
+- nível de atividade = Atleta
+- OU frequência 4-5x/semana
+- OU treina há pelo menos 6 meses consistentemente
+- OU sem limitações significativas
+- OU evolução corporal positiva recente
+
+**AVANÇADO:**
+- nível = Atleta Alto Rendimento
+- OU frequência 6-7x/semana
+- OU excelente evolução recente (ganho de massa/força consistente)
+- OU histórico consistente de treino (2+ anos)
+- OU domina técnica de exercícios compostos avançados
+
+⚠️ **REGRA DE OURO:** Se o nível de atividade for "Atleta" mas o usuário for iniciante em musculação, use as diretrizes de INICIANTE para prescrição de exercícios.
+
+=====================================================================
+### CLASSIFICAÇÃO DOS GRUPOS MUSCULARES (OBRIGATÓRIO)
+
+**MÚSCULOS GRANDES:**
+- Peito
+- Costas
+- Quadríceps
+- Posterior de coxa
+- Glúteos
+- Ombros (deltoide completo)
+
+**MÚSCULOS PEQUENOS:**
+- Bíceps
+- Tríceps
+- Panturrilha
+- Abdômen
+
+=====================================================================
+### QUANTIDADE DE EXERCÍCIOS (OBRIGATÓRIO)
+
+⚠️ **CRÍTICO: A IA NUNCA deve retornar apenas 1 exercício para músculo grande (exceto iniciantes/idosos/com limitações).**
+
+**INICIANTE / IDOSO / COM LIMITAÇÕES:**
+- ⚠️ **REGRA ESPECIAL:** IGNORE qualquer regra de quantidade por grupo muscular
+- Use APENAS o volume total: 4-6 exercícios por treino
+- 1 exercício por grupo grande é suficiente
+- 0-1 exercícios para grupos pequenos (opcional)
+- Full body permitido
+
+**INTERMEDIÁRIO:**
+- Grandes: 3-4 exercícios por grupo
+- Pequenos: 2-3 exercícios por grupo
+- Total por treino: 6-10 exercícios (respeitando tempo disponível)
+- Volume semanal obrigatório:
+  - Músculos grandes (peito, costas, pernas): 12-16 séries por semana
+  - Músculos médios (ombros): 10-14 séries por semana
+  - Músculos pequenos (bíceps, tríceps, panturrilha, abdômen): 8-12 séries por semana
+
+**AVANÇADO:**
+- Grandes: 4-6 exercícios por grupo
+- Pequenos: 3-4 exercícios por grupo
+- Total por treino: 10-16 exercícios (respeitando tempo disponível)
+- Frequência ideal: 2x/semana por grupo muscular
+- Volume semanal obrigatório:
+  - Grandes: 14-22 séries semanais
+  - Pequenos: 10-16 séries semanais
+
+**ADAPTAÇÃO POR TEMPO DISPONÍVEL:**
+- 30-40 min → treinos compactos (6-8 exercícios totais)
+- 45-60 min → treinos completos (8-12 exercícios totais)
+- 60-90 min → alto volume (12-16 exercícios totais)
+
+⚠️ **PRIORIDADE:** Se houver conflito entre tempo disponível e nível de musculação, priorize o nível de musculação para segurança, mas ajuste o número de exercícios dentro dos limites do tempo.
+
+=====================================================================
+### SINERGIAS E COMBINAÇÕES (OBRIGATÓRIO)
+
+**PERMITIDO:**
+- Peito + tríceps (sinergia natural)
+- Costas + bíceps (sinergia natural)
+- Pernas completas ou divididas (quadríceps + posterior + glúteos)
+- Ombro separado OU com costas (Pull)
+- Abdômen pode ser treinado em qualquer dia
+
+**EVITAR:**
+- Peito + ombro no mesmo dia (deltoide anterior já é muito ativado em supino)
+- Ombro no dia seguinte de peito (sobrecarga do deltoide anterior)
+- Overlap excessivo de tríceps/bíceps (evitar treinar ambos em dias consecutivos se volume alto)
+
+**DIVISÕES RECOMENDADAS POR FREQUÊNCIA:**
+- 2x/semana: Full Body ou Upper/Lower
+- 3x/semana: Full Body ou Upper/Lower + 1 dia
+- 4x/semana: Upper/Lower 2x ou Push/Pull/Legs + 1 dia
+- 5x/semana: Push/Pull/Legs + Upper/Lower ou PPL + 2 dias
+- 6-7x/semana: PPL 2x ou divisões especializadas
+
+=====================================================================
+### SELEÇÃO DE EXERCÍCIOS (OBRIGATÓRIO)
+
+**SEMPRE incluir diversidade entre:**
+- Multiarticulares (agachamento, supino, remada, desenvolvimento)
+- Isoladores (rosca direta, tríceps pulley, extensora, flexora)
+- Máquina (leg press, cadeira extensora, puxada alta)
+- Peso livre (agachamento livre, supino com barra, remada curvada)
+
+**ESCOLHA ADEQUADA AO LOCAL:**
+- **Casa**: halteres, elásticos, peso corporal, kettlebells
+- **Academia**: máquinas, compostos, alta variedade, barras e halteres
+- **Ambos**: misto (priorizar academia quando disponível)
+- **Ar livre**: funcional + calistenia + corrida
+
+**NUNCA prescrever:**
+- Exercícios que requerem equipamentos não disponíveis
+- Movimentos de alto risco sem progressão adequada
+- Exercícios que causam dor (verificar limitações do usuário)
+
+=====================================================================
+### PROGRESSÃO (OBRIGATÓRIO)
+
+**SEMPRE aplicar progressão estruturada:**
+
+**REGRA PADRÃO DE PROGRESSÃO:**
+
+**EXERCÍCIOS COMPOSTOS (multiarticulares):**
+- Quando atingir o topo da faixa de repetições em TODAS as séries, aumente a carga em 2-5%
+- Exemplo: Se alvo é 8-12 reps e fez 12 reps em todas as séries com 50kg, próxima série = 52.5kg (5% de aumento)
+- Após aumentar carga, volte ao início da faixa (ex: 8 reps) e suba novamente até o topo
+
+**EXERCÍCIOS ISOLADOS:**
+- Quando atingir o topo da faixa de repetições em TODAS as séries, aumente a carga em 1-2%
+- Exemplo: Se alvo é 8-12 reps e fez 12 reps em todas as séries com 10kg, próxima série = 10.5kg ou 11kg
+- Após aumentar carga, volte ao início da faixa e suba novamente
+
+⚠️ **CRÍTICO:** NÃO utilize progressão por reps extras (adicionar 13-14 reps antes de aumentar peso). A progressão deve ser SEMPRE por aumento de carga após atingir o topo da faixa em todas as séries. A IA pode definir progressão por reps extras apenas como variação especial e estratégica, mas não como regra padrão.
+
+**MANUTENÇÃO DE EXERCÍCIOS:**
+- Manter exercícios por 4-6 semanas antes de trocar
+- Trocar apenas se: estagnação, lesão, ou necessidade de variação estratégica
+
+**PROGRESSÃO SEMANAL:**
+- Semana 1-2: Adaptação (focar em técnica)
+- Semana 3-4: Progressão de carga (2-5% compostos, 1-2% isolados)
+- Semana 5-6: Consolidação (manter carga, melhorar execução)
+- Após 6 semanas: Reavaliar e ajustar se necessário
+
+### 🏋️ PRESCRIÇÃO DE TREINO DE FORÇA BASEADA EM NÍVEL DE MUSCULAÇÃO E IMC:
+
+⚠️ **CRÍTICO: Use o NÍVEL DE MUSCULAÇÃO (determinado automaticamente acima) para prescrição de exercícios, NÃO o nível de atividade!**
+
+⚠️ **O nível de atividade é usado APENAS para calcular TDEE. O nível de musculação é usado para prescrição de treino.**
+
+#### 📊 DIRETRIZES POR NÍVEL DE MUSCULAÇÃO:
+
+**INICIANTE (inclui IDOSOS 60+ anos):**
 - ⚠️ Foco em exercícios BÁSICOS e EFICIENTES
 - Priorizar exercícios MULTIARTICULARES (agachamento, supino, remada, desenvolvimento)
 - Volume moderado: 2-3 séries por exercício
 - Repetições: 8-15 (foco em técnica e adaptação)
 - Exercícios simples e seguros (evitar movimentos complexos)
-- Descanso: 60-90 segundos entre séries
+- Descanso: 60-90 segundos entre séries (idosos: 90-120 segundos)
 - Progressão gradual e conservadora
-- ⚠️ NÃO prescrever exercícios avançados ou isolados complexos
+- ⚠️ NUNCA prescrever exercícios avançados ou isolados complexos
+- ⚠️ NUNCA prescrever técnicas avançadas (drop sets, rest-pause, etc.)
+- Total de exercícios: 4-6 por treino (regra especial: ignorar quantidade por grupo)
+- ⚠️ Para IDOSOS (60+): volume reduzido, mais segurança articular, maior tempo de descanso
 - Exemplos adequados: Agachamento livre, Supino reto, Remada curvada, Desenvolvimento com halteres
 
-**MODERADO:**
+**INTERMEDIÁRIO:**
 - Exercícios BÁSICOS a INTERMEDIÁRIOS
 - Priorizar exercícios MULTIARTICULARES com alguns isolados estratégicos
 - Volume moderado: 3-4 séries por exercício
@@ -1401,38 +1588,30 @@ Use esta tabela para definir a estratégia correta:
 - Exercícios seguros com progressão moderada
 - Descanso: 60-120 segundos entre séries
 - Pode incluir alguns exercícios isolados complementares
+- Pode usar técnicas avançadas com moderação (apenas se domina técnica)
+- Total de exercícios: 6-10 por treino
 - Exemplos adequados: Agachamento, Supino, Remada, Desenvolvimento, Rosca direta, Tríceps pulley
 
-**ATLETA:**
+**AVANÇADO:**
 - Exercícios INTERMEDIÁRIOS a AVANÇADOS
-- Maior QUANTIDADE de exercícios (5-7 exercícios por treino)
-- Maior VOLUME: 3-5 séries por exercício
-- Repetições variadas: 6-12 (força/hipertrofia)
+- Maior QUANTIDADE de exercícios (10-16 exercícios por treino, respeitando tempo)
+- Maior VOLUME: 3-5 séries por exercício (4-6 para grupos prioritários)
+- Repetições variadas: 6-12 (força/hipertrofia) ou conforme IMC
 - Exercícios COMPOSTOS e avançados são adequados
 - Maior FADIGA MUSCULAR (volume total maior)
-- Descanso: 90-180 segundos entre séries
-- Pode incluir técnicas avançadas (drop set, rest-pause, etc.)
+- Descanso: 90-180 segundos entre séries (120-240 para compostos pesados)
+- Pode incluir técnicas avançadas (drop set, rest-pause, supersets, etc.)
 - Exercícios isolados para hipertrofia específica
+- Volume semanal obrigatório: 14-22 séries para grupos grandes, 10-16 para pequenos
 - Exemplos adequados: Agachamento frontal, Supino inclinado, Remada curvada, Desenvolvimento militar, Elevação lateral, Rosca scott, Tríceps francês
 
-**ATLETA ALTO RENDIMENTO:**
-- Exercícios AVANÇADOS e ESPECIALIZADOS
-- MÁXIMA QUANTIDADE de exercícios (6-8 exercícios por treino)
-- MÁXIMO VOLUME: 4-6 séries por exercício
-- Repetições variadas: 4-12 (força máxima/hipertrofia)
-- Exercícios COMPOSTOS complexos e isolados avançados
-- MÁXIMA FADIGA MUSCULAR (volume total muito alto)
-- Descanso: 120-240 segundos entre séries (para recuperação adequada)
-- Técnicas avançadas são esperadas (supersets, tri-sets, drop sets, rest-pause, etc.)
-- Especialização por grupo muscular
-- Exemplos adequados: Agachamento com barra alta, Supino declinado, Remada T-bar, Desenvolvimento Arnold, Elevação lateral com rotação, Rosca concentrada, Tríceps testa com barra W, Extensão de perna, Flexão de perna
-
 ⚠️ **REGRAS CRÍTICAS:**
-- Sedentário/Moderado: NUNCA prescrever mais de 4-5 exercícios por treino
-- Sedentário/Moderado: NUNCA prescrever mais de 3 séries por exercício
-- Atleta/Alto Rendimento: NUNCA prescrever menos de 5 exercícios por treino
-- Atleta/Alto Rendimento: Volume total deve ser significativamente maior
-- SEMPRE considerar o objetivo do usuário (emagrecimento, ganho de massa, etc.) junto com o nível de atividade
+- Iniciante: NUNCA prescrever mais de 6 exercícios por treino, máximo 3 séries por exercício
+- Iniciante: NUNCA prescrever técnicas avançadas ou exercícios complexos
+- Intermediário: 6-10 exercícios por treino, 3-4 séries por exercício
+- Avançado: mínimo 10 exercícios por treino (se tempo permitir), mínimo 3 séries por exercício
+- Avançado: Volume total deve ser significativamente maior que iniciante/intermediário
+- SEMPRE considerar o objetivo do usuário (emagrecimento, ganho de massa, etc.) junto com o nível de musculação
 
 #### 📊 PRESCRIÇÃO DE TREINO DE FORÇA BASEADA EM IMC (ACSM/ESSA):
 
@@ -1476,35 +1655,35 @@ Use esta tabela para definir a estratégia correta:
   - Adaptar exercícios para limitações de mobilidade
   - Progressão muito gradual (aumentar carga apenas quando técnica estiver perfeita)
 
-#### 🎯 REGRAS ESPECÍFICAS POR OBJETIVO + IMC + NÍVEL DE ATIVIDADE:
+#### 🎯 REGRAS ESPECÍFICAS POR OBJETIVO + IMC + NÍVEL DE MUSCULAÇÃO:
 
 **Para EMAGRECIMENTO com IMC ≥ 30:**
 - ⚠️ NUNCA prescreva menos de 10 repetições
 - Faixa ideal: 12-18 repetições (estudos mostram 9-12 reps eficazes, mas para obesos grau II/III, 12-18 é mais seguro)
 - Objetivo: Endurance muscular + queima calórica + preservação de massa magra
 - Cargas moderadas (60-70% 1RM estimado)
-- **Ajuste por nível de atividade:**
-  - Sedentário/Moderado: 3-4 exercícios, 2-3 séries cada, exercícios básicos multiarticulares
-  - Atleta: 5-6 exercícios, 3-4 séries cada, pode incluir alguns isolados
-  - Alto Rendimento: 6-7 exercícios, 4-5 séries cada, maior variedade e volume
+- **Ajuste por nível de musculação:**
+  - Iniciante: 4-6 exercícios, 2-3 séries cada, exercícios básicos multiarticulares
+  - Intermediário: 6-8 exercícios, 3-4 séries cada, pode incluir alguns isolados
+  - Avançado: 8-12 exercícios, 3-4 séries cada, maior variedade e volume
 
 **Para RECOMPOSIÇÃO (IMC ≥ 25 + Ganhar Massa):**
 - ⚠️ NUNCA prescreva 6-8 repetições (isso é para força máxima, não adequado para recomposição)
 - Faixa ideal: 8-12 repetições (IMC 25-29.9) ou 10-15 repetições (IMC ≥ 30)
 - Objetivo: Hipertrofia + perda de gordura simultânea
 - Cargas moderadas a altas (70-80% 1RM estimado)
-- **Ajuste por nível de atividade:**
-  - Sedentário/Moderado: 4-5 exercícios, 3 séries cada, foco em multiarticulares
-  - Atleta: 5-6 exercícios, 3-4 séries cada, multiarticulares + isolados estratégicos
-  - Alto Rendimento: 6-8 exercícios, 4-5 séries cada, volume alto com variedade
+- **Ajuste por nível de musculação:**
+  - Iniciante: 4-6 exercícios, 3 séries cada, foco em multiarticulares
+  - Intermediário: 6-10 exercícios, 3-4 séries cada, multiarticulares + isolados estratégicos
+  - Avançado: 10-16 exercícios, 3-5 séries cada, volume alto com variedade
 
 **Para GANHAR MASSA com IMC < 25:**
 - Faixa: 6-10 repetições (força/hipertrofia)
 - Cargas altas (75-85% 1RM estimado)
-- **Ajuste por nível de atividade:**
-  - Sedentário/Moderado: 4-5 exercícios, 3 séries cada, exercícios básicos eficientes
-  - Atleta: 5-7 exercícios, 3-5 séries cada, exercícios compostos e isolados
-  - Alto Rendimento: 6-8 exercícios, 4-6 séries cada, máximo volume e fadiga muscular
+- **Ajuste por nível de musculação:**
+  - Iniciante: 4-6 exercícios, 3 séries cada, exercícios básicos eficientes
+  - Intermediário: 6-10 exercícios, 3-4 séries cada, exercícios compostos e isolados
+  - Avançado: 10-16 exercícios, 4-6 séries cada, máximo volume e fadiga muscular
 
 #### ⚠️ VALIDAÇÃO OBRIGATÓRIA ANTES DE RETORNAR:
 
@@ -1514,15 +1693,32 @@ Antes de retornar o plano de treino, SEMPRE verifique:
 3. ✅ Para emagrecimento + IMC ≥ 30: repetições estão entre 12-18?
 4. ✅ Exercícios são seguros para o IMC do usuário? (evitar sobrecarga articular excessiva)
 5. ✅ Descanso está adequado? (60-90s para obesos, pode ser maior se necessário)
-6. ✅ **Nível de atividade está sendo respeitado?**
-   - Sedentário/Moderado: máximo 4-5 exercícios por treino, máximo 3 séries por exercício?
-   - Sedentário/Moderado: exercícios são básicos e multiarticulares?
-   - Atleta/Alto Rendimento: mínimo 5 exercícios por treino, mínimo 3 séries por exercício?
-   - Atleta/Alto Rendimento: volume total é significativamente maior que Sedentário/Moderado?
-   - Atleta/Alto Rendimento: exercícios incluem compostos avançados e isolados?
-7. ✅ **Objetivo + Nível de atividade estão alinhados?**
-   - Sedentário com objetivo de ganhar massa: exercícios básicos eficientes, não avançados
-   - Atleta com objetivo de ganhar massa: exercícios avançados, alto volume, técnicas avançadas
+6. ✅ **Nível de musculação está sendo respeitado?**
+   - Iniciante: máximo 6 exercícios por treino, máximo 3 séries por exercício?
+   - Iniciante: exercícios são básicos e multiarticulares? NUNCA técnicas avançadas?
+   - Intermediário: 6-10 exercícios por treino, 3-4 séries por exercício?
+   - Avançado: mínimo 10 exercícios por treino (se tempo permitir), mínimo 3 séries por exercício?
+   - Avançado: volume total é significativamente maior que iniciante/intermediário?
+   - Avançado: exercícios incluem compostos avançados e isolados?
+   - Avançado: volume semanal está dentro das faixas obrigatórias (14-22 séries grandes, 10-16 pequenos)?
+7. ✅ **Objetivo + Nível de musculação estão alinhados?**
+   - Iniciante com objetivo de ganhar massa: exercícios básicos eficientes, não avançados
+   - Avançado com objetivo de ganhar massa: exercícios avançados, alto volume, técnicas avançadas
+8. ✅ **Tempo disponível está sendo respeitado?**
+   - 30-40 min: máximo 8 exercícios?
+   - 45-60 min: 8-12 exercícios?
+   - 60-90 min: 12-16 exercícios?
+9. ✅ **Quantidade de exercícios por grupo muscular está adequada?**
+   - Iniciante: 1-2 exercícios para grupos grandes, 1 para pequenos?
+   - Intermediário: 3-4 exercícios para grupos grandes, 2-3 para pequenos?
+   - Avançado: 4-6 exercícios para grupos grandes, 3-4 para pequenos?
+10. ✅ **Diversidade de exercícios está presente?**
+    - Inclui multiarticulares E isolados?
+    - Inclui máquinas E peso livre (quando local permite)?
+11. ✅ **Progressão está definida?**
+    - Compostos: 2-5% de aumento?
+    - Isolados: 1-2% de aumento?
+    - Ou adicionar 1-2 reps antes de aumentar carga?
 
 **Se qualquer validação falhar, ajuste o plano antes de retornar!**
 
@@ -1766,6 +1962,36 @@ Antes de retornar o plano nutricional, SEMPRE verifique:
 - Motive e inspire o usuário (campo motivation é essencial!)
 - Adapte para o local de treino disponível
 - TENTE INCLUIR os campos analysis, trainingPlan, nutritionPlan, goals e motivation quando possível
+
+=====================================================================
+### FORMATO DE RESPOSTA (OBRIGATÓRIO)
+
+⚠️ **CRÍTICO: SEMPRE responder em JSON limpo e válido:**
+
+{
+  "analysis": { ... },
+  "trainingPlan": { ... },
+  "aerobicTraining": { ... },
+  "nutritionPlan": { ... },
+  "goals": { ... },
+  "motivation": "..."
+}
+
+**REGRAS ABSOLUTAS:**
+- ✅ NUNCA alterar nomes de campos (analysis, trainingPlan, aerobicTraining, nutritionPlan, goals, motivation)
+- ✅ NUNCA quebrar o JSON (sempre válido e bem formatado)
+- ✅ NUNCA gerar treinos curtos demais (respeitar quantidade mínima de exercícios por nível)
+- ✅ NUNCA ignorar dados do usuário (usar TODOS os dados fornecidos)
+- ✅ SEMPRE incluir todos os campos obrigatórios
+- ✅ SEMPRE validar antes de retornar (usar checklist de validação acima)
+
+**ESTRUTURA OBRIGATÓRIA:**
+- analysis: deve conter currentStatus, strengths, improvements, specialConsiderations (opcional)
+- trainingPlan: deve conter overview, weeklySchedule (com EXATAMENTE ${userData.trainingFrequency} dias), progression
+- aerobicTraining: deve conter overview, weeklySchedule, recommendations, progression
+- nutritionPlan: deve conter dailyCalories, macros, mealPlan, hydration
+- goals: deve conter weekly, monthly, tracking
+- motivation: deve conter personalMessage, tips
 
 Lembre-se: O objetivo do usuário é importante, mas a SAÚDE vem primeiro! Use sempre a tabela de decisão para garantir estratégias seguras e eficazes.`,
           },

@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { supabase } from "@/lib/supabase";
 import { PersonalizedPlan } from "@/types/personalized-plan";
+
+// Tipo auxiliar para mealPlan
+type MealPlanItem = NonNullable<
+  PersonalizedPlan["nutritionPlan"]
+>["mealPlan"][number];
+type MealOption = MealPlanItem["options"][number];
 // Função para criar cliente OpenAI apenas quando necessário
 function createOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -55,7 +61,14 @@ const PLAN_FIELD_SCHEMAS = {
                   muscleGroups: { type: "string" },
                 },
                 // ⚠️ OpenAI strict json_schema exige `required` contendo TODAS as chaves em `properties`
-                required: ["name", "sets", "reps", "rest", "notes", "muscleGroups"],
+                required: [
+                  "name",
+                  "sets",
+                  "reps",
+                  "rest",
+                  "notes",
+                  "muscleGroups",
+                ],
               },
             },
           },
@@ -316,52 +329,53 @@ function validatePlanFinal(planData: any): {
     const nutrition =
       planData.nutritionPlan as PersonalizedPlan["nutritionPlan"];
 
-    if (typeof nutrition.dailyCalories !== "number") {
-      missingFields.push("nutritionPlan.dailyCalories");
-    }
-
-    if (
-      !nutrition.macros ||
-      !nutrition.macros.protein ||
-      !nutrition.macros.carbs ||
-      !nutrition.macros.fats
-    ) {
-      missingFields.push("nutritionPlan.macros");
-    }
-
-    const mealPlan =
-      nutrition.mealPlan as PersonalizedPlan["nutritionPlan"]["mealPlan"];
-    if (!Array.isArray(mealPlan) || mealPlan.length === 0) {
-      missingFields.push("nutritionPlan.mealPlan");
+    if (!nutrition) {
+      missingFields.push("nutritionPlan");
     } else {
-      mealPlan.forEach((meal, idx) => {
-        if (!meal.meal) {
-          missingFields.push(`nutritionPlan.mealPlan[${idx}].meal`);
-        }
+      if (typeof nutrition.dailyCalories !== "number") {
+        missingFields.push("nutritionPlan.dailyCalories");
+      }
 
-        const options =
-          meal.options ??
-          ([] as PersonalizedPlan["nutritionPlan"]["mealPlan"][number]["options"]);
-        if (!options.length) {
-          missingFields.push(`nutritionPlan.mealPlan[${idx}].options`);
-        } else {
-          options.forEach((option, optIdx) => {
-            if (!option.food || !option.quantity) {
-              missingFields.push(
-                `nutritionPlan.mealPlan[${idx}].options[${optIdx}]`
-              );
-            }
-          });
-        }
+      if (
+        !nutrition.macros ||
+        !nutrition.macros.protein ||
+        !nutrition.macros.carbs ||
+        !nutrition.macros.fats
+      ) {
+        missingFields.push("nutritionPlan.macros");
+      }
 
-        if (!meal.timing) {
-          missingFields.push(`nutritionPlan.mealPlan[${idx}].timing`);
-        }
-      });
-    }
+      const mealPlan = nutrition!.mealPlan;
+      if (!Array.isArray(mealPlan) || mealPlan.length === 0) {
+        missingFields.push("nutritionPlan.mealPlan");
+      } else {
+        mealPlan.forEach((meal: MealPlanItem, idx: number) => {
+          if (!meal.meal) {
+            missingFields.push(`nutritionPlan.mealPlan[${idx}].meal`);
+          }
 
-    if (!nutrition.hydration) {
-      missingFields.push("nutritionPlan.hydration");
+          const options = meal.options ?? ([] as MealOption[]);
+          if (!options.length) {
+            missingFields.push(`nutritionPlan.mealPlan[${idx}].options`);
+          } else {
+            options.forEach((option: MealOption, optIdx: number) => {
+              if (!option.food || !option.quantity) {
+                missingFields.push(
+                  `nutritionPlan.mealPlan[${idx}].options[${optIdx}]`
+                );
+              }
+            });
+          }
+
+          if (!meal.timing) {
+            missingFields.push(`nutritionPlan.mealPlan[${idx}].timing`);
+          }
+        });
+      }
+
+      if (!nutrition.hydration) {
+        missingFields.push("nutritionPlan.hydration");
+      }
     }
   }
 
@@ -2611,47 +2625,45 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
         else {
           const nutrition =
             planData.nutritionPlan as PersonalizedPlan["nutritionPlan"];
-          if (typeof nutrition.dailyCalories !== "number")
-            missingFields.push("nutritionPlan.dailyCalories");
-          if (
-            !nutrition.macros ||
-            !nutrition.macros.protein ||
-            !nutrition.macros.carbs ||
-            !nutrition.macros.fats
-          ) {
-            missingFields.push("nutritionPlan.macros");
-          }
-          if (
-            !Array.isArray(nutrition.mealPlan) ||
-            nutrition.mealPlan.length === 0
-          ) {
-            missingFields.push("nutritionPlan.mealPlan");
+          if (!nutrition) {
+            missingFields.push("nutritionPlan");
           } else {
-            const mealPlan =
-              nutrition.mealPlan as PersonalizedPlan["nutritionPlan"]["mealPlan"];
-            mealPlan.forEach((meal, idx) => {
-              if (!meal.meal)
-                missingFields.push(`nutritionPlan.mealPlan[${idx}].meal`);
-              const options =
-                meal.options ??
-                ([] as PersonalizedPlan["nutritionPlan"]["mealPlan"][number]["options"]);
-              if (!options.length) {
-                missingFields.push(`nutritionPlan.mealPlan[${idx}].options`);
-              } else {
-                options.forEach((option, optIdx) => {
-                  if (!option.food || !option.quantity) {
-                    missingFields.push(
-                      `nutritionPlan.mealPlan[${idx}].options[${optIdx}]`
-                    );
-                  }
-                });
-              }
-              if (!meal.timing)
-                missingFields.push(`nutritionPlan.mealPlan[${idx}].timing`);
-            });
+            if (typeof nutrition.dailyCalories !== "number")
+              missingFields.push("nutritionPlan.dailyCalories");
+            if (
+              !nutrition.macros ||
+              !nutrition.macros.protein ||
+              !nutrition.macros.carbs ||
+              !nutrition.macros.fats
+            ) {
+              missingFields.push("nutritionPlan.macros");
+            }
+            const mealPlan = nutrition!.mealPlan;
+            if (!Array.isArray(mealPlan) || mealPlan.length === 0) {
+              missingFields.push("nutritionPlan.mealPlan");
+            } else {
+              mealPlan.forEach((meal: MealPlanItem, idx: number) => {
+                if (!meal.meal)
+                  missingFields.push(`nutritionPlan.mealPlan[${idx}].meal`);
+                const options = meal.options ?? ([] as MealOption[]);
+                if (!options.length) {
+                  missingFields.push(`nutritionPlan.mealPlan[${idx}].options`);
+                } else {
+                  options.forEach((option: MealOption, optIdx: number) => {
+                    if (!option.food || !option.quantity) {
+                      missingFields.push(
+                        `nutritionPlan.mealPlan[${idx}].options[${optIdx}]`
+                      );
+                    }
+                  });
+                }
+                if (!meal.timing)
+                  missingFields.push(`nutritionPlan.mealPlan[${idx}].timing`);
+              });
+            }
+            if (!nutrition.hydration)
+              missingFields.push("nutritionPlan.hydration");
           }
-          if (!nutrition.hydration)
-            missingFields.push("nutritionPlan.hydration");
         }
 
         if (!planData.goals) missingFields.push("goals");

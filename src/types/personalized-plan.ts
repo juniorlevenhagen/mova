@@ -5,7 +5,8 @@ export interface PersonalizedPlan {
     improvements: string[];
     specialConsiderations?: string[];
   };
-  trainingPlan: {
+  // Pode ser gerado sob demanda (ex.: ao abrir a aba "Treino") para evitar truncamento por tokens
+  trainingPlan?: {
     overview: string;
     weeklySchedule: Array<{
       day: string;
@@ -34,7 +35,8 @@ export interface PersonalizedPlan {
     recommendations: string;
     progression: string;
   };
-  nutritionPlan: {
+  // Pode ser gerado/atualizado separadamente (ex.: endpoint dedicado)
+  nutritionPlan?: {
     dailyCalories: number;
     macros: {
       protein: string;
@@ -53,12 +55,12 @@ export interface PersonalizedPlan {
     supplements?: string[];
     hydration: string;
   };
-  goals: {
+  goals?: {
     weekly: string[];
     monthly: string[];
     tracking: string[];
   };
-  motivation: {
+  motivation?: {
     personalMessage: string;
     tips: string[];
   };

@@ -54,7 +54,8 @@ const PLAN_FIELD_SCHEMAS = {
                   notes: { type: "string" },
                   muscleGroups: { type: "string" },
                 },
-                required: ["name", "sets", "reps", "rest"],
+                // ⚠️ OpenAI strict json_schema exige `required` contendo TODAS as chaves em `properties`
+                required: ["name", "sets", "reps", "rest", "notes", "muscleGroups"],
               },
             },
           },
@@ -381,26 +382,14 @@ function validatePlanFinal(planData: any): {
       missingFields.push("analysis.improvements");
   }
 
-  if (!planData.trainingPlan) missingFields.push("trainingPlan");
-  else {
-    if (!planData.trainingPlan.overview)
-      missingFields.push("trainingPlan.overview");
-    if (
-      !planData.trainingPlan.weeklySchedule ||
-      !Array.isArray(planData.trainingPlan.weeklySchedule)
-    )
-      missingFields.push("trainingPlan.weeklySchedule");
-    if (!planData.trainingPlan.progression)
-      missingFields.push("trainingPlan.progression");
-  }
-  if (!planData.goals) missingFields.push("goals");
-  else {
+  // trainingPlan pode ser gerado sob demanda (aba "Treino") para evitar truncamento por tokens.
+  // Portanto, NÃO validamos trainingPlan como obrigatório aqui.
+  if (planData.goals) {
     if (!planData.goals.weekly) missingFields.push("goals.weekly");
     if (!planData.goals.monthly) missingFields.push("goals.monthly");
     if (!planData.goals.tracking) missingFields.push("goals.tracking");
   }
-  if (!planData.motivation) missingFields.push("motivation");
-  else {
+  if (planData.motivation) {
     if (!planData.motivation.personalMessage)
       missingFields.push("motivation.personalMessage");
     if (!planData.motivation.tips) missingFields.push("motivation.tips");
@@ -2395,8 +2384,10 @@ ${
 
 ⚠️ ATENÇÃO CRÍTICA: Você DEVE retornar pelo menos os campos obrigatórios do JSON:
 - analysis (obrigatório)
-- trainingPlan (obrigatório) 
 - aerobicTraining (OBRIGATÓRIO - ver diretrizes acima sobre treino aeróbico)
+
+⚠️ IMPORTANTE: O campo trainingPlan (musculação) será gerado separadamente quando o usuário abrir a aba "Treino" no dashboard.
+Para reduzir risco de truncamento/limite de tokens, NÃO inclua o campo trainingPlan nesta resposta.
 
 Campos altamente recomendados (INCLUA SEMPRE QUE POSSÍVEL):
 - nutritionPlan (recomendado) - incluir dailyCalories, macros, mealPlan, hydration
@@ -2427,6 +2418,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
             name: "personalized_plan",
             schema: {
               type: "object",
+              additionalProperties: false,
               properties: {
                 analysis: {
                   type: "object",
@@ -2440,40 +2432,6 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
                     },
                   },
                   required: ["currentStatus", "strengths", "improvements"],
-                },
-                trainingPlan: {
-                  type: "object",
-                  properties: {
-                    overview: { type: "string" },
-                    weeklySchedule: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          day: { type: "string" },
-                          type: { type: "string" },
-                          exercises: {
-                            type: "array",
-                            items: {
-                              type: "object",
-                              properties: {
-                                name: { type: "string" },
-                                sets: { type: "string" },
-                                reps: { type: "string" },
-                                rest: { type: "string" },
-                                notes: { type: "string" },
-                                muscleGroups: { type: "string" },
-                              },
-                              required: ["name", "sets", "reps", "rest"],
-                            },
-                          },
-                        },
-                        required: ["day", "type", "exercises"],
-                      },
-                    },
-                    progression: { type: "string" },
-                  },
-                  required: ["overview", "weeklySchedule", "progression"],
                 },
                 aerobicTraining: {
                   type: "object",
@@ -2568,7 +2526,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
                   required: ["personalMessage", "tips"],
                 },
               },
-              required: ["analysis", "trainingPlan"],
+              required: ["analysis"],
             },
           },
         },
@@ -2646,23 +2604,8 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           }
         }
 
-        if (!planData.trainingPlan) {
-          missingFields.push("trainingPlan");
-        } else {
-          if (!planData.trainingPlan.overview) {
-            missingFields.push("trainingPlan.overview");
-          }
-          if (
-            !planData.trainingPlan.weeklySchedule ||
-            !Array.isArray(planData.trainingPlan.weeklySchedule) ||
-            planData.trainingPlan.weeklySchedule.length === 0
-          ) {
-            missingFields.push("trainingPlan.weeklySchedule");
-          }
-          if (!planData.trainingPlan.progression) {
-            missingFields.push("trainingPlan.progression");
-          }
-        }
+        // trainingPlan pode ser gerado sob demanda (aba "Treino") para evitar truncamento por tokens.
+        // Portanto, NÃO tratamos trainingPlan como obrigatório na geração inicial do plano.
 
         if (!planData.nutritionPlan) missingFields.push("nutritionPlan");
         else {

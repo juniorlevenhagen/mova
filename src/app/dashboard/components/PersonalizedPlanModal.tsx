@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { typography, components, colors } from "@/lib/design-tokens";
 import { PersonalizedPlan } from "@/types/personalized-plan";
 import { supabase } from "@/lib/supabase";
@@ -359,7 +359,10 @@ function getMuscleGroups(exerciseName: string): string {
     name.includes("costas") ||
     name.includes("dorsal") ||
     name.includes("pull") ||
-    name.includes("barra") ||
+    // ⚠️ NÃO usar "barra" genérico aqui (ex.: "supino com barra" não é costas)
+    name.includes("barra fixa") ||
+    name.includes("pull-up") ||
+    name.includes("chin-up") ||
     name.includes("serrote") ||
     name.includes("crucifixo inverso")
   ) {
@@ -500,6 +503,30 @@ export function PersonalizedPlanModal({
   >("analysis");
   const [openAIMessage, setOpenAIMessage] = useState<string>("");
   const [isLoadingOpenAI, setIsLoadingOpenAI] = useState<boolean>(false);
+  const [isLoadingTrainingPlan, setIsLoadingTrainingPlan] =
+    useState<boolean>(false);
+  const [trainingPlanError, setTrainingPlanError] = useState<string | null>(
+    null
+  );
+  const trainingPlanAttemptedRef = useRef(false);
+
+  const isTrainingPlanUsable = (
+    trainingPlan: PersonalizedPlan["trainingPlan"]
+  ) => {
+    if (!trainingPlan) return false;
+    if (!Array.isArray(trainingPlan.weeklySchedule)) return false;
+    if (trainingPlan.weeklySchedule.length === 0) return false;
+    for (const day of trainingPlan.weeklySchedule) {
+      if (
+        !day?.exercises ||
+        !Array.isArray(day.exercises) ||
+        day.exercises.length === 0
+      ) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   // Helper para exibir o orçamento alimentar em formato amigável
   const getFoodBudgetLabel = (budget?: string) => {
@@ -641,11 +668,9 @@ export function PersonalizedPlanModal({
             age,
             gender: userProfile.sexo || "Não informado",
             nivelAtividade: userProfile.nivelAtividade || "Moderado", // ✅ Nível de atividade do perfil
-            trainingFrequency:
-              userProfile.frequenciaTreinos || "Não informado",
+            trainingFrequency: userProfile.frequenciaTreinos || "Não informado",
             trainingTime: userProfile.tempoTreino || null,
-            dietaryRestrictions:
-              userProfile.dietaryRestrictions || "Nenhuma",
+            dietaryRestrictions: userProfile.dietaryRestrictions || "Nenhuma",
             foodBudget: userProfile.foodBudget || "moderado",
           };
 
@@ -715,6 +740,74 @@ export function PersonalizedPlanModal({
       });
     }
   }, [activeTab, openAIMessage, isLoadingOpenAI, userProfile, plan]);
+
+  // Gerar trainingPlan sob demanda ao abrir a aba "Treino" (evita plano cortado por tokens)
+  useEffect(() => {
+    if (!isOpen || !plan) return;
+    if (activeTab !== "training") return;
+    if (isLoadingTrainingPlan) return;
+    if (isTrainingPlanUsable(plan.trainingPlan)) return;
+    if (trainingPlanAttemptedRef.current) return;
+
+    const run = async () => {
+      try {
+        setTrainingPlanError(null);
+        setIsLoadingTrainingPlan(true);
+        trainingPlanAttemptedRef.current = true;
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          throw new Error("Usuário não autenticado");
+        }
+
+        const res = await fetch("/api/generate-training-plan", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        });
+
+        const raw = await res.text();
+        const data = (() => {
+          try {
+            return JSON.parse(raw);
+          } catch {
+            return { error: raw || "(empty response body)" };
+          }
+        })();
+        if (!res.ok) {
+          console.error(
+            "❌ /api/generate-training-plan erro:",
+            res.status,
+            data,
+            raw
+          );
+          throw new Error(
+            `(${res.status}) ${data?.error || "Erro ao gerar treino"}`
+          );
+        }
+
+        if (data?.success && data?.trainingPlan) {
+          // Atualizar o `plan` em memória (padrão já usado no nutritionPlan)
+          plan.trainingPlan = data.trainingPlan;
+        } else {
+          throw new Error("Resposta inesperada ao gerar treino");
+        }
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Erro ao gerar treino";
+        setTrainingPlanError(msg);
+      } finally {
+        setIsLoadingTrainingPlan(false);
+      }
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, activeTab]);
 
   useEffect(() => {
     if (isOpen) {
@@ -1381,7 +1474,8 @@ export function PersonalizedPlanModal({
                       ? `${plan.trainingPlan.weeklySchedule.length} dia${
                           plan.trainingPlan.weeklySchedule.length > 1 ? "s" : ""
                         } de musculação/sem`
-                      : userProfile?.frequenciaTreinos || "Frequência não definida"}
+                      : userProfile?.frequenciaTreinos ||
+                        "Frequência não definida"}
                   </p>
                   {plan.trainingPlan?.overview && (
                     <p className="mt-1 text-xs sm:text-[13px] text-blue-800 line-clamp-2">
@@ -1543,6 +1637,26 @@ export function PersonalizedPlanModal({
             {/* Treino */}
             {validActiveTab === "training" && (
               <div className="space-y-6">
+                {trainingPlanError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <p className="text-red-700 text-sm flex-1">
+                        {trainingPlanError}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          trainingPlanAttemptedRef.current = false;
+                          setTrainingPlanError(null);
+                        }}
+                        className="text-sm font-medium text-red-700 underline hover:text-red-800"
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
                 >
@@ -1564,62 +1678,114 @@ export function PersonalizedPlanModal({
                     Cronograma Semanal
                   </h4>
                   {(plan.trainingPlan?.weeklySchedule || []).map(
-                    (day, dayIndex) => (
-                      <div
-                        key={dayIndex}
-                        className="border border-gray-200 rounded-lg p-4"
-                      >
-                        <div className="flex items-center mb-3">
-                          <h5 className="font-semibold text-lg text-gray-900">
-                            {day?.day || "Dia não especificado"}
-                          </h5>
-                          <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                            {day?.type || "Tipo não especificado"}
-                          </span>
-                        </div>
+                    (day, dayIndex) => {
+                      const exercises = day?.exercises || [];
 
-                        <div className="space-y-3">
-                          {(day.exercises || []).map(
-                            (exercise, exerciseIndex) => (
-                              <div
-                                key={exerciseIndex}
-                                className="bg-gray-50 border border-gray-100 rounded p-3"
-                              >
-                                {(exercise?.muscleGroups ||
-                                  getMuscleGroups(exercise?.name || "")) && (
-                                  <p className="text-sm font-semibold text-blue-600 mb-2">
-                                    {capitalizeWords(
-                                      exercise?.muscleGroups ||
-                                        getMuscleGroups(exercise?.name || "")
-                                    )}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap items-center gap-4 mb-2">
-                                  <h6 className="font-medium text-gray-900 flex-1">
-                                    {exercise?.name ||
-                                      "Exercício não especificado"}
-                                  </h6>
-                                  <span className="text-sm text-gray-600">
-                                    Séries: {exercise?.sets || "N/A"}
-                                  </span>
-                                  <span className="text-sm text-gray-600">
-                                    Reps: {exercise?.reps || "N/A"}
-                                  </span>
-                                  <span className="text-sm text-gray-600">
-                                    Descanso: {exercise?.rest || "N/A"}
-                                  </span>
+                      const normalize = (s: string) =>
+                        s
+                          .toLowerCase()
+                          .trim()
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "");
+
+                      type Exercise = {
+                        name: string;
+                        sets: string;
+                        reps: string;
+                        rest: string;
+                        notes?: string;
+                        muscleGroups?: string | string[];
+                      };
+
+                      const primaryGroup = (ex: Exercise) => {
+                        const mg = Array.isArray(ex?.muscleGroups)
+                          ? ex.muscleGroups.join(", ")
+                          : ((ex?.muscleGroups ||
+                              getMuscleGroups(ex?.name || "")) as string);
+                        const first = (mg || "").split(",")[0]?.trim() || "";
+                        return capitalizeWords(first);
+                      };
+
+                      // agrupar preservando ordem de aparição
+                      const grouped: Array<{
+                        group: string;
+                        items: Exercise[];
+                      }> = [];
+                      const groupIndex = new Map<string, number>();
+
+                      exercises.forEach((ex: Exercise) => {
+                        const g = primaryGroup(ex) || "Outros";
+                        const key = normalize(g);
+                        const idx = groupIndex.get(key);
+                        if (idx === undefined) {
+                          groupIndex.set(key, grouped.length);
+                          grouped.push({ group: g, items: [ex] });
+                        } else {
+                          grouped[idx].items.push(ex);
+                        }
+                      });
+
+                      return (
+                        <div
+                          key={dayIndex}
+                          className="border border-gray-200 rounded-lg p-4"
+                        >
+                          <div className="flex items-center mb-3">
+                            <h5 className="font-semibold text-lg text-gray-900">
+                              {day?.day || "Dia não especificado"}
+                            </h5>
+                            <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                              {day?.type || "Tipo não especificado"}
+                            </span>
+                          </div>
+
+                          <div className="space-y-4">
+                            {grouped.map((bucket) => (
+                              <div key={bucket.group}>
+                                <h6 className="font-semibold text-gray-900 mb-2">
+                                  {bucket.group}:
+                                </h6>
+                                <div className="space-y-2">
+                                  {bucket.items.map(
+                                    (
+                                      exercise: Exercise,
+                                      exerciseIndex: number
+                                    ) => (
+                                      <div
+                                        key={exerciseIndex}
+                                        className="bg-gray-50 border border-gray-100 rounded p-3"
+                                      >
+                                        <div className="flex flex-wrap items-center gap-4">
+                                          <h6 className="font-medium text-gray-900 flex-1">
+                                            {exercise?.name ||
+                                              "Exercício não especificado"}
+                                          </h6>
+                                          <span className="text-sm text-gray-600">
+                                            Séries: {exercise?.sets || "N/A"}
+                                          </span>
+                                          <span className="text-sm text-gray-600">
+                                            Reps: {exercise?.reps || "N/A"}
+                                          </span>
+                                          <span className="text-sm text-gray-600">
+                                            Descanso: {exercise?.rest || "N/A"}
+                                          </span>
+                                        </div>
+                                        {exercise?.notes &&
+                                          exercise.notes.trim() !== "" && (
+                                            <p className="text-sm text-gray-600 mt-2">
+                                              Nota: {exercise.notes}
+                                            </p>
+                                          )}
+                                      </div>
+                                    )
+                                  )}
                                 </div>
-                                {exercise.notes && (
-                                  <p className="text-sm text-gray-600 mt-2">
-                                    Nota: {exercise.notes}
-                                  </p>
-                                )}
                               </div>
-                            )
-                          )}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )
+                      );
+                    }
                   )}
                 </div>
 

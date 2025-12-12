@@ -64,7 +64,8 @@ const TRAINING_SCHEMA = {
                       rest: { type: "string" },
                       notes: { type: "string" },
                     },
-                    required: ["name", "sets", "reps", "rest"],
+                    // ⚠️ OpenAI strict json_schema exige `required` contendo TODAS as chaves em `properties`
+                    required: ["name", "sets", "reps", "rest", "notes"],
                   },
                 },
               },
@@ -164,6 +165,10 @@ RESPEITANDO o formato JSON do campo trainingPlan (overview, weeklySchedule, prog
      - type: tipo de treino (ex.: "Upper", "Lower", "Pull", "Push", "Full Body").
      - exercises: lista de exercícios com name, sets, reps, rest, notes (opcional).
   3. progression: explicação de como progredir carga/volume ao longo das semanas.
+
+⚠️ IMPORTANTE (schema estrito):
+- O campo "notes" existe no schema e DEVE ser preenchido para TODOS os exercícios.
+- Se não houver nota relevante, use string vazia "".
 
 ## CONTEXTO E REGRAS GERAIS
 

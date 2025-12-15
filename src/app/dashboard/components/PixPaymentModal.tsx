@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
 interface PixPaymentModalProps {
@@ -240,9 +241,12 @@ export function PixPaymentModal({
               {/* QR Code */}
               {paymentData.qr_code_base64 ? (
                 <div className="bg-white p-4 rounded-lg border-2 border-gray-200 inline-block mb-4">
-                  <img
+                  <Image
                     src={`data:image/png;base64,${paymentData.qr_code_base64}`}
                     alt="QR Code PIX"
+                    width={256}
+                    height={256}
+                    unoptimized
                     className="w-64 h-64"
                   />
                 </div>

@@ -741,9 +741,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error: "TRIAL_LIMIT_REACHED",
+            errorCode: "NO_CREDITS",
             message:
               "Você atingiu o limite de planos gratuitos. Compre prompts para gerar novos planos personalizados!",
             trialMessage,
+            actionRequired: "purchase_prompts",
+            availablePrompts: 0,
           },
           { status: 403 }
         );

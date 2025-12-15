@@ -509,6 +509,15 @@ export function PersonalizedPlanModal({
     null
   );
   const trainingPlanAttemptedRef = useRef(false);
+  const [expandedCards, setExpandedCards] = useState<{
+    training: boolean;
+    aerobic: boolean;
+    nutrition: boolean;
+  }>({
+    training: false,
+    aerobic: false,
+    nutrition: false,
+  });
 
   const isTrainingPlanUsable = (
     trainingPlan: PersonalizedPlan["trainingPlan"]
@@ -1286,8 +1295,8 @@ export function PersonalizedPlanModal({
           className={`${components.card.base} relative inline-block align-bottom text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh]`}
         >
           {/* Header */}
-          <div className="bg-gray-800 px-4 sm:px-6 py-4 text-white relative">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pr-8 sm:pr-0">
+          <div className="bg-gray-800 px-4 sm:px-6 py-4 text-white relative pr-12 sm:pr-12">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
               <h3
                 className={`${typography.heading.h2} text-white text-lg sm:text-xl`}
               >
@@ -1319,7 +1328,7 @@ export function PersonalizedPlanModal({
             {/* Botão X no canto superior direito */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors"
+              className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors z-10"
               aria-label="Fechar"
             >
               <svg
@@ -1478,9 +1487,28 @@ export function PersonalizedPlanModal({
                         "Frequência não definida"}
                   </p>
                   {plan.trainingPlan?.overview && (
-                    <p className="mt-1 text-xs sm:text-[13px] text-blue-800 line-clamp-2">
-                      {plan.trainingPlan.overview}
-                    </p>
+                    <div className="mt-1">
+                      <p
+                        className={`text-xs sm:text-[13px] text-blue-800 ${
+                          expandedCards.training ? "" : "line-clamp-2"
+                        }`}
+                      >
+                        {plan.trainingPlan.overview}
+                      </p>
+                      {plan.trainingPlan.overview.length > 100 && (
+                        <button
+                          onClick={() =>
+                            setExpandedCards((prev) => ({
+                              ...prev,
+                              training: !prev.training,
+                            }))
+                          }
+                          className="mt-1 text-xs text-blue-600 hover:text-blue-800 font-medium underline"
+                        >
+                          {expandedCards.training ? "Ver menos" : "Ver mais"}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -1499,9 +1527,28 @@ export function PersonalizedPlanModal({
                       : "Frequência não definida"}
                   </p>
                   {plan.aerobicTraining?.overview && (
-                    <p className="mt-1 text-xs sm:text-[13px] text-emerald-800 line-clamp-2">
-                      {plan.aerobicTraining.overview}
-                    </p>
+                    <div className="mt-1">
+                      <p
+                        className={`text-xs sm:text-[13px] text-emerald-800 ${
+                          expandedCards.aerobic ? "" : "line-clamp-2"
+                        }`}
+                      >
+                        {plan.aerobicTraining.overview}
+                      </p>
+                      {plan.aerobicTraining.overview.length > 100 && (
+                        <button
+                          onClick={() =>
+                            setExpandedCards((prev) => ({
+                              ...prev,
+                              aerobic: !prev.aerobic,
+                            }))
+                          }
+                          className="mt-1 text-xs text-emerald-600 hover:text-emerald-800 font-medium underline"
+                        >
+                          {expandedCards.aerobic ? "Ver menos" : "Ver mais"}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -1521,6 +1568,30 @@ export function PersonalizedPlanModal({
                       {plan.nutritionPlan.macros.carbs || "N/A"} · Gord:{" "}
                       {plan.nutritionPlan.macros.fats || "N/A"}
                     </p>
+                  )}
+                  {plan.nutritionPlan?.hydration && (
+                    <div className="mt-1">
+                      <p
+                        className={`text-xs sm:text-[13px] text-orange-800 ${
+                          expandedCards.nutrition ? "" : "line-clamp-2"
+                        }`}
+                      >
+                        {plan.nutritionPlan.hydration}
+                      </p>
+                      {plan.nutritionPlan.hydration.length > 100 && (
+                        <button
+                          onClick={() =>
+                            setExpandedCards((prev) => ({
+                              ...prev,
+                              nutrition: !prev.nutrition,
+                            }))
+                          }
+                          className="mt-1 text-xs text-orange-600 hover:text-orange-800 font-medium underline"
+                        >
+                          {expandedCards.nutrition ? "Ver menos" : "Ver mais"}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

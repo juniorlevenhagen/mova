@@ -191,7 +191,23 @@ export function usePlanGeneration() {
         const errorData = await response.json();
 
         if (errorData.error === "TRIAL_LIMIT_REACHED") {
-          throw new Error(errorData.message || "Limite de planos atingido");
+          // ✅ Criar erro customizado com dados adicionais para melhor tratamento
+          interface CreditsError extends Error {
+            type: string;
+            errorCode: string;
+            actionRequired: string;
+            availablePrompts: number;
+          }
+
+          const creditsError = new Error(
+            errorData.message || "Você atingiu o limite de planos gratuitos. Compre prompts para gerar novos planos personalizados!"
+          ) as CreditsError;
+          creditsError.type = "TRIAL_LIMIT_REACHED";
+          creditsError.errorCode = errorData.errorCode || "NO_CREDITS";
+          creditsError.actionRequired = errorData.actionRequired || "purchase_prompts";
+          creditsError.availablePrompts = errorData.availablePrompts || 0;
+
+          throw creditsError;
         }
 
         if (errorData.error === "COOLDOWN_ACTIVE") {

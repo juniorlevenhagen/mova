@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 import { DeleteConfirmModal } from "@/components/admin/DeleteConfirmModal";
 import { Plus, Edit, Eye, Trash2, Calendar } from "lucide-react";
+import { AdminNav } from "@/components/admin/AdminNav";
 
 type BlogPost = {
   id: string;
@@ -219,6 +220,9 @@ export default function AdminBlogPage() {
     <AdminProtectedRoute>
       <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100">
         <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Navigation */}
+          <AdminNav />
+
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>

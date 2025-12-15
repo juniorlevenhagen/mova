@@ -162,6 +162,37 @@ export default function DashboardPage() {
         availablePrompts: cooldownError?.availablePrompts,
       });
 
+      // ✅ Type guard para erro de créditos
+      interface CreditsError extends Error {
+        type?: string;
+        errorCode?: string;
+        actionRequired?: string;
+        availablePrompts?: number;
+      }
+
+      const isCreditsError = (err: unknown): err is CreditsError => {
+        return (
+          typeof err === "object" &&
+          err !== null &&
+          ("type" in err || "errorCode" in err) &&
+          (err as CreditsError).type === "TRIAL_LIMIT_REACHED"
+        );
+      };
+
+      const creditsError = isCreditsError(error) ? error : null;
+
+      // ✅ Verificar se é erro de créditos (limite atingido)
+      if (
+        creditsError ||
+        errorMessage.includes("limite de planos gratuitos") ||
+        errorMessage.includes("Compre prompts")
+      ) {
+        console.log("💳 Erro de créditos detectado, abrindo modal de compra");
+        setShowUpgradeModal(true);
+        // Não mostrar erro adicional, o modal já explica
+        return;
+      }
+
       // ✅ Verificar se é erro de cooldown (por tipo ou mensagem)
       if (
         cooldownError?.type === "COOLDOWN_ACTIVE" ||

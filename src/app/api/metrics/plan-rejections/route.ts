@@ -3,7 +3,7 @@ import { planRejectionMetrics } from "@/lib/metrics/planRejectionMetrics";
 
 /**
  * Endpoint para consultar métricas de rejeição de planos
- * 
+ *
  * GET /api/metrics/plan-rejections
  * Query params:
  *   - period: "all" | "24h" (default: "all")
@@ -18,11 +18,13 @@ export async function GET(request: NextRequest) {
     let statistics;
 
     // Tentar usar banco de dados se disponível, senão usar memória
-    const useDB = source === "db" && planRejectionMetrics.isPersistenceEnabled();
+    const useDB =
+      source === "db" && planRejectionMetrics.isPersistenceEnabled();
 
     if (period === "24h") {
       if (useDB) {
-        statistics = await planRejectionMetrics.getLast24HoursStatisticsFromDB();
+        statistics =
+          await planRejectionMetrics.getLast24HoursStatisticsFromDB();
       } else {
         statistics = planRejectionMetrics.getLast24HoursStatistics();
       }
@@ -44,12 +46,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Erro ao obter métricas de rejeição:", error);
-    
+
     // Fallback para memória se o banco falhar
     try {
       const period = request.nextUrl.searchParams.get("period") || "all";
       let statistics;
-      
+
       if (period === "24h") {
         statistics = planRejectionMetrics.getLast24HoursStatistics();
       } else {
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest) {
         timestamp: Date.now(),
         warning: "Banco de dados não disponível, usando dados em memória",
       });
-    } catch (fallbackError) {
+    } catch {
       return NextResponse.json(
         { error: "Erro ao obter métricas", details: String(error) },
         { status: 500 }
@@ -73,4 +75,3 @@ export async function GET(request: NextRequest) {
     }
   }
 }
-

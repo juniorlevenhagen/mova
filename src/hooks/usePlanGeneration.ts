@@ -200,11 +200,13 @@ export function usePlanGeneration() {
           }
 
           const creditsError = new Error(
-            errorData.message || "Você atingiu o limite de planos gratuitos. Compre prompts para gerar novos planos personalizados!"
+            errorData.message ||
+              "Você atingiu o limite de planos gratuitos. Compre prompts para gerar novos planos personalizados!"
           ) as CreditsError;
           creditsError.type = "TRIAL_LIMIT_REACHED";
           creditsError.errorCode = errorData.errorCode || "NO_CREDITS";
-          creditsError.actionRequired = errorData.actionRequired || "purchase_prompts";
+          creditsError.actionRequired =
+            errorData.actionRequired || "purchase_prompts";
           creditsError.availablePrompts = errorData.availablePrompts || 0;
 
           throw creditsError;

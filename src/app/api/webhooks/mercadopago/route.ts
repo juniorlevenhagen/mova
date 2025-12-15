@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
     if (type === "payment") {
       const paymentId = data.id;
       if (!paymentId) {
-        return NextResponse.json({ error: "Payment ID não encontrado" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Payment ID não encontrado" },
+          { status: 400 }
+        );
       }
 
       // Criar cliente do Mercado Pago
@@ -92,7 +95,9 @@ export async function POST(request: NextRequest) {
         .update(updateData)
         .eq("id", pixPayment.id);
 
-      console.log(`✅ Status do pagamento ${paymentId} atualizado para: ${newStatus}`);
+      console.log(
+        `✅ Status do pagamento ${paymentId} atualizado para: ${newStatus}`
+      );
     }
 
     return NextResponse.json({ received: true });
@@ -135,7 +140,10 @@ async function addPromptsToUser(
         updateData.package_prompts = newPackagePrompts;
       }
 
-      await supabase.from("user_trials").update(updateData).eq("user_id", userId);
+      await supabase
+        .from("user_trials")
+        .update(updateData)
+        .eq("user_id", userId);
 
       console.log(
         `✅ ${promptsAmount} prompt(s) adicionado(s) via PIX. Total disponível: ${newPrompts}`
@@ -171,4 +179,3 @@ async function addPromptsToUser(
     throw error;
   }
 }
-

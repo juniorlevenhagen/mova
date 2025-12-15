@@ -151,19 +151,19 @@ IMC: ${userData.imc || "Não informado"}
 Idade: ${userData.age || "Não informada"} anos
 Sexo: ${userData.gender || "Não informado"}
 Nível de Atividade: ${
-              userData.nivelAtividade || "Moderado"
-            } (⚠️ IMPORTANTE: Use este nível para calcular TDEE - Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
+            userData.nivelAtividade || "Moderado"
+          } (⚠️ IMPORTANTE: Use este nível para calcular TDEE - Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
 Frequência de treino: ${userData.trainingFrequency || "Não informado"}
 Restrições alimentares: ${userData.dietaryRestrictions || "Nenhuma"}
 Orçamento alimentar: ${
-              userData.foodBudget || "moderado"
-            } (⚠️ IMPORTANTE: ajuste a escolha de alimentos:
+            userData.foodBudget || "moderado"
+          } (⚠️ IMPORTANTE: ajuste a escolha de alimentos:
 - "economico": priorize frango, ovos, iogurte comum, atum enlatado, feijão, arroz, batata, banana, maçã. Evite salmão, iogurte grego, queijos caros, frutas exóticas.
 - "moderado": pode usar ocasionalmente iogurte grego e peixes mais baratos (tilápia, sardinha), mas priorize alimentos básicos.
 - "premium": pode incluir salmão, iogurte grego, queijos especiais e alimentos mais caros, priorizando qualidade e variedade.)
 Tempo disponível por treino: ${
-              userData.trainingTime || "Não informado"
-            } (use este tempo para ajustar horários e tamanho das refeições em torno do treino, se fizer sentido)
+            userData.trainingTime || "Não informado"
+          } (use este tempo para ajustar horários e tamanho das refeições em torno do treino, se fizer sentido)
 
 ${
   existingPlan

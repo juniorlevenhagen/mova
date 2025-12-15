@@ -1,6 +1,6 @@
 /**
  * Valida se o número de exercícios por dia está dentro dos limites do nível
- * 
+ *
  * @param exerciseCount - Número de exercícios no dia
  * @param level - Nível do usuário (ex: "Idoso", "Iniciante", "Atleta Alto Rendimento")
  * @returns true se o número de exercícios está dentro do limite do nível
@@ -35,4 +35,3 @@ export function validateExercisesCountByLevel(
 
   return exerciseCount <= max;
 }
-

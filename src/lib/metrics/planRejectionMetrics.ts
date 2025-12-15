@@ -1,9 +1,9 @@
 /**
  * Sistema de Monitoramento de Métricas de Rejeição de Planos
- * 
+ *
  * Rastreia quando e por que planos de treino são rejeitados,
  * permitindo análise de padrões e identificação de problemas.
- * 
+ *
  * Agora com persistência em banco de dados (Supabase).
  */
 
@@ -41,13 +41,7 @@ export interface RejectionMetric {
   };
 }
 
-interface DatabaseMetric {
-  id: string;
-  reason: RejectionReason;
-  timestamp: number;
-  context: Record<string, unknown>;
-  created_at: string;
-}
+// Interface DatabaseMetric removida - não está sendo usada
 
 /**
  * Cliente Supabase para persistência
@@ -56,9 +50,10 @@ interface DatabaseMetric {
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
+
   // Se não tiver service key, usar anon key (pode falhar se RLS bloquear)
-  const supabaseKey = supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey =
+    supabaseServiceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     return null;
@@ -137,9 +132,7 @@ class PlanRejectionMetrics {
   /**
    * Obtém todas as métricas do banco de dados
    */
-  async getAllMetricsFromDB(
-    limit: number = 10000
-  ): Promise<RejectionMetric[]> {
+  async getAllMetricsFromDB(limit: number = 10000): Promise<RejectionMetric[]> {
     if (!this.persistenceEnabled || !this.supabase) {
       // Fallback para memória
       return this.getAllMetrics();
@@ -315,10 +308,7 @@ class PlanRejectionMetrics {
   > {
     const now = Date.now();
     const last24Hours = now - 24 * 60 * 60 * 1000;
-    const metrics24h = await this.getMetricsByPeriodFromDB(
-      last24Hours,
-      now
-    );
+    const metrics24h = await this.getMetricsByPeriodFromDB(last24Hours, now);
 
     return this.calculateStatistics(metrics24h);
   }
@@ -326,7 +316,9 @@ class PlanRejectionMetrics {
   /**
    * Obtém estatísticas das últimas 24 horas (da memória - método legado)
    */
-  getLast24HoursStatistics(): ReturnType<PlanRejectionMetrics["getStatistics"]> {
+  getLast24HoursStatistics(): ReturnType<
+    PlanRejectionMetrics["getStatistics"]
+  > {
     const now = Date.now();
     const last24Hours = now - 24 * 60 * 60 * 1000;
     const metrics24h = this.getMetricsByPeriod(last24Hours, now);
@@ -366,7 +358,9 @@ export async function recordPlanRejection(
 /**
  * Mapeia mensagens de console.warn para RejectionReason
  */
-export function mapWarnMessageToReason(message: string): RejectionReason | null {
+export function mapWarnMessageToReason(
+  message: string
+): RejectionReason | null {
   const reasonMap: Record<string, RejectionReason> = {
     "weeklySchedule inválido ou ausente": "weeklySchedule_invalido",
     "número de dias incompatível": "numero_dias_incompativel",
@@ -377,14 +371,20 @@ export function mapWarnMessageToReason(message: string): RejectionReason | null 
     "grupo muscular proibido no dia": "grupo_muscular_proibido",
     "grupo muscular não permitido": "grupo_muscular_proibido",
     "Lower day sem grupos obrigatórios": "lower_sem_grupos_obrigatorios",
-    "Full Body day sem grupos obrigatórios": "full_body_sem_grupos_obrigatorios",
+    "Full Body day sem grupos obrigatórios":
+      "full_body_sem_grupos_obrigatorios",
     "grupo muscular obrigatório ausente": "grupo_obrigatorio_ausente",
     "ordem de exercícios inválida": "ordem_exercicios_invalida",
-    "excesso de exercícios com mesmo músculo primário": "excesso_exercicios_musculo_primario",
-    "tríceps como primário em excesso no dia Push": "distribuicao_inteligente_invalida",
-    "bíceps como primário em excesso no dia Pull": "distribuicao_inteligente_invalida",
-    "Push day sem Peitoral ou Ombros como primários": "distribuicao_inteligente_invalida",
-    "músculo concentrado demais no dia Lower": "distribuicao_inteligente_invalida",
+    "excesso de exercícios com mesmo músculo primário":
+      "excesso_exercicios_musculo_primario",
+    "tríceps como primário em excesso no dia Push":
+      "distribuicao_inteligente_invalida",
+    "bíceps como primário em excesso no dia Pull":
+      "distribuicao_inteligente_invalida",
+    "Push day sem Peitoral ou Ombros como primários":
+      "distribuicao_inteligente_invalida",
+    "músculo concentrado demais no dia Lower":
+      "distribuicao_inteligente_invalida",
     "secondaryMuscles excede limite de 2": "secondaryMuscles_excede_limite",
     "tempo de treino excede disponível": "tempo_treino_excede_disponivel",
   };

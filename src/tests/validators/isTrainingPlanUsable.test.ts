@@ -4,16 +4,16 @@ import { describe, it, expect } from "vitest";
 import {
   isTrainingPlanUsable,
   type TrainingPlan,
-  type TrainingDay,
-  type Exercise,
-} from "@/app/api/generate-training-plan/route";
+} from "@/lib/validators/trainingPlanValidator";
 
 describe("isTrainingPlanUsable - Integração", () => {
-  const createValidUpperDay = (exerciseCount: number): TrainingPlan["weeklySchedule"][0] => {
+  const createValidUpperDay = (
+    exerciseCount: number
+  ): TrainingPlan["weeklySchedule"][0] => {
     // Garantir grupos obrigatórios: peitoral, costas, ombros
     // Para grupos grandes, mínimo 3 exercícios cada
     const minRequired = 9; // 3 peitoral + 3 costas + 3 ombros
-    
+
     if (exerciseCount < minRequired) {
       return {
         day: "Segunda",
@@ -51,7 +51,7 @@ describe("isTrainingPlanUsable - Integração", () => {
         ],
       };
     }
-    
+
     // Para counts maiores, usar estrutura completa
     const exercises = [
       // Peitoral (3 exercícios - obrigatório)
@@ -92,14 +92,22 @@ describe("isTrainingPlanUsable - Integração", () => {
         rest: "60s",
         notes: "Nota",
       })),
-      ...Array.from({ length: Math.min(2, exerciseCount - 9 - Math.min(2, exerciseCount - 9)) }, (_, i) => ({
-        name: `Tríceps ${i + 1}`,
-        primaryMuscle: "triceps",
-        sets: 3,
-        reps: "10-12",
-        rest: "60s",
-        notes: "Nota",
-      })),
+      ...Array.from(
+        {
+          length: Math.min(
+            2,
+            exerciseCount - 9 - Math.min(2, exerciseCount - 9)
+          ),
+        },
+        (_, i) => ({
+          name: `Tríceps ${i + 1}`,
+          primaryMuscle: "triceps",
+          sets: 3,
+          reps: "10-12",
+          rest: "60s",
+          notes: "Nota",
+        })
+      ),
     ];
 
     return {
@@ -109,7 +117,9 @@ describe("isTrainingPlanUsable - Integração", () => {
     };
   };
 
-  const createValidLowerDay = (exerciseCount: number): TrainingPlan["weeklySchedule"][0] => ({
+  const createValidLowerDay = (
+    exerciseCount: number
+  ): TrainingPlan["weeklySchedule"][0] => ({
     day: "Terça",
     type: "Lower",
     exercises: [
@@ -145,7 +155,9 @@ describe("isTrainingPlanUsable - Integração", () => {
     ].slice(0, exerciseCount),
   });
 
-  const createValidFullBodyDay = (exerciseCount: number): TrainingPlan["weeklySchedule"][0] => ({
+  const createValidFullBodyDay = (
+    exerciseCount: number
+  ): TrainingPlan["weeklySchedule"][0] => ({
     day: "Segunda",
     type: "Full Body",
     exercises: [

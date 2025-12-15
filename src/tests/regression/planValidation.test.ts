@@ -1,20 +1,18 @@
 /**
  * Testes de Regressão - Validação de Planos
- * 
+ *
  * OBJETIVO: Garantir que mudanças futuras não quebrem validações críticas
- * 
+ *
  * - Planos Golden: Devem SEMPRE passar (não podem quebrar)
  * - Casos de Rejeição: Devem SEMPRE falhar (não podem deixar de rejeitar)
  * - Métricas: Devem ser registradas corretamente
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import {
   isTrainingPlanUsable,
   type TrainingPlan,
-  type TrainingDay,
-  type Exercise,
-} from "@/app/api/generate-training-plan/route";
+} from "@/lib/validators/trainingPlanValidator";
 import { planRejectionMetrics } from "@/lib/metrics/planRejectionMetrics";
 
 describe("Regressão - Validação de Planos", () => {
@@ -30,7 +28,7 @@ describe("Regressão - Validação de Planos", () => {
   describe("regression_golden_plans", () => {
     /**
      * Plano Golden: Iniciante + Emagrecimento + Full Body 3x (6 exercícios)
-     * 
+     *
      * Características:
      * - Nível: Iniciante (máx 6 exercícios/dia)
      * - Divisão: Full Body (3x/semana)
@@ -217,9 +215,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 3, "Iniciante", 70);
-      
+
       expect(result).toBe(true);
-      
+
       // Validar que NENHUMA métrica foi registrada (plano válido)
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBe(0);
@@ -227,7 +225,7 @@ describe("Regressão - Validação de Planos", () => {
 
     /**
      * Plano Golden: Moderado + Hipertrofia + Upper/Lower 4x (8 exercícios)
-     * 
+     *
      * Características:
      * - Nível: Moderado (máx 8 exercícios/dia)
      * - Divisão: Upper/Lower (4x/semana)
@@ -407,9 +405,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 4, "Moderado", 90);
-      
+
       expect(result).toBe(true);
-      
+
       // Validar que NENHUMA métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBe(0);
@@ -417,7 +415,7 @@ describe("Regressão - Validação de Planos", () => {
 
     /**
      * Plano Golden: Atleta + Performance + PPL 5x (10 exercícios)
-     * 
+     *
      * Características:
      * - Nível: Atleta (máx 10 exercícios/dia)
      * - Divisão: PPL (5x/semana)
@@ -725,9 +723,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 5, "Atleta", 120);
-      
+
       expect(result).toBe(true);
-      
+
       // Validar que NENHUMA métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBe(0);
@@ -741,7 +739,7 @@ describe("Regressão - Validação de Planos", () => {
   describe("regression_rejection_cases", () => {
     /**
      * Rejeição: Excesso de exercícios por nível
-     * 
+     *
      * Iniciante pode ter no máximo 6 exercícios/dia
      * Plano tem 7 exercícios → DEVE REJEITAR
      */
@@ -755,8 +753,20 @@ describe("Regressão - Validação de Planos", () => {
             type: "Full",
             exercises: Array.from({ length: 7 }, (_, i) => ({
               name: `Exercício ${i + 1}`,
-              primaryMuscle: i % 4 === 0 ? "peitoral" : i % 4 === 1 ? "costas" : i % 4 === 2 ? "quadriceps" : "ombros",
-              secondaryMuscles: i % 4 === 0 ? ["triceps"] : i % 4 === 1 ? ["biceps"] : undefined,
+              primaryMuscle:
+                i % 4 === 0
+                  ? "peitoral"
+                  : i % 4 === 1
+                    ? "costas"
+                    : i % 4 === 2
+                      ? "quadriceps"
+                      : "ombros",
+              secondaryMuscles:
+                i % 4 === 0
+                  ? ["triceps"]
+                  : i % 4 === 1
+                    ? ["biceps"]
+                    : undefined,
               sets: 3,
               reps: "10-12",
               rest: "60s",
@@ -768,8 +778,20 @@ describe("Regressão - Validação de Planos", () => {
             type: "Full",
             exercises: Array.from({ length: 6 }, (_, i) => ({
               name: `Exercício ${i + 1}`,
-              primaryMuscle: i % 4 === 0 ? "peitoral" : i % 4 === 1 ? "costas" : i % 4 === 2 ? "quadriceps" : "ombros",
-              secondaryMuscles: i % 4 === 0 ? ["triceps"] : i % 4 === 1 ? ["biceps"] : undefined,
+              primaryMuscle:
+                i % 4 === 0
+                  ? "peitoral"
+                  : i % 4 === 1
+                    ? "costas"
+                    : i % 4 === 2
+                      ? "quadriceps"
+                      : "ombros",
+              secondaryMuscles:
+                i % 4 === 0
+                  ? ["triceps"]
+                  : i % 4 === 1
+                    ? ["biceps"]
+                    : undefined,
               sets: 3,
               reps: "10-12",
               rest: "60s",
@@ -781,8 +803,20 @@ describe("Regressão - Validação de Planos", () => {
             type: "Full",
             exercises: Array.from({ length: 6 }, (_, i) => ({
               name: `Exercício ${i + 1}`,
-              primaryMuscle: i % 4 === 0 ? "peitoral" : i % 4 === 1 ? "costas" : i % 4 === 2 ? "quadriceps" : "ombros",
-              secondaryMuscles: i % 4 === 0 ? ["triceps"] : i % 4 === 1 ? ["biceps"] : undefined,
+              primaryMuscle:
+                i % 4 === 0
+                  ? "peitoral"
+                  : i % 4 === 1
+                    ? "costas"
+                    : i % 4 === 2
+                      ? "quadriceps"
+                      : "ombros",
+              secondaryMuscles:
+                i % 4 === 0
+                  ? ["triceps"]
+                  : i % 4 === 1
+                    ? ["biceps"]
+                    : undefined,
               sets: 3,
               reps: "10-12",
               rest: "60s",
@@ -793,9 +827,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 3, "Iniciante");
-      
+
       expect(result).toBe(false);
-      
+
       // Validar que métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBeGreaterThan(0);
@@ -804,7 +838,7 @@ describe("Regressão - Validação de Planos", () => {
 
     /**
      * Rejeição: Excesso de músculo primário no dia
-     * 
+     *
      * Moderado pode ter no máximo 5 exercícios com mesmo músculo primário
      * Plano tem 6 exercícios com "peitoral" como primário → DEVE REJEITAR
      */
@@ -949,9 +983,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 4, "Moderado");
-      
+
       expect(result).toBe(false);
-      
+
       // Validar que métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBeGreaterThan(0);
@@ -961,7 +995,7 @@ describe("Regressão - Validação de Planos", () => {
 
     /**
      * Rejeição: Distribuição inteligente inválida (Push)
-     * 
+     *
      * Push: Tríceps não pode ser primário em mais de 30% dos exercícios
      * Plano tem 10 exercícios, 4 com tríceps como primário (40%) → DEVE REJEITAR
      */
@@ -1066,9 +1100,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 1, "Atleta");
-      
+
       expect(result).toBe(false);
-      
+
       // Validar que plano foi rejeitado (métrica pode não ser registrada se rejeição ocorrer antes)
       // O importante é que o plano seja rejeitado
       expect(result).toBe(false);
@@ -1076,7 +1110,7 @@ describe("Regressão - Validação de Planos", () => {
 
     /**
      * Rejeição: Distribuição inteligente inválida (Pull)
-     * 
+     *
      * Pull: Bíceps não pode ser primário em mais de 30% dos exercícios
      * Plano tem 10 exercícios, 4 com bíceps como primário (40%) → DEVE REJEITAR
      */
@@ -1181,9 +1215,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 1, "Atleta");
-      
+
       expect(result).toBe(false);
-      
+
       // Validar que plano foi rejeitado (métrica pode não ser registrada se rejeição ocorrer antes)
       // O importante é que o plano seja rejeitado
       expect(result).toBe(false);
@@ -1191,7 +1225,7 @@ describe("Regressão - Validação de Planos", () => {
 
     /**
      * Rejeição: Distribuição inteligente inválida (Lower)
-     * 
+     *
      * Lower: Nenhum músculo pode ter mais de 50% dos exercícios
      * Plano tem 10 exercícios, 6 com quadríceps como primário (60%) → DEVE REJEITAR
      */
@@ -1256,9 +1290,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 1, "Atleta");
-      
+
       expect(result).toBe(false);
-      
+
       // Validar que plano foi rejeitado (métrica pode não ser registrada se rejeição ocorrer antes)
       // O importante é que o plano seja rejeitado
       expect(result).toBe(false);
@@ -1266,7 +1300,7 @@ describe("Regressão - Validação de Planos", () => {
 
     /**
      * Rejeição: Tempo de treino excedido
-     * 
+     *
      * Usuário tem 60 minutos disponíveis
      * Treino calculado: 90 minutos → DEVE REJEITAR
      */
@@ -1283,8 +1317,14 @@ describe("Regressão - Validação de Planos", () => {
               // Tempo: (12 * 4 * 90s) + (12 * 4 * 30s execução) = 4320s + 1440s = 5760s = 96 minutos
               ...Array.from({ length: 12 }, (_, i) => ({
                 name: `Exercício ${i + 1}`,
-                primaryMuscle: i % 3 === 0 ? "peitoral" : i % 3 === 1 ? "costas" : "ombros",
-                secondaryMuscles: i % 3 === 0 ? ["triceps"] : i % 3 === 1 ? ["biceps"] : undefined,
+                primaryMuscle:
+                  i % 3 === 0 ? "peitoral" : i % 3 === 1 ? "costas" : "ombros",
+                secondaryMuscles:
+                  i % 3 === 0
+                    ? ["triceps"]
+                    : i % 3 === 1
+                      ? ["biceps"]
+                      : undefined,
                 sets: 4,
                 reps: "8-10",
                 rest: "90s", // Descanso longo
@@ -1295,14 +1335,21 @@ describe("Regressão - Validação de Planos", () => {
         ],
       };
 
-      const result = isTrainingPlanUsable(plan, 1, "Atleta Alto Rendimento", 60);
-      
+      const result = isTrainingPlanUsable(
+        plan,
+        1,
+        "Atleta Alto Rendimento",
+        60
+      );
+
       expect(result).toBe(false);
-      
+
       // Validar que métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBeGreaterThan(0);
-      expect(stats.byReason["tempo_treino_excede_disponivel"]).toBeGreaterThan(0);
+      expect(stats.byReason["tempo_treino_excede_disponivel"]).toBeGreaterThan(
+        0
+      );
     });
   });
 
@@ -1380,9 +1427,9 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 1, "Iniciante");
-      
+
       expect(result).toBe(true);
-      
+
       // Validar que NENHUMA métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBe(0);
@@ -1401,8 +1448,20 @@ describe("Regressão - Validação de Planos", () => {
             type: "Full",
             exercises: Array.from({ length: 7 }, (_, i) => ({
               name: `Exercício ${i + 1}`,
-              primaryMuscle: i % 4 === 0 ? "peitoral" : i % 4 === 1 ? "costas" : i % 4 === 2 ? "quadriceps" : "ombros",
-              secondaryMuscles: i % 4 === 0 ? ["triceps"] : i % 4 === 1 ? ["biceps"] : undefined,
+              primaryMuscle:
+                i % 4 === 0
+                  ? "peitoral"
+                  : i % 4 === 1
+                    ? "costas"
+                    : i % 4 === 2
+                      ? "quadriceps"
+                      : "ombros",
+              secondaryMuscles:
+                i % 4 === 0
+                  ? ["triceps"]
+                  : i % 4 === 1
+                    ? ["biceps"]
+                    : undefined,
               sets: 3,
               reps: "10-12",
               rest: "60s",
@@ -1413,14 +1472,14 @@ describe("Regressão - Validação de Planos", () => {
       };
 
       const result = isTrainingPlanUsable(plan, 1, "Iniciante");
-      
+
       expect(result).toBe(false);
-      
+
       // Validar que métrica foi registrada com motivo correto
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBeGreaterThan(0);
       expect(stats.byReason["excesso_exercicios_nivel"]).toBeGreaterThan(0);
-      
+
       // Validar contexto
       const metrics = planRejectionMetrics.getAllMetrics();
       const rejectionMetric = metrics.find(
@@ -1432,4 +1491,3 @@ describe("Regressão - Validação de Planos", () => {
     });
   });
 });
-

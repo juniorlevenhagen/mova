@@ -65,8 +65,7 @@ const REASON_LABELS: Record<RejectionReason, string> = {
   full_body_sem_grupos_obrigatorios: "Full Body sem grupos obrigatórios",
   grupo_obrigatorio_ausente: "Grupo obrigatório ausente",
   ordem_exercicios_invalida: "Ordem de exercícios inválida",
-  excesso_exercicios_musculo_primario:
-    "Excesso por músculo primário (volume)",
+  excesso_exercicios_musculo_primario: "Excesso por músculo primário (volume)",
   distribuicao_inteligente_invalida: "Distribuição inteligente inválida",
   secondaryMuscles_excede_limite: "secondaryMuscles excede limite",
   tempo_treino_excede_disponivel: "Tempo de treino excede disponível",
@@ -102,7 +101,6 @@ export default function AdminMetricsPage() {
     } else if (!authLoading) {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, period]);
 
   async function fetchMetrics(selectedPeriod: "all" | "24h") {
@@ -111,7 +109,7 @@ export default function AdminMetricsPage() {
       setError(null);
 
       const res = await fetch(
-        `/api/metrics/plan-rejections?period=${selectedPeriod}`,
+        `/api/metrics/plan-rejections?period=${selectedPeriod}`
       );
       if (!res.ok) {
         throw new Error(`Status ${res.status}`);
@@ -227,10 +225,11 @@ export default function AdminMetricsPage() {
                     <>
                       {(() => {
                         const entries = Object.entries(
-                          data.statistics.byReason,
+                          data.statistics.byReason
                         ) as [RejectionReason, number][];
-                        const [reason, count] =
-                          entries.sort((a, b) => b[1] - a[1])[0];
+                        const [reason, count] = entries.sort(
+                          (a, b) => b[1] - a[1]
+                        )[0];
                         return (
                           <>
                             <p className="text-sm font-medium text-gray-900">
@@ -288,17 +287,16 @@ export default function AdminMetricsPage() {
                 ) : (
                   <ul className="space-y-2">
                     {(
-                      Object.entries(
-                        data.statistics.byReason,
-                      ) as [RejectionReason, number][]
+                      Object.entries(data.statistics.byReason) as [
+                        RejectionReason,
+                        number,
+                      ][]
                     )
                       .sort((a, b) => b[1] - a[1])
                       .map(([reason, count]) => {
                         const percent =
                           data.statistics.total > 0
-                            ? Math.round(
-                                (count / data.statistics.total) * 100,
-                              )
+                            ? Math.round((count / data.statistics.total) * 100)
                             : 0;
                         return (
                           <li
@@ -482,5 +480,3 @@ export default function AdminMetricsPage() {
     </div>
   );
 }
-
-

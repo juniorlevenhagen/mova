@@ -70,7 +70,7 @@ export const PixelImage = ({
     const frame = requestAnimationFrame(() => {
       setIsVisible(true);
     });
-    
+
     if (grayscaleAnimation) {
       const colorTimeout = setTimeout(() => {
         setShowColor(true);
@@ -80,7 +80,7 @@ export const PixelImage = ({
         clearTimeout(colorTimeout);
       };
     }
-    
+
     return () => cancelAnimationFrame(frame);
   }, [colorRevealDelay, grayscaleAnimation]);
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, BarChart3, Home } from "lucide-react";
+import { FileText, BarChart3 } from "lucide-react";
 
 export function AdminNav() {
   const pathname = usePathname();
@@ -51,4 +51,3 @@ export function AdminNav() {
     </nav>
   );
 }
-

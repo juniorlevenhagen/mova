@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { planRejectionMetrics, recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
+import {
+  planRejectionMetrics,
+  recordPlanRejection,
+  type RejectionReason,
+} from "@/lib/metrics/planRejectionMetrics";
 
 /**
  * Endpoint de teste para verificar persistência de métricas
- * 
+ *
  * GET /api/test-metrics - Verifica status da persistência
  * POST /api/test-metrics - Cria uma métrica de teste
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const persistenceEnabled = planRejectionMetrics.isPersistenceEnabled();
     const stats = planRejectionMetrics.getStatistics();
@@ -49,7 +53,10 @@ export async function POST(request: NextRequest) {
     };
 
     // Registrar uma métrica de teste
-    await recordPlanRejection(reason as any, context);
+    await recordPlanRejection(
+      reason as Parameters<typeof recordPlanRejection>[0],
+      context
+    );
 
     // Verificar se foi registrada
     const stats = planRejectionMetrics.getStatistics();
@@ -64,7 +71,7 @@ export async function POST(request: NextRequest) {
       },
       currentStats: {
         total: stats.total,
-        byReason: stats.byReason[reason] || 0,
+        byReason: stats.byReason[reason as RejectionReason] || 0,
       },
       persistenceEnabled: planRejectionMetrics.isPersistenceEnabled(),
     });
@@ -79,4 +86,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

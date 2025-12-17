@@ -256,6 +256,106 @@ function validateTrainingTime(
 }
 
 /**
+ * Valida se o nome do exercício corresponde ao primaryMuscle atribuído
+ * Rejeita correspondências incorretas conhecidas (ex: "Elevação de panturrilha" com primaryMuscle "ombros")
+ */
+function validateExerciseMuscleMatch(exercise: Exercise): boolean {
+  const name = normalize(exercise.name);
+  const primary = normalize(exercise.primaryMuscle);
+
+  // ❌ Correspondências incorretas conhecidas (exercício × músculo)
+  const invalidMatches: Array<{
+    exercisePattern: string[];
+    invalidMuscle: string[];
+  }> = [
+    // Panturrilha nunca pode ser ombros
+    {
+      exercisePattern: ["panturrilha"],
+      invalidMuscle: ["ombros", "ombro", "deltoide", "deltoides"],
+    },
+    // Remada nunca pode ser ombros como primário
+    {
+      exercisePattern: ["remada", "remado"],
+      invalidMuscle: ["ombros", "ombro", "deltoide", "deltoides"],
+    },
+    // Exercícios de pernas nunca podem ser braços
+    {
+      exercisePattern: [
+        "agachamento",
+        "leg press",
+        "extensao",
+        "extensão",
+        "flexao",
+        "flexão",
+        "pernas",
+        "perna",
+      ],
+      invalidMuscle: [
+        "ombros",
+        "ombro",
+        "biceps",
+        "bíceps",
+        "triceps",
+        "tríceps",
+        "peitoral",
+        "costas",
+      ],
+    },
+    // Exercícios de braços nunca podem ser pernas
+    {
+      exercisePattern: [
+        "supino",
+        "desenvolvimento",
+        "elevacao lateral",
+        "elevação lateral",
+        "crucifixo",
+      ],
+      invalidMuscle: [
+        "quadriceps",
+        "quadríceps",
+        "posterior",
+        "gluteos",
+        "glúteos",
+        "panturrilhas",
+        "panturrilha",
+      ],
+    },
+    // Elevação de panturrilha especificamente
+    {
+      exercisePattern: ["panturrilha"],
+      invalidMuscle: [
+        "ombros",
+        "ombro",
+        "deltoide",
+        "deltoides",
+        "peitoral",
+        "costas",
+        "biceps",
+        "bíceps",
+        "triceps",
+        "tríceps",
+      ],
+    },
+  ];
+
+  // Verificar cada regra de correspondência inválida
+  for (const rule of invalidMatches) {
+    const matchesExercisePattern = rule.exercisePattern.some((pattern) =>
+      name.includes(pattern)
+    );
+    const matchesInvalidMuscle = rule.invalidMuscle.some((muscle) =>
+      primary.includes(muscle)
+    );
+
+    if (matchesExercisePattern && matchesInvalidMuscle) {
+      return false; // Correspondência inválida detectada
+    }
+  }
+
+  return true; // Correspondência válida ou não detectada como inválida
+}
+
+/**
  * Valida a ordem lógica dos grupos musculares nos exercícios
  */
 function validateExerciseOrder(day: TrainingDay): boolean {
@@ -640,6 +740,30 @@ export function isTrainingPlanUsable(
           );
           return false;
         }
+      }
+    }
+
+    // Validação de correspondência exercício × músculo primário
+    for (const exercise of day.exercises) {
+      if (!validateExerciseMuscleMatch(exercise)) {
+        rejectPlan(
+          "exercicio_musculo_incompativel",
+          {
+            activityLevel: level,
+            trainingDays,
+            dayType,
+            day: day.day,
+            exerciseName: exercise.name,
+            primaryMuscle: exercise.primaryMuscle,
+          },
+          "exercício com músculo primário incompatível",
+          {
+            day: day.day,
+            exerciseName: exercise.name,
+            primaryMuscle: exercise.primaryMuscle,
+          }
+        );
+        return false;
       }
     }
 

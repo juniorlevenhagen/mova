@@ -24,7 +24,8 @@ export type RejectionReason =
   | "excesso_exercicios_musculo_primario"
   | "distribuicao_inteligente_invalida"
   | "secondaryMuscles_excede_limite"
-  | "tempo_treino_excede_disponivel";
+  | "tempo_treino_excede_disponivel"
+  | "exercicio_musculo_incompativel";
 
 export interface RejectionMetric {
   reason: RejectionReason;
@@ -387,6 +388,8 @@ export function mapWarnMessageToReason(
       "distribuicao_inteligente_invalida",
     "secondaryMuscles excede limite de 2": "secondaryMuscles_excede_limite",
     "tempo de treino excede disponível": "tempo_treino_excede_disponivel",
+    "exercício com músculo primário incompatível":
+      "exercicio_musculo_incompativel",
   };
 
   for (const [key, reason] of Object.entries(reasonMap)) {

@@ -317,6 +317,24 @@ export function usePlanGeneration() {
       // ✅ Parar loading
       setIsGenerating(false);
 
+      // ✅ Verificar se é erro de créditos (limite atingido)
+      if (
+        error &&
+        typeof error === "object" &&
+        "type" in error &&
+        error.type === "TRIAL_LIMIT_REACHED"
+      ) {
+        throw error; // Relançar erro de créditos para ser tratado no componente
+      }
+
+      // ✅ Verificar se é erro de créditos pela mensagem
+      if (
+        errorMessage.includes("limite de planos gratuitos") ||
+        errorMessage.includes("Compre prompts")
+      ) {
+        throw error; // Relançar erro de créditos
+      }
+
       // ✅ Relançar erros de cooldown para serem tratados no componente
       if (
         error &&

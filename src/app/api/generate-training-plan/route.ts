@@ -459,6 +459,113 @@ Exemplos CORRETOS:
 - Levantamento terra → { "primaryMuscle": "posterior de coxa", "secondaryMuscles": ["costas", "glúteos"], "sets": 3, ... }
 
 ====================================================================
+EXERCÍCIOS VÁLIDOS POR GRUPO MUSCULAR (OBRIGATÓRIO)
+====================================================================
+
+⚠️ CRÍTICO: O nome do exercício DEVE corresponder ao primaryMuscle atribuído.
+
+❌ ERROS PROIBIDOS (NUNCA FAZER):
+- "Elevação de panturrilha" com primaryMuscle "ombros" → INCORRETO (panturrilha trabalha panturrilhas, não ombros)
+- "Remada unilateral" com primaryMuscle "ombros" → INCORRETO (remada trabalha costas, não ombros como primário)
+- Qualquer exercício de pernas com primaryMuscle de braço ou vice-versa
+
+✅ EXERCÍCIOS VÁLIDOS PARA OMBROS (primaryMuscle: "ombros"):
+
+Exercícios Compostos:
+- Desenvolvimento com halteres (ombros)
+- Desenvolvimento militar com barra (ombros)
+- Desenvolvimento Arnold (ombros)
+- Desenvolvimento sentado com halteres (ombros)
+- Desenvolvimento com barra (ombros)
+
+Exercícios de Isolamento - Deltóide Anterior:
+- Elevação frontal com halteres (ombros)
+- Elevação frontal com barra (ombros)
+- Elevação frontal na polia (ombros)
+
+Exercícios de Isolamento - Deltóide Lateral:
+- Elevação lateral com halteres (ombros)
+- Elevação lateral na polia (ombros)
+- Elevação lateral inclinada (ombros)
+
+Exercícios de Isolamento - Deltóide Posterior:
+- Elevação lateral invertida (ombros)
+- Crucifixo invertido (ombros)
+- Face pull (ombros) - pode ter "deltoide posterior" ou "trapézio" como secundário
+
+⚠️ IMPORTANTE SOBRE REMADA E OMBROS:
+- Remada unilateral/com halteres → primaryMuscle DEVE ser "costas" (não "ombros")
+- Remada pode ter "deltoide posterior" ou "trapézio" como secondaryMuscles, mas NUNCA como primaryMuscle
+- Se o dia é Pull e precisa trabalhar ombros posteriores, use exercícios específicos como Face Pull ou Elevação lateral invertida
+
+✅ EXERCÍCIOS VÁLIDOS PARA OUTROS GRUPOS:
+
+Panturrilhas (primaryMuscle: "panturrilhas"):
+- Elevação de panturrilha em pé
+- Elevação de panturrilha sentado
+- Elevação de panturrilha no leg press
+- Elevação de panturrilha unilateral
+
+Costas (primaryMuscle: "costas"):
+- Remada curvada com barra
+- Remada unilateral com halteres
+- Puxada frontal
+- Puxada aberta
+- Remada alta
+- Barra fixa
+
+Peitoral (primaryMuscle: "peitoral"):
+- Supino reto
+- Supino inclinado
+- Supino declinado
+- Crucifixo
+- Flexão de braços
+
+Quadríceps (primaryMuscle: "quadríceps"):
+- Agachamento
+- Agachamento frontal
+- Leg press
+- Extensão de pernas
+- Afundo
+
+Posterior de coxa (primaryMuscle: "posterior de coxa"):
+- Levantamento terra
+- Stiff
+- RDL (Romanian Deadlift)
+- Flexão de pernas
+- Good morning
+
+Glúteos (primaryMuscle: "glúteos"):
+- Agachamento (pode ser secundário)
+- Elevação pélvica
+- Ponte de glúteos
+- Abdução de quadril
+
+====================================================================
+VALIDAÇÃO DE CORRESPONDÊNCIA EXERCÍCIO × MÚSCULO (OBRIGATÓRIO)
+====================================================================
+
+ANTES DE ATRIBUIR primaryMuscle a um exercício, verifique:
+
+1. O nome do exercício corresponde ao grupo muscular?
+   - "Elevação de panturrilha" → primaryMuscle DEVE ser "panturrilhas" (NUNCA "ombros")
+   - "Remada" → primaryMuscle DEVE ser "costas" (NUNCA "ombros")
+   - "Desenvolvimento" → primaryMuscle DEVE ser "ombros"
+   - "Elevação lateral" → primaryMuscle DEVE ser "ombros"
+
+2. O exercício está no grupo muscular correto para o dia?
+   - Push: ombros (anterior/lateral) são permitidos
+   - Pull: ombros posteriores são permitidos, mas use exercícios específicos (Face Pull, Elevação lateral invertida)
+   - Lower: NUNCA incluir exercícios de ombros
+
+3. Se houver dúvida sobre qual músculo é primário:
+   - Consulte a biomecânica do movimento
+   - O músculo que realiza o movimento principal é o primário
+   - Exercícios compostos: o músculo que mais trabalha é o primário
+
+⚠️ SE O EXERCÍCIO NÃO CORRESPONDER AO primaryMuscle → PLANO INVÁLIDO
+
+====================================================================
 LIMITE DE VOLUME POR MÚSCULO PRIMÁRIO (REGRA CRÍTICA)
 ====================================================================
 

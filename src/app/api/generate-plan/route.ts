@@ -1171,6 +1171,47 @@ export async function POST(request: NextRequest) {
 
     // 4. Preparar dados para OpenAI (incluindo histórico de planos e insights normalizados)
     // ✅ Garantir que estamos usando os dados mais recentes do perfil
+
+    // ✅ INTERPRETAÇÃO INTELIGENTE DE OBJETIVOS (antes de criar userData)
+    const imc =
+      profile?.height && profile?.weight
+        ? parseFloat(
+            (profile.weight / Math.pow(profile.height / 100, 2)).toFixed(1)
+          )
+        : null;
+
+    let interpretedObjective = profile?.objective || "Não informado";
+    let objectiveConversion = null;
+
+    if (imc !== null) {
+      const { interpretObjective, logObjectiveConversion } = await import(
+        "@/lib/rules/objectiveInterpretation"
+      );
+      const conversion = interpretObjective({
+        imc,
+        nivelAtividade: profile?.nivel_atividade || "Moderado",
+        objective: profile?.objective || "Não informado",
+        weight: profile?.weight,
+        height: profile?.height,
+        age: profile?.age,
+        gender: profile?.gender,
+      });
+
+      if (conversion.wasConverted) {
+        interpretedObjective = conversion.interpretedObjective;
+        objectiveConversion = conversion;
+        logObjectiveConversion(conversion, {
+          imc,
+          nivelAtividade: profile?.nivel_atividade || "Moderado",
+          objective: profile?.objective || "Não informado",
+          weight: profile?.weight,
+          height: profile?.height,
+          age: profile?.age,
+          gender: profile?.gender,
+        });
+      }
+    }
+
     const userData = {
       // Dados básicos
       name:
@@ -1182,7 +1223,7 @@ export async function POST(request: NextRequest) {
       initialWeight: profile?.initial_weight || profile?.weight || 0,
 
       // Objetivos e preferências
-      objective: profile?.objective || "Não informado",
+      objective: interpretedObjective, // ✅ Usar objetivo interpretado
       trainingFrequency: profile?.training_frequency || "Não informado",
       trainingLocation: profile?.training_location || "Academia",
       trainingTime: profile?.training_time || null, // Tempo disponível por treino
@@ -1203,11 +1244,8 @@ export async function POST(request: NextRequest) {
       // Metas
       currentGoals: goals || [],
 
-      // Cálculos - ✅ Recalcular com dados atualizados
-      imc:
-        profile?.height && profile?.weight
-          ? (profile.weight / Math.pow(profile.height / 100, 2)).toFixed(1)
-          : null,
+      // Cálculos - ✅ Usar IMC já calculado acima
+      imc: imc !== null ? imc.toFixed(1) : null,
       weightChange:
         profile?.weight && profile?.initial_weight
           ? (profile.weight - profile.initial_weight).toFixed(1)
@@ -1224,11 +1262,46 @@ export async function POST(request: NextRequest) {
     // 4. Gerar plano com OpenAI (usando histórico de planos anteriores)
     const openai = createOpenAIClient();
 
+    // ✅ PROGRESSÃO DE CARDIO (antes de gerar plano)
+    let cardioProgression = null;
+    if (imc !== null && profile) {
+      const { determineCardioProgression, logCardioProgression } = await import(
+        "@/lib/rules/cardioProgression"
+      );
+      // Extrair frequência de cardio do userData se disponível (pode estar em aerobicTraining ou ser inferida)
+      const cardioFreq = 0; // Será determinado pelo sistema baseado no objetivo
+      cardioProgression = determineCardioProgression({
+        nivelAtividade: profile.nivel_atividade || "Moderado",
+        imc,
+        cardioFrequency: cardioFreq,
+        trainingFrequency:
+          parseInt(String(profile.training_frequency || 0)) || 0,
+      });
+      logCardioProgression(cardioProgression, {
+        nivelAtividade: profile.nivel_atividade || "Moderado",
+        imc,
+        cardioFrequency: cardioFreq,
+        trainingFrequency:
+          parseInt(String(profile.training_frequency || 0)) || 0,
+      }, cardioFreq);
+    }
+
     // Função para gerar plano com retry se necessário
     const generatePlanWithRetry = async (attempt = 1, maxAttempts = 3) => {
       console.log(
         `🔄 Tentativa ${attempt}/${maxAttempts} de gerar plano completo...`
       );
+
+      // Construir mensagem de objetivo interpretado
+      const objectiveMessage = objectiveConversion?.wasConverted
+        ? `\n⚠️ OBJETIVO INTERPRETADO: O objetivo original "${objectiveConversion.originalObjective}" foi convertido para "${interpretedObjective}" devido a: ${objectiveConversion.reason}\n`
+        : `\nObjetivo: ${interpretedObjective}\n`;
+
+      // Construir mensagem de progressão de cardio
+      const cardioMessage = cardioProgression?.wasAdjusted
+        ? `\n⚠️ PROGRESSÃO DE CARDIO: ${cardioProgression.reason}\nFrequência inicial recomendada: ${cardioProgression.initialFrequency}x/semana, intensidade ${cardioProgression.initialIntensity}. Progressão após ${cardioProgression.progressionWeeks} semanas.\n`
+        : "";
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         temperature: 0.3, // ✅ Aumentar temperatura para mais variação nos planos
@@ -1239,6 +1312,7 @@ export async function POST(request: NextRequest) {
             content: `Você é um personal trainer e nutricionista especialista de ALTO NÍVEL.
 
 IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o plano deve ser construído especificamente para atingir esse objetivo.
+${objectiveMessage}${cardioMessage}
 
 ⚠️ CAMPOS RECOMENDADOS (temporariamente opcionais para testes):
 1. analysis - análise completa do status atual (RECOMENDADO)
@@ -1840,8 +1914,19 @@ Exemplo de estrutura esperada:
 1. **SEMPRE inclua o campo aerobicTraining separado do trainingPlan**
    ⚠️ CRÍTICO: O treino aeróbico é INDEPENDENTE do treino de musculação. Pode ser feito no mesmo dia que a musculação quando apropriado.
    
-2. **Mínimo 2-3 sessões por semana** (seguindo diretrizes OMS: mínimo 150min/semana moderado)
+2. **PROGRESSÃO AUTOMÁTICA DE CARDIO PARA SEDENTÁRIOS (REGRA CRÍTICA)**
+   ⚠️ REGRA DE OURO: Se nível de atividade = "Sedentário":
+   - IMC ≥ 35: Iniciar com MÁXIMO 2 sessões/semana, intensidade LEVE (Z1-Z2)
+   - IMC 30-34.9: Iniciar com MÁXIMO 3 sessões/semana, intensidade LEVE (Z1-Z2)
+   - IMC < 30: Iniciar com MÁXIMO 3 sessões/semana, intensidade LEVE (Z1-Z2)
+   - Progressão automática após 2-4 semanas (conforme IMC)
+   - Total de estímulos semanais (musculação + cardio) não deve exceder 6 inicialmente
+   - ⚠️ NUNCA inicie sedentário com 4+ sessões de cardio, mesmo que o usuário informe essa frequência
+   - ⚠️ Objetivo: Evitar fadiga, risco articular e abandono
+   
+3. **Mínimo 2-3 sessões por semana** (seguindo diretrizes OMS: mínimo 150min/semana moderado)
    ⚠️ IMPORTANTE: A frequência de aeróbico é independente da frequência de musculação informada pelo usuário.
+   ⚠️ EXCEÇÃO: Para sedentários, respeitar progressão automática acima (início conservador)
    
 3. **Especifique: dia, atividade, duração, intensidade, zona de FC (quando possível)**
    ⚠️ PODE SER NO MESMO DIA: Quando apropriado, você pode agendar treino aeróbico no mesmo dia que treino de musculação.
@@ -3070,6 +3155,65 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
         console.warn("⚠️ Erro ao tentar gerar nutritionPlan:", optionalError);
       }
     } else if (plan && plan.nutritionPlan) {
+      // ✅ VALIDAÇÃO NUTRICIONAL COM LIMITES FISIOLÓGICOS
+      if (profile && imc !== null) {
+        const { validateAndCorrectNutrition, logNutritionCorrection } = await import(
+          "@/lib/rules/nutritionValidation"
+        );
+        
+        // Obter valores originais antes da validação para a métrica
+        const proteinStr = (plan.nutritionPlan as any).macros?.protein || "0";
+        const proteinMatch = String(proteinStr).match(/(\d+)/);
+        const originalProtein = proteinMatch ? parseInt(proteinMatch[1]) : 0;
+
+        const validated = validateAndCorrectNutrition(
+          plan.nutritionPlan as any,
+          {
+            weight: profile.weight || 0,
+            height: profile.height || 0,
+            age: profile.age || 0,
+            gender: profile.gender || "Não informado",
+            imc,
+            nivelAtividade: profile.nivel_atividade,
+          }
+        );
+
+        if (validated.wasAdjusted) {
+          console.log("🔧 Plano nutricional ajustado:", validated.adjustments);
+          
+          // Extrair valor corrigido para a métrica
+          const correctedProteinStr = validated.plan.macros.protein;
+          const correctedProteinMatch = String(correctedProteinStr).match(/(\d+)/);
+          const correctedProtein = correctedProteinMatch ? parseInt(correctedProteinMatch[1]) : 0;
+
+          // Estimar massa magra para a métrica (re-usando a lógica interna ou apenas passando o valor)
+          // Como a função logNutritionCorrection pede a leanMass, e ela é interna a validateAndCorrectNutrition,
+          // idealmente validateAndCorrectNutrition deveria retornar a leanMass usada.
+          // Por simplicidade aqui, vamos extrair se possível ou deixar logNutritionCorrection calcular.
+          // Ajustei logNutritionCorrection para calcular internamente se necessário, mas vou passar o que temos.
+          
+          logNutritionCorrection(
+            validated, 
+            {
+              weight: profile.weight || 0,
+              height: profile.height || 0,
+              age: profile.age || 0,
+              gender: profile.gender || "Não informado",
+              imc,
+              nivelAtividade: profile.nivel_atividade,
+            },
+            originalProtein,
+            correctedProtein,
+            validated.leanMass
+          );
+
+          plan.nutritionPlan = validated.plan as any;
+        }
+
+        if (validated.warnings.length > 0) {
+          console.warn("⚠️ Avisos nutricionais:", validated.warnings);
+        }
+      }
       console.log("✅ nutritionPlan já existe no plano inicial");
     }
 

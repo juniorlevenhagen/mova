@@ -129,37 +129,35 @@ export default function DashboardPage() {
       if (result) {
         await refetchTrial();
         setShowPlanModal(true);
+      } else {
+        // ✅ Se result é null, pode ser erro de créditos que não foi lançado
+        // Verificar erro do hook
+        if (planGenerationError) {
+          const errorMessage = planGenerationError;
+          if (
+            errorMessage.includes("limite de planos gratuitos") ||
+            errorMessage.includes("Compre prompts")
+          ) {
+            console.log(
+              "💳 Erro de créditos detectado (via planGenerationError), abrindo modal de compra"
+            );
+            setShowUpgradeModal(true);
+            return;
+          }
+        }
       }
     } catch (error: unknown) {
       // ✅ Capturar erro de cooldown especificamente
       const errorMessage =
         error instanceof Error ? error.message : "Erro ao gerar plano";
 
-      // ✅ Type guard para erro de cooldown
-      interface CooldownError extends Error {
-        type?: string;
-        hoursRemaining?: number;
-        nextPlanAvailable?: string;
-        availablePrompts?: number;
-      }
-
-      const isCooldownError = (err: unknown): err is CooldownError => {
-        return (
-          typeof err === "object" &&
-          err !== null &&
-          ("type" in err || "message" in err)
-        );
-      };
-
-      const cooldownError = isCooldownError(error) ? error : null;
-
       console.log("🔍 Erro capturado no handleGeneratePlan:", {
         error,
         errorMessage,
-        type: cooldownError?.type,
-        hoursRemaining: cooldownError?.hoursRemaining,
-        nextPlanAvailable: cooldownError?.nextPlanAvailable,
-        availablePrompts: cooldownError?.availablePrompts,
+        errorType:
+          typeof error === "object" && error !== null && "type" in error
+            ? (error as { type?: string }).type
+            : undefined,
       });
 
       // ✅ Type guard para erro de créditos
@@ -175,23 +173,61 @@ export default function DashboardPage() {
           typeof err === "object" &&
           err !== null &&
           ("type" in err || "errorCode" in err) &&
-          (err as CreditsError).type === "TRIAL_LIMIT_REACHED"
+          ((err as CreditsError).type === "TRIAL_LIMIT_REACHED" ||
+            (err instanceof Error &&
+              (err.message.includes("limite de planos gratuitos") ||
+                err.message.includes("Compre prompts"))))
         );
       };
 
       const creditsError = isCreditsError(error) ? error : null;
 
-      // ✅ Verificar se é erro de créditos (limite atingido)
+      // ✅ Verificar se é erro de créditos (limite atingido) - PRIORIDADE ALTA
       if (
         creditsError ||
         errorMessage.includes("limite de planos gratuitos") ||
-        errorMessage.includes("Compre prompts")
+        errorMessage.includes("Compre prompts") ||
+        (typeof error === "object" &&
+          error !== null &&
+          "type" in error &&
+          (error as { type?: string }).type === "TRIAL_LIMIT_REACHED")
       ) {
-        console.log("💳 Erro de créditos detectado, abrindo modal de compra");
+        console.log("💳 Erro de créditos detectado, abrindo modal de compra", {
+          creditsError,
+          errorMessage,
+          errorType:
+            typeof error === "object" && error !== null && "type" in error
+              ? (error as { type?: string }).type
+              : undefined,
+        });
         setShowUpgradeModal(true);
+        setPlanError(null); // Limpar qualquer erro anterior
         // Não mostrar erro adicional, o modal já explica
         return;
       }
+
+      // ✅ Type guard para erro de cooldown
+      interface CooldownError extends Error {
+        type?: string;
+        hoursRemaining?: number;
+        nextPlanAvailable?: string;
+        availablePrompts?: number;
+      }
+
+      const isCooldownError = (err: unknown): err is CooldownError => {
+        return (
+          typeof err === "object" &&
+          err !== null &&
+          ("type" in err || "message" in err) &&
+          ((err as CooldownError).type === "COOLDOWN_ACTIVE" ||
+            (err instanceof Error &&
+              (err.message.includes("Aguarde") ||
+                err.message.includes("cooldown") ||
+                err.message.includes("Cooldown"))))
+        );
+      };
+
+      const cooldownError = isCooldownError(error) ? error : null;
 
       // ✅ Verificar se é erro de cooldown (por tipo ou mensagem)
       if (
@@ -419,12 +455,30 @@ export default function DashboardPage() {
   // ✅ Monitorar erros do hook de geração de planos
   useEffect(() => {
     if (planGenerationError) {
-      setPlanError(planGenerationError);
+      const errorMessage = planGenerationError;
 
-      // Esconder erro após 8 segundos
-      setTimeout(() => {
-        setPlanError(null);
-      }, 8000);
+      // ✅ Verificar se é erro de créditos e abrir modal automaticamente
+      if (
+        errorMessage.includes("limite de planos gratuitos") ||
+        errorMessage.includes("Compre prompts") ||
+        errorMessage.includes("TRIAL_LIMIT_REACHED")
+      ) {
+        console.log(
+          "💳 Erro de créditos detectado (via useEffect), abrindo modal de compra"
+        );
+        setShowUpgradeModal(true);
+        setPlanError(null); // Não mostrar erro adicional, o modal já explica
+      } else {
+        // Outros erros - mostrar na mensagem padrão
+        setPlanError(errorMessage);
+
+        // Esconder erro após 8 segundos
+        setTimeout(() => {
+          setPlanError(null);
+        }, 8000);
+      }
+    } else {
+      setPlanError(null);
     }
   }, [planGenerationError]);
 

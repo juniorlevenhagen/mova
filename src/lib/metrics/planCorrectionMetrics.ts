@@ -1,6 +1,6 @@
 /**
  * Sistema de Registro de Correções Aplicadas (Assíncrono)
- * 
+ *
  * "LLM cria, código governa, métricas informam."
  */
 
@@ -28,25 +28,28 @@ export async function recordPlanCorrection(
   // 1. Log imediato no console (para debug em dev)
   console.log(`📈 [Métrica de Correção] ${payload.reason}`, {
     data: payload.data,
-    context
+    context,
   });
 
   if (!supabase) return;
 
   // 2. Persistência em background
-  supabase
-    .from("plan_correction_metrics")
-    .insert({
-      reason: payload.reason,
-      payload: payload.data,
-      context: context,
-      created_at: new Date().toISOString(),
-    })
-    .then(({ error }) => {
-      if (error) console.warn("[Metrics] Erro ao persistir correção:", error.message);
-    })
-    .catch((err) => {
-      console.warn("[Metrics] Falha crítica ao registrar correção:", err);
-    });
-}
+  const persist = async () => {
+    try {
+      const { error } = await supabase.from("plan_correction_metrics").insert({
+        reason: payload.reason,
+        payload: payload.data,
+        context: context,
+        created_at: new Date().toISOString(),
+      });
 
+      if (error) {
+        console.warn("[Metrics] Erro ao persistir correção:", error.message);
+      }
+    } catch (err) {
+      console.warn("[Metrics] Falha crítica ao registrar correção:", err);
+    }
+  };
+
+  persist();
+}

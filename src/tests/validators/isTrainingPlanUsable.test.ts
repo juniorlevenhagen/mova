@@ -470,4 +470,267 @@ describe("isTrainingPlanUsable - Integração", () => {
     expect(isTrainingPlanUsable(plan, 4, null)).toBe(false);
     expect(isTrainingPlanUsable(plan, 4, undefined)).toBe(false);
   });
+
+  describe("PERFIL ATLETA - 5x por semana (Simulação Real)", () => {
+    const activityLevel = "Atleta";
+    const trainingDays = 5;
+    const availableTime = 60;
+
+    it("deve aceitar um plano PPL válido para nível Atleta", () => {
+      const plan: TrainingPlan = {
+        overview: "Plano de alta performance",
+        progression: "Aumentar cargas progressivamente",
+        weeklySchedule: [
+          {
+            day: "Segunda",
+            type: "Push",
+            exercises: [
+              {
+                name: "Supino Reto",
+                primaryMuscle: "peitoral",
+                sets: 4,
+                reps: "8-10",
+                rest: "90s",
+              },
+              {
+                name: "Desenvolvimento Halteres",
+                primaryMuscle: "ombros",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Supino Inclinado",
+                primaryMuscle: "peitoral",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Elevação Lateral",
+                primaryMuscle: "ombros",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+              {
+                name: "Tríceps Pulley",
+                primaryMuscle: "triceps",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+              {
+                name: "Paralelas",
+                primaryMuscle: "peitoral",
+                sets: 3,
+                reps: "falha",
+                rest: "60s",
+              },
+            ],
+          },
+          {
+            day: "Terça",
+            type: "Pull",
+            exercises: [
+              {
+                name: "Puxada Frontal",
+                primaryMuscle: "costas",
+                sets: 4,
+                reps: "8-10",
+                rest: "90s",
+              },
+              {
+                name: "Remada Curvada",
+                primaryMuscle: "costas",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Face Pull",
+                primaryMuscle: "ombros",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              }, // Deltoide posterior
+              {
+                name: "Rosca Direta",
+                primaryMuscle: "biceps",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Puxada Triângulo",
+                primaryMuscle: "costas",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Rosca Martelo",
+                primaryMuscle: "biceps",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+            ],
+          },
+          {
+            day: "Quarta",
+            type: "Legs",
+            exercises: [
+              {
+                name: "Agachamento",
+                primaryMuscle: "quadriceps",
+                sets: 4,
+                reps: "8-10",
+                rest: "120s",
+              },
+              {
+                name: "Leg Press",
+                primaryMuscle: "quadriceps",
+                sets: 3,
+                reps: "10-12",
+                rest: "90s",
+              },
+              {
+                name: "Cadeira Flexora",
+                primaryMuscle: "posterior de coxa",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+              {
+                name: "Stiff",
+                primaryMuscle: "posterior de coxa",
+                sets: 3,
+                reps: "10-12",
+                rest: "90s",
+              },
+              {
+                name: "Afundo",
+                primaryMuscle: "quadriceps",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Panturrilha em pé",
+                primaryMuscle: "panturrilhas",
+                sets: 4,
+                reps: "15-20",
+                rest: "60s",
+              },
+            ],
+          },
+          {
+            day: "Quinta",
+            type: "Push",
+            exercises: [
+              {
+                name: "Supino Reto",
+                primaryMuscle: "peitoral",
+                sets: 4,
+                reps: "8-10",
+                rest: "90s",
+              },
+              {
+                name: "Desenvolvimento Halteres",
+                primaryMuscle: "ombros",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Supino Inclinado",
+                primaryMuscle: "peitoral",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Elevação Lateral",
+                primaryMuscle: "ombros",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+              {
+                name: "Tríceps Pulley",
+                primaryMuscle: "triceps",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+              {
+                name: "Paralelas",
+                primaryMuscle: "peitoral",
+                sets: 3,
+                reps: "falha",
+                rest: "60s",
+              },
+            ],
+          },
+          {
+            day: "Sexta",
+            type: "Pull",
+            exercises: [
+              {
+                name: "Puxada Frontal",
+                primaryMuscle: "costas",
+                sets: 4,
+                reps: "8-10",
+                rest: "90s",
+              },
+              {
+                name: "Remada Curvada",
+                primaryMuscle: "costas",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Face Pull",
+                primaryMuscle: "ombros",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+              {
+                name: "Rosca Direta",
+                primaryMuscle: "biceps",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Puxada Triângulo",
+                primaryMuscle: "costas",
+                sets: 3,
+                reps: "10-12",
+                rest: "60s",
+              },
+              {
+                name: "Rosca Martelo",
+                primaryMuscle: "biceps",
+                sets: 3,
+                reps: "12-15",
+                rest: "60s",
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = isTrainingPlanUsable(
+        plan,
+        trainingDays,
+        activityLevel,
+        availableTime
+      );
+      expect(result).toBe(true);
+    });
+  });
 });

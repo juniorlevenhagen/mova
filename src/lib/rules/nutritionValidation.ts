@@ -92,9 +92,13 @@ export function logNutritionCorrection(
           originalProtein,
           correctedProtein,
           leanMass,
-          reason: Math.abs(correctedProtein - (profile.gender.toLowerCase().includes("feminino") ? 180 : 220)) < 1
-            ? "cap_absoluto" 
-            : "massa_magra",
+          reason:
+            Math.abs(
+              correctedProtein -
+                (profile.gender.toLowerCase().includes("feminino") ? 180 : 220)
+            ) < 1
+              ? "cap_absoluto"
+              : "massa_magra",
         },
       },
       {
@@ -131,9 +135,6 @@ export function validateAndCorrectNutrition(
 
   // Calcular calorias dos macros
   const proteinCalories = proteinGrams * 4;
-  const carbsCalories = carbsGrams * 4;
-  const fatsCalories = fatsGrams * 9;
-  const totalMacroCalories = proteinCalories + carbsCalories + fatsCalories;
 
   // VALIDAÇÃO 1: Proteína como % das calorias totais
   const proteinPercent = (proteinCalories / calories) * 100;
@@ -217,8 +218,9 @@ export function validateAndCorrectNutrition(
     );
   }
 
-  // Construir plano corrigido
-  const correctedPlan: NutritionPlan = {
+  // Construir plano corrigido preservando campos originais (mealPlan, hydration, etc)
+  const correctedPlan = {
+    ...plan,
     dailyCalories: calories,
     macros: {
       protein: `${Math.round(correctedProtein)}g`,

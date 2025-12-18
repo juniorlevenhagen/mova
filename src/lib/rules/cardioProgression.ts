@@ -148,7 +148,8 @@ export function logCardioProgression(
             musculacaoCount: profile.trainingFrequency || 0,
             originalCardio: originalCardioFrequency,
             correctedCardio: progression.initialFrequency,
-            totalStimuli: (profile.trainingFrequency || 0) + originalCardioFrequency,
+            totalStimuli:
+              (profile.trainingFrequency || 0) + originalCardioFrequency,
           },
         },
         {

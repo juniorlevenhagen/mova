@@ -4,7 +4,7 @@ import LoginForm from "@/components/ui/LoginForm";
 
 export default function LoginPage() {
   return (
-    <div className="bg-white rounded-[22px] border-2 border-black shadow-2xl p-8">
+    <div className="bg-gray-50 rounded-[22px] p-8">
       <div className="text-center mb-8">
         <h1 className="text-3xl md:text-4xl font-zalando-medium text-black mb-2">
           Bem-vindo de volta

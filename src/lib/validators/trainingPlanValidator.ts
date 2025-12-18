@@ -791,7 +791,9 @@ export function isTrainingPlanUsable(
       idoso: 3,
       limitado: 3,
       iniciante: 4,
+      intermediario: 5,
       moderado: 5,
+      avancado: 6,
       atleta: 6,
       atleta_altorendimento: 8,
     };

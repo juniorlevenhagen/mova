@@ -1181,8 +1181,6 @@ export async function POST(request: NextRequest) {
         : null;
 
     let interpretedObjective = profile?.objective || "Não informado";
-    let objectiveConversion = null;
-
     if (imc !== null) {
       const { interpretObjective, logObjectiveConversion } = await import(
         "@/lib/rules/objectiveInterpretation"
@@ -1199,7 +1197,6 @@ export async function POST(request: NextRequest) {
 
       if (conversion.wasConverted) {
         interpretedObjective = conversion.interpretedObjective;
-        objectiveConversion = conversion;
         logObjectiveConversion(conversion, {
           imc,
           nivelAtividade: profile?.nivel_atividade || "Moderado",
@@ -1277,13 +1274,17 @@ export async function POST(request: NextRequest) {
         trainingFrequency:
           parseInt(String(profile.training_frequency || 0)) || 0,
       });
-      logCardioProgression(cardioProgression, {
-        nivelAtividade: profile.nivel_atividade || "Moderado",
-        imc,
-        cardioFrequency: cardioFreq,
-        trainingFrequency:
-          parseInt(String(profile.training_frequency || 0)) || 0,
-      }, cardioFreq);
+      logCardioProgression(
+        cardioProgression,
+        {
+          nivelAtividade: profile.nivel_atividade || "Moderado",
+          imc,
+          cardioFrequency: cardioFreq,
+          trainingFrequency:
+            parseInt(String(profile.training_frequency || 0)) || 0,
+        },
+        cardioFreq
+      );
     }
 
     // Função para gerar plano com retry se necessário
@@ -1292,54 +1293,92 @@ export async function POST(request: NextRequest) {
         `🔄 Tentativa ${attempt}/${maxAttempts} de gerar plano completo...`
       );
 
-      // Construir mensagem de objetivo interpretado
-      const objectiveMessage = objectiveConversion?.wasConverted
-        ? `\n⚠️ OBJETIVO INTERPRETADO: O objetivo original "${objectiveConversion.originalObjective}" foi convertido para "${interpretedObjective}" devido a: ${objectiveConversion.reason}\n`
-        : `\nObjetivo: ${interpretedObjective}\n`;
-
-      // Construir mensagem de progressão de cardio
-      const cardioMessage = cardioProgression?.wasAdjusted
-        ? `\n⚠️ PROGRESSÃO DE CARDIO: ${cardioProgression.reason}\nFrequência inicial recomendada: ${cardioProgression.initialFrequency}x/semana, intensidade ${cardioProgression.initialIntensity}. Progressão após ${cardioProgression.progressionWeeks} semanas.\n`
-        : "";
-
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
-        temperature: 0.3, // ✅ Aumentar temperatura para mais variação nos planos
-        max_tokens: 4096, // ✅ Aumentar tokens para planos mais completos
+        temperature: 0.3,
+        max_tokens: 4096,
         messages: [
           {
             role: "system",
-            content: `Você é um personal trainer e nutricionista especialista de ALTO NÍVEL.
+            content: `Você é um personal trainer e nutricionista esportivo de elite. Sua missão é gerar um plano de saúde IMPECÁVEL.
+Qualidade e precisão fisiológica são inegociáveis.
 
-IMPORTANTE: O OBJETIVO PRINCIPAL DO USUÁRIO É SUA PRIORIDADE ABSOLUTA. Todo o plano deve ser construído especificamente para atingir esse objetivo.
-${objectiveMessage}${cardioMessage}
+⚠️ Qualquer violação destas regras invalida o plano.
 
-⚠️ CAMPOS RECOMENDADOS (temporariamente opcionais para testes):
-1. analysis - análise completa do status atual (RECOMENDADO)
-2. trainingPlan - plano de treino de FORÇA/MUSCULAÇÃO completo com weeklySchedule E progression (RECOMENDADO)
-   ⚠️ IMPORTANTE: A frequência de treinos informada pelo usuário (${userData.trainingFrequency}) se refere APENAS aos dias de musculação/força.
-   O weeklySchedule do trainingPlan deve conter EXATAMENTE ${userData.trainingFrequency} dias de treino de força.
-3. aerobicTraining - plano de TREINO AERÓBICO/CARDIOVASCULAR (OBRIGATÓRIO - ver diretrizes abaixo)
-   ⚠️ IMPORTANTE: O treino aeróbico é INDEPENDENTE do treino de musculação e pode ser feito no mesmo dia quando apropriado.
-4. nutritionPlan - plano nutricional completo com dailyCalories, macros, mealPlan E hydration (MUITO IMPORTANTE!)
-5. goals - metas semanais, mensais e indicadores de progresso (RECOMENDADO)
-6. motivation - mensagem personalizada e dicas motivacionais (RECOMENDADO - IMPORTANTE PARA MOTIVAR O USUÁRIO!)
+====================================================================
+🔒 CLÁUSULA FAIL-FAST (CRÍTICO)
+====================================================================
+Se por qualquer motivo técnico ou de tempo você não conseguir cumprir RIGOROSAMENTE as regras de:
+- Segurança nutricional e limites de proteína (máx 180g mulheres / 220g homens)
+- Interpretação inteligente de objetivo (Recomposição para IMC ≥ 30)
+- Volume mínimo por músculo grande
+NÃO GERE O PLANO. É preferível falhar do que entregar uma estratégia que comprometa a saúde ou os resultados de elite do usuário.
 
-⚠️ **CRÍTICO: SEMPRE inclua o campo aerobicTraining em TODOS os planos!** Treino aeróbico é essencial para saúde cardiovascular e deve ser tratado com a mesma importância que treino de força.
+====================================================================
+1️⃣ INTERPRETAÇÃO INTELIGENTE DE OBJETIVO (REGRA CRÍTICA)
+====================================================================
+- Nunca interprete o objetivo literalmente sem avaliar o contexto fisiológico.
+- Se IMC ≥ 30 E nível de atividade = Sedentário:
+  * NÃO gerar plano com foco em "ganho de massa puro".
+  * Converter automaticamente para: "Recomposição corporal com foco em força e preservação de massa magra".
+  * Justificativa: Pessoas obesas precisam fortalecer a massa magra enquanto reduzem gordura, não apenas ganhar peso.
 
-## ANÁLISE ESTRATÉGICA BASEADA NO OBJETIVO E IMC:
+====================================================================
+2️⃣ NUTRIÇÃO — LIMITES FISIOLÓGICOS OBRIGATÓRIOS
+====================================================================
+- Proteína: Basear sempre na massa magra estimada.
+- Faixa válida: 1.6 a 2.2 g/kg de massa magra.
+- Limite absoluto de segurança: Mulheres (máx 180g/dia) | Homens (máx 220g/dia).
+- Proteína NUNCA deve exceder 75% das calorias totais.
+- Se houver ajuste de proteína: Redistribuir calorias (60% Carbs, 40% Gorduras).
 
-⚠️ REGRA CRÍTICA: SEMPRE considere o IMC antes de definir a estratégia nutricional!
+====================================================================
+3️⃣ CARDIO — PROGRESSÃO AUTOMÁTICA PARA SEDENTÁRIOS
+====================================================================
+- Se nível = Sedentário:
+  * IMC ≥ 35 → máx 2 sessões/semana, intensidade leve.
+  * IMC 30-34.9 → máx 3 sessões/semana, intensidade leve.
+  * IMC < 30 → máx 3 sessões/semana, intensidade leve.
+- Progressão automática sugerida após 2-4 semanas.
+- Total de estímulos semanais (Musculação + Cardio) ≤ 6 inicialmente.
 
-### 📊 CLASSIFICAÇÃO DO IMC:
-- Abaixo do peso: IMC < 18.5
-- Normal: IMC 18.5 - 24.9
-- Sobrepeso: IMC 25 - 29.9
-- Obesidade Grau I: IMC 30 - 34.9
-- Obesidade Grau II: IMC 35 - 39.9
-- Obesidade Grau III (Grave): IMC ≥ 40
+====================================================================
+4️⃣ VOLUME MÍNIMO POR GRUPO MUSCULAR (REGRA FUNDAMENTAL)
+====================================================================
+- Nunca subdimensionar músculos grandes (Peitoral, Costas, Quadríceps, Posterior, Glúteos).
+- Atletas/Treinados: Mínimo 3 exercícios por músculo grande por sessão.
+- Intermediários: 2-3 exercícios (3 preferencial).
+- Iniciantes: 2 exercícios aceitável.
+- Esta regra vale igualmente para homens e mulheres.
 
-### 📋 TABELA DE DECISÃO: IMC + OBJETIVO = ESTRATÉGIA
+====================================================================
+5️⃣ FREQUÊNCIA SEMANAL E DIVISÕES (IMPORTANTE)
+====================================================================
+- Se frequência = 5x/semana: Aceitável um grupo com menor frequência. Sugerir 6º dia se possível.
+- Repetir treinos (A/B) é válido. Consistência > Criatividade aleatória.
+
+====================================================================
+6️⃣ CLASSIFICAÇÃO CORRETA DOS EXERCÍCIOS
+====================================================================
+- Nunca rotular exercícios de forma anatomicamente incorreta.
+- ❌ Panturrilha ≠ Ombros.
+- ✅ Remadas: Classificar como "costas" (mencionar deltoide posterior como secundário).
+- ✅ Face Pull: "costas" ou "ombros" (foco deltoide posterior).
+
+====================================================================
+7️⃣ TOM E QUALIDADE FINAL
+====================================================================
+- Seja confiante, técnico e claro.
+- Evite jargões desnecessários e promessas irreais.
+- O objetivo é um plano fisiologicamente coerente, clínico e defensivo.
+
+⚠️ INSTRUÇÃO DE QUALIDADE:
+- Seja extremamente detalhado na análise estratégica.
+- No plano nutricional, escolha alimentos que façam sentido para o objetivo e orçamento.
+- Seja inspirador no campo motivation, use o nome do usuário e seus dados para criar uma conexão real.
+
+⚠️ IMPORTANTE: O campo trainingPlan.weeklySchedule deve conter EXATAMENTE ${userData.trainingFrequency} dias de treino de musculação.
+⚠️ **CRÍTICO: SEMPRE inclua o campo aerobicTraining em TODOS os planos!**
 
 Use esta tabela para definir a estratégia correta:
 
@@ -3157,10 +3196,9 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
     } else if (plan && plan.nutritionPlan) {
       // ✅ VALIDAÇÃO NUTRICIONAL COM LIMITES FISIOLÓGICOS
       if (profile && imc !== null) {
-        const { validateAndCorrectNutrition, logNutritionCorrection } = await import(
-          "@/lib/rules/nutritionValidation"
-        );
-        
+        const { validateAndCorrectNutrition, logNutritionCorrection } =
+          await import("@/lib/rules/nutritionValidation");
+
         // Obter valores originais antes da validação para a métrica
         const proteinStr = (plan.nutritionPlan as any).macros?.protein || "0";
         const proteinMatch = String(proteinStr).match(/(\d+)/);
@@ -3180,20 +3218,23 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
 
         if (validated.wasAdjusted) {
           console.log("🔧 Plano nutricional ajustado:", validated.adjustments);
-          
+
           // Extrair valor corrigido para a métrica
           const correctedProteinStr = validated.plan.macros.protein;
-          const correctedProteinMatch = String(correctedProteinStr).match(/(\d+)/);
-          const correctedProtein = correctedProteinMatch ? parseInt(correctedProteinMatch[1]) : 0;
+          const correctedProteinMatch =
+            String(correctedProteinStr).match(/(\d+)/);
+          const correctedProtein = correctedProteinMatch
+            ? parseInt(correctedProteinMatch[1])
+            : 0;
 
           // Estimar massa magra para a métrica (re-usando a lógica interna ou apenas passando o valor)
           // Como a função logNutritionCorrection pede a leanMass, e ela é interna a validateAndCorrectNutrition,
           // idealmente validateAndCorrectNutrition deveria retornar a leanMass usada.
           // Por simplicidade aqui, vamos extrair se possível ou deixar logNutritionCorrection calcular.
           // Ajustei logNutritionCorrection para calcular internamente se necessário, mas vou passar o que temos.
-          
+
           logNutritionCorrection(
-            validated, 
+            validated,
             {
               weight: profile.weight || 0,
               height: profile.height || 0,
@@ -3207,7 +3248,11 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
             validated.leanMass
           );
 
-          plan.nutritionPlan = validated.plan as any;
+          // Merge explícito para garantir que mealPlan e hydration não sumam
+          plan.nutritionPlan = {
+            ...plan.nutritionPlan,
+            ...validated.plan,
+          };
         }
 
         if (validated.warnings.length > 0) {

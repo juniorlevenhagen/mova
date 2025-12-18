@@ -35,9 +35,18 @@ export interface StimuliCorrectionPayload {
 }
 
 export type CorrectionPayload =
-  | { reason: "proteina_ajustada_limite_seguranca"; data: ProteinCorrectionPayload }
-  | { reason: "objetivo_convertido_fisiologico"; data: ObjectiveCorrectionPayload }
-  | { reason: "cardio_frequencia_reduzida_adaptacao"; data: CardioCorrectionPayload }
+  | {
+      reason: "proteina_ajustada_limite_seguranca";
+      data: ProteinCorrectionPayload;
+    }
+  | {
+      reason: "objetivo_convertido_fisiologico";
+      data: ObjectiveCorrectionPayload;
+    }
+  | {
+      reason: "cardio_frequencia_reduzida_adaptacao";
+      data: CardioCorrectionPayload;
+    }
   | { reason: "estimulos_totais_excedidos"; data: StimuliCorrectionPayload };
 
 export interface CorrectionContext {
@@ -46,4 +55,3 @@ export interface CorrectionContext {
   activityLevel: string;
   age: number;
 }
-

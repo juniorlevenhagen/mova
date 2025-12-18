@@ -28,7 +28,7 @@ function getOpenAI(): OpenAI {
 -------------------------------------------------------- */
 const TRAINING_SCHEMA = {
   name: "training_plan",
-  strict: false,
+  strict: true,
   schema: {
     type: "object",
     properties: {
@@ -57,8 +57,6 @@ const TRAINING_SCHEMA = {
                       secondaryMuscles: {
                         type: "array",
                         items: { type: "string" },
-                        minItems: 0,
-                        maxItems: 2,
                         description:
                           "Músculos secundários (opcional, máximo 2)",
                       },
@@ -70,22 +68,34 @@ const TRAINING_SCHEMA = {
                       rest: { type: "string" },
                       notes: {
                         type: "string",
-                        description: "Notas técnicas (opcional)",
+                        description: "Notas técnicas detalhadas (obrigatório)",
                       },
                     },
-                    required: ["name", "primaryMuscle", "sets", "reps", "rest"],
+                    required: [
+                      "name",
+                      "primaryMuscle",
+                      "secondaryMuscles",
+                      "sets",
+                      "reps",
+                      "rest",
+                      "notes",
+                    ],
+                    additionalProperties: false,
                   },
                 },
               },
-              required: ["day", "exercises"],
+              required: ["day", "type", "exercises"],
+              additionalProperties: false,
             },
           },
           progression: { type: "string" },
         },
         required: ["overview", "weeklySchedule", "progression"],
+        additionalProperties: false,
       },
     },
     required: ["trainingPlan"],
+    additionalProperties: false,
   },
 };
 
@@ -227,6 +237,7 @@ export async function POST(request: NextRequest) {
       objective: profile?.objective || "Não informado",
       trainingFrequency: profile?.training_frequency || "3x por semana",
       trainingLocation: profile?.training_location || "academia",
+      trainingTime: profile?.training_time || "60 minutos",
       limitations: profile?.limitations || "Nenhuma",
     };
 
@@ -651,6 +662,16 @@ REGRAS DE PROGRESSÃO (OBRIGATÓRIO)
 - Priorize técnica, segurança e consistência
 
 ====================================================================
+🔒 CLÁUSULA FAIL-FAST (CRÍTICO - NUNCA IGNORAR)
+====================================================================
+Se por qualquer motivo (tempo disponível insuficiente, falta de dados ou limitações técnicas) você não conseguir cumprir RIGOROSAMENTE as regras de:
+- Volume mínimo por músculo grande (mín 3 p/ atletas, 2 p/ iniciantes)
+- Classificação anatômica correta (ex: Panturrilha JAMAIS em Ombros)
+- Número mínimo de exercícios totais por dia conforme o nível
+NÃO GERE O PLANO. É terminantemente PROIBIDO gerar um treino "capado" ou fisiologicamente incoerente para tentar se adaptar.
+É preferível falhar do que entregar um plano que viole estas diretrizes de elite.
+
+====================================================================
 FORMATO EXATO DO RETORNO (OBRIGATÓRIO)
 ====================================================================
 Você deve retornar APENAS:
@@ -667,19 +688,29 @@ Nada fora disso.
 `;
 
     const userPrompt = `
-Gerar treino completo com base nos dados:
-
+⚠️ SOLICITAÇÃO DE ALTA PERFORMANCE ⚠️
+Gere um plano de treino nível ELITE para o seguinte usuário:
 ${JSON.stringify(userData, null, 2)}
+
+REQUISITOS PARA A RESPOSTA PERFEITA:
+1. EXTRATÉGIA: O treino deve ser a aplicação prática perfeita do objetivo e nível do usuário.
+2. VOLUME: Não economize exercícios. Use o máximo permitido pelo nível e tempo disponível.
+3. TÉCNICA: No campo "notes", forneça instruções biomecânicas avançadas (ex: "foco na fase excêntrica", "manter escápulas em depressão", "pico de contração").
+4. VARIEDADE: Escolha exercícios que se complementam, cobrindo todos os ângulos do músculo.
+5. REALISMO: O treino deve ser desafiador, mas possível dentro do tempo informado (${userData.trainingTime}).
+
+Seja o melhor treinador que este usuário já teve.
 `;
 
     // 5) Tentar gerar até 2 vezes
     let trainingPlan: TrainingPlan | null = null;
 
     for (let attempt = 1; attempt <= 2; attempt++) {
+      console.log(`🔄 Tentativa ${attempt} de gerar Resposta Perfeita...`);
       const completion = await getOpenAI().chat.completions.create({
         model: "gpt-4o",
-        temperature: 0.2,
-        max_tokens: 12000,
+        temperature: 0.3, // Um pouco mais de "brilho" técnico, mas mantendo a consistência
+        max_tokens: 4096, // Garantir que o texto longo não seja cortado
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },

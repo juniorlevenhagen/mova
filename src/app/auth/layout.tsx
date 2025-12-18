@@ -30,7 +30,7 @@ export default function AuthLayout({
           {/* Mobile: Image simples para melhor performance */}
           <div className="lg:hidden absolute inset-0">
             <Image
-              src="/images/about-woman-exercising.webp"
+              src="/images/about-woman-exercising.jpg"
               alt="Fitness motivation"
               fill
               className="object-cover"
@@ -40,7 +40,7 @@ export default function AuthLayout({
           {/* Desktop: PixelImage com efeito */}
           <div className="hidden lg:block absolute inset-0">
             <PixelImage
-              src="/images/about-woman-exercising.webp"
+              src="/images/about-woman-exercising.jpg"
               className="absolute inset-0 w-full h-full"
               grayscaleAnimation={false}
             />

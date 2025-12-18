@@ -363,7 +363,7 @@ describe("Regressão - Validação de Planos", () => {
             rest: "60s",
             notes: "Técnica correta",
           },
-          // Glúteos (1 exercício)
+          // Glúteos (2 exercícios)
           {
             name: "Elevação pélvica",
             primaryMuscle: "gluteos",
@@ -372,22 +372,12 @@ describe("Regressão - Validação de Planos", () => {
             rest: "60s",
             notes: "Técnica correta",
           },
-          // Panturrilhas (1 exercício)
           {
-            name: "Panturrilha em pé",
-            primaryMuscle: "panturrilhas",
+            name: "Abdução de quadril",
+            primaryMuscle: "gluteos",
             sets: 3,
-            reps: "15-20",
-            rest: "45s",
-            notes: "Técnica correta",
-          },
-          // Core (1 exercício)
-          {
-            name: "Abdominal",
-            primaryMuscle: "abdomen",
-            sets: 3,
-            reps: "15-20",
-            rest: "45s",
+            reps: "12-15",
+            rest: "60s",
             notes: "Técnica correta",
           },
         ],
@@ -616,7 +606,7 @@ describe("Regressão - Validação de Planos", () => {
         day: "Quarta",
         type: "Legs",
         exercises: [
-          // Quadríceps (4 exercícios)
+          // Quadríceps (4 exercícios - Piso Atleta Foco)
           {
             name: "Agachamento",
             primaryMuscle: "quadriceps",
@@ -636,16 +626,15 @@ describe("Regressão - Validação de Planos", () => {
             notes: "Técnica correta",
           },
           {
-            name: "Afundo",
+            name: "Extensora",
             primaryMuscle: "quadriceps",
-            secondaryMuscles: ["gluteos"],
             sets: 3,
             reps: "10-12",
             rest: "60s",
             notes: "Técnica correta",
           },
           {
-            name: "Extensora",
+            name: "Afundo",
             primaryMuscle: "quadriceps",
             sets: 3,
             reps: "10-12",
@@ -680,9 +669,25 @@ describe("Regressão - Validação de Planos", () => {
             rest: "60s",
             notes: "Técnica correta",
           },
-          // Glúteos (1 exercício)
+          // Glúteos (3 exercícios)
           {
             name: "Elevação pélvica",
+            primaryMuscle: "gluteos",
+            sets: 3,
+            reps: "12-15",
+            rest: "60s",
+            notes: "Técnica correta",
+          },
+          {
+            name: "Abdução de quadril",
+            primaryMuscle: "gluteos",
+            sets: 3,
+            reps: "12-15",
+            rest: "60s",
+            notes: "Técnica correta",
+          },
+          {
+            name: "Cadeira abdutora",
             primaryMuscle: "gluteos",
             sets: 3,
             reps: "12-15",
@@ -692,15 +697,6 @@ describe("Regressão - Validação de Planos", () => {
           // Panturrilhas (1 exercício)
           {
             name: "Panturrilha em pé",
-            primaryMuscle: "panturrilhas",
-            sets: 3,
-            reps: "15-20",
-            rest: "45s",
-            notes: "Técnica correta",
-          },
-          // Panturrilhas (1 exercício extra)
-          {
-            name: "Panturrilha sentado",
             primaryMuscle: "panturrilhas",
             sets: 3,
             reps: "15-20",

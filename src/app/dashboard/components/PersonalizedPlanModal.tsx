@@ -5,6 +5,7 @@ import { typography, components, colors } from "@/lib/design-tokens";
 import { PersonalizedPlan } from "@/types/personalized-plan";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
+import { Dumbbell, Zap, RotateCcw, Info, TrendingUp } from "lucide-react";
 
 interface PersonalizedPlanModalProps {
   isOpen: boolean;
@@ -269,214 +270,7 @@ function extractSupplements(text: string): string[] {
   return supplements;
 }
 
-// Função para capitalizar palavras
-function capitalizeWords(text: string): string {
-  if (!text) return "";
-  return text
-    .split(", ")
-    .map((group) => {
-      return group
-        .split(" ")
-        .map((word) => {
-          if (word.length === 0) return word;
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join(" ");
-    })
-    .join(", ");
-}
-
-// Função para identificar grupos musculares trabalhados por um exercício
-function getMuscleGroups(exerciseName: string): string {
-  if (!exerciseName) return "";
-
-  const name = exerciseName.toLowerCase();
-  const groups: string[] = [];
-
-  // Peitoral
-  if (
-    name.includes("supino") ||
-    name.includes("peito") ||
-    name.includes("peitoral") ||
-    name.includes("crucifixo") ||
-    name.includes("flexão") ||
-    name.includes("push-up") ||
-    name.includes("crossover")
-  ) {
-    groups.push("peitoral");
-  }
-
-  // Bíceps
-  if (
-    name.includes("rosca") ||
-    name.includes("bíceps") ||
-    name.includes("biceps") ||
-    name.includes("curl") ||
-    name.includes("martelo")
-  ) {
-    groups.push("bíceps");
-  }
-
-  // Tríceps
-  if (
-    name.includes("tríceps") ||
-    name.includes("triceps") ||
-    name.includes("francês") ||
-    name.includes("pulley") ||
-    name.includes("coice")
-  ) {
-    groups.push("tríceps");
-  }
-
-  // Antebraço
-  if (
-    name.includes("antebraço") ||
-    name.includes("punho") ||
-    name.includes("martelo") ||
-    name.includes("rosca inversa")
-  ) {
-    groups.push("antebraço");
-  }
-
-  // Ombros/Deltoides
-  if (
-    name.includes("ombro") ||
-    name.includes("deltoide") ||
-    name.includes("desenvolvimento") ||
-    name.includes("elevação") ||
-    name.includes("lateral") ||
-    name.includes("frontal") ||
-    name.includes("posterior") ||
-    name.includes("arnold")
-  ) {
-    groups.push("ombros");
-  }
-
-  // Costas
-  if (
-    name.includes("remada") ||
-    name.includes("puxada") ||
-    name.includes("costas") ||
-    name.includes("dorsal") ||
-    name.includes("pull") ||
-    // ⚠️ NÃO usar "barra" genérico aqui (ex.: "supino com barra" não é costas)
-    name.includes("barra fixa") ||
-    name.includes("pull-up") ||
-    name.includes("chin-up") ||
-    name.includes("serrote") ||
-    name.includes("crucifixo inverso")
-  ) {
-    groups.push("costas");
-  }
-
-  // Pernas - Quadríceps
-  if (
-    name.includes("agachamento") ||
-    name.includes("leg press") ||
-    name.includes("extensão") ||
-    name.includes("quadríceps") ||
-    name.includes("quadriceps") ||
-    name.includes("afundo") ||
-    name.includes("lunge") ||
-    name.includes("passada") ||
-    name.includes("hack squat") ||
-    name.includes("bulgaro")
-  ) {
-    groups.push("quadríceps");
-  }
-
-  // Pernas - Posterior
-  if (
-    name.includes("flexão de perna") ||
-    name.includes("stiff") ||
-    name.includes("posterior") ||
-    name.includes("glúteo") ||
-    name.includes("gluteo") ||
-    name.includes("glute") ||
-    name.includes("elevação pélvica") ||
-    name.includes("hip thrust")
-  ) {
-    groups.push("posterior de coxa");
-  }
-
-  // Glúteos
-  if (
-    name.includes("glúteo") ||
-    name.includes("gluteo") ||
-    name.includes("glute") ||
-    name.includes("quadril") ||
-    name.includes("elevação pélvica") ||
-    name.includes("hip thrust") ||
-    name.includes("abdução") ||
-    name.includes("agachamento sumô")
-  ) {
-    if (!groups.includes("glúteos")) {
-      groups.push("glúteos");
-    }
-  }
-
-  // Panturrilhas
-  if (
-    name.includes("panturrilha") ||
-    name.includes("gêmeos") ||
-    name.includes("gastrocnêmio") ||
-    name.includes("calf") ||
-    name.includes("elevação")
-  ) {
-    groups.push("panturrilhas");
-  }
-
-  // Abdômen/Core
-  if (
-    name.includes("abdominal") ||
-    name.includes("abdomem") ||
-    name.includes("core") ||
-    name.includes("prancha") ||
-    name.includes("plank") ||
-    name.includes("oblíquo") ||
-    name.includes("obliquo") ||
-    name.includes("crunch") ||
-    name.includes("sit-up") ||
-    name.includes("russian twist")
-  ) {
-    groups.push("abdômen");
-  }
-
-  // Exercícios compostos que trabalham múltiplos grupos
-  if (name.includes("agachamento")) {
-    if (!groups.includes("quadríceps")) groups.push("quadríceps");
-    if (!groups.includes("glúteos")) groups.push("glúteos");
-    if (!groups.includes("posterior de coxa")) groups.push("posterior de coxa");
-  }
-
-  if (name.includes("terra") || name.includes("deadlift")) {
-    groups.push("costas", "posterior de coxa", "glúteos", "trapézio");
-  }
-
-  if (name.includes("desenvolvimento") || name.includes("military press")) {
-    if (!groups.includes("ombros")) groups.push("ombros");
-    if (!groups.includes("tríceps")) groups.push("tríceps");
-  }
-
-  // Remove duplicatas e retorna
-  const uniqueGroups = Array.from(new Set(groups));
-
-  if (uniqueGroups.length === 0) {
-    return "";
-  }
-
-  // Se houver múltiplos grupos, destaca o principal
-  let result = "";
-  if (uniqueGroups.length > 1) {
-    result = uniqueGroups.join(", ");
-  } else {
-    result = uniqueGroups[0];
-  }
-
-  // Capitaliza as palavras
-  return capitalizeWords(result);
-}
-
+// Interface para refeição estruturada
 interface MealOption {
   food?: string;
   name?: string;
@@ -490,6 +284,17 @@ interface MealPlanItem {
   timing?: string;
   options?: MealOption[];
   foods?: Array<{ name: string; quantity?: string; calories?: string }>;
+}
+
+interface Exercise {
+  name: string;
+  sets: number;
+  reps: string;
+  rest: string;
+  notes?: string;
+  primaryMuscle: string;
+  secondaryMuscles?: string[];
+  muscleGroups?: string[];
 }
 
 export function PersonalizedPlanModal({
@@ -1292,7 +1097,7 @@ export function PersonalizedPlanModal({
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
 
         <div
-          className={`${components.card.base} relative inline-block align-bottom text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh]`}
+          className={`${components.card.base} relative inline-block align-bottom text-left overflow-hidden transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl w-full max-h-[95vh] sm:max-h-[90vh]`}
         >
           {/* Header */}
           <div className="bg-gray-800 px-4 sm:px-6 py-4 text-white relative pr-12 sm:pr-12">
@@ -1707,7 +1512,7 @@ export function PersonalizedPlanModal({
 
             {/* Treino */}
             {validActiveTab === "training" && (
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {trainingPlanError && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -1728,174 +1533,599 @@ export function PersonalizedPlanModal({
                   </div>
                 )}
 
-                <div
-                  className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
-                >
-                  <h4
-                    className={`${typography.heading.h4} ${colors.status.info.text} mb-2`}
-                  >
-                    Visão Geral do Treino
-                  </h4>
-                  <p className={`${colors.status.info.text}`}>
-                    {plan.trainingPlan?.overview ||
-                      "Visão geral não disponível"}
-                  </p>
-                </div>
+                {isLoadingTrainingPlan ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-gray-600 font-medium">
+                      Gerando seu treino de alta performance...
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="bg-slate-900 rounded-xl p-3 sm:p-4 text-white shadow-lg border border-slate-800">
+                      <div className="flex items-center gap-2.5 mb-2 sm:mb-3">
+                        <div className="h-5 sm:h-6 w-1 bg-blue-500 rounded-full" />
+                        <h4 className="text-sm sm:text-base font-bold uppercase tracking-wider text-blue-400">
+                          Visão Geral da Estratégia
+                        </h4>
+                      </div>
+                      <p className="text-[13px] sm:text-sm text-slate-300 leading-relaxed italic">
+                        &quot;
+                        {plan.trainingPlan?.overview ||
+                          "Sua estratégia personalizada para máxima performance."}
+                        &quot;
+                      </p>
+                    </div>
 
-                <div className="space-y-4">
-                  <h4
-                    className={`${typography.heading.h4} ${colors.text.primary}`}
-                  >
-                    Cronograma Semanal
-                  </h4>
-                  {(plan.trainingPlan?.weeklySchedule || []).map(
-                    (day, dayIndex) => {
-                      const exercises = day?.exercises || [];
+                    <div className="space-y-8 sm:space-y-12">
+                      {(plan.trainingPlan?.weeklySchedule || []).map(
+                        (day, dayIndex) => {
+                          const exercises = day?.exercises || [];
 
-                      const normalize = (s: string) =>
-                        s
-                          .toLowerCase()
-                          .trim()
-                          .normalize("NFD")
-                          .replace(/[\u0300-\u036f]/g, "");
+                          // Helper para cores por tipo de treino
+                          const getDayTheme = (type: string) => {
+                            const t = type.toLowerCase();
+                            if (t.includes("push"))
+                              return {
+                                text: "text-red-600",
+                                bg: "bg-red-50",
+                                accent: "bg-red-600",
+                                shadow: "shadow-red-100",
+                              };
+                            if (t.includes("pull"))
+                              return {
+                                text: "text-blue-600",
+                                bg: "bg-blue-50",
+                                accent: "bg-blue-600",
+                                shadow: "shadow-blue-100",
+                              };
+                            if (t.includes("legs") || t.includes("lower"))
+                              return {
+                                text: "text-emerald-600",
+                                bg: "bg-emerald-50",
+                                accent: "bg-emerald-600",
+                                shadow: "shadow-emerald-100",
+                              };
+                            if (t.includes("upper"))
+                              return {
+                                text: "text-purple-600",
+                                bg: "bg-purple-50",
+                                accent: "bg-purple-600",
+                                shadow: "shadow-purple-100",
+                              };
+                            return {
+                              text: "text-slate-600",
+                              bg: "bg-slate-50",
+                              accent: "bg-slate-600",
+                              shadow: "shadow-slate-100",
+                            };
+                          };
 
-                      type Exercise = {
-                        name: string;
-                        sets: string;
-                        reps: string;
-                        rest: string;
-                        notes?: string;
-                        muscleGroups?: string | string[];
-                      };
+                          const theme = getDayTheme(day?.type || "");
 
-                      const primaryGroup = (ex: Exercise) => {
-                        const mg = Array.isArray(ex?.muscleGroups)
-                          ? ex.muscleGroups.join(", ")
-                          : ((ex?.muscleGroups ||
-                              getMuscleGroups(ex?.name || "")) as string);
-                        const first = (mg || "").split(",")[0]?.trim() || "";
-                        return capitalizeWords(first);
-                      };
+                          // 🧠 Utilitário para inferir o músculo se a IA falhar ou enviar "Geral"
+                          const inferMuscle = (ex: Exercise): string => {
+                            const name = (ex.name || "").toLowerCase();
+                            const primary = (
+                              ex.primaryMuscle || ""
+                            ).toLowerCase();
 
-                      // agrupar preservando ordem de aparição
-                      const grouped: Array<{
-                        group: string;
-                        items: Exercise[];
-                      }> = [];
-                      const groupIndex = new Map<string, number>();
+                            // Se já temos um músculo válido e não é genérico, usamos ele
+                            const validMuscles = [
+                              "peito",
+                              "peitoral",
+                              "costas",
+                              "dorsal",
+                              "ombros",
+                              "deltoide",
+                              "bíceps",
+                              "tríceps",
+                              "quadríceps",
+                              "isquiotibiais",
+                              "glúteos",
+                              "panturrilhas",
+                              "core",
+                              "abdominal",
+                              "trapézio",
+                              "antebraço",
+                              "lombar",
+                            ];
 
-                      exercises.forEach((ex: Exercise) => {
-                        const g = primaryGroup(ex) || "Outros";
-                        const key = normalize(g);
-                        const idx = groupIndex.get(key);
-                        if (idx === undefined) {
-                          groupIndex.set(key, grouped.length);
-                          grouped.push({ group: g, items: [ex] });
-                        } else {
-                          grouped[idx].items.push(ex);
-                        }
-                      });
+                            if (primary && validMuscles.includes(primary)) {
+                              return primary;
+                            }
 
-                      return (
-                        <div
-                          key={dayIndex}
-                          className="border border-gray-200 rounded-lg p-4"
-                        >
-                          <div className="flex items-center mb-3">
-                            <h5 className="font-semibold text-lg text-gray-900">
-                              {day?.day || "Dia não especificado"}
-                            </h5>
-                            <span className="ml-3 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                              {day?.type || "Tipo não especificado"}
-                            </span>
-                          </div>
+                            // Mapeamento de emergência baseado em palavras-chave (Exaustivo)
+                            // PEITO
+                            if (
+                              name.includes("supino") ||
+                              name.includes("crucifixo") ||
+                              name.includes("peitoral") ||
+                              name.includes("chest") ||
+                              name.includes("cross over") ||
+                              name.includes("voador") ||
+                              name.includes("peck deck") ||
+                              name.includes("flexão de braço")
+                            )
+                              return "peito";
+                            // COSTAS
+                            if (
+                              name.includes("remada") ||
+                              name.includes("puxada") ||
+                              name.includes("barra fixa") ||
+                              name.includes("pulldown") ||
+                              name.includes("dorsal") ||
+                              name.includes("serrote") ||
+                              name.includes("low row") ||
+                              name.includes("pullover")
+                            )
+                              return "costas";
+                            // OMBROS
+                            if (
+                              name.includes("desenvolvimento") ||
+                              name.includes("elevacao lateral") ||
+                              name.includes("elevação lateral") ||
+                              name.includes("frontal") ||
+                              name.includes("deltoide") ||
+                              name.includes("militar") ||
+                              name.includes("arnold") ||
+                              name.includes("shoulder press")
+                            )
+                              return "ombros";
+                            // BÍCEPS
+                            if (
+                              name.includes("rosca") ||
+                              name.includes("biceps") ||
+                              name.includes("bíceps") ||
+                              name.includes("martelo") ||
+                              name.includes("scott")
+                            )
+                              return "bíceps";
+                            // TRÍCEPS
+                            if (
+                              name.includes("triceps") ||
+                              name.includes("tríceps") ||
+                              name.includes("testa") ||
+                              name.includes("pulley") ||
+                              name.includes("paralelas") ||
+                              name.includes("extensão de tríceps") ||
+                              name.includes("coice")
+                            )
+                              return "tríceps";
+                            // QUADRÍCEPS
+                            if (
+                              name.includes("agachamento") ||
+                              name.includes("leg press") ||
+                              name.includes("extensora") ||
+                              name.includes("afundo") ||
+                              name.includes("passada") ||
+                              name.includes("hack") ||
+                              name.includes("avanço") ||
+                              name.includes("sissy")
+                            )
+                              return "quadríceps";
+                            // ISQUIOTIBIAIS
+                            if (
+                              name.includes("flexora") ||
+                              name.includes("stiff") ||
+                              name.includes("isquiotibiais") ||
+                              name.includes("mesa flexora") ||
+                              name.includes("cadeira flexora") ||
+                              name.includes("rdl") ||
+                              name.includes("bom dia") ||
+                              name.includes("good morning")
+                            )
+                              return "isquiotibiais";
+                            // GLÚTEOS
+                            if (
+                              name.includes("pélvica") ||
+                              name.includes("pelvica") ||
+                              name.includes("gluteo") ||
+                              name.includes("glúteo") ||
+                              name.includes("abdução") ||
+                              name.includes("clamshell") ||
+                              name.includes("kickback")
+                            )
+                              return "glúteos";
+                            // PANTURRILHAS
+                            if (
+                              name.includes("panturrilha") ||
+                              name.includes("gemeos") ||
+                              name.includes("gêmeos") ||
+                              name.includes("soleo") ||
+                              name.includes("sóleo")
+                            )
+                              return "panturrilhas";
+                            // CORE / ABDÔMEN
+                            if (
+                              name.includes("abdominal") ||
+                              name.includes("prancha") ||
+                              name.includes("infra") ||
+                              name.includes("supra") ||
+                              name.includes("core") ||
+                              name.includes("leg raise") ||
+                              name.includes("crunch")
+                            )
+                              return "core";
+                            // TRAPÉZIO
+                            if (
+                              name.includes("encolhimento") ||
+                              name.includes("shrug") ||
+                              name.includes("trapézio") ||
+                              name.includes("trapezio")
+                            )
+                              return "trapézio";
+                            // ANTEBRAÇO
+                            if (
+                              name.includes("antebraço") ||
+                              name.includes("antebraco") ||
+                              name.includes("flexão de punho") ||
+                              name.includes("extensão de punho")
+                            )
+                              return "antebraço";
+                            // LOMBAR
+                            if (
+                              name.includes("lombar") ||
+                              name.includes("hiperextensão") ||
+                              name.includes("hyper") ||
+                              name.includes("back extension")
+                            )
+                              return "lombar";
 
-                          <div className="space-y-4">
-                            {grouped.map((bucket) => (
-                              <div key={bucket.group}>
-                                <h6 className="font-semibold text-gray-900 mb-2">
-                                  {bucket.group}:
-                                </h6>
-                                <div className="space-y-2">
-                                  {bucket.items.map(
-                                    (
-                                      exercise: Exercise,
-                                      exerciseIndex: number
-                                    ) => (
-                                      <div
-                                        key={exerciseIndex}
-                                        className="bg-gray-50 border border-gray-100 rounded p-3"
+                            return primary || "Geral";
+                          };
+
+                          // Agrupar exercícios por músculo inferido
+                          const groupedByMuscle: Record<string, Exercise[]> =
+                            {};
+
+                          (exercises as unknown as Exercise[]).forEach((ex) => {
+                            const muscle = inferMuscle(ex);
+
+                            const key =
+                              muscle.charAt(0).toUpperCase() +
+                              muscle.slice(1).toLowerCase();
+                            if (!groupedByMuscle[key])
+                              groupedByMuscle[key] = [];
+                            groupedByMuscle[key].push(ex);
+                          });
+
+                          // ✅ Ordenar grupos musculares (Decrescente: Grandes -> Médios -> Pequenos)
+                          // Hierarchy: Pernas > Tronco > Ombros > Braços > Finalizadores
+                          const muscleWeights: Record<string, number> = {
+                            // Pernas (Topo)
+                            quadríceps: 100,
+                            isquiotibiais: 95,
+                            glúteos: 90,
+                            // Tronco (Base)
+                            costas: 85,
+                            peito: 85,
+                            peitoral: 85,
+                            dorsal: 85,
+                            // Ombros e Pescoço
+                            ombros: 80,
+                            trapézio: 78,
+                            // Braços
+                            tríceps: 75,
+                            bíceps: 70,
+                            // Estabilização e Extremidades
+                            core: 65,
+                            abdominal: 65,
+                            lombar: 62,
+                            panturrilhas: 60,
+                            antebraço: 55,
+                          };
+
+                          const sortedMuscleEntries = Object.entries(
+                            groupedByMuscle
+                          ).sort(([muscleA], [muscleB]) => {
+                            const weightA =
+                              muscleWeights[muscleA.toLowerCase()] || 0;
+                            const weightB =
+                              muscleWeights[muscleB.toLowerCase()] || 0;
+                            return weightB - weightA;
+                          });
+
+                          return (
+                            <div
+                              key={dayIndex}
+                              className={`bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden transition-all hover:shadow-xl`}
+                            >
+                              {/* Day Header - High Contrast */}
+                              <div
+                                className={`p-4 sm:p-5 ${theme.bg} border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4`}
+                              >
+                                <div className="flex items-center gap-3 sm:gap-4">
+                                  <div
+                                    className={`p-2.5 sm:p-3 rounded-lg sm:rounded-xl ${theme.accent} text-white shadow-md ${theme.shadow}`}
+                                  >
+                                    <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6" />
+                                  </div>
+                                  <div>
+                                    <h5 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5 sm:mb-2">
+                                      {day?.day || "Sessão de Elite"}
+                                    </h5>
+                                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                                      <span
+                                        className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-white ${theme.text} border-2 border-current shadow-sm`}
                                       >
-                                        <div className="flex flex-wrap items-center gap-4">
-                                          <h6 className="font-medium text-gray-900 flex-1">
-                                            {exercise?.name ||
-                                              "Exercício não especificado"}
+                                        {day?.type || "Musculação"}
+                                      </span>
+                                      <div className="flex items-center gap-1 px-2 py-0.5 bg-slate-900/5 rounded-full">
+                                        <Zap className="w-2.5 h-2.5 text-slate-500" />
+                                        <span className="text-[9px] sm:text-[10px] text-slate-600 font-bold uppercase tracking-tighter">
+                                          {exercises.length} Exercícios
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="p-4 sm:p-6">
+                                <div className="space-y-6 sm:space-y-8">
+                                  {sortedMuscleEntries.map(
+                                    ([muscle, items]) => (
+                                      <div key={muscle} className="relative">
+                                        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
+                                          <div
+                                            className={`h-4 sm:h-5 w-1 ${theme.accent} rounded-full`}
+                                          />
+                                          <h6 className="font-black text-slate-900 text-[10px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.2em]">
+                                            Bloco: {muscle}
                                           </h6>
-                                          <span className="text-sm text-gray-600">
-                                            Séries: {exercise?.sets || "N/A"}
-                                          </span>
-                                          <span className="text-sm text-gray-600">
-                                            Reps: {exercise?.reps || "N/A"}
-                                          </span>
-                                          <span className="text-sm text-gray-600">
-                                            Descanso: {exercise?.rest || "N/A"}
-                                          </span>
+                                          <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent" />
                                         </div>
-                                        {exercise?.notes &&
-                                          exercise.notes.trim() !== "" && (
-                                            <p className="text-sm text-gray-600 mt-2">
-                                              Nota: {exercise.notes}
-                                            </p>
-                                          )}
+
+                                        <div className="grid grid-cols-1 gap-4 sm:gap-5">
+                                          {(() => {
+                                            // ✅ Ordenar exercícios dentro do grupo (Compostos ANTES de Isoladores)
+                                            const sortedExercises = [
+                                              ...items,
+                                            ].sort((a, b) => {
+                                              const compoundKeywords = [
+                                                "agachamento",
+                                                "supino",
+                                                "levantamento",
+                                                "terra",
+                                                "remada",
+                                                "puxada",
+                                                "desenvolvimento",
+                                                "leg press",
+                                                "afundo",
+                                                "barra fixa",
+                                                "paralelas",
+                                                "passada",
+                                                "avanço",
+                                                "stiff",
+                                                "rdl",
+                                                "militar",
+                                                "pulldown",
+                                                "hack",
+                                                "smith",
+                                                "press",
+                                                "mergulho",
+                                              ];
+                                              const aIsCompound =
+                                                compoundKeywords.some((k) =>
+                                                  a.name
+                                                    .toLowerCase()
+                                                    .includes(k)
+                                                );
+                                              const bIsCompound =
+                                                compoundKeywords.some((k) =>
+                                                  b.name
+                                                    .toLowerCase()
+                                                    .includes(k)
+                                                );
+                                              if (aIsCompound && !bIsCompound)
+                                                return -1;
+                                              if (!aIsCompound && bIsCompound)
+                                                return 1;
+                                              return 0;
+                                            });
+
+                                            return sortedExercises.map(
+                                              (ex, idx) => (
+                                                <div
+                                                  key={idx}
+                                                  className="group relative bg-white border border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-all duration-300 hover:border-slate-200 hover:shadow-md"
+                                                >
+                                                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+                                                    <div className="flex-1">
+                                                      <div className="flex items-center gap-2.5 sm:gap-3">
+                                                        <span className="text-slate-200 font-black text-xl sm:text-2xl leading-none select-none">
+                                                          {(idx + 1)
+                                                            .toString()
+                                                            .padStart(2, "0")}
+                                                        </span>
+                                                        <div>
+                                                          <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-tight block mb-1">
+                                                            {ex.name}
+                                                          </h4>
+
+                                                          {/* Secondary Muscles */}
+                                                          {ex.secondaryMuscles &&
+                                                            ex.secondaryMuscles
+                                                              .length > 0 && (
+                                                              <div className="flex flex-wrap gap-1.5">
+                                                                {ex.secondaryMuscles.map(
+                                                                  (
+                                                                    sm: string,
+                                                                    sidx: number
+                                                                  ) => (
+                                                                    <span
+                                                                      key={sidx}
+                                                                      className="px-1.5 py-0.5 bg-slate-50 text-slate-400 rounded text-[8px] sm:text-[9px] font-bold uppercase tracking-wider border border-slate-100"
+                                                                    >
+                                                                      + {sm}
+                                                                    </span>
+                                                                  )
+                                                                )}
+                                                              </div>
+                                                            )}
+                                                        </div>
+                                                      </div>
+                                                    </div>
+
+                                                    {/* Stats Card - Mais compacto e horizontal */}
+                                                    <div className="flex items-center gap-2 sm:gap-3 bg-slate-50/50 p-1.5 rounded-lg sm:rounded-xl border border-slate-100/50 lg:w-fit">
+                                                      <div className="bg-white px-2.5 sm:px-3 py-1.5 rounded-md sm:rounded-lg shadow-sm text-center min-w-[55px] sm:min-w-[60px]">
+                                                        <span className="block text-[8px] sm:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">
+                                                          Séries
+                                                        </span>
+                                                        <span className="text-sm sm:text-base font-black text-slate-900 leading-none">
+                                                          {ex.sets}
+                                                        </span>
+                                                      </div>
+                                                      <div className="bg-white px-2.5 sm:px-3 py-1.5 rounded-md sm:rounded-lg shadow-sm text-center min-w-[65px] sm:min-w-[70px]">
+                                                        <span className="block text-[8px] sm:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">
+                                                          Reps
+                                                        </span>
+                                                        <span className="text-sm sm:text-base font-black text-slate-900 leading-none">
+                                                          {ex.reps}
+                                                        </span>
+                                                      </div>
+                                                      <div className="bg-white px-2.5 sm:px-3 py-1.5 rounded-md sm:rounded-lg shadow-sm text-center min-w-[70px] sm:min-w-[80px]">
+                                                        <span className="block text-[8px] sm:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">
+                                                          Descanso
+                                                        </span>
+                                                        <div className="flex items-center justify-center gap-1">
+                                                          <RotateCcw className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-slate-400" />
+                                                          <span className="text-[11px] sm:text-xs font-black text-slate-700 leading-none">
+                                                            {ex.rest}
+                                                          </span>
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Notes Section - Mais discreto */}
+                                                  {ex.notes && (
+                                                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-slate-50/30 rounded-lg sm:rounded-xl border border-slate-100/30 relative overflow-hidden group-hover:bg-white group-hover:border-slate-200 transition-colors">
+                                                      <div className="relative z-10 flex items-start gap-2.5 sm:gap-3">
+                                                        <div className="p-1 bg-white rounded shadow-sm border border-slate-100">
+                                                          <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
+                                                        </div>
+                                                        <p className="text-[12px] sm:text-[13px] text-slate-600 leading-relaxed italic">
+                                                          <span className="font-black text-slate-900 not-italic uppercase text-[8px] sm:text-[9px] tracking-widest block mb-0.5">
+                                                            Nota:
+                                                          </span>
+                                                          {ex.notes}
+                                                        </p>
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              )
+                                            );
+                                          })()}
+                                        </div>
                                       </div>
                                     )
                                   )}
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                          );
+                        }
+                      )}
+                    </div>
+
+                    {/* Progression Section - Elite UI */}
+                    <div className="mt-8 sm:mt-10 bg-slate-900 rounded-xl sm:rounded-2xl p-5 sm:p-6 text-white relative overflow-hidden shadow-xl">
+                      <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-[80px] -mr-24 -mt-24" />
+                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-[80px] -ml-24 -mb-24" />
+
+                      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-6">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                          <div className="p-2.5 sm:p-3 bg-emerald-500 rounded-lg sm:rounded-xl shadow-lg shadow-emerald-500/20">
+                            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
+                              Estratégia de Progressão
+                            </h4>
+                            <p className="text-slate-400 text-[11px] sm:text-xs font-medium">
+                              Como evoluir seu treino nas próximas semanas
+                            </p>
                           </div>
                         </div>
-                      );
-                    }
-                  )}
-                </div>
+                      </div>
 
-                <div
-                  className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
-                >
-                  <h4
-                    className={`${typography.heading.h4} ${colors.status.success.text} mb-2`}
-                  >
-                    Progressão
-                  </h4>
-                  <p className={`${colors.status.success.text}`}>
-                    {plan.trainingPlan?.progression ||
-                      "Progressão não disponível"}
-                  </p>
-                </div>
+                      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="space-y-2.5 sm:space-y-3 text-slate-300 leading-relaxed text-[13px] sm:text-sm">
+                          {plan.trainingPlan?.progression
+                            ?.split("\n")
+                            .filter((l) => l.trim().length > 0)
+                            .slice(
+                              0,
+                              Math.ceil(
+                                (plan.trainingPlan?.progression
+                                  ?.split("\n")
+                                  .filter((l) => l.trim().length > 0).length ||
+                                  0) / 2
+                              )
+                            )
+                            .map((line, i) => (
+                              <div key={i} className="flex gap-3">
+                                <div className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                <p>{line.replace(/^[-•]\s*/, "")}</p>
+                              </div>
+                            )) || (
+                            <p>
+                              Foco em progressão de carga e técnica impecável.
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2.5 sm:space-y-3 text-slate-300 leading-relaxed text-[13px] sm:text-sm">
+                          {plan.trainingPlan?.progression
+                            ?.split("\n")
+                            .filter((l) => l.trim().length > 0)
+                            .slice(
+                              Math.ceil(
+                                (plan.trainingPlan?.progression
+                                  ?.split("\n")
+                                  .filter((l) => l.trim().length > 0).length ||
+                                  0) / 2
+                              )
+                            )
+                            .map((line, i) => (
+                              <div key={i} className="flex gap-3">
+                                <div className="mt-2 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                                <p>{line.replace(/^[-•]\s*/, "")}</p>
+                              </div>
+                            )) || null}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
             {/* Aeróbico */}
             {validActiveTab === "aerobic" && plan.aerobicTraining && (
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 <div
-                  className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
+                  className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-3 sm:p-4`}
                 >
                   <h4
-                    className={`${typography.heading.h4} ${colors.status.info.text} mb-2`}
+                    className={`${typography.heading.h4} ${colors.status.info.text} mb-1 sm:mb-2`}
                   >
                     Visão Geral do Treino Aeróbico
                   </h4>
-                  <p className={`${colors.status.info.text}`}>
+                  <p
+                    className={`${colors.status.info.text} text-sm sm:text-base`}
+                  >
                     {plan.aerobicTraining.overview ||
                       "Visão geral não disponível"}
                   </p>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <h4
-                    className={`${typography.heading.h4} ${colors.text.primary}`}
+                    className={`${typography.heading.h4} ${colors.text.primary} text-base sm:text-lg`}
                   >
                     Cronograma Semanal de Atividades Aeróbicas
                   </h4>
@@ -1903,53 +2133,53 @@ export function PersonalizedPlanModal({
                     (day, dayIndex) => (
                       <div
                         key={dayIndex}
-                        className="border border-gray-200 rounded-lg p-4"
+                        className="border border-gray-200 rounded-lg p-3 sm:p-4"
                       >
-                        <div className="flex items-center mb-3">
-                          <h5 className="font-semibold text-lg text-gray-900">
+                        <div className="flex items-center mb-2 sm:mb-3">
+                          <h5 className="font-semibold text-base sm:text-lg text-gray-900">
                             {day?.day || "Dia não especificado"}
                           </h5>
                         </div>
 
-                        <div className="bg-gray-50 border border-gray-100 rounded p-3 space-y-2">
-                          <div className="flex flex-wrap items-center gap-4">
-                            <div className="flex-1">
-                              <span className="text-sm font-medium text-gray-600">
+                        <div className="bg-gray-50 border border-gray-100 rounded p-2.5 sm:p-3 space-y-2">
+                          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                            <div className="flex-1 min-w-[120px]">
+                              <span className="text-[11px] sm:text-sm font-medium text-gray-600">
                                 Atividade:
                               </span>
-                              <p className="font-medium text-gray-900">
+                              <p className="font-medium text-sm sm:text-base text-gray-900">
                                 {day?.activity || "Não especificado"}
                               </p>
                             </div>
                             <div>
-                              <span className="text-sm font-medium text-gray-600">
+                              <span className="text-[11px] sm:text-sm font-medium text-gray-600">
                                 Duração:
                               </span>
-                              <p className="text-gray-900">
+                              <p className="text-sm sm:text-base text-gray-900">
                                 {day?.duration || "N/A"}
                               </p>
                             </div>
                             <div>
-                              <span className="text-sm font-medium text-gray-600">
+                              <span className="text-[11px] sm:text-sm font-medium text-gray-600">
                                 Intensidade:
                               </span>
-                              <p className="text-gray-900">
+                              <p className="text-sm sm:text-base text-gray-900">
                                 {day?.intensity || "N/A"}
                               </p>
                             </div>
                             {day?.heartRateZone && (
                               <div>
-                                <span className="text-sm font-medium text-gray-600">
+                                <span className="text-[11px] sm:text-sm font-medium text-gray-600">
                                   Zona FC:
                                 </span>
-                                <p className="text-gray-900">
+                                <p className="text-sm sm:text-base text-gray-900">
                                   {day.heartRateZone}
                                 </p>
                               </div>
                             )}
                           </div>
                           {day.notes && (
-                            <p className="text-sm text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                            <p className="text-xs sm:text-sm text-gray-600 mt-2 pt-2 border-t border-gray-200">
                               <span className="font-medium">Nota:</span>{" "}
                               {day.notes}
                             </p>
@@ -1994,36 +2224,36 @@ export function PersonalizedPlanModal({
 
             {/* Dieta */}
             {validActiveTab === "diet" && (
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 {/* Priorizar dados estruturados do plan.nutritionPlan se disponível */}
                 {plan?.nutritionPlan ? (
-                  <div className="space-y-6">
+                  <div className="space-y-5 sm:space-y-6">
                     {/* Resumo de Calorias e Macronutrientes */}
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                       <div
-                        className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
+                        className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-3 sm:p-4`}
                       >
                         <h4
-                          className={`${typography.heading.h4} ${colors.status.success.text} mb-3`}
+                          className={`${typography.heading.h4} ${colors.status.success.text} mb-2 sm:mb-3`}
                         >
                           Calorias Diárias
                         </h4>
                         <p
-                          className={`text-2xl font-bold ${colors.status.success.text}`}
+                          className={`text-xl sm:text-2xl font-bold ${colors.status.success.text}`}
                         >
                           {plan.nutritionPlan.dailyCalories || 0} kcal
                         </p>
                       </div>
 
                       <div
-                        className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
+                        className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-3 sm:p-4`}
                       >
                         <h4
-                          className={`${typography.heading.h4} ${colors.status.info.text} mb-3`}
+                          className={`${typography.heading.h4} ${colors.status.info.text} mb-2 sm:mb-3`}
                         >
                           Macronutrientes
                         </h4>
-                        <div className="space-y-2">
+                        <div className="space-y-1.5 sm:space-y-2 text-sm sm:text-base">
                           <div className="flex justify-between">
                             <span className={`${colors.status.info.text}`}>
                               Proteínas:
@@ -2063,28 +2293,28 @@ export function PersonalizedPlanModal({
                       plan.nutritionPlan.mealPlan.length > 0 && (
                         <div>
                           <h4
-                            className={`${typography.heading.h4} ${colors.text.primary} mb-4`}
+                            className={`${typography.heading.h4} ${colors.text.primary} mb-3 sm:mb-4 text-base sm:text-lg`}
                           >
                             Plano Alimentar Diário
                           </h4>
-                          <div className="space-y-4">
+                          <div className="space-y-3 sm:space-y-4">
                             {plan.nutritionPlan.mealPlan.map(
                               (meal: MealPlanItem, index: number) => (
                                 <div
                                   key={index}
-                                  className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
+                                  className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-white shadow-sm"
                                 >
-                                  <div className="flex items-center justify-between mb-3">
-                                    <h5 className="font-semibold text-gray-900 text-lg">
+                                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                                    <h5 className="font-semibold text-gray-900 text-base sm:text-lg">
                                       {meal?.meal || meal?.name || "Refeição"}
                                     </h5>
                                     {meal?.timing && (
-                                      <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                                      <span className="text-xs sm:text-sm text-gray-600 bg-gray-100 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">
                                         {meal.timing}
                                       </span>
                                     )}
                                   </div>
-                                  <div className="space-y-2">
+                                  <div className="space-y-1.5 sm:space-y-2">
                                     {(meal.options || []).map(
                                       (
                                         option: MealOption,
@@ -2092,12 +2322,12 @@ export function PersonalizedPlanModal({
                                       ) => (
                                         <div
                                           key={optionIndex}
-                                          className="flex items-start bg-gray-50 border border-gray-100 rounded p-2"
+                                          className="flex items-start bg-gray-50 border border-gray-100 rounded p-1.5 sm:p-2"
                                         >
-                                          <span className="text-green-600 mr-2 mt-1">
+                                          <span className="text-green-600 mr-2 mt-0.5 sm:mt-1">
                                             •
                                           </span>
-                                          <div className="flex-1">
+                                          <div className="flex-1 text-sm sm:text-base">
                                             <span className="text-gray-900 font-medium">
                                               {option.food || option.name}
                                             </span>
@@ -2106,7 +2336,7 @@ export function PersonalizedPlanModal({
                                                 option.quantity,
                                                 option.food || option.name
                                               ) && (
-                                                <span className="text-gray-600 ml-2 font-medium">
+                                                <span className="text-gray-600 ml-1.5 sm:ml-2 font-medium">
                                                   (
                                                   {formatQuantity(
                                                     option.quantity,
@@ -2116,7 +2346,7 @@ export function PersonalizedPlanModal({
                                                 </span>
                                               )}
                                             {option.calories && (
-                                              <span className="text-gray-500 text-sm ml-2">
+                                              <span className="text-gray-500 text-xs sm:text-sm ml-1.5 sm:ml-2">
                                                 - {option.calories} kcal
                                               </span>
                                             )}

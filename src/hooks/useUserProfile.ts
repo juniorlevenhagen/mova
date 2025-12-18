@@ -135,10 +135,10 @@ export function useUserProfile(user: User | null) {
   };
 
   // Função para recarregar os dados do perfil
-  const refreshProfile = async () => {
+  const refreshProfile = async (silent = false) => {
     if (!user) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const { data: profileResult, error: profileError } = await supabase
         .from("user_profiles")

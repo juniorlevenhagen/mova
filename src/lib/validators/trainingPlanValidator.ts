@@ -7,6 +7,7 @@
 
 import { validateExercisesCountByLevel } from "@/lib/validators/exerciseCountValidator";
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
+import { recordPlanCorrection } from "@/lib/metrics/planCorrectionMetrics";
 
 /* --------------------------------------------------------
    Tipos
@@ -64,18 +65,48 @@ function normalizeDivisionName(name: string): string {
   return normalized;
 }
 
+function isBig(muscle: string): boolean {
+  const big = [
+    "peitoral",
+    "peito",
+    "costas",
+    "dorsal",
+    "quadriceps",
+    "posterior de coxa",
+    "isquiotibiais",
+    "gluteos",
+    "glúteo",
+    "glúteos",
+  ];
+  return big.includes(normalize(muscle));
+}
+
+function isMedium(muscle: string): boolean {
+  const medium = ["ombros", "trapezio"];
+  return medium.includes(normalize(muscle));
+}
+
 /**
  * Valida se a divisão do plano corresponde à frequência semanal
  */
 function validateDivisionByFrequency(
   plan: TrainingPlan,
-  trainingDays: number
+  trainingDays: number,
+  activityLevel?: string | null
 ): boolean {
+  const level = normalize(activityLevel || "moderado");
+  const isAdvanced =
+    level === "atleta" ||
+    level === "avancado" ||
+    level === "atleta_altorendimento";
+
   const expectedDivisionByFrequency: Record<number, string[]> = {
     2: ["full", "fullbody"],
     3: ["full", "fullbody"],
     4: ["upper", "lower"], // Upper/Lower
-    5: ["push", "pull", "legs", "lower"], // PPL
+    5: isAdvanced
+      ? ["push", "pull", "legs", "lower", "upper"]
+      : ["push", "pull", "legs", "lower"], // PPL ou PPL+UL para atletas
     6: ["push", "pull", "legs", "lower"], // PPL 2x
     7: ["push", "pull", "legs", "lower"], // PPL com ajustes
   };
@@ -104,11 +135,20 @@ function validateDivisionByFrequency(
     const hasLower = usedDivisions.has("lower") || usedDivisions.has("legs");
     if (!hasUpper || !hasLower) return false;
   } else if (trainingDays >= 5) {
-    // 5x+ deve ter Push, Pull e Legs/Lower
+    // 5x+ deve ter Push, Pull e Legs/Lower (e opcionalmente Upper para 5x atletas)
     const hasPush = usedDivisions.has("push");
     const hasPull = usedDivisions.has("pull");
     const hasLegs = usedDivisions.has("lower") || usedDivisions.has("legs");
-    if (!hasPush || !hasPull || !hasLegs) return false;
+
+    // Se for 5x e não tiver a tríade PPL básica, pode ser que tenha Upper/Lower misturado se for avançado
+    if (!hasPush || !hasPull || !hasLegs) {
+      if (trainingDays === 5 && isAdvanced) {
+        // Para atletas 5x, permitimos PPL + UL
+        const hasUpper = usedDivisions.has("upper");
+        if (hasUpper && (hasPush || hasPull || hasLegs)) return true;
+      }
+      return false;
+    }
   }
 
   return true;
@@ -151,7 +191,8 @@ function validateMuscleDistribution(
       return false;
     }
     // Deve ter pelo menos Peitoral OU Ombros como primários
-    const hasPeitoral = primaryMuscleCounts.has("peitoral");
+    const hasPeitoral =
+      primaryMuscleCounts.has("peitoral") || primaryMuscleCounts.has("peito");
     const hasOmbros = primaryMuscleCounts.has("ombros");
     if (!hasPeitoral && !hasOmbros) {
       console.warn(
@@ -165,7 +206,10 @@ function validateMuscleDistribution(
   } else if (dayType === "pull") {
     // Pull: alternar entre Costas e Posterior de coxa
     // Bíceps nunca deve dominar (máximo 30%)
-    const bicepsCount = primaryMuscleCounts.get("biceps") || 0;
+    const bicepsCount =
+      primaryMuscleCounts.get("biceps") ||
+      primaryMuscleCounts.get("bíceps") ||
+      0;
     const maxBiceps = Math.ceil(totalExercises * 0.3);
     if (bicepsCount > maxBiceps) {
       console.warn(
@@ -215,7 +259,9 @@ function validateTrainingTime(
   for (const ex of day.exercises) {
     // Parsear sets (agora é number)
     const sets =
-      typeof ex.sets === "number" ? ex.sets : parseInt(ex.sets, 10) || 3;
+      typeof ex.sets === "number"
+        ? ex.sets
+        : parseInt(ex.sets as unknown as string, 10) || 3;
 
     // Parsear rest (ex: "60s", "90s", "2min")
     let restSeconds = 60; // default
@@ -248,7 +294,7 @@ function validateTrainingTime(
       available: availableTimeMinutes,
       day: day.day,
       dayType: day.type,
-    });
+    }).catch(() => {});
     return false;
   }
 
@@ -298,7 +344,9 @@ function validateExerciseMuscleMatch(exercise: Exercise): boolean {
         "triceps",
         "tríceps",
         "peitoral",
+        "peito",
         "costas",
+        "dorsal",
       ],
     },
     // Exercícios de braços nunca podem ser pernas
@@ -363,16 +411,38 @@ function validateExerciseOrder(day: TrainingDay): boolean {
 
   // Ordem esperada por divisão (grupos grandes antes de pequenos)
   const expectedOrderByDivision: Record<string, string[][]> = {
-    push: [["peitoral"], ["ombros"], ["triceps"]],
-    pull: [["costas"], ["biceps"]],
-    lower: [["quadriceps"], ["posterior de coxa"], ["gluteos", "panturrilhas"]],
-    legs: [["quadriceps"], ["posterior de coxa"], ["gluteos", "panturrilhas"]],
-    upper: [["peitoral", "costas"], ["ombros"], ["biceps", "triceps"]],
-    full: [
-      ["peitoral", "costas"],
-      ["quadriceps", "posterior de coxa", "gluteos"],
+    push: [["peitoral", "peito"], ["ombros"], ["triceps", "tríceps"]],
+    pull: [
+      ["costas", "dorsal"],
+      ["biceps", "bíceps"],
+    ],
+    lower: [
+      ["quadriceps", "quadríceps"],
+      ["posterior de coxa", "isquiotibiais"],
+      ["gluteos", "glúteos", "panturrilhas"],
+    ],
+    legs: [
+      ["quadriceps", "quadríceps"],
+      ["posterior de coxa", "isquiotibiais"],
+      ["gluteos", "glúteos", "panturrilhas"],
+    ],
+    upper: [
+      ["peitoral", "peito", "costas", "dorsal"],
       ["ombros"],
-      ["biceps", "triceps"],
+      ["biceps", "bíceps", "triceps", "tríceps"],
+    ],
+    full: [
+      ["peitoral", "peito", "costas", "dorsal"],
+      [
+        "quadriceps",
+        "quadríceps",
+        "posterior de coxa",
+        "isquiotibiais",
+        "gluteos",
+        "glúteos",
+      ],
+      ["ombros"],
+      ["biceps", "bíceps", "triceps", "tríceps"],
     ],
   };
 
@@ -441,7 +511,7 @@ export function isTrainingPlanUsable(
     recordPlanRejection("weeklySchedule_invalido", {
       activityLevel: activityLevel || undefined,
       trainingDays,
-    });
+    }).catch(() => {});
     return false;
   }
   if (plan.weeklySchedule.length !== trainingDays) {
@@ -454,21 +524,73 @@ export function isTrainingPlanUsable(
       trainingDays,
       expected: trainingDays,
       received: plan.weeklySchedule.length,
-    });
+    }).catch(() => {});
     return false;
   }
 
   // Validação de divisão × frequência (hard rule)
-  if (!validateDivisionByFrequency(plan, trainingDays)) {
+  if (!validateDivisionByFrequency(plan, trainingDays, activityLevel)) {
     console.warn("Plano rejeitado: divisão incompatível com frequência", {
       frequency: trainingDays,
+      level: activityLevel,
     });
     recordPlanRejection("divisao_incompativel_frequencia", {
       activityLevel: activityLevel || undefined,
       trainingDays,
       frequency: trainingDays,
-    });
+    }).catch(() => {});
     return false;
+  }
+
+  // Detectar ajuste técnico de divisão (ex: PPL+UL para Atleta 5x)
+  const usedDivisions = new Set(
+    plan.weeklySchedule.map((d) => normalizeDivisionName(d.type || ""))
+  );
+  if (trainingDays === 5 && usedDivisions.has("upper")) {
+    recordPlanCorrection(
+      {
+        reason: "divisao_ajustada_tecnica",
+        data: {
+          originalDivision: "PPL Clássico",
+          correctedDivision: "PPL + Upper/Lower",
+          trainingDays: 5,
+        },
+      },
+      {
+        imc: 0,
+        gender: "N/A",
+        activityLevel: activityLevel || "Moderado",
+        age: 0,
+      }
+    ).catch(() => {});
+  }
+
+  // NOVA VALIDAÇÃO: Proibir linguagem de viés estético (Neutralidade técnica)
+  const forbiddenTerms = [
+    "foco em gluteos",
+    "foco em glúteos",
+    "treino feminino",
+    "obrigatorio para mulher",
+    "obrigatório para mulher",
+  ];
+  const allText = (
+    plan.overview +
+    plan.progression +
+    plan.weeklySchedule
+      .map((d) => d.exercises.map((e) => e.notes || "").join(" "))
+      .join(" ")
+  ).toLowerCase();
+
+  for (const term of forbiddenTerms) {
+    if (allText.includes(term)) {
+      console.warn("Plano rejeitado: viés estético detectado", { term });
+      recordPlanRejection("vies_estetico_detectado", {
+        activityLevel: activityLevel || undefined,
+        trainingDays,
+        term,
+      }).catch(() => {});
+      return false;
+    }
   }
 
   for (const day of plan.weeklySchedule) {
@@ -482,12 +604,19 @@ export function isTrainingPlanUsable(
         trainingDays,
         dayType: day.type,
         day: day.day,
-      });
+      }).catch(() => {});
       return false;
     }
 
     // Validação de limite de exercícios por nível
     const level = activityLevel || "Moderado";
+    const normalizedLevel = level
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "_")
+      .replace("atleta_alto_rendimento", "atleta_altorendimento");
+
     if (!validateExercisesCountByLevel(day.exercises.length, level)) {
       console.warn("Plano rejeitado: excesso de exercícios por nível", {
         level,
@@ -501,7 +630,7 @@ export function isTrainingPlanUsable(
         exerciseCount: day.exercises.length,
         dayType: day.type,
         day: day.day,
-      });
+      }).catch(() => {});
       return false;
     }
 
@@ -510,30 +639,67 @@ export function isTrainingPlanUsable(
 
     // MUSCLES ALLOWED BY DAY
     const allowed = {
-      push: ["peitoral", "triceps", "ombros"],
-      pull: ["costas", "biceps", "trapézio", "deltoide posterior", "ombros"],
-      legs: ["quadriceps", "posterior de coxa", "gluteos", "panturrilhas"],
+      push: ["peitoral", "peito", "triceps", "tríceps", "ombros"],
+      pull: [
+        "costas",
+        "dorsal",
+        "biceps",
+        "bíceps",
+        "trapézio",
+        "deltoide posterior",
+        "ombros",
+      ],
+      legs: [
+        "quadriceps",
+        "quadríceps",
+        "posterior de coxa",
+        "isquiotibiais",
+        "gluteos",
+        "glúteos",
+        "panturrilhas",
+      ],
       lower: [
         "quadriceps",
+        "quadríceps",
         "posterior de coxa",
+        "isquiotibiais",
         "gluteos",
+        "glúteos",
         "panturrilhas",
         "abdomen",
         "core",
       ],
-      upper: ["peitoral", "triceps", "ombros", "costas", "biceps"],
+      upper: [
+        "peitoral",
+        "peito",
+        "triceps",
+        "tríceps",
+        "ombros",
+        "costas",
+        "dorsal",
+        "biceps",
+        "bíceps",
+      ],
       full: [
         "peitoral",
+        "peito",
         "costas",
+        "dorsal",
         "quadriceps",
+        "quadríceps",
         "posterior de coxa",
+        "isquiotibiais",
         "ombros",
         "biceps",
+        "bíceps",
         "triceps",
+        "tríceps",
         "abdomen",
         "core",
+        "gluteos",
+        "glúteos",
       ],
-      shouldersarms: ["ombros", "biceps", "triceps"],
+      shouldersarms: ["ombros", "biceps", "bíceps", "triceps", "tríceps"],
     };
 
     const allowedMuscles = allowed[dayType as keyof typeof allowed] || [];
@@ -569,7 +735,18 @@ export function isTrainingPlanUsable(
         // Special cases for strict validation
         if (dayType === "legs" || dayType === "lower") {
           // Legs/Lower cannot have upper body
-          if (["peitoral", "costas", "biceps", "triceps"].includes(mg)) {
+          if (
+            [
+              "peitoral",
+              "peito",
+              "costas",
+              "dorsal",
+              "biceps",
+              "bíceps",
+              "triceps",
+              "tríceps",
+            ].includes(mg)
+          ) {
             rejectPlan(
               "grupo_muscular_proibido",
               {
@@ -592,7 +769,7 @@ export function isTrainingPlanUsable(
           }
         } else if (dayType === "push") {
           // Push cannot have costas/biceps
-          if (["costas", "biceps"].includes(mg)) {
+          if (["costas", "dorsal", "biceps", "bíceps"].includes(mg)) {
             console.warn("Plano rejeitado: grupo muscular proibido no dia", {
               dayType,
               muscleGroup: mg,
@@ -603,7 +780,7 @@ export function isTrainingPlanUsable(
           }
         } else if (dayType === "pull") {
           // Pull cannot have peito/triceps
-          if (["peitoral", "triceps"].includes(mg)) {
+          if (["peitoral", "peito", "triceps", "tríceps"].includes(mg)) {
             console.warn("Plano rejeitado: grupo muscular proibido no dia", {
               dayType,
               muscleGroup: mg,
@@ -614,7 +791,7 @@ export function isTrainingPlanUsable(
           }
         } else if (dayType === "shouldersarms") {
           // Shoulders & Arms cannot have costas
-          if (mg === "costas") {
+          if (mg === "costas" || mg === "dorsal") {
             console.warn("Plano rejeitado: grupo muscular proibido no dia", {
               dayType,
               muscleGroup: mg,
@@ -636,9 +813,15 @@ export function isTrainingPlanUsable(
 
     // Validate Lower day requirements (usando primaryMuscle)
     if (dayType === "lower" || dayType === "legs") {
-      const hasQuadriceps = primaryMuscleCounts.has("quadriceps");
-      const hasPosterior = primaryMuscleCounts.has("posterior de coxa");
-      const hasGluteos = primaryMuscleCounts.has("gluteos");
+      const hasQuadriceps =
+        primaryMuscleCounts.has("quadriceps") ||
+        primaryMuscleCounts.has("quadríceps");
+      const hasPosterior =
+        primaryMuscleCounts.has("posterior de coxa") ||
+        primaryMuscleCounts.has("isquiotibiais");
+      const hasGluteos =
+        primaryMuscleCounts.has("gluteos") ||
+        primaryMuscleCounts.has("glúteos");
       const hasPanturrilhas = primaryMuscleCounts.has("panturrilhas");
 
       if (
@@ -673,12 +856,17 @@ export function isTrainingPlanUsable(
 
     // Validate Full Body day requirements (usando primaryMuscle)
     if (dayType === "full") {
-      const hasPeitoral = primaryMuscleCounts.has("peitoral");
-      const hasCostas = primaryMuscleCounts.has("costas");
+      const hasPeitoral =
+        primaryMuscleCounts.has("peitoral") || primaryMuscleCounts.has("peito");
+      const hasCostas =
+        primaryMuscleCounts.has("costas") || primaryMuscleCounts.has("dorsal");
       const hasPernas =
         primaryMuscleCounts.has("quadriceps") ||
+        primaryMuscleCounts.has("quadríceps") ||
         primaryMuscleCounts.has("posterior de coxa") ||
-        primaryMuscleCounts.has("gluteos");
+        primaryMuscleCounts.has("isquiotibiais") ||
+        primaryMuscleCounts.has("gluteos") ||
+        primaryMuscleCounts.has("glúteos");
       const hasOmbros = primaryMuscleCounts.has("ombros");
 
       if (!hasPeitoral || !hasCostas || !hasPernas || !hasOmbros) {
@@ -709,19 +897,47 @@ export function isTrainingPlanUsable(
 
     // Validação de grupos obrigatórios por divisão (usando primaryMuscle)
     const requiredGroupsByDivision: Record<string, string[]> = {
-      push: ["peitoral", "ombros", "triceps"],
+      push: ["peito", "ombros", "triceps"],
       pull: ["costas", "biceps"],
       legs: ["quadriceps", "posterior de coxa"],
       lower: ["quadriceps", "posterior de coxa"],
-      upper: ["peitoral", "costas", "ombros"],
-      full: ["peitoral", "costas"], // Pernas já validado acima
+      upper: ["peito", "costas", "ombros"],
+      full: ["peito", "costas"], // Pernas já validado acima
     };
 
     const requiredGroups = requiredGroupsByDivision[dayType];
     if (requiredGroups) {
       // Verificar se todos os grupos obrigatórios estão presentes
       for (const requiredGroup of requiredGroups) {
-        if (!primaryMuscleCounts.has(normalize(requiredGroup))) {
+        const normalizedRequired = normalize(requiredGroup);
+        // Permitir variações peito/peitoral, costas/dorsal, etc.
+        let found = primaryMuscleCounts.has(normalizedRequired);
+        if (!found && normalizedRequired === "peito")
+          found = primaryMuscleCounts.has("peitoral");
+        if (!found && normalizedRequired === "peitoral")
+          found = primaryMuscleCounts.has("peito");
+        if (!found && normalizedRequired === "costas")
+          found = primaryMuscleCounts.has("dorsal");
+        if (!found && normalizedRequired === "dorsal")
+          found = primaryMuscleCounts.has("costas");
+        if (!found && normalizedRequired === "triceps")
+          found = primaryMuscleCounts.has("tríceps");
+        if (!found && normalizedRequired === "tríceps")
+          found = primaryMuscleCounts.has("triceps");
+        if (!found && normalizedRequired === "biceps")
+          found = primaryMuscleCounts.has("bíceps");
+        if (!found && normalizedRequired === "bíceps")
+          found = primaryMuscleCounts.has("biceps");
+        if (!found && normalizedRequired === "quadriceps")
+          found = primaryMuscleCounts.has("quadríceps");
+        if (!found && normalizedRequired === "quadríceps")
+          found = primaryMuscleCounts.has("quadriceps");
+        if (!found && normalizedRequired === "posterior de coxa")
+          found = primaryMuscleCounts.has("isquiotibiais");
+        if (!found && normalizedRequired === "isquiotibiais")
+          found = primaryMuscleCounts.has("posterior de coxa");
+
+        if (!found) {
           rejectPlan(
             "grupo_obrigatorio_ausente",
             {
@@ -786,6 +1002,93 @@ export function isTrainingPlanUsable(
       return false;
     }
 
+    // NOVA VALIDAÇÃO: Volume mínimo por grupo muscular (Piso Técnico)
+    for (const [muscle, count] of primaryMuscleCounts) {
+      let minRequired = 1;
+      let muscleCategory = "pequeno";
+      const isAdvanced =
+        normalizedLevel === "atleta" ||
+        normalizedLevel === "atleta_altorendimento" ||
+        normalizedLevel === "avancado";
+      const isBeginner =
+        normalizedLevel === "iniciante" ||
+        normalizedLevel === "idoso" ||
+        normalizedLevel === "limitado";
+
+      if (isBig(muscle)) {
+        muscleCategory = "grande";
+        // Piso técnico dinâmico para grupos grandes
+        const isFocusDay = ["push", "pull", "legs", "lower"].includes(dayType);
+
+        if (isBeginner) {
+          minRequired = 2;
+          // Exceção Full Body Iniciante: permite 1
+          if (dayType === "full") minRequired = 1;
+        } else if (isAdvanced) {
+          minRequired = isFocusDay ? 5 : 3;
+          // No Full Body para atletas, mínimo 2 de cada grande
+          if (dayType === "full") minRequired = 2;
+        } else {
+          // Moderado/Intermediário
+          minRequired = isFocusDay ? 3 : 2;
+        }
+      } else if (isMedium(muscle)) {
+        muscleCategory = "médio";
+        // Piso técnico para grupos médios
+        if (isAdvanced) {
+          minRequired = 3;
+        } else {
+          minRequired = 2;
+          // Em treinos muito densos (Full/Upper), permitimos 1
+          if (dayType === "full" || dayType === "upper") minRequired = 1;
+        }
+      }
+
+      if (count < minRequired) {
+        // Decisão técnica automática: Se estiver perto do mínimo, aceitamos mas registramos correção.
+        // Se estiver muito longe (ex: 1 exercício para grupo grande em atleta), rejeitamos.
+        const isWayTooLow = isBig(muscle) && count <= 1;
+
+        if (isWayTooLow) {
+          rejectPlan(
+            "volume_insuficiente_critico",
+            {
+              activityLevel: level,
+              trainingDays,
+              dayType,
+              muscle,
+              count,
+              minRequired,
+              day: day.day,
+            },
+            `Volume insuficiente crítico para grupo ${muscleCategory} (${muscle}): ${count}/${minRequired}`,
+            { muscle, count, minRequired, day: day.day }
+          );
+          return false;
+        }
+
+        // Caso contrário, permitimos a decisão técnica automática e registramos a correção
+        recordPlanCorrection(
+          {
+            reason: "ajuste_volume_minimo_obrigatorio",
+            data: {
+              muscle,
+              category: muscleCategory,
+              count,
+              minRequired,
+              day: day.day,
+            },
+          },
+          {
+            imc: 0,
+            gender: "N/A",
+            activityLevel: level,
+            age: 0,
+          }
+        ).catch(() => {});
+      }
+    }
+
     // NOVA VALIDAÇÃO: Limite de exercícios por músculo primário (por nível)
     const maxPerMuscleByLevel: Record<string, number> = {
       idoso: 3,
@@ -794,16 +1097,9 @@ export function isTrainingPlanUsable(
       intermediario: 5,
       moderado: 5,
       avancado: 6,
-      atleta: 6,
+      atleta: 8,
       atleta_altorendimento: 8,
     };
-
-    const normalizedLevel = level
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "_")
-      .replace("atleta_alto_rendimento", "atleta_altorendimento");
 
     const maxPerMuscle = maxPerMuscleByLevel[normalizedLevel] || 5;
 

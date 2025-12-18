@@ -42,40 +42,43 @@ export function useEvolution(user: User | null) {
   const [error, setError] = useState<string | null>(null);
 
   // Buscar evoluções do usuário - usando useCallback para evitar re-renders
-  const fetchEvolutions = useCallback(async () => {
-    if (!user) {
-      setEvolutions([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from("user_evolutions")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("date", { ascending: true });
-
-      if (error) {
-        console.error("Erro ao buscar evoluções:", error);
-        setError("Erro ao carregar evoluções");
+  const fetchEvolutions = useCallback(
+    async (silent = false) => {
+      if (!user) {
         setEvolutions([]);
+        setLoading(false);
+        setError(null);
         return;
       }
 
-      setEvolutions(data || []);
-    } catch (error) {
-      console.error("Erro inesperado ao buscar evoluções:", error);
-      setError("Erro inesperado ao carregar evoluções");
-      setEvolutions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+      if (!silent) setLoading(true);
+      setError(null);
+
+      try {
+        const { data, error } = await supabase
+          .from("user_evolutions")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: true });
+
+        if (error) {
+          console.error("Erro ao buscar evoluções:", error);
+          setError("Erro ao carregar evoluções");
+          setEvolutions([]);
+          return;
+        }
+
+        setEvolutions(data || []);
+      } catch (error) {
+        console.error("Erro inesperado ao buscar evoluções:", error);
+        setError("Erro inesperado ao carregar evoluções");
+        setEvolutions([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user]
+  );
 
   // Adicionar nova evolução
   const addEvolution = async (data: EvolutionData) => {

@@ -6,7 +6,9 @@ export type CorrectionReason =
   | "objetivo_convertido_fisiologico"
   | "proteina_ajustada_limite_seguranca"
   | "cardio_frequencia_reduzida_adaptacao"
-  | "estimulos_totais_excedidos";
+  | "estimulos_totais_excedidos"
+  | "ajuste_volume_minimo_obrigatorio"
+  | "divisao_ajustada_tecnica";
 
 export interface ProteinCorrectionPayload {
   originalProtein: number;
@@ -34,6 +36,20 @@ export interface StimuliCorrectionPayload {
   totalStimuli: number;
 }
 
+export interface VolumeCorrectionPayload {
+  muscle: string;
+  category: string;
+  count: number;
+  minRequired: number;
+  day: string;
+}
+
+export interface DivisionCorrectionPayload {
+  originalDivision: string;
+  correctedDivision: string;
+  trainingDays: number;
+}
+
 export type CorrectionPayload =
   | {
       reason: "proteina_ajustada_limite_seguranca";
@@ -47,7 +63,12 @@ export type CorrectionPayload =
       reason: "cardio_frequencia_reduzida_adaptacao";
       data: CardioCorrectionPayload;
     }
-  | { reason: "estimulos_totais_excedidos"; data: StimuliCorrectionPayload };
+  | { reason: "estimulos_totais_excedidos"; data: StimuliCorrectionPayload }
+  | {
+      reason: "ajuste_volume_minimo_obrigatorio";
+      data: VolumeCorrectionPayload;
+    }
+  | { reason: "divisao_ajustada_tecnica"; data: DivisionCorrectionPayload };
 
 export interface CorrectionContext {
   imc: number;

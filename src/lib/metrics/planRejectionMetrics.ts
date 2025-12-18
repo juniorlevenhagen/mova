@@ -25,6 +25,8 @@ export type RejectionReason =
   | "distribuicao_inteligente_invalida"
   | "secondaryMuscles_excede_limite"
   | "tempo_treino_excede_disponivel"
+  | "vies_estetico_detectado"
+  | "volume_insuficiente_critico"
   | "exercicio_musculo_incompativel";
 
 export interface RejectionMetric {

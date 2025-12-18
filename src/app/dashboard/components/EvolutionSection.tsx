@@ -139,7 +139,18 @@ export function EvolutionSection({
   const initialData = {
     date: "15/01/2024",
     peso: userProfile?.pesoInicial || 0,
-    percentualGordura: null, // Não temos dados reais de % gordura no cadastro
+    percentualGordura: (() => {
+      const peso = userProfile?.pesoInicial || 0;
+      const altura = userProfile?.altura || 0;
+      const sexo = userProfile?.sexo || "";
+      if (peso > 0 && altura > 0 && sexo) {
+        const mm = calcularMassaMagraEstimada(peso, altura, sexo);
+        if (mm && peso > mm) {
+          return Number((((peso - mm) / peso) * 100).toFixed(1));
+        }
+      }
+      return null;
+    })(), // Estimativa baseada na Massa Magra de Boer
     massaMagra:
       userProfile?.pesoInicial && userProfile?.altura && userProfile?.sexo
         ? calcularMassaMagraEstimada(
@@ -242,6 +253,16 @@ export function EvolutionSection({
   // Se está carregando, usar dados mais estáveis
   if (loading) {
   }
+
+  const isEstimatedComposition = useMemo(() => {
+    // Se não há nenhuma evolução com dados reais de composição, é estimado
+    const hasRealData = evolutions.some(
+      (evo) =>
+        (evo.percentual_gordura && evo.percentual_gordura > 0) ||
+        (evo.massa_magra && evo.massa_magra > 0)
+    );
+    return !hasRealData;
+  }, [evolutions]);
 
   // Função para formatar valores ou mostrar "-"
   const formatValue = (value: number | string | null, unit: string = "") => {
@@ -1238,6 +1259,30 @@ export function EvolutionSection({
               <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full"></div>
               Composição Corporal Atual
             </h4>
+
+            {isEstimatedComposition && (
+              <div className="mb-3 px-2 py-1.5 bg-amber-50 border border-amber-100 rounded-md flex items-start gap-2">
+                <svg
+                  className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <p className="text-[10px] sm:text-xs text-amber-700 leading-tight">
+                  <strong>Nota:</strong> Estes valores são estimativas baseadas
+                  no seu perfil inicial. Para maior precisão, adicione uma
+                  evolução manual com seu percentual de gordura real.
+                </p>
+              </div>
+            )}
+
             <div
               className="w-full"
               style={{ minHeight: "250px", height: "250px" }}

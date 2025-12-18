@@ -13,11 +13,12 @@ export interface PersonalizedPlan {
       type: string;
       exercises: Array<{
         name: string;
-        sets: string;
+        sets: number;
         reps: string;
         rest: string;
         notes?: string;
-        muscleGroups?: string;
+        primaryMuscle: string;
+        secondaryMuscles?: string[];
       }>;
     }>;
     progression: string;

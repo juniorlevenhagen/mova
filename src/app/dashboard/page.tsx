@@ -88,10 +88,10 @@ export default function DashboardPage() {
   // Função combinada para refresh após upload de PDF
   const handlePdfUploadRefresh = async () => {
     // Refresh do perfil
-    await refreshProfile();
+    await refreshProfile(true);
 
     // Refresh das evoluções
-    await refreshEvolutions();
+    await refreshEvolutions(true);
   };
 
   // Função para gerar plano e abrir modal
@@ -128,7 +128,7 @@ export default function DashboardPage() {
 
       // ✅ Sucesso - recarregar dados do trial e abrir modal
       if (result) {
-        await refetchTrial();
+        await refetchTrial(true);
         setShowPlanModal(true);
       } else {
         // ✅ Se result é null, pode ser erro de créditos que não foi lançado
@@ -301,6 +301,11 @@ export default function DashboardPage() {
 
     if (isSuccess && !verifyRunning.current) {
       verifyRunning.current = true;
+
+      // Limpar URL imediatamente para evitar re-execução em re-renders rápidos
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+
       const verifyPayment = async () => {
         try {
           // Obter token de autenticação
@@ -350,7 +355,7 @@ export default function DashboardPage() {
 
                 while (retries > 0 && !promptsFound) {
                   await new Promise((resolve) => setTimeout(resolve, 2000)); // Aguardar 2s entre tentativas
-                  await refetchTrial();
+                  await refetchTrial(true);
                   // Verificar novamente após refetch
                   const {
                     data: { session: checkSession },
@@ -381,7 +386,7 @@ export default function DashboardPage() {
                 }
               } else {
                 // Prompts já foram adicionados, apenas recarregar
-                await refetchTrial();
+                await refetchTrial(true);
               }
 
               console.log("🔄 Recarregando status do plano...");
@@ -391,17 +396,20 @@ export default function DashboardPage() {
         } catch (error) {
           console.error("❌ Erro ao verificar pagamento:", error);
         }
-
-        // Limpar URL sempre
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, "", newUrl);
       };
 
       verifyPayment();
     } else if (
       (purchaseParam === "success" || upgradeParam === "success") &&
-      user
+      user &&
+      !verifyRunning.current
     ) {
+      verifyRunning.current = true;
+
+      // Limpar URL imediatamente
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+
       // Fallback sem session_id: tentar ativar premium via /api/verify-payment
       const runFallback = async () => {
         try {
@@ -438,15 +446,12 @@ export default function DashboardPage() {
               await new Promise((resolve) => setTimeout(resolve, 3000));
             }
 
-            await refetchTrial();
+            await refetchTrial(true);
             console.log("🔄 Recarregando status do plano (fallback)...");
             refetchPlanStatus();
           }
         } catch (e) {
           console.error("❌ Fallback verify-payment falhou:", e);
-        } finally {
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, "", newUrl);
         }
       };
 

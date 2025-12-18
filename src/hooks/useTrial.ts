@@ -49,44 +49,202 @@ export function useTrial(user: User | null) {
   const fetchingRef = useRef(false);
 
   // Buscar dados do trial com useCallback
-  const fetchTrial = useCallback(async () => {
-    if (fetchingRef.current) return; // Prevenir chamadas simultâneas
-    fetchingRef.current = true;
-    if (!user) {
-      setTrial(null);
-      setTrialStatus({
-        isNewUser: true,
-        canGenerate: false,
-        plansRemaining: 0,
-        hasUsedFreePlan: false,
-        availablePrompts: 0,
-        message: "Você precisa comprar um pacote para gerar planos",
-      });
-      setLoading(false);
-      fetchingRef.current = false;
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Buscar dados do trial
-      const { data: trialData, error: trialError } = await supabase
-        .from("user_trials")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle(); // Usar maybeSingle() em vez de single()
-
-      if (trialError) {
-        throw trialError;
+  const fetchTrial = useCallback(
+    async (silent = false) => {
+      if (fetchingRef.current) return; // Prevenir chamadas simultâneas
+      fetchingRef.current = true;
+      if (!user) {
+        setTrial(null);
+        setTrialStatus({
+          isNewUser: true,
+          canGenerate: false,
+          plansRemaining: 0,
+          hasUsedFreePlan: false,
+          availablePrompts: 0,
+          message: "Você precisa comprar um pacote para gerar planos",
+        });
+        setLoading(false);
+        fetchingRef.current = false;
+        return;
       }
 
-      // Lógica para determinar status
-      let status: TrialStatus;
+      try {
+        if (!silent) setLoading(true);
+        setError(null);
 
-      if (!trialData) {
-        status = {
+        // Buscar dados do trial
+        const { data: trialData, error: trialError } = await supabase
+          .from("user_trials")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle(); // Usar maybeSingle() em vez de single()
+
+        if (trialError) {
+          throw trialError;
+        }
+
+        // Lógica para determinar status
+        let status: TrialStatus;
+
+        if (!trialData) {
+          status = {
+            isNewUser: true,
+            canGenerate: false,
+            plansRemaining: 0,
+            hasUsedFreePlan: false,
+            availablePrompts: 0,
+            message: "Você precisa comprar um pacote para gerar planos",
+            plansGenerated: 0,
+            isInCooldown: false,
+          };
+        } else {
+          const plansGenerated = trialData.plans_generated || 0;
+          const availablePrompts = trialData.available_prompts || 0;
+          const maxFreePlans = trialData.max_plans_allowed || 0;
+          const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
+
+          // ✅ Calcular cooldown APENAS para prompts do pacote de 3
+          // Prompts unitários não têm cooldown - podem ser usados imediatamente
+          const packagePrompts = trialData.package_prompts || 0;
+          const singlePrompts = availablePrompts - packagePrompts; // Prompts unitários
+          const promptCooldownHours = 24; // Configurável: horas de espera entre gerar planos com prompts do pacote
+          let isInCooldown = false;
+          let hoursUntilNextPlan: number | undefined;
+          let nextPlanAvailable: string | undefined;
+
+          console.log("📊 Debug cooldown:", {
+            availablePrompts,
+            packagePrompts,
+            singlePrompts,
+            lastPlanGeneratedAt: trialData.last_plan_generated_at,
+          });
+
+          // ✅ Calcular cooldown se houver prompts do pacote OU se houver last_plan_generated_at para mostrar informações
+          if (trialData.last_plan_generated_at) {
+            const lastPlanDate = new Date(trialData.last_plan_generated_at);
+            const now = new Date();
+            const hoursSinceLastPlan =
+              (now.getTime() - lastPlanDate.getTime()) / (1000 * 60 * 60);
+
+            // ✅ Só calcular cooldown se houver prompts do pacote E estiver dentro do período
+            if (packagePrompts > 0) {
+              const hoursRemaining = promptCooldownHours - hoursSinceLastPlan;
+
+              console.log("⏳ Verificando cooldown do pacote:", {
+                hoursSinceLastPlan: hoursSinceLastPlan.toFixed(2),
+                hoursRemaining: hoursRemaining.toFixed(2),
+                hasSinglePrompts: singlePrompts > 0,
+              });
+
+              if (hoursSinceLastPlan < promptCooldownHours) {
+                // ✅ Se tem prompts do pacote e está dentro do período de cooldown, mostrar countdown
+                isInCooldown = true; // ✅ Sempre mostrar countdown se tem prompts do pacote em cooldown
+                hoursUntilNextPlan = Math.max(0, hoursRemaining);
+                nextPlanAvailable = new Date(
+                  now.getTime() + hoursRemaining * 60 * 60 * 1000
+                ).toISOString();
+                console.log("✅ Countdown do pacote ativo:", {
+                  isInCooldown,
+                  hoursUntilNextPlan,
+                  canStillUseSinglePrompts: singlePrompts > 0,
+                });
+              } else {
+                // ✅ Cooldown terminou, mostrar quando pode gerar novamente (agora)
+                hoursUntilNextPlan = 0;
+                nextPlanAvailable = now.toISOString();
+                console.log(
+                  "✅ Cooldown do pacote terminou - pode gerar agora"
+                );
+              }
+            } else if (singlePrompts === 0 && availablePrompts === 0) {
+              // ✅ Sem prompts mas teve plano gerado - mostrar quando foi o último
+              // Isso ajuda o usuário a saber quando pode comprar mais
+              nextPlanAvailable = undefined;
+            }
+          }
+
+          // ✅ Pode gerar se: tem prompts unitários OU (tem prompts do pacote e não está em cooldown) OU tem plano grátis
+          const canGenerate =
+            singlePrompts > 0 ||
+            (packagePrompts > 0 && !isInCooldown) ||
+            freePlansRemaining > 0;
+
+          let message: string;
+          if (availablePrompts > 0) {
+            if (isInCooldown && hoursUntilNextPlan !== undefined) {
+              // ✅ Em cooldown do pacote - mas pode ter prompts unitários
+              const hours = Math.floor(hoursUntilNextPlan);
+              const minutes = Math.floor((hoursUntilNextPlan - hours) * 60);
+              const timeStr =
+                hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+              if (singlePrompts > 0) {
+                message =
+                  singlePrompts === 1
+                    ? `Você tem 1 prompt disponível agora (sem cooldown). Próximo prompt do pacote disponível em ${timeStr}.`
+                    : `Você tem ${singlePrompts} prompts disponíveis agora (sem cooldown). Próximos prompts do pacote disponíveis em ${timeStr}.`;
+              } else {
+                message =
+                  packagePrompts === 1
+                    ? `Você tem 1 prompt do pacote disponível. Próximo plano pode ser gerado em ${timeStr}.`
+                    : `Você tem ${packagePrompts} prompts do pacote disponíveis. Próximo plano pode ser gerado em ${timeStr}.`;
+              }
+            } else {
+              // ✅ Não está em cooldown ou só tem prompts unitários
+              if (singlePrompts > 0 && packagePrompts > 0) {
+                message =
+                  singlePrompts === 1
+                    ? `Você tem 1 prompt unitário disponível (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`
+                    : `Você tem ${singlePrompts} prompts unitários disponíveis (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`;
+              } else if (singlePrompts > 0) {
+                message =
+                  singlePrompts === 1
+                    ? "Você tem 1 prompt disponível para gerar planos!"
+                    : `Você tem ${singlePrompts} prompts disponíveis para gerar planos!`;
+              } else {
+                message =
+                  packagePrompts === 1
+                    ? "Você tem 1 prompt disponível para gerar planos!"
+                    : `Você tem ${packagePrompts} prompts disponíveis para gerar planos!`;
+              }
+            }
+          } else {
+            // Não há prompts disponíveis - sempre mostrar mensagem para comprar
+            message = "Compre prompts para gerar novos planos.";
+          }
+
+          const plansRemaining =
+            availablePrompts > 0 ? availablePrompts : freePlansRemaining;
+
+          status = {
+            isNewUser: false,
+            canGenerate,
+            plansRemaining,
+            hasUsedFreePlan: freePlansRemaining === 0,
+            availablePrompts,
+            message,
+            plansGenerated,
+            isInCooldown,
+            hoursUntilNextPlan,
+            nextPlanAvailable,
+          };
+        }
+
+        setTrialStatus(status);
+        setTrial(trialData || null);
+
+        console.log("✅ Trial atualizado:", {
+          availablePrompts: status.availablePrompts,
+          plansRemaining: status.plansRemaining,
+          canGenerate: status.canGenerate,
+          message: status.message,
+        });
+      } catch (error: unknown) {
+        console.error("Erro ao buscar trial:", error);
+        setError("Erro ao carregar dados do trial");
+
+        // Fallback em caso de erro
+        setTrialStatus({
           isNewUser: true,
           canGenerate: false,
           plansRemaining: 0,
@@ -95,166 +253,14 @@ export function useTrial(user: User | null) {
           message: "Você precisa comprar um pacote para gerar planos",
           plansGenerated: 0,
           isInCooldown: false,
-        };
-      } else {
-        const plansGenerated = trialData.plans_generated || 0;
-        const availablePrompts = trialData.available_prompts || 0;
-        const maxFreePlans = trialData.max_plans_allowed || 0;
-        const freePlansRemaining = Math.max(0, maxFreePlans - plansGenerated);
-
-        // ✅ Calcular cooldown APENAS para prompts do pacote de 3
-        // Prompts unitários não têm cooldown - podem ser usados imediatamente
-        const packagePrompts = trialData.package_prompts || 0;
-        const singlePrompts = availablePrompts - packagePrompts; // Prompts unitários
-        const promptCooldownHours = 24; // Configurável: horas de espera entre gerar planos com prompts do pacote
-        let isInCooldown = false;
-        let hoursUntilNextPlan: number | undefined;
-        let nextPlanAvailable: string | undefined;
-
-        console.log("📊 Debug cooldown:", {
-          availablePrompts,
-          packagePrompts,
-          singlePrompts,
-          lastPlanGeneratedAt: trialData.last_plan_generated_at,
         });
-
-        // ✅ Calcular cooldown se houver prompts do pacote OU se houver last_plan_generated_at para mostrar informações
-        if (trialData.last_plan_generated_at) {
-          const lastPlanDate = new Date(trialData.last_plan_generated_at);
-          const now = new Date();
-          const hoursSinceLastPlan =
-            (now.getTime() - lastPlanDate.getTime()) / (1000 * 60 * 60);
-
-          // ✅ Só calcular cooldown se houver prompts do pacote E estiver dentro do período
-          if (packagePrompts > 0) {
-            const hoursRemaining = promptCooldownHours - hoursSinceLastPlan;
-
-            console.log("⏳ Verificando cooldown do pacote:", {
-              hoursSinceLastPlan: hoursSinceLastPlan.toFixed(2),
-              hoursRemaining: hoursRemaining.toFixed(2),
-              hasSinglePrompts: singlePrompts > 0,
-            });
-
-            if (hoursSinceLastPlan < promptCooldownHours) {
-              // ✅ Se tem prompts do pacote e está dentro do período de cooldown, mostrar countdown
-              isInCooldown = true; // ✅ Sempre mostrar countdown se tem prompts do pacote em cooldown
-              hoursUntilNextPlan = Math.max(0, hoursRemaining);
-              nextPlanAvailable = new Date(
-                now.getTime() + hoursRemaining * 60 * 60 * 1000
-              ).toISOString();
-              console.log("✅ Countdown do pacote ativo:", {
-                isInCooldown,
-                hoursUntilNextPlan,
-                canStillUseSinglePrompts: singlePrompts > 0,
-              });
-            } else {
-              // ✅ Cooldown terminou, mostrar quando pode gerar novamente (agora)
-              hoursUntilNextPlan = 0;
-              nextPlanAvailable = now.toISOString();
-              console.log("✅ Cooldown do pacote terminou - pode gerar agora");
-            }
-          } else if (singlePrompts === 0 && availablePrompts === 0) {
-            // ✅ Sem prompts mas teve plano gerado - mostrar quando foi o último
-            // Isso ajuda o usuário a saber quando pode comprar mais
-            nextPlanAvailable = undefined;
-          }
-        }
-
-        // ✅ Pode gerar se: tem prompts unitários OU (tem prompts do pacote e não está em cooldown) OU tem plano grátis
-        const canGenerate =
-          singlePrompts > 0 ||
-          (packagePrompts > 0 && !isInCooldown) ||
-          freePlansRemaining > 0;
-
-        let message: string;
-        if (availablePrompts > 0) {
-          if (isInCooldown && hoursUntilNextPlan !== undefined) {
-            // ✅ Em cooldown do pacote - mas pode ter prompts unitários
-            const hours = Math.floor(hoursUntilNextPlan);
-            const minutes = Math.floor((hoursUntilNextPlan - hours) * 60);
-            const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-
-            if (singlePrompts > 0) {
-              message =
-                singlePrompts === 1
-                  ? `Você tem 1 prompt disponível agora (sem cooldown). Próximo prompt do pacote disponível em ${timeStr}.`
-                  : `Você tem ${singlePrompts} prompts disponíveis agora (sem cooldown). Próximos prompts do pacote disponíveis em ${timeStr}.`;
-            } else {
-              message =
-                packagePrompts === 1
-                  ? `Você tem 1 prompt do pacote disponível. Próximo plano pode ser gerado em ${timeStr}.`
-                  : `Você tem ${packagePrompts} prompts do pacote disponíveis. Próximo plano pode ser gerado em ${timeStr}.`;
-            }
-          } else {
-            // ✅ Não está em cooldown ou só tem prompts unitários
-            if (singlePrompts > 0 && packagePrompts > 0) {
-              message =
-                singlePrompts === 1
-                  ? `Você tem 1 prompt unitário disponível (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`
-                  : `Você tem ${singlePrompts} prompts unitários disponíveis (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`;
-            } else if (singlePrompts > 0) {
-              message =
-                singlePrompts === 1
-                  ? "Você tem 1 prompt disponível para gerar planos!"
-                  : `Você tem ${singlePrompts} prompts disponíveis para gerar planos!`;
-            } else {
-              message =
-                packagePrompts === 1
-                  ? "Você tem 1 prompt disponível para gerar planos!"
-                  : `Você tem ${packagePrompts} prompts disponíveis para gerar planos!`;
-            }
-          }
-        } else {
-          // Não há prompts disponíveis - sempre mostrar mensagem para comprar
-          message = "Compre prompts para gerar novos planos.";
-        }
-
-        const plansRemaining =
-          availablePrompts > 0 ? availablePrompts : freePlansRemaining;
-
-        status = {
-          isNewUser: false,
-          canGenerate,
-          plansRemaining,
-          hasUsedFreePlan: freePlansRemaining === 0,
-          availablePrompts,
-          message,
-          plansGenerated,
-          isInCooldown,
-          hoursUntilNextPlan,
-          nextPlanAvailable,
-        };
+      } finally {
+        setLoading(false);
+        fetchingRef.current = false;
       }
-
-      setTrialStatus(status);
-      setTrial(trialData || null);
-
-      console.log("✅ Trial atualizado:", {
-        availablePrompts: status.availablePrompts,
-        plansRemaining: status.plansRemaining,
-        canGenerate: status.canGenerate,
-        message: status.message,
-      });
-    } catch (error: unknown) {
-      console.error("Erro ao buscar trial:", error);
-      setError("Erro ao carregar dados do trial");
-
-      // Fallback em caso de erro
-      setTrialStatus({
-        isNewUser: true,
-        canGenerate: false,
-        plansRemaining: 0,
-        hasUsedFreePlan: false,
-        availablePrompts: 0,
-        message: "Você precisa comprar um pacote para gerar planos",
-        plansGenerated: 0,
-        isInCooldown: false,
-      });
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
-    }
-  }, [user]);
+    },
+    [user]
+  );
 
   // Incrementar contador de planos gerados
   const incrementPlanUsage = useCallback(async () => {

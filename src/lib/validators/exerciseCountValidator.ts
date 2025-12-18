@@ -19,7 +19,7 @@ export function validateExercisesCountByLevel(
     moderado: 8,
     intermediario: 8,
     avancado: 10,
-    atleta: 10,
+    atleta: 12, // Aumentado para permitir volume de elite
     atleta_altorendimento: 12,
   };
 

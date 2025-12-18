@@ -68,7 +68,7 @@ const TRAINING_SCHEMA = {
                       rest: { type: "string" },
                       notes: {
                         type: "string",
-                        description: "Notas técnicas detalhadas",
+                        description: "Notas técnicas detalhadas (obrigatório)",
                       },
                     },
                     required: [

@@ -252,6 +252,13 @@ export function usePlanGeneration() {
           throw cooldownError;
         }
 
+        if (errorData.error === "OPENAI_QUOTA_EXCEEDED") {
+          throw new Error(
+            errorData.message ||
+              "Sistema temporariamente indisponível. Tente novamente mais tarde."
+          );
+        }
+
         throw new Error(errorData.error || "Erro ao gerar plano");
       }
 

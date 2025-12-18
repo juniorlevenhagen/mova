@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     console.log("🍎 Gerando plano nutricional...");
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       temperature: 0.2,
       max_tokens: 2048,
       messages: [

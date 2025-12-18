@@ -267,7 +267,7 @@ async function fetchMissingPlanSections(
   console.log(`🔧 Solicitando campos faltantes: ${missingFields.join(", ")}`);
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o-mini",
     temperature: 0.3, // ✅ Aumentar temperatura para mais variação nos planos
     max_tokens: 2048,
     messages: [
@@ -1294,7 +1294,7 @@ export async function POST(request: NextRequest) {
       );
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         temperature: 0.3,
         max_tokens: 4096,
         messages: [
@@ -3743,11 +3743,33 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
     });
   } catch (error) {
     console.error("❌ Erro ao gerar plano:", error);
+
+    // ✅ Detectar erro de cota da OpenAI
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isQuotaError =
+      errorMessage.includes("quota") ||
+      errorMessage.includes("limit") ||
+      errorMessage.includes("429") ||
+      (error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 429);
+
+    if (isQuotaError) {
+      return NextResponse.json(
+        {
+          error: "OPENAI_QUOTA_EXCEEDED",
+          message:
+            "O sistema está temporariamente indisponível devido a limites de processamento. Por favor, tente novamente em alguns instantes ou entre em contato com o suporte.",
+          details: errorMessage,
+        },
+        { status: 503 } // Service Unavailable (mais apropriado que 429 interno do app)
+      );
+    }
+
     return NextResponse.json(
       {
-        error:
-          "Erro interno: " +
-          (error instanceof Error ? error.message : String(error)),
+        error: "Erro interno: " + errorMessage,
       },
       { status: 500 }
     );

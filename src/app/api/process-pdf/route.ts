@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     console.log("🤖 Processando com OpenAI...");
     const openai = createOpenAIClient();
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -476,6 +476,29 @@ export async function POST(request: NextRequest) {
 
     const errorMessage =
       error instanceof Error ? error.message : "Erro desconhecido";
+
+    // ✅ Detectar erro de cota da OpenAI
+    const isQuotaError =
+      errorMessage.includes("quota") ||
+      errorMessage.includes("limit") ||
+      errorMessage.includes("429") ||
+      (error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 429);
+
+    if (isQuotaError) {
+      return NextResponse.json(
+        {
+          error: "OPENAI_QUOTA_EXCEEDED",
+          message:
+            "O sistema está temporariamente indisponível devido a limites de processamento da IA. Por favor, tente novamente em alguns instantes ou entre em contato com o suporte.",
+          details: errorMessage,
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: "Erro interno do servidor: " + errorMessage },
       { status: 500 }

@@ -100,11 +100,11 @@ export const components = {
 
   // Botões
   button: {
-    base: "font-medium rounded-lg transition-colors duration-200 font-inter",
+    base: "font-bold rounded-2xl transition-all duration-300 font-inter active:scale-95",
     sizes: {
-      sm: "px-3 py-2 text-sm",
-      md: "px-4 py-2 text-base",
-      lg: "px-6 py-3 text-base",
+      sm: "px-4 py-2 text-sm",
+      md: "px-6 py-3 text-base",
+      lg: "px-12 py-6 text-xl",
     },
     variants: {
       primary: `${colors.interactive.primary.bg} ${colors.interactive.primary.hover} ${colors.interactive.primary.text}`,

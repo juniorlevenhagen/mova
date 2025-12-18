@@ -1172,26 +1172,26 @@ export function UserDataSection({
           Ações
         </h4>
 
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 min-w-0">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <button
             onClick={handleGeneratePlan}
             disabled={isGeneratingPlan || isCheckingPlanStatus}
-            className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.lg} ${
+            className={`flex-1 ${components.button.base} ${components.button.sizes.md} ${
               planStatus?.isExisting &&
               !trialStatus?.canGenerate &&
               (trialStatus?.availablePrompts || 0) === 0
                 ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700"
-                : "bg-black text-white hover:bg-gray-900"
-            } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap`}
+                : "bg-slate-950 text-white hover:bg-slate-900"
+            } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap`}
           >
             {isGeneratingPlan ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 <span>Gerando Plano...</span>
               </>
             ) : isCheckingPlanStatus ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                 <span>Verificando...</span>
               </>
             ) : planStatus?.isExisting &&
@@ -1199,7 +1199,7 @@ export function UserDataSection({
               (trialStatus?.availablePrompts || 0) === 0 ? (
               <>
                 <svg
-                  className="w-5 h-5 flex-shrink-0"
+                  className="w-6 h-6 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1222,7 +1222,7 @@ export function UserDataSection({
             ) : (
               <>
                 <svg
-                  className="w-5 h-5 flex-shrink-0"
+                  className="w-6 h-6 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1242,12 +1242,12 @@ export function UserDataSection({
           {onViewHistory && (
             <button
               onClick={onViewHistory}
-              className={`flex-1 sm:flex-none min-w-0 ${components.button.base} ${
-                components.button.sizes.lg
-              } flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 whitespace-nowrap`}
+              className={`flex-1 ${components.button.base} ${
+                components.button.sizes.md
+              } flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 whitespace-nowrap`}
             >
               <svg
-                className="w-5 h-5 flex-shrink-0"
+                className="w-6 h-6 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1266,9 +1266,9 @@ export function UserDataSection({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className={`flex-1 sm:flex-none min-w-0 ${components.button.base} ${
-              components.button.sizes.lg
-            } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap ${
+            className={`flex-1 ${components.button.base} ${
+              components.button.sizes.md
+            } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all duration-200 whitespace-nowrap ${
               evaluation
                 ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
                 : "bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800"
@@ -1276,13 +1276,13 @@ export function UserDataSection({
           >
             {isUploading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Enviando...
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Enviando...</span>
               </>
             ) : evaluation ? (
               <>
                 <svg
-                  className="w-5 h-5"
+                  className="w-6 h-6 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1294,12 +1294,12 @@ export function UserDataSection({
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                Avaliação Enviada
+                <span>Avaliação Ativa</span>
               </>
             ) : (
               <>
                 <svg
-                  className="w-5 h-5"
+                  className="w-6 h-6 flex-shrink-0"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1311,7 +1311,7 @@ export function UserDataSection({
                     d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                   />
                 </svg>
-                Upload Avaliação
+                <span>Upload</span>
               </>
             )}
           </button>
@@ -1349,7 +1349,7 @@ export function UserDataSection({
               </button>
               <button
                 onClick={confirmGeneratePlan}
-                className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-md hover:shadow-lg`}
+                className={`flex-1 min-w-0 ${components.button.base} ${components.button.sizes.md} bg-slate-950 text-white hover:bg-slate-900 transition-all duration-200 shadow-md hover:shadow-lg`}
               >
                 Gerar Sem Avaliação
               </button>
@@ -1388,7 +1388,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowIMCModal(false)}
-              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap`}
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-slate-950 text-white hover:bg-slate-900 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap`}
             >
               Entendi
             </button>
@@ -1427,7 +1427,7 @@ export function UserDataSection({
             </div>
             <button
               onClick={() => setShowCaloriaModal(false)}
-              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-black text-white hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap`}
+              className={`w-full ${components.button.base} ${components.button.sizes.md} bg-slate-950 text-white hover:bg-slate-900 transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap`}
             >
               Entendi
             </button>

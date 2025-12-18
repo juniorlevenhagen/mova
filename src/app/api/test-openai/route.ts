@@ -35,7 +35,7 @@ Apresente os dados de forma clara e organizada, como se estivesse apresentando u
     }
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       temperature: 0.2,
       max_tokens: 2000,
       messages: [

@@ -775,7 +775,7 @@ Seja o melhor treinador que este usuário já teve.
     for (let attempt = 1; attempt <= 2; attempt++) {
       console.log(`🔄 Tentativa ${attempt} de gerar Resposta Perfeita...`);
       const completion = await getOpenAI().chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         temperature: 0.3, // Um pouco mais de "brilho" técnico, mas mantendo a consistência
         max_tokens: 4096, // Garantir que o texto longo não seja cortado
         messages: [
@@ -842,6 +842,26 @@ Seja o melhor treinador que este usuário já teve.
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erro desconhecido";
     console.error("Erro ao gerar trainingPlan:", err);
+
+    // ✅ Detectar erro de cota da OpenAI
+    const isQuotaError =
+      message.includes("quota") ||
+      message.includes("limit") ||
+      message.includes("429") ||
+      (err && typeof err === "object" && "status" in err && err.status === 429);
+
+    if (isQuotaError) {
+      return NextResponse.json(
+        {
+          error: "OPENAI_QUOTA_EXCEEDED",
+          message:
+            "O sistema está temporariamente indisponível devido a limites de processamento. Por favor, tente novamente em alguns instantes ou entre em contato com o suporte.",
+          details: message,
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

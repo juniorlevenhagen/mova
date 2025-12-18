@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-12-15.clover",
+      apiVersion: "2025-12-15.clover" as unknown as "2025-08-27.basil",
     })
   : null;
 
@@ -154,22 +154,23 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url });
-  } catch (error: any) {
-    console.error("❌ Erro ao criar sessão de checkout:", error);
+  } catch (error) {
+    const stripeError = error as { type?: string; message: string };
+    console.error("❌ Erro ao criar sessão de checkout:", stripeError);
 
     // Log detalhado do erro do Stripe
-    if (error.type === "StripeInvalidRequestError") {
+    if (stripeError.type === "StripeInvalidRequestError") {
       console.error(
         "📋 Detalhes do erro Stripe (Invalid Request):",
-        error.message
+        stripeError.message
       );
     }
 
     return NextResponse.json(
       {
         error: "Erro ao processar pagamento",
-        details: error.message,
-        type: error.type,
+        details: stripeError.message,
+        type: stripeError.type,
       },
       { status: 500 }
     );

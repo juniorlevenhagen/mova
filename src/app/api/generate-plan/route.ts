@@ -243,7 +243,7 @@ function safeParseJSON(rawContent: string | null | undefined) {
 
   try {
     return JSON.parse(rawContent);
-  } catch (jsonError: any) {
+  } catch (jsonError) {
     try {
       const jsonStart = rawContent.indexOf("{");
       const jsonEnd = rawContent.lastIndexOf("}") + 1;
@@ -2678,8 +2678,11 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
         const rawContent = completion.choices[0].message.content || "{}";
 
         plan = JSON.parse(rawContent);
-      } catch (jsonError: any) {
-        console.error("❌ Erro ao parsear JSON da OpenAI:", jsonError.message);
+      } catch (jsonError) {
+        console.error(
+          "❌ Erro ao parsear JSON da OpenAI:",
+          jsonError instanceof Error ? jsonError.message : String(jsonError)
+        );
         console.error(
           "📄 Primeiros 500 chars:",
           completion.choices[0].message.content?.substring(0, 500)
@@ -3200,12 +3203,16 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           await import("@/lib/rules/nutritionValidation");
 
         // Obter valores originais antes da validação para a métrica
-        const proteinStr = (plan.nutritionPlan as any).macros?.protein || "0";
+        const proteinStr =
+          (plan.nutritionPlan as unknown as { macros?: { protein?: string } })
+            .macros?.protein || "0";
         const proteinMatch = String(proteinStr).match(/(\d+)/);
         const originalProtein = proteinMatch ? parseInt(proteinMatch[1]) : 0;
 
         const validated = validateAndCorrectNutrition(
-          plan.nutritionPlan as any,
+          plan.nutritionPlan as unknown as Parameters<
+            typeof validateAndCorrectNutrition
+          >[0],
           {
             weight: profile.weight || 0,
             height: profile.height || 0,
@@ -3734,10 +3741,14 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       daysUntilNext: null,
       nextPlanAvailable: null,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Erro ao gerar plano:", error);
     return NextResponse.json(
-      { error: "Erro interno: " + error.message },
+      {
+        error:
+          "Erro interno: " +
+          (error instanceof Error ? error.message : String(error)),
+      },
       { status: 500 }
     );
   }

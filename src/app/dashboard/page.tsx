@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, startTransition } from "react";
+import { useState, useEffect, useMemo, startTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";

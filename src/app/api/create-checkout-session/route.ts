@@ -57,6 +57,10 @@ export async function POST(request: NextRequest) {
 
     console.log("🔍 Tipo de compra:", purchaseType);
 
+    // Determinar a URL base dinamicamente
+    const origin = request.headers.get("origin") || "https://movamais.fit";
+    console.log("🔍 Origin detectada:", origin);
+
     // Configurar produtos baseado no tipo
     let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     const mode: "payment" | "subscription" = "payment";
@@ -122,16 +126,8 @@ export async function POST(request: NextRequest) {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode,
-      success_url: `${
-        process.env.NODE_ENV === "production"
-          ? "https://movamais.fit"
-          : "http://localhost:3000"
-      }/dashboard?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${
-        process.env.NODE_ENV === "production"
-          ? "https://movamais.fit"
-          : "http://localhost:3000"
-      }/dashboard?purchase=canceled`,
+      success_url: `${origin}/dashboard?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/dashboard?purchase=canceled`,
       customer_email: userProfile?.email || user.email,
       metadata,
     };
@@ -139,10 +135,23 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url });
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Erro ao criar sessão de checkout:", error);
+
+    // Log detalhado do erro do Stripe
+    if (error.type === "StripeInvalidRequestError") {
+      console.error(
+        "📋 Detalhes do erro Stripe (Invalid Request):",
+        error.message
+      );
+    }
+
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      {
+        error: "Erro ao processar pagamento",
+        details: error.message,
+        type: error.type,
+      },
       { status: 500 }
     );
   }

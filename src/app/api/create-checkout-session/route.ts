@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 
 const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-08-27.basil",
+      apiVersion: "2025-12-15.clover",
     })
   : null;
 
@@ -57,9 +57,28 @@ export async function POST(request: NextRequest) {
 
     console.log("🔍 Tipo de compra:", purchaseType);
 
-    // Determinar a URL base dinamicamente
-    const origin = request.headers.get("origin") || "https://movamais.fit";
-    console.log("🔍 Origin detectada:", origin);
+    // Determinar a URL base de forma mais robusta usando a própria URL da requisição
+    let origin = request.nextUrl.origin;
+
+    // Fallback e correção para produção
+    if (process.env.NODE_ENV === "production") {
+      // Se já temos um origin válido com movamais.fit e HTTPS, mantemos para preservar subdomínios (ex: www)
+      if (
+        origin &&
+        origin.includes("movamais.fit") &&
+        origin.startsWith("https")
+      ) {
+        console.log("🔍 Origin de produção detectada e preservada:", origin);
+      } else {
+        origin = "https://movamais.fit";
+        console.log(
+          "⚠️ Origin de produção não detectada ou inválida, forçando padrão:",
+          origin
+        );
+      }
+    }
+
+    console.log("🔍 Origin final para redirect:", origin);
 
     // Configurar produtos baseado no tipo
     let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
@@ -78,7 +97,7 @@ export async function POST(request: NextRequest) {
               name: "Mova+ - 1 Prompt",
               description: "1 prompt para gerar plano personalizado",
             },
-            unit_amount: 50, // Valor mínimo do Stripe (50 centavos)
+            unit_amount: 199, // R$ 1,99 (acima do mínimo de 50 centavos)
           },
           quantity: 1,
         },
@@ -112,7 +131,7 @@ export async function POST(request: NextRequest) {
               name: "Mova+ - 1 Prompt",
               description: "1 prompt para gerar plano personalizado",
             },
-            unit_amount: 1799,
+            unit_amount: 199, // R$ 1,99
           },
           quantity: 1,
         },

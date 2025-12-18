@@ -76,6 +76,7 @@ export default function DashboardPage() {
   } = useTrial(user);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showCooldownModal, setShowCooldownModal] = useState(false);
+  const verifyRunning = useRef(false);
   const [cooldownData, setCooldownData] = useState<{
     message: string;
     hoursRemaining?: number;
@@ -298,7 +299,8 @@ export default function DashboardPage() {
       sessionId &&
       user;
 
-    if (isSuccess) {
+    if (isSuccess && !verifyRunning.current) {
+      verifyRunning.current = true;
       const verifyPayment = async () => {
         try {
           // Obter token de autenticação

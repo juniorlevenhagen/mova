@@ -12,6 +12,7 @@ type MealOption = MealPlanItem["options"][number];
 // Função para criar cliente OpenAI apenas quando necessário
 function createOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
+  console.log("apiKey", apiKey);
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY environment variable is not configured");
   }
@@ -1295,7 +1296,7 @@ export async function POST(request: NextRequest) {
 
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        temperature: 0.3,
+        temperature: 0,
         max_tokens: 4096,
         messages: [
           {
@@ -1647,6 +1648,93 @@ Use esta tabela para definir a estratégia correta:
 - Exercícios que requerem equipamentos não disponíveis
 - Movimentos de alto risco sem progressão adequada
 - Exercícios que causam dor (verificar limitações do usuário)
+
+=====================================================================
+### ESTRUTURA E ORDEM DOS EXERCÍCIOS (OBRIGATÓRIO - REGRA #1 PRIORITÁRIA)
+
+🚨🚨🚨 **REGRA ABSOLUTA - REPETIÇÃO DE TREINOS DO MESMO TIPO - NÃO PODE SER IGNORADA 🚨🚨🚨**
+
+⚠️⚠️⚠️ **ESTA É A REGRA MAIS IMPORTANTE - LEIA COM ATENÇÃO ⚠️⚠️⚠️**
+
+Quando o plano contém múltiplos dias do MESMO tipo de treino (ex: Push A e Push D, Pull B e Pull E):
+
+**❌ PROIBIDO ABSOLUTAMENTE:**
+- Variar exercícios entre dias do mesmo tipo
+- Mudar equipamentos (barra → halteres) entre dias repetidos
+- Alterar ângulos (reto → inclinado) entre dias repetidos
+- Mudar séries, reps ou descanso entre dias repetidos
+
+**✅ OBRIGATÓRIO:**
+- **SEMPRE use EXATAMENTE os MESMOS exercícios, séries, repetições e descanso em ambos os dias**
+- **COPIE E COLE os exercícios do primeiro dia para o segundo dia do mesmo tipo**
+
+**📋 EXEMPLO CONCRETO OBRIGATÓRIO:**
+
+Se você gerar Push A com:
+1. Supino reto com barra (4 séries, 6-10 reps, 90-120s)
+2. Supino inclinado com halteres (3 séries, 8-12 reps, 60-90s)
+3. Crucifixo (3 séries, 12-15 reps, 60-90s)
+4. Tríceps testa (3 séries, 8-12 reps, 60-90s)
+5. Tríceps na polia (3 séries, 10-12 reps, 60-90s)
+
+Então Push D DEVE ter EXATAMENTE:
+1. Supino reto com barra (4 séries, 6-10 reps, 90-120s) ← MESMO
+2. Supino inclinado com halteres (3 séries, 8-12 reps, 60-90s) ← MESMO
+3. Crucifixo (3 séries, 12-15 reps, 60-90s) ← MESMO
+4. Tríceps testa (3 séries, 8-12 reps, 60-90s) ← MESMO
+5. Tríceps na polia (3 séries, 10-12 reps, 60-90s) ← MESMO
+
+**❌ ERRADO (NÃO FAÇA ISSO):**
+Push D com "Supino reto com halteres" ou "Supino inclinado com barra" ou qualquer variação.
+
+**⚠️ CONSEQUÊNCIA:** Se você violar esta regra, o plano será REJEITADO automaticamente e você terá que gerar novamente, gastando mais tokens. Gere corretamente desde o início!
+
+**💡 LEMBRE-SE:** A variação de exercícios só deve ocorrer entre tipos DIFERENTES de treino (Push vs Pull vs Legs), NUNCA entre dias do mesmo tipo.
+
+⚠️ **CRÍTICO - ORDEM DE EXECUÇÃO DOS EXERCÍCIOS:**
+
+A ordem dos exercícios DEVE seguir esta estrutura RÍGIDA:
+
+**1. PRIMEIRO: TODOS os exercícios do grupo muscular GRANDE (principal do dia)**
+   - Push: TODOS os exercícios de PEITO primeiro
+   - Pull: TODOS os exercícios de COSTAS primeiro
+   - Legs: TODOS os exercícios de QUADRÍCEPS primeiro (ou compostos de perna)
+
+**2. DEPOIS: TODOS os exercícios do grupo muscular PEQUENO (secundário)**
+   - Push: DEPOIS de todos os exercícios de peito, coloque TODOS os exercícios de TRÍCEPS
+   - Pull: DEPOIS de todos os exercícios de costas, coloque TODOS os exercícios de BÍCEPS
+   - Legs: DEPOIS dos compostos, coloque isoladores (extensora, flexora, panturrilha)
+
+**3. NUNCA alternar grupos musculares:**
+   - ❌ ERRADO: Peito → Tríceps → Tríceps → Tríceps → Peito
+   - ✅ CORRETO: Peito → Peito → Peito → Tríceps → Tríceps → Tríceps
+
+**4. Dentro de cada grupo, ordem:**
+   - Compostos ANTES de isoladores
+   - Exercícios mais pesados/complexos ANTES de mais leves/simples
+
+**EXEMPLOS CORRETOS:**
+
+**Push Day:**
+1. Supino reto com barra (Peito - composto)
+2. Supino inclinado com halteres (Peito - composto)
+3. Crossover com cabos (Peito - isolado)
+4. Tríceps testa com barra EZ (Tríceps - isolado)
+5. Tríceps na polia alta (Tríceps - isolado)
+
+**Pull Day:**
+1. Puxada na barra fixa (Costas - composto)
+2. Remada curvada com barra (Costas - composto)
+3. Remada unilateral com halteres (Costas - composto)
+4. Rosca direta com barra (Bíceps - isolado)
+5. Rosca martelo com halteres (Bíceps - isolado)
+
+**Legs Day:**
+1. Agachamento com barra (Quadríceps - composto)
+2. Leg press (Quadríceps - composto)
+3. Cadeira extensora (Quadríceps - isolado)
+4. Mesa flexora (Posterior - isolado)
+5. Elevação de panturrilha (Panturrilha - isolado)
 
 =====================================================================
 ### PROGRESSÃO (OBRIGATÓRIO)
@@ -2403,6 +2491,8 @@ ${
 ### 🎨 VARIAÇÃO DINÂMICA E PREVENÇÃO DE MONOTONIA:
 
 ⚠️ **CRÍTICO: Evite repetir exatamente os mesmos exercícios e alimentos dos planos anteriores!**
+
+⚠️ **IMPORTANTE:** Esta variação se aplica ENTRE PLANOS DIFERENTES (novo plano vs planos anteriores), NÃO entre dias do mesmo plano. Dentro do mesmo plano, quando o mesmo tipo de treino aparece múltiplas vezes (ex: Push A e Push D), use OS MESMOS exercícios (ver seção "ESTRUTURA E ORDEM DOS EXERCÍCIOS").
 
 O usuário precisa de **VARIAÇÃO** para evitar:
 - Efeitos platô (adaptação do corpo)
@@ -3384,6 +3474,119 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
     }
 
     console.log("✅ Plano validado com sucesso!");
+
+    // ✅ VALIDAÇÃO E CORREÇÃO DO TRAINING PLAN (se existir)
+    if (plan.trainingPlan) {
+      const { isTrainingPlanUsable, correctSameTypeDaysExercises } =
+        await import("@/lib/validators/trainingPlanValidator");
+
+      // 🔧 CORREÇÃO AUTOMÁTICA: Garantir que dias do mesmo tipo tenham os mesmos exercícios
+      const { plan: correctedTrainingPlan, wasCorrected } =
+        correctSameTypeDaysExercises(plan.trainingPlan);
+
+      if (wasCorrected) {
+        console.log(
+          "🔧 TrainingPlan corrigido automaticamente: dias do mesmo tipo agora têm exercícios idênticos"
+        );
+        plan.trainingPlan = correctedTrainingPlan;
+
+        // Registrar métrica de correção com contexto completo
+        if (imc !== null && profile) {
+          const { recordPlanCorrection } = await import(
+            "@/lib/metrics/planCorrectionMetrics"
+          );
+          // Contar quantos dias foram corrigidos
+          const daysByType = new Map<string, number>();
+          for (const day of correctedTrainingPlan.weeklySchedule) {
+            const dayType = (day.type || "").toLowerCase();
+            daysByType.set(dayType, (daysByType.get(dayType) || 0) + 1);
+          }
+          const correctedDays = Array.from(daysByType.entries())
+            .filter(([, count]) => count > 1)
+            .map(([type, count]) => ({ type, count }));
+
+          if (correctedDays.length > 0) {
+            const firstCorrection = correctedDays[0];
+            const firstDay = correctedTrainingPlan.weeklySchedule.find(
+              (d) => (d.type || "").toLowerCase() === firstCorrection.type
+            );
+            recordPlanCorrection(
+              {
+                reason: "same_type_days_exercises",
+                data: {
+                  dayType: firstCorrection.type,
+                  firstDay: firstDay?.day || "N/A",
+                  correctedDay: "Múltiplos dias corrigidos",
+                  exerciseCount: firstDay?.exercises.length || 0,
+                },
+              },
+              {
+                imc,
+                gender: profile.gender || "Não informado",
+                activityLevel: profile.nivel_atividade || "Moderado",
+                age: profile.age || 0,
+              }
+            ).catch(() => {});
+          }
+        }
+      }
+
+      // Funções auxiliares para parsing
+      const parseTrainingDays = (freq: string | null | undefined): number => {
+        if (!freq) return 3;
+        const digits = String(freq).replace(/\D/g, "");
+        const n = parseInt(digits, 10);
+        if (!n || n < 1 || n > 7) return 3;
+        return n;
+      };
+
+      const parseTrainingTime = (
+        timeStr: string | null | undefined
+      ): number | undefined => {
+        if (!timeStr) return undefined;
+        const match = timeStr.match(/(\d+)/);
+        if (!match) return undefined;
+        const num = parseInt(match[1]);
+        if (timeStr.toLowerCase().includes("hora")) {
+          return num * 60;
+        }
+        return num;
+      };
+
+      const trainingDays = parseTrainingDays(
+        profile?.training_frequency || "3x por semana"
+      );
+      const availableTimeMinutes = parseTrainingTime(profile?.training_time);
+
+      const isTrainingValid = isTrainingPlanUsable(
+        plan.trainingPlan,
+        trainingDays,
+        profile?.nivel_atividade,
+        availableTimeMinutes,
+        imc !== null && profile
+          ? {
+              imc,
+              gender: profile.gender || "Não informado",
+              age: profile.age || 0,
+            }
+          : undefined
+      );
+
+      if (!isTrainingValid) {
+        console.error(
+          "❌ TrainingPlan inválido! Rejeitando plano completo para forçar regeneração."
+        );
+        return NextResponse.json(
+          {
+            error: "TRAINING_PLAN_INVALID",
+            message:
+              "O plano de treino gerado não atende às regras de validação. Por favor, tente gerar novamente.",
+          },
+          { status: 500 }
+        );
+      }
+      console.log("✅ TrainingPlan validado com sucesso!");
+    }
 
     // ✅ Adicionar metadata do peso no momento da geração ao plan_data
     // Isso permite exibir o peso histórico correto quando o plano for visualizado depois

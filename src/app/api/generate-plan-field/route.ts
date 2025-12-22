@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { generateTrainingPlanStructure } from "@/lib/generators/trainingPlanGenerator";
+import {
+  isTrainingPlanUsable,
+  correctSameTypeDaysExercises,
+} from "@/lib/validators/trainingPlanValidator";
 
 const openaiApiKey = process.env.OPENAI_API_KEY!;
 
@@ -63,9 +68,17 @@ const TRAINING_SCHEMA = {
                       reps: { type: "string" },
                       rest: { type: "string" },
                       notes: { type: "string" },
+                      primaryMuscle: { type: "string" },
                     },
                     // ⚠️ OpenAI strict json_schema exige `required` contendo TODAS as chaves em `properties`
-                    required: ["name", "sets", "reps", "rest", "notes"],
+                    required: [
+                      "name",
+                      "sets",
+                      "reps",
+                      "rest",
+                      "notes",
+                      "primaryMuscle",
+                    ],
                   },
                 },
               },
@@ -113,6 +126,83 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`🔧 Gerando ${fieldType}...`);
+
+    // Se for trainingPlan, usar gerador de padrões primeiro
+    if (fieldType === "trainingPlan") {
+      // Parsear frequência de treino
+      const parseTrainingDays = (freq: string | null | undefined): number => {
+        if (!freq) return 3;
+        const digits = String(freq).replace(/\D/g, "");
+        const n = parseInt(digits, 10);
+        if (!n || n < 1 || n > 7) return 3;
+        return n;
+      };
+
+      const trainingDays = parseTrainingDays(userData.trainingFrequency);
+      const activityLevel = userData.nivelAtividade || "Moderado";
+
+      // Determinar divisão baseada na frequência
+      let division: "PPL" | "Upper/Lower" | "Full Body" = "PPL";
+      if (trainingDays <= 3) {
+        division = "Full Body";
+      } else if (trainingDays === 4) {
+        division = "Upper/Lower";
+      }
+
+      console.log(
+        `🔧 Gerando trainingPlan via padrões: ${trainingDays}x/semana, nível ${activityLevel}, divisão ${division}`
+      );
+
+      // Parsear tempo disponível
+      const parseTrainingTime = (
+        timeStr: string | null | undefined
+      ): number | undefined => {
+        if (!timeStr) return undefined;
+        const match = timeStr.match(/(\d+)/);
+        if (!match) return undefined;
+        const num = parseInt(match[1]);
+        if (timeStr.toLowerCase().includes("hora")) {
+          return num * 60;
+        }
+        return num;
+      };
+
+      const availableTimeMinutes = parseTrainingTime(userData.trainingTime);
+
+      // Gerar estrutura via padrões (com tempo disponível)
+      const generatedPlan = generateTrainingPlanStructure(
+        trainingDays,
+        activityLevel,
+        division,
+        availableTimeMinutes
+      );
+
+      // Corrigir dias do mesmo tipo
+      const { plan: correctedPlan } =
+        correctSameTypeDaysExercises(generatedPlan);
+
+      // Validar (usar o mesmo availableTimeMinutes já calculado)
+
+      const isValid = isTrainingPlanUsable(
+        correctedPlan,
+        trainingDays,
+        activityLevel,
+        availableTimeMinutes
+      );
+
+      if (isValid) {
+        console.log("✅ TrainingPlan gerado via padrões e validado!");
+        return NextResponse.json({
+          success: true,
+          trainingPlan: correctedPlan,
+        });
+      } else {
+        console.warn(
+          "⚠️ TrainingPlan gerado via padrões falhou na validação, usando IA como fallback..."
+        );
+        // Continuar para geração via IA
+      }
+    }
 
     const schema = fieldType === "analysis" ? ANALYSIS_SCHEMA : TRAINING_SCHEMA;
 
@@ -259,7 +349,19 @@ Use o NÍVEL DE ATIVIDADE como referência de quantos exercícios/séries o alun
    - Explique brevemente o volume semanal por grupo muscular.
 
 2) weeklySchedule:
-   - Deve ter EXATAMENTE o número de dias de musculação informado em ${userData.trainingFrequency || "não informado"}.
+   - ⚠️⚠️⚠️ CRÍTICO: Deve ter EXATAMENTE ${(() => {
+     const freq = userData.trainingFrequency || "não informado";
+     const digits = String(freq).replace(/\D/g, "");
+     const n = parseInt(digits, 10);
+     return n || 3;
+   })()} dias de treino no array weeklySchedule. 
+   - O número foi extraído de "${userData.trainingFrequency || "não informado"}".
+   - NUNCA gere apenas 1 dia! O array weeklySchedule DEVE ter ${(() => {
+     const freq = userData.trainingFrequency || "não informado";
+     const digits = String(freq).replace(/\D/g, "");
+     const n = parseInt(digits, 10);
+     return n || 3;
+   })()} elementos.
    - Cada entrada (dia/treino) deve conter:
      • day: nome do dia ou do treino (ex.: “Treino A – Peito/Tríceps”).
      • type: “Upper”, “Lower”, “Pull”, “Push”, “Full Body”, “Legs”, etc.

@@ -79,8 +79,53 @@ describe("Simulação de Leg Day para Usuário Avançado", () => {
             },
           ],
         },
-        { day: "Quinta", type: "Push", exercises: [] },
-        { day: "Sexta", type: "Pull", exercises: [] },
+        { 
+          day: "Quinta", 
+          type: "Push", 
+          exercises: [
+            {
+              name: "Peito",
+              primaryMuscle: "peitoral",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+            {
+              name: "Ombro",
+              primaryMuscle: "ombros",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+            {
+              name: "Triceps",
+              primaryMuscle: "triceps",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+          ] 
+        },
+        { 
+          day: "Sexta", 
+          type: "Pull", 
+          exercises: [
+            {
+              name: "Costas",
+              primaryMuscle: "costas",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+            {
+              name: "Biceps",
+              primaryMuscle: "biceps",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+          ] 
+        },
       ],
     };
   };
@@ -136,12 +181,14 @@ describe("Simulação de Leg Day para Usuário Avançado", () => {
   it("deve ACEITAR volume máximo permitido (5 Quad, 5 Posterior, 2 Glúteo = 12 total)", () => {
     // 12 é o máximo absoluto permitido pelo validador para Atleta Alto Rendimento,
     // mas o Avançado para em 10. Vamos testar com 10 total para Avançado.
+    // Adicionar panturrilhas para atender grupos obrigatórios
     const plan = createLegsWorkout({
-      quadriceps: 5,
+      quadriceps: 4,
       "posterior de coxa": 3,
       gluteos: 2,
+      panturrilhas: 1,
     });
-    // Quad = 5/10 (50%) -> OK (limite exato)
+    // Quad = 4/10 (40%) -> OK (<= 50%)
     const result = isTrainingPlanUsable(
       plan,
       trainingDays,

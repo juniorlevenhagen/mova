@@ -27,7 +27,8 @@ export type RejectionReason =
   | "tempo_treino_excede_disponivel"
   | "vies_estetico_detectado"
   | "volume_insuficiente_critico"
-  | "exercicio_musculo_incompativel";
+  | "exercicio_musculo_incompativel"
+  | "dias_mesmo_tipo_exercicios_diferentes";
 
 export interface RejectionMetric {
   reason: RejectionReason;

@@ -101,6 +101,7 @@ describe("Regressão - Validação de Planos", () => {
             day: "Quarta",
             type: "Full",
             exercises: [
+              // Mesmos exercícios do primeiro dia Full Body
               {
                 name: "Supino inclinado",
                 primaryMuscle: "peitoral",
@@ -111,7 +112,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Puxada frontal",
+                name: "Remada curvada",
                 primaryMuscle: "costas",
                 secondaryMuscles: ["biceps"],
                 sets: 3,
@@ -120,7 +121,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Leg press",
+                name: "Agachamento",
                 primaryMuscle: "quadriceps",
                 secondaryMuscles: ["gluteos"],
                 sets: 3,
@@ -129,7 +130,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Elevação lateral",
+                name: "Desenvolvimento",
                 primaryMuscle: "ombros",
                 sets: 3,
                 reps: "10-12",
@@ -137,7 +138,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Rosca martelo",
+                name: "Rosca direta",
                 primaryMuscle: "biceps",
                 sets: 2,
                 reps: "10-12",
@@ -145,7 +146,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Tríceps testa",
+                name: "Tríceps pulley",
                 primaryMuscle: "triceps",
                 sets: 2,
                 reps: "10-12",
@@ -158,8 +159,9 @@ describe("Regressão - Validação de Planos", () => {
             day: "Sexta",
             type: "Full",
             exercises: [
+              // Mesmos exercícios do primeiro dia Full Body
               {
-                name: "Supino declinado",
+                name: "Supino inclinado",
                 primaryMuscle: "peitoral",
                 secondaryMuscles: ["triceps"],
                 sets: 3,
@@ -168,7 +170,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Remada baixa",
+                name: "Remada curvada",
                 primaryMuscle: "costas",
                 secondaryMuscles: ["biceps"],
                 sets: 3,
@@ -177,7 +179,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Afundo",
+                name: "Agachamento",
                 primaryMuscle: "quadriceps",
                 secondaryMuscles: ["gluteos"],
                 sets: 3,
@@ -186,7 +188,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Desenvolvimento halteres",
+                name: "Desenvolvimento",
                 primaryMuscle: "ombros",
                 sets: 3,
                 reps: "10-12",
@@ -194,7 +196,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Rosca concentrada",
+                name: "Rosca direta",
                 primaryMuscle: "biceps",
                 sets: 2,
                 reps: "10-12",
@@ -202,7 +204,7 @@ describe("Regressão - Validação de Planos", () => {
                 notes: "Técnica correta",
               },
               {
-                name: "Tríceps coice",
+                name: "Tríceps pulley",
                 primaryMuscle: "triceps",
                 sets: 2,
                 reps: "10-12",
@@ -706,15 +708,20 @@ describe("Regressão - Validação de Planos", () => {
         ],
       });
 
+      // Criar os dias uma vez e reutilizar os exercícios
+      const pushDay1 = createPushDay();
+      const pullDay1 = createPullDay();
+      const legsDay = createLegsDay();
+      
       const plan: TrainingPlan = {
         overview: "Plano Golden - Atleta",
         progression: "Progressão por carga e volume",
         weeklySchedule: [
-          createPushDay(),
-          createPullDay(),
-          createLegsDay(),
-          createPushDay(),
-          createPullDay(),
+          { ...pushDay1, day: "Segunda" },
+          { ...pullDay1, day: "Terça" },
+          { ...legsDay, day: "Quarta" },
+          { ...pushDay1, day: "Quinta" }, // Mesmos exercícios do Push da Segunda
+          { ...pullDay1, day: "Sexta" }, // Mesmos exercícios do Pull da Terça
         ],
       };
 
@@ -740,6 +747,29 @@ describe("Regressão - Validação de Planos", () => {
      * Plano tem 7 exercícios → DEVE REJEITAR
      */
     it("regression_rejection_excesso_exercicios_por_nivel", () => {
+      // Criar exercícios uma vez para reutilizar (7 exercícios - excede limite de 6 para Iniciante)
+      const exercises7 = Array.from({ length: 7 }, (_, i) => ({
+        name: `Exercício ${i + 1}`,
+        primaryMuscle:
+          i % 4 === 0
+            ? "peitoral"
+            : i % 4 === 1
+              ? "costas"
+              : i % 4 === 2
+                ? "quadriceps"
+                : "ombros",
+        secondaryMuscles:
+          i % 4 === 0
+            ? ["triceps"]
+            : i % 4 === 1
+              ? ["biceps"]
+              : undefined,
+        sets: 3,
+        reps: "10-12",
+        rest: "60s",
+        notes: "Nota",
+      }));
+      
       const plan: TrainingPlan = {
         overview: "Plano com excesso de exercícios",
         progression: "Progressão",
@@ -747,77 +777,17 @@ describe("Regressão - Validação de Planos", () => {
           {
             day: "Segunda",
             type: "Full",
-            exercises: Array.from({ length: 7 }, (_, i) => ({
-              name: `Exercício ${i + 1}`,
-              primaryMuscle:
-                i % 4 === 0
-                  ? "peitoral"
-                  : i % 4 === 1
-                    ? "costas"
-                    : i % 4 === 2
-                      ? "quadriceps"
-                      : "ombros",
-              secondaryMuscles:
-                i % 4 === 0
-                  ? ["triceps"]
-                  : i % 4 === 1
-                    ? ["biceps"]
-                    : undefined,
-              sets: 3,
-              reps: "10-12",
-              rest: "60s",
-              notes: "Nota",
-            })),
+            exercises: exercises7, // 7 exercícios - excede limite de 6 para Iniciante
           },
           {
             day: "Quarta",
             type: "Full",
-            exercises: Array.from({ length: 6 }, (_, i) => ({
-              name: `Exercício ${i + 1}`,
-              primaryMuscle:
-                i % 4 === 0
-                  ? "peitoral"
-                  : i % 4 === 1
-                    ? "costas"
-                    : i % 4 === 2
-                      ? "quadriceps"
-                      : "ombros",
-              secondaryMuscles:
-                i % 4 === 0
-                  ? ["triceps"]
-                  : i % 4 === 1
-                    ? ["biceps"]
-                    : undefined,
-              sets: 3,
-              reps: "10-12",
-              rest: "60s",
-              notes: "Nota",
-            })),
+            exercises: exercises7, // Mesmos exercícios (mesmo número)
           },
           {
             day: "Sexta",
             type: "Full",
-            exercises: Array.from({ length: 6 }, (_, i) => ({
-              name: `Exercício ${i + 1}`,
-              primaryMuscle:
-                i % 4 === 0
-                  ? "peitoral"
-                  : i % 4 === 1
-                    ? "costas"
-                    : i % 4 === 2
-                      ? "quadriceps"
-                      : "ombros",
-              secondaryMuscles:
-                i % 4 === 0
-                  ? ["triceps"]
-                  : i % 4 === 1
-                    ? ["biceps"]
-                    : undefined,
-              sets: 3,
-              reps: "10-12",
-              rest: "60s",
-              notes: "Nota",
-            })),
+            exercises: exercises7, // Mesmos exercícios (mesmo número)
           },
         ],
       };
@@ -829,7 +799,7 @@ describe("Regressão - Validação de Planos", () => {
       // Validar que métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBeGreaterThan(0);
-      expect(stats.byReason["excesso_exercicios_nivel"]).toBeGreaterThan(0);
+      expect(stats.byReason["excesso_exercicios_nivel"] ?? 0).toBeGreaterThan(0);
     });
 
     /**

@@ -263,13 +263,15 @@ function validateTrainingTime(
         ? ex.sets
         : parseInt(ex.sets as unknown as string, 10) || 3;
 
-    // Parsear rest (ex: "60s", "90s", "2min")
+    // Parsear rest (ex: "60s", "90s", "2min", "90-120s" → pega primeiro número)
     let restSeconds = 60; // default
     const restStr = ex.rest?.toLowerCase() || "60s";
     if (restStr.includes("min")) {
       restSeconds = parseInt(restStr, 10) * 60;
     } else if (restStr.includes("s")) {
-      restSeconds = parseInt(restStr, 10) || 60;
+      // Pegar primeiro número (ex: "90-120s" → 90)
+      const match = restStr.match(/(\d+)/);
+      restSeconds = match ? parseInt(match[1], 10) : 60;
     }
 
     // Tempo por exercício: (sets * tempo_execucao) + (sets * rest)
@@ -325,14 +327,18 @@ function validateExerciseMuscleMatch(exercise: Exercise): boolean {
       invalidMuscle: ["ombros", "ombro", "deltoide", "deltoides"],
     },
     // Exercícios de pernas nunca podem ser braços
+    // ⚠️ IMPORTANTE: "flexão de braços" (push-up) é válido para peitoral!
+    // Apenas bloquear flexões de PERNAS (flexão de joelhos, flexão de pernas)
     {
       exercisePattern: [
         "agachamento",
         "leg press",
         "extensao",
         "extensão",
-        "flexao",
-        "flexão",
+        "flexao de pernas",
+        "flexão de pernas",
+        "flexao de joelhos",
+        "flexão de joelhos",
         "pernas",
         "perna",
       ],
@@ -481,6 +487,104 @@ function validateExerciseOrder(day: TrainingDay): boolean {
   return true;
 }
 
+/**
+ * Valida se treinos do mesmo tipo têm os mesmos exercícios
+ * Quando Push A e Push D existem, devem ter exatamente os mesmos exercícios
+ */
+function validateSameTypeDaysHaveSameExercises(plan: TrainingPlan): boolean {
+  if (!plan?.weeklySchedule) return true;
+
+  // Agrupar dias por tipo
+  const daysByType = new Map<string, TrainingDay[]>();
+  for (const day of plan.weeklySchedule) {
+    const dayType = normalizeDivisionName(day.type || "");
+    if (!daysByType.has(dayType)) {
+      daysByType.set(dayType, []);
+    }
+    daysByType.get(dayType)!.push(day);
+  }
+
+  // Para cada tipo que aparece múltiplas vezes, verificar se os exercícios são iguais
+  for (const [dayType, days] of daysByType.entries()) {
+    if (days.length <= 1) continue; // Apenas tipos que aparecem 2+ vezes
+
+    // Comparar o primeiro dia com todos os outros
+    const firstDay = days[0];
+    const firstDayExercises = firstDay.exercises.map((ex) => ({
+      name: normalize(ex.name),
+      sets: ex.sets,
+      reps: ex.reps,
+      rest: ex.rest,
+    }));
+
+    for (let i = 1; i < days.length; i++) {
+      const currentDay = days[i];
+      const currentDayExercises = currentDay.exercises.map((ex) => ({
+        name: normalize(ex.name),
+        sets: ex.sets,
+        reps: ex.reps,
+        rest: ex.rest,
+      }));
+
+      // Verificar se têm o mesmo número de exercícios
+      if (firstDayExercises.length !== currentDayExercises.length) {
+        console.warn(
+          `Plano rejeitado: dias do mesmo tipo (${dayType}) têm número diferente de exercícios`,
+          {
+            firstDay: firstDay.day,
+            currentDay: currentDay.day,
+            firstCount: firstDayExercises.length,
+            currentCount: currentDayExercises.length,
+          }
+        );
+        recordPlanRejection("dias_mesmo_tipo_exercicios_diferentes", {
+          dayType,
+          firstDay: firstDay.day,
+          currentDay: currentDay.day,
+          firstCount: firstDayExercises.length,
+          currentCount: currentDayExercises.length,
+        }).catch(() => {});
+        return false;
+      }
+
+      // Verificar se os exercícios são os mesmos (mesmo nome, séries, reps, descanso)
+      for (let j = 0; j < firstDayExercises.length; j++) {
+        const firstEx = firstDayExercises[j];
+        const currentEx = currentDayExercises[j];
+
+        if (
+          firstEx.name !== currentEx.name ||
+          firstEx.sets !== currentEx.sets ||
+          firstEx.reps !== currentEx.reps ||
+          firstEx.rest !== currentEx.rest
+        ) {
+          console.warn(
+            `Plano rejeitado: dias do mesmo tipo (${dayType}) têm exercícios diferentes`,
+            {
+              firstDay: firstDay.day,
+              currentDay: currentDay.day,
+              exerciseIndex: j,
+              firstExercise: firstEx,
+              currentExercise: currentEx,
+            }
+          );
+          recordPlanRejection("dias_mesmo_tipo_exercicios_diferentes", {
+            dayType,
+            firstDay: firstDay.day,
+            currentDay: currentDay.day,
+            exerciseIndex: j,
+            firstExercise: firstEx.name,
+            currentExercise: currentEx.name,
+          }).catch(() => {});
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 /* --------------------------------------------------------
    HELPER: Registrar rejeição com métricas
 -------------------------------------------------------- */
@@ -498,13 +602,114 @@ function rejectPlan(
 }
 
 /* --------------------------------------------------------
+   CORREÇÃO AUTOMÁTICA DE PLANOS
+-------------------------------------------------------- */
+
+/**
+ * Corrige automaticamente um plano de treino para garantir que dias do mesmo tipo
+ * tenham os mesmos exercícios, séries, reps e descanso.
+ *
+ * Esta função é chamada APÓS a geração para garantir consistência, evitando
+ * rejeições e regenerações desnecessárias.
+ *
+ * @param plan - Plano de treino a ser corrigido
+ * @returns Plano corrigido e flag indicando se houve correção
+ */
+export function correctSameTypeDaysExercises(plan: TrainingPlan): {
+  plan: TrainingPlan;
+  wasCorrected: boolean;
+} {
+  if (!plan?.weeklySchedule || !Array.isArray(plan.weeklySchedule)) {
+    return { plan, wasCorrected: false };
+  }
+
+  let wasCorrected = false;
+  const correctedSchedule = [...plan.weeklySchedule];
+
+  // Agrupar dias por tipo
+  const daysByType = new Map<string, TrainingDay[]>();
+  for (let i = 0; i < correctedSchedule.length; i++) {
+    const day = correctedSchedule[i];
+    const dayType = normalizeDivisionName(day.type || "");
+    if (!daysByType.has(dayType)) {
+      daysByType.set(dayType, []);
+    }
+    daysByType.get(dayType)!.push(day);
+  }
+
+  // Para cada tipo que tem mais de 1 dia, copiar exercícios do primeiro para os demais
+  for (const [dayType, days] of daysByType.entries()) {
+    if (days.length > 1) {
+      const firstDay = days[0];
+      const firstDayExercises = firstDay.exercises;
+
+      // Verificar se os dias já estão corretos
+      let needsCorrection = false;
+      for (let i = 1; i < days.length; i++) {
+        const currentDay = days[i];
+        const currentDayExercises = currentDay.exercises;
+
+        // Comparar exercícios (nome, séries, reps, descanso)
+        if (
+          firstDayExercises.length !== currentDayExercises.length ||
+          !firstDayExercises.every((ex, idx) => {
+            const currentEx = currentDayExercises[idx];
+            return (
+              ex.name === currentEx.name &&
+              ex.sets === currentEx.sets &&
+              ex.reps === currentEx.reps &&
+              ex.rest === currentEx.rest
+            );
+          })
+        ) {
+          needsCorrection = true;
+          break;
+        }
+      }
+
+      // Se precisa corrigir, copiar exercícios do primeiro dia para os demais
+      if (needsCorrection) {
+        wasCorrected = true;
+        for (let i = 1; i < days.length; i++) {
+          const currentDay = days[i];
+          // Criar cópia profunda dos exercícios
+          currentDay.exercises = firstDayExercises.map((ex) => ({
+            ...ex,
+            secondaryMuscles: ex.secondaryMuscles
+              ? [...ex.secondaryMuscles]
+              : undefined,
+          }));
+
+          console.log(
+            `🔧 Correção automática: ${currentDay.day} agora tem os mesmos exercícios de ${firstDay.day} (tipo: ${dayType})`
+          );
+        }
+      }
+    }
+  }
+
+  return {
+    plan: {
+      ...plan,
+      weeklySchedule: correctedSchedule,
+    },
+    wasCorrected,
+  };
+}
+
+/* --------------------------------------------------------
    VALIDAÇÃO FLEXÍVEL E TIPADA
 -------------------------------------------------------- */
 export function isTrainingPlanUsable(
   plan: TrainingPlan | null,
   trainingDays: number,
   activityLevel?: string | null,
-  availableTimeMinutes?: number
+  availableTimeMinutes?: number,
+  context?: {
+    imc?: number;
+    gender?: string;
+    age?: number;
+  }
 ): boolean {
   if (!plan?.weeklySchedule || !Array.isArray(plan.weeklySchedule)) {
     console.warn("Plano rejeitado: weeklySchedule inválido ou ausente");
@@ -540,6 +745,11 @@ export function isTrainingPlanUsable(
       frequency: trainingDays,
     }).catch(() => {});
     return false;
+  }
+
+  // Validação: dias do mesmo tipo devem ter os mesmos exercícios
+  if (!validateSameTypeDaysHaveSameExercises(plan)) {
+    return false; // A função já registra a rejeição
   }
 
   // Detectar ajuste técnico de divisão (ex: PPL+UL para Atleta 5x)
@@ -896,9 +1106,10 @@ export function isTrainingPlanUsable(
     }
 
     // Validação de grupos obrigatórios por divisão (usando primaryMuscle)
+    // ⚠️ IMPORTANTE: Push NÃO deve ter ombros (regra: evitar peito + ombros no mesmo dia)
     const requiredGroupsByDivision: Record<string, string[]> = {
-      push: ["peito", "ombros", "triceps"],
-      pull: ["costas", "biceps"],
+      push: ["peito", "triceps"], // Ombros removidos - devem estar no Pull
+      pull: ["costas", "biceps"], // Ombros podem estar aqui (posterior de ombro)
       legs: ["quadriceps", "posterior de coxa"],
       lower: ["quadriceps", "posterior de coxa"],
       upper: ["peito", "costas", "ombros"],
@@ -1019,28 +1230,48 @@ export function isTrainingPlanUsable(
         muscleCategory = "grande";
         // Piso técnico dinâmico para grupos grandes
         const isFocusDay = ["push", "pull", "legs", "lower"].includes(dayType);
+        const isUpperDay = dayType === "upper";
 
         if (isBeginner) {
           minRequired = 2;
           // Exceção Full Body Iniciante: permite 1
           if (dayType === "full") minRequired = 1;
         } else if (isAdvanced) {
-          minRequired = isFocusDay ? 5 : 3;
-          // No Full Body para atletas, mínimo 2 de cada grande
-          if (dayType === "full") minRequired = 2;
+          // Para dias focados (Push, Pull, Legs): mínimo 4-5
+          // Para Upper: mínimo 3 (compartilha espaço com outros grupos)
+          // Para Full Body: mínimo 2
+          if (isFocusDay) {
+            minRequired = 4; // Reduzido de 5 para 4 para ser mais realista
+          } else if (isUpperDay) {
+            minRequired = 3; // Upper compartilha espaço
+          } else if (dayType === "full") {
+            minRequired = 2;
+          } else {
+            minRequired = 3;
+          }
         } else {
           // Moderado/Intermediário
           minRequired = isFocusDay ? 3 : 2;
+          if (isUpperDay) minRequired = 2; // Upper compartilha espaço
         }
       } else if (isMedium(muscle)) {
         muscleCategory = "médio";
         // Piso técnico para grupos médios
+        const isUpperDay = dayType === "upper";
+        const isFullBody = dayType === "full";
+        
         if (isAdvanced) {
-          minRequired = 3;
+          // Para dias focados: mínimo 2-3
+          // Para Upper/Full Body: mínimo 1-2 (compartilha espaço)
+          if (isUpperDay || isFullBody) {
+            minRequired = 1; // Upper e Full Body compartilham espaço
+          } else {
+            minRequired = 2; // Reduzido de 3 para 2 para ser mais realista
+          }
         } else {
           minRequired = 2;
           // Em treinos muito densos (Full/Upper), permitimos 1
-          if (dayType === "full" || dayType === "upper") minRequired = 1;
+          if (isFullBody || isUpperDay) minRequired = 1;
         }
       }
 
@@ -1068,24 +1299,26 @@ export function isTrainingPlanUsable(
         }
 
         // Caso contrário, permitimos a decisão técnica automática e registramos a correção
-        recordPlanCorrection(
-          {
-            reason: "ajuste_volume_minimo_obrigatorio",
-            data: {
-              muscle,
-              category: muscleCategory,
-              count,
-              minRequired,
-              day: day.day,
+        if (context) {
+          recordPlanCorrection(
+            {
+              reason: "ajuste_volume_minimo_obrigatorio",
+              data: {
+                muscle,
+                category: muscleCategory,
+                count,
+                minRequired,
+                day: day.day,
+              },
             },
-          },
-          {
-            imc: 0,
-            gender: "N/A",
-            activityLevel: level,
-            age: 0,
-          }
-        ).catch(() => {});
+            {
+              imc: context.imc || 0,
+              gender: context.gender || "Não informado",
+              activityLevel: level,
+              age: context.age || 0,
+            }
+          ).catch(() => {});
+        }
       }
     }
 

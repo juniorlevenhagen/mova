@@ -5,7 +5,6 @@ import { typography, components, colors } from "@/lib/design-tokens";
 import { PersonalizedPlan } from "@/types/personalized-plan";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
-import { Dumbbell, Zap, RotateCcw, Info, TrendingUp } from "lucide-react";
 
 interface PersonalizedPlanModalProps {
   isOpen: boolean;
@@ -1512,7 +1511,7 @@ export function PersonalizedPlanModal({
 
             {/* Treino */}
             {validActiveTab === "training" && (
-              <div className="space-y-8">
+              <div className="space-y-6">
                 {trainingPlanError && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div className="flex items-start justify-between gap-4">
@@ -1542,66 +1541,25 @@ export function PersonalizedPlanModal({
                   </div>
                 ) : (
                   <>
-                    <div className="bg-slate-900 rounded-xl p-3 sm:p-4 text-white shadow-lg border border-slate-800">
-                      <div className="flex items-center gap-2.5 mb-2 sm:mb-3">
-                        <div className="h-5 sm:h-6 w-1 bg-blue-500 rounded-full" />
-                        <h4 className="text-sm sm:text-base font-bold uppercase tracking-wider text-blue-400">
-                          Visão Geral da Estratégia
+                    {plan.trainingPlan?.overview && (
+                      <div
+                        className={`${colors.status.info.bg} ${colors.status.info.border} border rounded-lg p-4`}
+                      >
+                        <h4
+                          className={`${typography.heading.h4} ${colors.status.info.text} mb-2`}
+                        >
+                          Visão Geral
                         </h4>
+                        <p className={`${colors.status.info.text} text-sm`}>
+                          {plan.trainingPlan.overview}
+                        </p>
                       </div>
-                      <p className="text-[13px] sm:text-sm text-slate-300 leading-relaxed italic">
-                        &quot;
-                        {plan.trainingPlan?.overview ||
-                          "Sua estratégia personalizada para máxima performance."}
-                        &quot;
-                      </p>
-                    </div>
+                    )}
 
-                    <div className="space-y-8 sm:space-y-12">
+                    <div className="space-y-4">
                       {(plan.trainingPlan?.weeklySchedule || []).map(
                         (day, dayIndex) => {
                           const exercises = day?.exercises || [];
-
-                          // Helper para cores por tipo de treino
-                          const getDayTheme = (type: string) => {
-                            const t = type.toLowerCase();
-                            if (t.includes("push"))
-                              return {
-                                text: "text-red-600",
-                                bg: "bg-red-50",
-                                accent: "bg-red-600",
-                                shadow: "shadow-red-100",
-                              };
-                            if (t.includes("pull"))
-                              return {
-                                text: "text-blue-600",
-                                bg: "bg-blue-50",
-                                accent: "bg-blue-600",
-                                shadow: "shadow-blue-100",
-                              };
-                            if (t.includes("legs") || t.includes("lower"))
-                              return {
-                                text: "text-emerald-600",
-                                bg: "bg-emerald-50",
-                                accent: "bg-emerald-600",
-                                shadow: "shadow-emerald-100",
-                              };
-                            if (t.includes("upper"))
-                              return {
-                                text: "text-purple-600",
-                                bg: "bg-purple-50",
-                                accent: "bg-purple-600",
-                                shadow: "shadow-purple-100",
-                              };
-                            return {
-                              text: "text-slate-600",
-                              bg: "bg-slate-50",
-                              accent: "bg-slate-600",
-                              shadow: "shadow-slate-100",
-                            };
-                          };
-
-                          const theme = getDayTheme(day?.type || "");
 
                           // 🧠 Utilitário para inferir o músculo se a IA falhar ou enviar "Geral"
                           const inferMuscle = (ex: Exercise): string => {
@@ -1779,12 +1737,35 @@ export function PersonalizedPlanModal({
                           const groupedByMuscle: Record<string, Exercise[]> =
                             {};
 
+                          // Função para normalizar nome de músculo (remove acentos e padroniza)
+                          const normalizeMuscleName = (name: string): string => {
+                            const normalized = name
+                              .toLowerCase()
+                              .normalize("NFD")
+                              .replace(/[\u0300-\u036f]/g, "")
+                              .trim();
+                            
+                            // Mapear variações para nome padrão
+                            const muscleMap: Record<string, string> = {
+                              triceps: "tríceps",
+                              biceps: "bíceps",
+                              quadriceps: "quadríceps",
+                              gluteos: "glúteos",
+                              isquiotibiais: "posterior de coxa",
+                              "posterior de coxa": "posterior de coxa",
+                            };
+                            
+                            return muscleMap[normalized] || normalized;
+                          };
+
                           (exercises as unknown as Exercise[]).forEach((ex) => {
                             const muscle = inferMuscle(ex);
+                            const normalizedMuscle = normalizeMuscleName(muscle);
 
+                            // Capitalizar primeira letra
                             const key =
-                              muscle.charAt(0).toUpperCase() +
-                              muscle.slice(1).toLowerCase();
+                              normalizedMuscle.charAt(0).toUpperCase() +
+                              normalizedMuscle.slice(1);
                             if (!groupedByMuscle[key])
                               groupedByMuscle[key] = [];
                             groupedByMuscle[key].push(ex);
@@ -1795,6 +1776,7 @@ export function PersonalizedPlanModal({
                           const muscleWeights: Record<string, number> = {
                             // Pernas (Topo)
                             quadríceps: 100,
+                            "posterior de coxa": 95,
                             isquiotibiais: 95,
                             glúteos: 90,
                             // Tronco (Base)
@@ -1807,7 +1789,9 @@ export function PersonalizedPlanModal({
                             trapézio: 78,
                             // Braços
                             tríceps: 75,
+                            triceps: 75, // Normalizado
                             bíceps: 70,
+                            biceps: 70, // Normalizado
                             // Estabilização e Extremidades
                             core: 65,
                             abdominal: 65,
@@ -1829,57 +1813,39 @@ export function PersonalizedPlanModal({
                           return (
                             <div
                               key={dayIndex}
-                              className={`bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden transition-all hover:shadow-xl`}
+                              className="border border-gray-200 rounded-lg bg-white shadow-sm"
                             >
-                              {/* Day Header - High Contrast */}
-                              <div
-                                className={`p-4 sm:p-5 ${theme.bg} border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4`}
-                              >
-                                <div className="flex items-center gap-3 sm:gap-4">
-                                  <div
-                                    className={`p-2.5 sm:p-3 rounded-lg sm:rounded-xl ${theme.accent} text-white shadow-md ${theme.shadow}`}
-                                  >
-                                    <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6" />
-                                  </div>
+                              {/* Day Header */}
+                              <div className="p-4 border-b border-gray-200">
+                                <div className="flex items-center justify-between">
                                   <div>
-                                    <h5 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5 sm:mb-2">
-                                      {day?.day || "Sessão de Elite"}
+                                    <h5 className="font-semibold text-lg text-gray-900 mb-1">
+                                      {day?.day || "Dia de Treino"}
                                     </h5>
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                                      <span
-                                        className={`px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-white ${theme.text} border-2 border-current shadow-sm`}
-                                      >
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm text-gray-600 bg-gray-100 px-2 py-0.5 rounded">
                                         {day?.type || "Musculação"}
                                       </span>
-                                      <div className="flex items-center gap-1 px-2 py-0.5 bg-slate-900/5 rounded-full">
-                                        <Zap className="w-2.5 h-2.5 text-slate-500" />
-                                        <span className="text-[9px] sm:text-[10px] text-slate-600 font-bold uppercase tracking-tighter">
-                                          {exercises.length} Exercícios
-                                        </span>
-                                      </div>
+                                      <span className="text-sm text-gray-500">
+                                        {exercises.length} exercícios
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
                               </div>
 
-                              <div className="p-4 sm:p-6">
-                                <div className="space-y-6 sm:space-y-8">
+                              <div className="p-4">
+                                <div className="space-y-4">
                                   {sortedMuscleEntries.map(
                                     ([muscle, items]) => (
-                                      <div key={muscle} className="relative">
-                                        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-5">
-                                          <div
-                                            className={`h-4 sm:h-5 w-1 ${theme.accent} rounded-full`}
-                                          />
-                                          <h6 className="font-black text-slate-900 text-[10px] sm:text-[11px] uppercase tracking-[0.15em] sm:tracking-[0.2em]">
-                                            Bloco: {muscle}
-                                          </h6>
-                                          <div className="h-px flex-1 bg-gradient-to-r from-slate-100 to-transparent" />
-                                        </div>
+                                      <div key={muscle}>
+                                        <h6 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">
+                                          {muscle}
+                                        </h6>
 
-                                        <div className="grid grid-cols-1 gap-4 sm:gap-5">
+                                        <div className="space-y-3">
                                           {(() => {
-                                            // ✅ Ordenar exercícios dentro do grupo (Compostos ANTES de Isoladores)
+                                            // Ordenar exercícios dentro do grupo (Compostos ANTES de Isoladores)
                                             const sortedExercises = [
                                               ...items,
                                             ].sort((a, b) => {
@@ -1929,91 +1895,73 @@ export function PersonalizedPlanModal({
                                               (ex, idx) => (
                                                 <div
                                                   key={idx}
-                                                  className="group relative bg-white border border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-all duration-300 hover:border-slate-200 hover:shadow-md"
+                                                  className="bg-gray-50 border border-gray-100 rounded-lg p-3"
                                                 >
-                                                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+                                                  <div className="flex items-start justify-between gap-3 mb-2">
                                                     <div className="flex-1">
-                                                      <div className="flex items-center gap-2.5 sm:gap-3">
-                                                        <span className="text-slate-200 font-black text-xl sm:text-2xl leading-none select-none">
-                                                          {(idx + 1)
-                                                            .toString()
-                                                            .padStart(2, "0")}
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-gray-400 text-sm font-medium">
+                                                          {idx + 1}.
                                                         </span>
-                                                        <div>
-                                                          <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-tight block mb-1">
-                                                            {ex.name}
-                                                          </h4>
-
-                                                          {/* Secondary Muscles */}
-                                                          {ex.secondaryMuscles &&
-                                                            ex.secondaryMuscles
-                                                              .length > 0 && (
-                                                              <div className="flex flex-wrap gap-1.5">
-                                                                {ex.secondaryMuscles.map(
-                                                                  (
-                                                                    sm: string,
-                                                                    sidx: number
-                                                                  ) => (
-                                                                    <span
-                                                                      key={sidx}
-                                                                      className="px-1.5 py-0.5 bg-slate-50 text-slate-400 rounded text-[8px] sm:text-[9px] font-bold uppercase tracking-wider border border-slate-100"
-                                                                    >
-                                                                      + {sm}
-                                                                    </span>
-                                                                  )
-                                                                )}
-                                                              </div>
-                                                            )}
-                                                        </div>
+                                                        <h4 className="font-semibold text-gray-900 text-sm">
+                                                          {ex.name}
+                                                        </h4>
                                                       </div>
+                                                      {ex.secondaryMuscles &&
+                                                        ex.secondaryMuscles
+                                                          .length > 0 && (
+                                                          <div className="flex flex-wrap gap-1 ml-6">
+                                                            {ex.secondaryMuscles.map(
+                                                              (
+                                                                sm: string,
+                                                                sidx: number
+                                                              ) => (
+                                                                <span
+                                                                  key={sidx}
+                                                                  className="text-xs text-gray-500"
+                                                                >
+                                                                  +{sm}
+                                                                </span>
+                                                              )
+                                                            )}
+                                                          </div>
+                                                        )}
                                                     </div>
-
-                                                    {/* Stats Card - Mais compacto e horizontal */}
-                                                    <div className="flex items-center gap-2 sm:gap-3 bg-slate-50/50 p-1.5 rounded-lg sm:rounded-xl border border-slate-100/50 lg:w-fit">
-                                                      <div className="bg-white px-2.5 sm:px-3 py-1.5 rounded-md sm:rounded-lg shadow-sm text-center min-w-[55px] sm:min-w-[60px]">
-                                                        <span className="block text-[8px] sm:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">
+                                                    <div className="flex items-center gap-3 text-sm">
+                                                      <div className="text-center">
+                                                        <span className="block text-xs text-gray-500 mb-0.5">
                                                           Séries
                                                         </span>
-                                                        <span className="text-sm sm:text-base font-black text-slate-900 leading-none">
+                                                        <span className="font-semibold text-gray-900">
                                                           {ex.sets}
                                                         </span>
                                                       </div>
-                                                      <div className="bg-white px-2.5 sm:px-3 py-1.5 rounded-md sm:rounded-lg shadow-sm text-center min-w-[65px] sm:min-w-[70px]">
-                                                        <span className="block text-[8px] sm:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">
+                                                      <div className="text-center">
+                                                        <span className="block text-xs text-gray-500 mb-0.5">
                                                           Reps
                                                         </span>
-                                                        <span className="text-sm sm:text-base font-black text-slate-900 leading-none">
+                                                        <span className="font-semibold text-gray-900">
                                                           {ex.reps}
                                                         </span>
                                                       </div>
-                                                      <div className="bg-white px-2.5 sm:px-3 py-1.5 rounded-md sm:rounded-lg shadow-sm text-center min-w-[70px] sm:min-w-[80px]">
-                                                        <span className="block text-[8px] sm:text-[9px] text-slate-400 font-black uppercase tracking-tighter mb-0.5">
+                                                      <div className="text-center">
+                                                        <span className="block text-xs text-gray-500 mb-0.5">
                                                           Descanso
                                                         </span>
-                                                        <div className="flex items-center justify-center gap-1">
-                                                          <RotateCcw className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-slate-400" />
-                                                          <span className="text-[11px] sm:text-xs font-black text-slate-700 leading-none">
-                                                            {ex.rest}
-                                                          </span>
-                                                        </div>
+                                                        <span className="font-semibold text-gray-900">
+                                                          {ex.rest}
+                                                        </span>
                                                       </div>
                                                     </div>
                                                   </div>
-
-                                                  {/* Notes Section - Mais discreto */}
                                                   {ex.notes && (
-                                                    <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-slate-50/30 rounded-lg sm:rounded-xl border border-slate-100/30 relative overflow-hidden group-hover:bg-white group-hover:border-slate-200 transition-colors">
-                                                      <div className="relative z-10 flex items-start gap-2.5 sm:gap-3">
-                                                        <div className="p-1 bg-white rounded shadow-sm border border-slate-100">
-                                                          <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
-                                                        </div>
-                                                        <p className="text-[12px] sm:text-[13px] text-slate-600 leading-relaxed italic">
-                                                          <span className="font-black text-slate-900 not-italic uppercase text-[8px] sm:text-[9px] tracking-widest block mb-0.5">
-                                                            Nota:
-                                                          </span>
-                                                          {ex.notes}
-                                                        </p>
-                                                      </div>
+                                                    <div className="mt-2 pt-2 border-t border-gray-200">
+                                                      <p className="text-xs text-gray-600 italic">
+                                                        <span className="font-medium not-italic">
+                                                          Nota:{" "}
+                                                        </span>
+                                                        {ex.notes}
+                                                      </p>
                                                     </div>
                                                   )}
                                                 </div>
@@ -2032,73 +1980,30 @@ export function PersonalizedPlanModal({
                       )}
                     </div>
 
-                    {/* Progression Section - Elite UI */}
-                    <div className="mt-8 sm:mt-10 bg-slate-900 rounded-xl sm:rounded-2xl p-5 sm:p-6 text-white relative overflow-hidden shadow-xl">
-                      <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-[80px] -mr-24 -mt-24" />
-                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-[80px] -ml-24 -mb-24" />
-
-                      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 mb-4 sm:mb-6">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="p-2.5 sm:p-3 bg-emerald-500 rounded-lg sm:rounded-xl shadow-lg shadow-emerald-500/20">
-                            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
-                              Estratégia de Progressão
-                            </h4>
-                            <p className="text-slate-400 text-[11px] sm:text-xs font-medium">
-                              Como evoluir seu treino nas próximas semanas
-                            </p>
-                          </div>
+                    {plan.trainingPlan?.progression && (
+                      <div
+                        className={`${colors.status.success.bg} ${colors.status.success.border} border rounded-lg p-4`}
+                      >
+                        <h4
+                          className={`${typography.heading.h4} ${colors.status.success.text} mb-2`}
+                        >
+                          Estratégia de Progressão
+                        </h4>
+                        <div className="space-y-2">
+                          {plan.trainingPlan.progression
+                            .split("\n")
+                            .filter((l) => l.trim().length > 0)
+                            .map((line, i) => (
+                              <p
+                                key={i}
+                                className={`${colors.status.success.text} text-sm`}
+                              >
+                                • {line.replace(/^[-•]\s*/, "")}
+                              </p>
+                            ))}
                         </div>
                       </div>
-
-                      <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="space-y-2.5 sm:space-y-3 text-slate-300 leading-relaxed text-[13px] sm:text-sm">
-                          {plan.trainingPlan?.progression
-                            ?.split("\n")
-                            .filter((l) => l.trim().length > 0)
-                            .slice(
-                              0,
-                              Math.ceil(
-                                (plan.trainingPlan?.progression
-                                  ?.split("\n")
-                                  .filter((l) => l.trim().length > 0).length ||
-                                  0) / 2
-                              )
-                            )
-                            .map((line, i) => (
-                              <div key={i} className="flex gap-3">
-                                <div className="mt-2 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                <p>{line.replace(/^[-•]\s*/, "")}</p>
-                              </div>
-                            )) || (
-                            <p>
-                              Foco em progressão de carga e técnica impecável.
-                            </p>
-                          )}
-                        </div>
-                        <div className="space-y-2.5 sm:space-y-3 text-slate-300 leading-relaxed text-[13px] sm:text-sm">
-                          {plan.trainingPlan?.progression
-                            ?.split("\n")
-                            .filter((l) => l.trim().length > 0)
-                            .slice(
-                              Math.ceil(
-                                (plan.trainingPlan?.progression
-                                  ?.split("\n")
-                                  .filter((l) => l.trim().length > 0).length ||
-                                  0) / 2
-                              )
-                            )
-                            .map((line, i) => (
-                              <div key={i} className="flex gap-3">
-                                <div className="mt-2 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                                <p>{line.replace(/^[-•]\s*/, "")}</p>
-                              </div>
-                            )) || null}
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </>
                 )}
               </div>

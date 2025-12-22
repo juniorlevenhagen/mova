@@ -33,6 +33,8 @@ describe("Simulação de Volume de Músculos Pequenos para Usuário Avançado", 
 
     const allExercises = [...costasExercises, ...bicepsExercises];
 
+    // Para PPL 5x, precisamos ter 2 Push, 2 Pull, 1 Legs
+    // Os dias do mesmo tipo devem ter os mesmos exercícios
     return {
       overview: `Teste Pull com ${bicepsCount} roscas e ${costasCount} remadas`,
       progression: "...",
@@ -92,8 +94,30 @@ describe("Simulação de Volume de Músculos Pequenos para Usuário Avançado", 
             },
           ],
         },
-        { day: "Quinta", type: "Push", exercises: [] }, // Simplificado para o teste focar na Segunda
-        { day: "Sexta", type: "Pull", exercises: [] },
+        { day: "Quinta", type: "Push", exercises: [
+          {
+            name: "Supino",
+            primaryMuscle: "peitoral",
+            sets: 3,
+            reps: "10",
+            rest: "60s",
+          },
+          {
+            name: "Desenvolvimento",
+            primaryMuscle: "ombros",
+            sets: 3,
+            reps: "10",
+            rest: "60s",
+          },
+          {
+            name: "Triceps",
+            primaryMuscle: "triceps",
+            sets: 3,
+            reps: "10",
+            rest: "60s",
+          },
+        ] }, // Mesmos exercícios do Push da Terça
+        { day: "Sexta", type: "Pull", exercises: allExercises }, // Mesmos exercícios do Pull da Segunda
       ],
     };
   };

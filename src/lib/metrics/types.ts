@@ -8,7 +8,9 @@ export type CorrectionReason =
   | "cardio_frequencia_reduzida_adaptacao"
   | "estimulos_totais_excedidos"
   | "ajuste_volume_minimo_obrigatorio"
-  | "divisao_ajustada_tecnica";
+  | "divisao_ajustada_tecnica"
+  | "same_type_days_exercises"
+  | "rebaixamento_por_tempo_insuficiente";
 
 export interface ProteinCorrectionPayload {
   originalProtein: number;
@@ -50,6 +52,13 @@ export interface DivisionCorrectionPayload {
   trainingDays: number;
 }
 
+export interface SameTypeDaysCorrectionPayload {
+  dayType: string;
+  firstDay: string;
+  correctedDay: string;
+  exerciseCount: number;
+}
+
 export type CorrectionPayload =
   | {
       reason: "proteina_ajustada_limite_seguranca";
@@ -68,7 +77,15 @@ export type CorrectionPayload =
       reason: "ajuste_volume_minimo_obrigatorio";
       data: VolumeCorrectionPayload;
     }
-  | { reason: "divisao_ajustada_tecnica"; data: DivisionCorrectionPayload };
+  | { reason: "divisao_ajustada_tecnica"; data: DivisionCorrectionPayload }
+  | {
+      reason: "same_type_days_exercises";
+      data: SameTypeDaysCorrectionPayload;
+    }
+  | {
+      reason: "rebaixamento_por_tempo_insuficiente";
+      data: LevelDowngradeCorrectionPayload;
+    };
 
 export interface CorrectionContext {
   imc: number;

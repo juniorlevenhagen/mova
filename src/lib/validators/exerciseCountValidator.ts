@@ -19,8 +19,8 @@ export function validateExercisesCountByLevel(
     moderado: 8,
     intermediario: 8,
     avancado: 10,
-    atleta: 12, // Aumentado para permitir volume de elite
-    atleta_altorendimento: 12,
+    atleta: 10, // Atleta padrão: até 10 exercícios
+    atleta_altorendimento: 12, // Atleta alto rendimento: até 12 exercícios
   };
 
   // Normalização consistente

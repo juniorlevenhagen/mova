@@ -9,7 +9,11 @@ import { validateExercisesCountByLevel } from "@/lib/validators/exerciseCountVal
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { recordPlanCorrection } from "@/lib/metrics/planCorrectionMetrics";
 import { validateAdvancedRules } from "@/lib/validators/advancedPlanValidator";
-import { getTrainingProfile, isValidRepsForProfile, isIsolationExercise } from "@/lib/profiles/trainingProfiles";
+import {
+  getTrainingProfile,
+  isValidRepsForProfile,
+  isIsolationExercise,
+} from "@/lib/profiles/trainingProfiles";
 
 /* --------------------------------------------------------
    Tipos
@@ -760,13 +764,15 @@ export function isTrainingPlanUsable(
   // 2. Padrões motores repetidos
   // 3. Compatibilidade com déficit calórico
   // 4. Frequência × Volume
-  if (!validateAdvancedRules(
-    plan,
-    trainingDays,
-    activityLevel,
-    context?.objective,
-    context?.imc
-  )) {
+  if (
+    !validateAdvancedRules(
+      plan,
+      trainingDays,
+      activityLevel,
+      context?.objective,
+      context?.imc
+    )
+  ) {
     return false; // A função já registra a rejeição
   }
 
@@ -898,7 +904,7 @@ export function isTrainingPlanUsable(
         const minRep = parseInt(repsMatch[1]);
         if (minRep <= 5) {
           lowRepCount++;
-          
+
           // Validar se isoladores podem ter reps baixas
           if (isIsolationExercise(exercise.name) && minRep <= 5) {
             // Isoladores nunca devem ter reps baixas (3-5)
@@ -922,7 +928,10 @@ export function isTrainingPlanUsable(
     }
 
     // Validar limite de exercícios com reps baixas
-    if (profile.maxLowRepExercises !== undefined && lowRepCount > profile.maxLowRepExercises) {
+    if (
+      profile.maxLowRepExercises !== undefined &&
+      lowRepCount > profile.maxLowRepExercises
+    ) {
       console.warn("Plano rejeitado: excesso de exercícios com reps baixas", {
         level,
         lowRepCount,
@@ -1354,7 +1363,7 @@ export function isTrainingPlanUsable(
         // Piso técnico para grupos médios
         const isUpperDay = dayType === "upper";
         const isFullBody = dayType === "full";
-        
+
         if (isAdvanced) {
           // Para dias focados: mínimo 2-3
           // Para Upper/Full Body: mínimo 1-2 (compartilha espaço)

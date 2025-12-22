@@ -1127,8 +1127,8 @@ export function UserDataSection({
                           />
                         </svg>
                         <span className="break-words">
-                          Para gerar um novo plano, compre créditos adicionais no
-                          botão acima.
+                          Para gerar um novo plano, compre créditos adicionais
+                          no botão acima.
                         </span>
                       </p>
                     )

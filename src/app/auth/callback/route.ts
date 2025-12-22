@@ -21,9 +21,8 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createClient();
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
-      code
-    );
+    const { error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
       console.error("Erro ao trocar código por sessão:", exchangeError);
@@ -41,4 +40,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

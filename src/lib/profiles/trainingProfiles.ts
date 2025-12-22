@@ -1,6 +1,6 @@
 /**
  * Perfis Técnicos de Treino
- * 
+ *
  * Sistema simplificado: 4 níveis de usuário mapeados para perfis técnicos internos
  * Flags de restrição modificam o perfil base, não criam novos níveis
  */
@@ -21,7 +21,11 @@ export interface UserFlags {
 // PERFIS TÉCNICOS INTERNOS (não expostos)
 // ============================================
 
-type TechnicalProfile = "SEDENTARY_BASE" | "MODERATE_BASE" | "ATHLETE_BASE" | "ATHLETE_HIGH_VOLUME";
+type TechnicalProfile =
+  | "SEDENTARY_BASE"
+  | "MODERATE_BASE"
+  | "ATHLETE_BASE"
+  | "ATHLETE_HIGH_VOLUME";
 
 export interface TrainingProfile {
   volumeMultiplier: number;
@@ -216,12 +220,15 @@ function applyRestrictionFlags(
   profile: TrainingProfile,
   flags: UserFlags
 ): TrainingProfile {
-  let adjusted = { ...profile };
+  const adjusted = { ...profile };
 
   // Flag: Idoso
   if (flags.elderly) {
     adjusted.volumeMultiplier *= 0.7; // Reduz volume em 30%
-    adjusted.maxExercisesPerSession = Math.max(5, adjusted.maxExercisesPerSession - 1);
+    adjusted.maxExercisesPerSession = Math.max(
+      5,
+      adjusted.maxExercisesPerSession - 1
+    );
     adjusted.minReps = Math.max(8, adjusted.minReps); // Mínimo 8 reps
     adjusted.lowRepAllowed = false; // Bloqueia reps baixas
     adjusted.weeklySets = {
@@ -241,7 +248,10 @@ function applyRestrictionFlags(
   // Flag: Reinício/Iniciante
   if (flags.beginnerRestart) {
     adjusted.volumeMultiplier *= 0.75; // Reduz volume em 25%
-    adjusted.maxExercisesPerMuscle = Math.max(2, adjusted.maxExercisesPerMuscle - 1);
+    adjusted.maxExercisesPerMuscle = Math.max(
+      2,
+      adjusted.maxExercisesPerMuscle - 1
+    );
     adjusted.minReps = Math.max(8, adjusted.minReps); // Mínimo 8 reps
     adjusted.lowRepAllowed = false; // Bloqueia reps baixas
   }
@@ -252,7 +262,9 @@ function applyRestrictionFlags(
 /**
  * Normaliza o nível do usuário para o tipo UserLevel
  */
-export function normalizeUserLevel(level: string | null | undefined): UserLevel {
+export function normalizeUserLevel(
+  level: string | null | undefined
+): UserLevel {
   if (!level) return "Moderado";
 
   const normalized = level
@@ -265,7 +277,10 @@ export function normalizeUserLevel(level: string | null | undefined): UserLevel 
   if (normalized.includes("sedentario") || normalized.includes("sedentary")) {
     return "Sedentario";
   }
-  if (normalized.includes("atleta") && (normalized.includes("alto") || normalized.includes("rendimento"))) {
+  if (
+    normalized.includes("atleta") &&
+    (normalized.includes("alto") || normalized.includes("rendimento"))
+  ) {
     return "AltoRendimento";
   }
   if (normalized.includes("atleta") || normalized.includes("athlete")) {
@@ -278,7 +293,9 @@ export function normalizeUserLevel(level: string | null | undefined): UserLevel 
 /**
  * Detecta flags de restrição a partir do nível antigo (compatibilidade)
  */
-export function detectRestrictionFlags(level: string | null | undefined): UserFlags {
+export function detectRestrictionFlags(
+  level: string | null | undefined
+): UserFlags {
   if (!level) return {};
 
   const normalized = level
@@ -313,7 +330,7 @@ export function getTrainingProfile(
 ): TrainingProfile {
   // Normalizar nível do usuário
   const userLevel = normalizeUserLevel(level);
-  
+
   // Obter perfil técnico base
   const technicalProfile = userLevelToProfile[userLevel];
   const baseProfile = technicalProfiles[technicalProfile];
@@ -386,4 +403,3 @@ export function isIsolationExercise(exerciseName: string): boolean {
 
   return isolationKeywords.some((keyword) => name.includes(keyword));
 }
-

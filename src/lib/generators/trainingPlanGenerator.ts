@@ -637,7 +637,10 @@ function getOperationalLevel(
     return declaredLevel;
   }
 
-  const level = declaredLevel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const level = declaredLevel
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
   // Mapeamento obrigatório de tempo mínimo por nível
   if (level.includes("atleta")) {
@@ -686,7 +689,10 @@ export function generateTrainingPlanStructure(
   objective?: string
 ): TrainingPlan {
   // 🔥 REGRA-MÃE: Determinar nível operacional baseado em tempo
-  const operationalLevel = getOperationalLevel(activityLevel, availableTimeMinutes);
+  const operationalLevel = getOperationalLevel(
+    activityLevel,
+    availableTimeMinutes
+  );
   const volumeConfig = getVolumeConfig(operationalLevel);
   const weeklySchedule: TrainingDay[] = [];
 
@@ -790,9 +796,9 @@ export function generateTrainingPlanStructure(
     progression:
       "Aumentar a carga em 2-5% quando conseguir realizar o topo da faixa de repetições em todas as séries. Após 4-6 semanas, considerar aumentar o número de séries para exercícios principais, se a recuperação permitir.",
   };
-  
+
   const { plan: correctedPlan } = correctSameTypeDaysExercises(plan);
-  
+
   // 🔥 VALIDAÇÃO PÓS-GERAÇÃO OBRIGATÓRIA
   // Registrar métrica de rebaixamento se houve mudança de nível (async, não bloqueia retorno)
   if (operationalLevel !== activityLevel && availableTimeMinutes) {
@@ -805,9 +811,13 @@ export function generateTrainingPlanStructure(
               declaredLevel: activityLevel,
               operationalLevel,
               availableTimeMinutes,
-              timeRequired: operationalLevel.toLowerCase().includes("atleta") ? 75 :
-                            operationalLevel.toLowerCase().includes("avancado") ? 60 :
-                            operationalLevel.toLowerCase().includes("intermediario") ? 45 : 30,
+              timeRequired: operationalLevel.toLowerCase().includes("atleta")
+                ? 75
+                : operationalLevel.toLowerCase().includes("avancado")
+                  ? 60
+                  : operationalLevel.toLowerCase().includes("intermediario")
+                    ? 45
+                    : 30,
             },
           },
           {
@@ -820,7 +830,7 @@ export function generateTrainingPlanStructure(
       })
       .catch(() => {});
   }
-  
+
   return correctedPlan;
 }
 
@@ -856,9 +866,10 @@ function generateDayExercises(
     );
 
     // 🔥 PISO TÉCNICO: Grupos grandes mínimo 3, 4 quando nível operacional = Atleta
-    const isOperationalAthlete = operationalLevel?.toLowerCase().includes("atleta") ?? false;
+    const isOperationalAthlete =
+      operationalLevel?.toLowerCase().includes("atleta") ?? false;
     const minLargeMuscle = isOperationalAthlete ? 4 : 3;
-    
+
     // Peito recebe 60-70% do volume total (PRIMÁRIO)
     const peitoCount = Math.max(
       Math.max(volumeConfig.largeMuscleMin, minLargeMuscle), // Garantir piso técnico
@@ -872,7 +883,10 @@ function generateDayExercises(
     const minMediumMuscle = 2;
     const ombrosCount = isOperationalAthlete
       ? Math.max(minMediumMuscle, Math.min(4, Math.floor(totalExercises * 0.2))) // Atleta: mínimo 2, ideal 3-4
-      : Math.max(minMediumMuscle, Math.min(2, Math.floor(totalExercises * 0.15))); // Outros: mínimo 2
+      : Math.max(
+          minMediumMuscle,
+          Math.min(2, Math.floor(totalExercises * 0.15))
+        ); // Outros: mínimo 2
 
     // Tríceps: máximo 30% do total (PEQUENO)
     const tricepsCount = Math.min(
@@ -897,7 +911,9 @@ function generateDayExercises(
       ombrosCount
     );
     exercises.push(
-      ...ombrosTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+      ...ombrosTemplates.map((t) =>
+        convertTemplateToExercise(t, imc, objective)
+      )
     );
 
     // Adicionar exercícios de tríceps (PEQUENOS DEPOIS)
@@ -906,7 +922,9 @@ function generateDayExercises(
       tricepsCount
     );
     exercises.push(
-      ...tricepsTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+      ...tricepsTemplates.map((t) =>
+        convertTemplateToExercise(t, imc, objective)
+      )
     );
   } else if (dayType === "Pull") {
     // Pull: Costas (PRIMÁRIO - 60-70% do volume) + Posterior de ombro (SECUNDÁRIO - mínimo 1) + Bíceps (PEQUENO - máximo 30%)
@@ -916,9 +934,10 @@ function generateDayExercises(
     );
 
     // 🔥 PISO TÉCNICO: Grupos grandes mínimo 3, 4 quando nível operacional = Atleta
-    const isOperationalAthlete = operationalLevel?.toLowerCase().includes("atleta") ?? false;
+    const isOperationalAthlete =
+      operationalLevel?.toLowerCase().includes("atleta") ?? false;
     const minLargeMuscle = isOperationalAthlete ? 4 : 3;
-    
+
     // Costas recebe 60-70% do volume total (PRIMÁRIO)
     const costasCount = Math.max(
       Math.max(volumeConfig.largeMuscleMin, minLargeMuscle), // Garantir piso técnico
@@ -954,7 +973,9 @@ function generateDayExercises(
       costasCount
     );
     exercises.push(
-      ...costasTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+      ...costasTemplates.map((t) =>
+        convertTemplateToExercise(t, imc, objective)
+      )
     );
 
     // Adicionar exercícios de ombros posteriores (SECUNDÁRIO - mínimo 1)
@@ -970,7 +991,9 @@ function generateDayExercises(
       bicepsCount
     );
     exercises.push(
-      ...bicepsTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+      ...bicepsTemplates.map((t) =>
+        convertTemplateToExercise(t, imc, objective)
+      )
     );
   } else if (dayType === "Legs" || dayType === "Lower") {
     // Legs: Quadríceps (PRIMÁRIO) + Posterior (PRIMÁRIO) + Panturrilhas (PEQUENO)
@@ -1016,7 +1039,9 @@ function generateDayExercises(
       posteriorCount
     );
     exercises.push(
-      ...posteriorTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+      ...posteriorTemplates.map((t) =>
+        convertTemplateToExercise(t, imc, objective)
+      )
     );
 
     // Adicionar exercícios de panturrilhas (PEQUENOS POR ÚLTIMO)
@@ -1025,7 +1050,9 @@ function generateDayExercises(
       panturrilhasCount
     );
     exercises.push(
-      ...panturrilhasExercises.map((t) => convertTemplateToExercise(t, imc, objective))
+      ...panturrilhasExercises.map((t) =>
+        convertTemplateToExercise(t, imc, objective)
+      )
     );
   } else if (dayType === "Upper") {
     // Upper: Peito + Costas + Ombros + Bíceps + Tríceps
@@ -1064,45 +1091,46 @@ function generateDayExercises(
     // Full Body: 5 exercícios fixos e bem definidos
     // 1 Peito + 1 Costas + 1 Quadríceps OU Posterior + 1 Ombros + 1 Core/Braço
     exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.peitoral, 1).map(
-        (t) => convertTemplateToExercise(t, imc, objective)
+      ...selectDiverseExercises(EXERCISE_DATABASE.peitoral, 1).map((t) =>
+        convertTemplateToExercise(t, imc, objective)
       )
     );
     exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.costas, 1).map(
-        (t) => convertTemplateToExercise(t, imc, objective)
+      ...selectDiverseExercises(EXERCISE_DATABASE.costas, 1).map((t) =>
+        convertTemplateToExercise(t, imc, objective)
       )
     );
     // Alternar entre quadríceps e posterior a cada treino
     if (dayIndex % 2 === 0) {
       exercises.push(
-        ...selectDiverseExercises(EXERCISE_DATABASE.quadriceps, 1).map(
-          (t) => convertTemplateToExercise(t, imc, objective)
+        ...selectDiverseExercises(EXERCISE_DATABASE.quadriceps, 1).map((t) =>
+          convertTemplateToExercise(t, imc, objective)
         )
       );
     } else {
       exercises.push(
-        ...selectDiverseExercises(EXERCISE_DATABASE["posterior de coxa"], 1).map(
-          (t) => convertTemplateToExercise(t, imc, objective)
-        )
+        ...selectDiverseExercises(
+          EXERCISE_DATABASE["posterior de coxa"],
+          1
+        ).map((t) => convertTemplateToExercise(t, imc, objective))
       );
     }
     exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.ombros, 1).map(
-        (t) => convertTemplateToExercise(t, imc, objective)
+      ...selectDiverseExercises(EXERCISE_DATABASE.ombros, 1).map((t) =>
+        convertTemplateToExercise(t, imc, objective)
       )
     );
     // Alternar entre bíceps e tríceps
     if (dayIndex % 2 === 0) {
       exercises.push(
-        ...selectDiverseExercises(EXERCISE_DATABASE.biceps, 1).map(
-          (t) => convertTemplateToExercise(t, imc, objective)
+        ...selectDiverseExercises(EXERCISE_DATABASE.biceps, 1).map((t) =>
+          convertTemplateToExercise(t, imc, objective)
         )
       );
     } else {
       exercises.push(
-        ...selectDiverseExercises(EXERCISE_DATABASE.triceps, 1).map(
-          (t) => convertTemplateToExercise(t, imc, objective)
+        ...selectDiverseExercises(EXERCISE_DATABASE.triceps, 1).map((t) =>
+          convertTemplateToExercise(t, imc, objective)
         )
       );
     }
@@ -1142,10 +1170,13 @@ function adjustExercisesForTime(
   }> = [];
 
   for (const ex of exercises) {
-    const sets = typeof ex.sets === "number" ? ex.sets : parseInt(String(ex.sets), 10) || 3;
+    const sets =
+      typeof ex.sets === "number"
+        ? ex.sets
+        : parseInt(String(ex.sets), 10) || 3;
     let restSeconds = 60; // default
     const restStr = ex.rest?.toLowerCase() || "60s";
-    
+
     // Parsear descanso (ex: "90-120s" → 90, "60s" → 60)
     if (restStr.includes("min")) {
       restSeconds = parseInt(restStr, 10) * 60;
@@ -1260,7 +1291,10 @@ function removeExercisesToFitTime(
 
   // Calcular tempo atual
   for (const ex of adjustedExercises) {
-    const sets = typeof ex.sets === "number" ? ex.sets : parseInt(String(ex.sets), 10) || 3;
+    const sets =
+      typeof ex.sets === "number"
+        ? ex.sets
+        : parseInt(String(ex.sets), 10) || 3;
     let restSeconds = 45; // Usar mínimo após ajuste
     const restStr = ex.rest?.toLowerCase() || "60s";
     if (restStr.includes("min")) {
@@ -1288,7 +1322,10 @@ function removeExercisesToFitTime(
       ex.name.toLowerCase().includes("panturrilha");
 
     if (isIsolation) {
-      const sets = typeof ex.sets === "number" ? ex.sets : parseInt(String(ex.sets), 10) || 3;
+      const sets =
+        typeof ex.sets === "number"
+          ? ex.sets
+          : parseInt(String(ex.sets), 10) || 3;
       let restSeconds = 45;
       const restStr = ex.rest?.toLowerCase() || "60s";
       if (restStr.includes("min")) {
@@ -1536,8 +1573,11 @@ function selectDiverseExercises(
 
   // Função para extrair tipo base (ex: "supino" de "supino inclinado")
   const getBaseType = (name: string): string => {
-    const normalized = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    
+    const normalized = name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
     // Padrões conhecidos
     if (normalized.includes("supino")) return "supino";
     if (normalized.includes("remada")) return "remada";
@@ -1546,12 +1586,13 @@ function selectDiverseExercises(
     if (normalized.includes("leg press")) return "leg press";
     if (normalized.includes("desenvolvimento")) return "desenvolvimento";
     if (normalized.includes("rosca")) return "rosca";
-    if (normalized.includes("triceps") || normalized.includes("tríceps")) return "triceps";
+    if (normalized.includes("triceps") || normalized.includes("tríceps"))
+      return "triceps";
     if (normalized.includes("crucifixo")) return "crucifixo";
     if (normalized.includes("stiff")) return "stiff";
     if (normalized.includes("rdl")) return "rdl";
     if (normalized.includes("good morning")) return "good morning";
-    
+
     // Fallback: primeira palavra
     return normalized.split(" ")[0] || normalized;
   };
@@ -1620,9 +1661,7 @@ function convertTemplateToExercise(
 
   // Log do ajuste se houver
   if (adjustmentReason) {
-    console.log(
-      `  🔧 ${template.name}: ${adjustmentReason}`
-    );
+    console.log(`  🔧 ${template.name}: ${adjustmentReason}`);
   }
 
   return {

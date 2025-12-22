@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 
 /**
  * Rota de callback para exclusão de dados do Facebook (GDPR/LGPD)
- * 
+ *
  * O Facebook envia requisições POST para esta URL quando um usuário
  * solicita a exclusão de seus dados através do Facebook.
- * 
+ *
  * Documentação: https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback
  */
 function getSupabaseAdmin() {
@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
       const supabaseAdmin = getSupabaseAdmin();
 
       // Buscar usuário pelo provider_id do Facebook
-      const { data: authUsers, error: authError } = await supabaseAdmin.auth.admin.listUsers();
+      const { data: authUsers, error: authError } =
+        await supabaseAdmin.auth.admin.listUsers();
 
       if (authError) {
         console.error("Erro ao listar usuários:", authError);
@@ -113,7 +114,10 @@ export async function POST(request: NextRequest) {
                 .eq("user_id", userId);
             } catch (err) {
               // Ignorar erro se a tabela não existir
-              console.log("Tabela plan_rejection_metrics não encontrada ou erro:", err);
+              console.log(
+                "Tabela plan_rejection_metrics não encontrada ou erro:",
+                err
+              );
               return { data: null, error: null };
             }
           })()
@@ -124,7 +128,8 @@ export async function POST(request: NextRequest) {
 
         // Verificar se houve erros críticos (ignorar erros de tabelas que não existem)
         const criticalErrors = results.filter(
-          (result) => result.error && !result.error.message?.includes("does not exist")
+          (result) =>
+            result.error && !result.error.message?.includes("does not exist")
         );
 
         if (criticalErrors.length > 0) {
@@ -139,7 +144,10 @@ export async function POST(request: NextRequest) {
         try {
           await supabaseAdmin.auth.admin.deleteUser(userId);
         } catch (deleteUserError) {
-          console.error("Erro ao excluir usuário da autenticação:", deleteUserError);
+          console.error(
+            "Erro ao excluir usuário da autenticação:",
+            deleteUserError
+          );
           // Continuar mesmo se falhar, pois os dados já foram excluídos
         }
 
@@ -177,4 +185,3 @@ export async function GET(request: NextRequest) {
     confirmation_code: "mova_data_deletion",
   });
 }
-

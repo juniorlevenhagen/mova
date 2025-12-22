@@ -28,7 +28,15 @@ export type RejectionReason =
   | "vies_estetico_detectado"
   | "volume_insuficiente_critico"
   | "exercicio_musculo_incompativel"
-  | "dias_mesmo_tipo_exercicios_diferentes";
+  | "dias_mesmo_tipo_exercicios_diferentes"
+  | "excesso_series_semanais"
+  | "excesso_padrao_motor"
+  | "excesso_volume_em_deficit"
+  | "excesso_series_por_sessao"
+  | "excesso_exercicios_sessao"
+  | "reps_fora_limites_perfil"
+  | "isolador_com_reps_baixas"
+  | "excesso_exercicios_reps_baixas";
 
 export interface RejectionMetric {
   reason: RejectionReason;

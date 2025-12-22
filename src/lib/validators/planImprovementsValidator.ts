@@ -1,6 +1,6 @@
 /**
  * Validações Adicionais para Melhorias do Sistema de Planos
- * 
+ *
  * Implementa validações baseadas na análise de planos gerados:
  * - Volume máximo de exercícios por grupo muscular
  * - Validação de calorias vs TDEE
@@ -106,7 +106,10 @@ export function validateCaloriesVsTDEE(
   const deficitPercent = (deficit / tdee) * 100;
   const surplusPercent = (surplus / tdee) * 100;
 
-  if (objective === "Emagrecimento" || objective.toLowerCase().includes("emagrec")) {
+  if (
+    objective === "Emagrecimento" ||
+    objective.toLowerCase().includes("emagrec")
+  ) {
     // Déficit máximo: 25% do TDEE OU 600 kcal, o que for menor
     const maxDeficit = Math.min(tdee * 0.25, 600);
     const maxDeficitPercent = (maxDeficit / tdee) * 100;
@@ -135,7 +138,10 @@ export function validateCaloriesVsTDEE(
         `Aumentar calorias para pelo menos ${minCalories} kcal/dia para segurança metabólica`
       );
     }
-  } else if (objective === "Ganhar Massa" || objective.toLowerCase().includes("ganhar")) {
+  } else if (
+    objective === "Ganhar Massa" ||
+    objective.toLowerCase().includes("ganhar")
+  ) {
     // Superávit máximo: 20% do TDEE OU 400 kcal, o que for menor
     const maxSurplus = Math.min(tdee * 0.2, 400);
     const maxSurplusPercent = (maxSurplus / tdee) * 100;
@@ -230,7 +236,10 @@ export function validateRepsForIMCAndObjective(
           }
         }
       }
-    } else if (normalizedObjective.includes("ganhar") || normalizedObjective.includes("massa")) {
+    } else if (
+      normalizedObjective.includes("ganhar") ||
+      normalizedObjective.includes("massa")
+    ) {
       // Recomposição: 8-12 reps (não 6-8)
       for (const ex of exercises) {
         const repsRange = extractRepsRange(ex.reps);
@@ -270,7 +279,10 @@ export function validateRepsForIMCAndObjective(
           }
         }
       }
-    } else if (normalizedObjective.includes("ganhar") || normalizedObjective.includes("massa")) {
+    } else if (
+      normalizedObjective.includes("ganhar") ||
+      normalizedObjective.includes("massa")
+    ) {
       // Recomposição: 10-15 reps (não menos de 10)
       for (const ex of exercises) {
         const repsRange = extractRepsRange(ex.reps);
@@ -310,7 +322,10 @@ export function validateRepsForIMCAndObjective(
           }
         }
       }
-    } else if (normalizedObjective.includes("ganhar") || normalizedObjective.includes("massa")) {
+    } else if (
+      normalizedObjective.includes("ganhar") ||
+      normalizedObjective.includes("massa")
+    ) {
       // Recomposição: 12-18 reps (nunca menos de 12)
       for (const ex of exercises) {
         const repsRange = extractRepsRange(ex.reps);
@@ -353,7 +368,7 @@ function normalizeExerciseName(name: string): string {
  */
 function extractExerciseBaseType(name: string): string {
   const normalized = normalizeExerciseName(name);
-  
+
   // Padrões conhecidos
   const patterns = [
     { pattern: /supino/i, base: "supino" },
@@ -441,13 +456,20 @@ export function validatePlanWithImprovements(
   // Validar cada dia de treino
   for (const day of plan.weeklySchedule) {
     // Volume por grupo muscular
-    const volumeResult = validateExerciseVolumePerMuscleGroup(day, activityLevel);
+    const volumeResult = validateExerciseVolumePerMuscleGroup(
+      day,
+      activityLevel
+    );
     allWarnings.push(...volumeResult.warnings);
     allErrors.push(...volumeResult.errors);
     allSuggestions.push(...volumeResult.suggestions);
 
     // Repetições por IMC + objetivo
-    const repsResult = validateRepsForIMCAndObjective(day.exercises, imc, objective);
+    const repsResult = validateRepsForIMCAndObjective(
+      day.exercises,
+      imc,
+      objective
+    );
     allWarnings.push(...repsResult.warnings);
     allErrors.push(...repsResult.errors);
     allSuggestions.push(...repsResult.suggestions);
@@ -479,4 +501,3 @@ export function validatePlanWithImprovements(
     suggestions: allSuggestions,
   };
 }
-

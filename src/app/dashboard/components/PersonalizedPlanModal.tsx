@@ -1738,13 +1738,15 @@ export function PersonalizedPlanModal({
                             {};
 
                           // Função para normalizar nome de músculo (remove acentos e padroniza)
-                          const normalizeMuscleName = (name: string): string => {
+                          const normalizeMuscleName = (
+                            name: string
+                          ): string => {
                             const normalized = name
                               .toLowerCase()
                               .normalize("NFD")
                               .replace(/[\u0300-\u036f]/g, "")
                               .trim();
-                            
+
                             // Mapear variações para nome padrão
                             const muscleMap: Record<string, string> = {
                               triceps: "tríceps",
@@ -1754,13 +1756,14 @@ export function PersonalizedPlanModal({
                               isquiotibiais: "posterior de coxa",
                               "posterior de coxa": "posterior de coxa",
                             };
-                            
+
                             return muscleMap[normalized] || normalized;
                           };
 
                           (exercises as unknown as Exercise[]).forEach((ex) => {
                             const muscle = inferMuscle(ex);
-                            const normalizedMuscle = normalizeMuscleName(muscle);
+                            const normalizedMuscle =
+                              normalizeMuscleName(muscle);
 
                             // Capitalizar primeira letra
                             const key =

@@ -94,29 +94,33 @@ describe("Simulação de Volume de Músculos Pequenos para Usuário Avançado", 
             },
           ],
         },
-        { day: "Quinta", type: "Push", exercises: [
-          {
-            name: "Supino",
-            primaryMuscle: "peitoral",
-            sets: 3,
-            reps: "10",
-            rest: "60s",
-          },
-          {
-            name: "Desenvolvimento",
-            primaryMuscle: "ombros",
-            sets: 3,
-            reps: "10",
-            rest: "60s",
-          },
-          {
-            name: "Triceps",
-            primaryMuscle: "triceps",
-            sets: 3,
-            reps: "10",
-            rest: "60s",
-          },
-        ] }, // Mesmos exercícios do Push da Terça
+        {
+          day: "Quinta",
+          type: "Push",
+          exercises: [
+            {
+              name: "Supino",
+              primaryMuscle: "peitoral",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+            {
+              name: "Desenvolvimento",
+              primaryMuscle: "ombros",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+            {
+              name: "Triceps",
+              primaryMuscle: "triceps",
+              sets: 3,
+              reps: "10",
+              rest: "60s",
+            },
+          ],
+        }, // Mesmos exercícios do Push da Terça
         { day: "Sexta", type: "Pull", exercises: allExercises }, // Mesmos exercícios do Pull da Segunda
       ],
     };

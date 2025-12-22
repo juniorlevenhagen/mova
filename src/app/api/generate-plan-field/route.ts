@@ -173,10 +173,7 @@ export async function POST(request: NextRequest) {
       const imc =
         userData.height && userData.weight
           ? parseFloat(
-              (
-                userData.weight /
-                Math.pow(userData.height / 100, 2)
-              ).toFixed(1)
+              (userData.weight / Math.pow(userData.height / 100, 2)).toFixed(1)
             )
           : undefined;
 

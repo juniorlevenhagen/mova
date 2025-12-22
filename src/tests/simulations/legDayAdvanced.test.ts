@@ -79,9 +79,9 @@ describe("Simulação de Leg Day para Usuário Avançado", () => {
             },
           ],
         },
-        { 
-          day: "Quinta", 
-          type: "Push", 
+        {
+          day: "Quinta",
+          type: "Push",
           exercises: [
             {
               name: "Peito",
@@ -104,11 +104,11 @@ describe("Simulação de Leg Day para Usuário Avançado", () => {
               reps: "10",
               rest: "60s",
             },
-          ] 
+          ],
         },
-        { 
-          day: "Sexta", 
-          type: "Pull", 
+        {
+          day: "Sexta",
+          type: "Pull",
           exercises: [
             {
               name: "Costas",
@@ -124,7 +124,7 @@ describe("Simulação de Leg Day para Usuário Avançado", () => {
               reps: "10",
               rest: "60s",
             },
-          ] 
+          ],
         },
       ],
     };

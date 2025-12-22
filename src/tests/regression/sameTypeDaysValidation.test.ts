@@ -196,9 +196,11 @@ describe("Regressão - Validação de Dias do Mesmo Tipo", () => {
         rest: "90-120s",
       }
     );
-    
+
     // Adicionar ombros (mínimo 2 para Avançado/Atleta em Push)
-    pushExercises.splice(5, 0, 
+    pushExercises.splice(
+      5,
+      0,
       {
         name: "Desenvolvimento militar com barra",
         primaryMuscle: "ombros",

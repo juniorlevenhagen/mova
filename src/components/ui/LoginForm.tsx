@@ -161,10 +161,7 @@ export default function LoginForm() {
 
       if (oauthError) {
         console.error(`Erro ao fazer login com ${provider}:`, oauthError);
-        const providerName =
-          provider === "google"
-            ? "Google"
-            : "Azure";
+        const providerName = provider === "google" ? "Google" : "Azure";
         setError(`Erro ao fazer login com ${providerName}. Tente novamente.`);
         setLoading(false);
       }

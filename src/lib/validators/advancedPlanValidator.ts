@@ -1,6 +1,6 @@
 /**
  * Validador Avançado de Planos de Treino
- * 
+ *
  * Validações baseadas em:
  * - Séries semanais por grupamento muscular
  * - Frequência de estímulo
@@ -8,7 +8,11 @@
  * - Compatibilidade com déficit calórico
  */
 
-import type { TrainingPlan, TrainingDay, Exercise } from "./trainingPlanValidator";
+import type {
+  TrainingPlan,
+  TrainingDay,
+  Exercise,
+} from "./trainingPlanValidator";
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { getTrainingProfile } from "@/lib/profiles/trainingProfiles";
 
@@ -57,14 +61,22 @@ function normalize(str: string): string {
 function normalizeMuscle(muscle: string): string {
   const normalized = normalize(muscle);
   // Mapear variações para nomes padrão
-  if (normalized.includes("peito") || normalized.includes("peitoral")) return "peito";
-  if (normalized.includes("costas") || normalized.includes("dorsal")) return "costas";
-  if (normalized.includes("quadriceps") || normalized.includes("quadríceps")) return "quadriceps";
-  if (normalized.includes("posterior") || normalized.includes("isquiotibiais")) return "posterior";
-  if (normalized.includes("ombro") || normalized.includes("deltoide")) return "ombro";
-  if (normalized.includes("triceps") || normalized.includes("tríceps")) return "triceps";
-  if (normalized.includes("biceps") || normalized.includes("bíceps")) return "biceps";
-  if (normalized.includes("gluteo") || normalized.includes("glúteo")) return "gluteos";
+  if (normalized.includes("peito") || normalized.includes("peitoral"))
+    return "peito";
+  if (normalized.includes("costas") || normalized.includes("dorsal"))
+    return "costas";
+  if (normalized.includes("quadriceps") || normalized.includes("quadríceps"))
+    return "quadriceps";
+  if (normalized.includes("posterior") || normalized.includes("isquiotibiais"))
+    return "posterior";
+  if (normalized.includes("ombro") || normalized.includes("deltoide"))
+    return "ombro";
+  if (normalized.includes("triceps") || normalized.includes("tríceps"))
+    return "triceps";
+  if (normalized.includes("biceps") || normalized.includes("bíceps"))
+    return "biceps";
+  if (normalized.includes("gluteo") || normalized.includes("glúteo"))
+    return "gluteos";
   if (normalized.includes("panturrilha")) return "panturrilhas";
   return normalized;
 }
@@ -110,7 +122,10 @@ function detectMotorPattern(exercise: Exercise): string | null {
     name.includes("crossover") ||
     name.includes("flexao") ||
     name.includes("push-up") ||
-    (primary === "peito" && (name.includes("inclinado") || name.includes("declinado") || name.includes("reto")))
+    (primary === "peito" &&
+      (name.includes("inclinado") ||
+        name.includes("declinado") ||
+        name.includes("reto")))
   ) {
     return "horizontal_push";
   }
@@ -131,7 +146,10 @@ function detectMotorPattern(exercise: Exercise): string | null {
     name.includes("remada") ||
     name.includes("row") ||
     name.includes("t-bar") ||
-    (primary === "costas" && (name.includes("curvada") || name.includes("unilateral") || name.includes("baixa")))
+    (primary === "costas" &&
+      (name.includes("curvada") ||
+        name.includes("unilateral") ||
+        name.includes("baixa")))
   ) {
     return "horizontal_pull";
   }
@@ -142,7 +160,10 @@ function detectMotorPattern(exercise: Exercise): string | null {
     name.includes("pull") ||
     name.includes("chin-up") ||
     name.includes("lat pulldown") ||
-    (primary === "costas" && (name.includes("frente") || name.includes("atras") || name.includes("barra fixa")))
+    (primary === "costas" &&
+      (name.includes("frente") ||
+        name.includes("atras") ||
+        name.includes("barra fixa")))
   ) {
     return "vertical_pull";
   }
@@ -154,7 +175,9 @@ function detectMotorPattern(exercise: Exercise): string | null {
  * Obtém limites de séries semanais baseado no nível de atividade
  * Agora usa os perfis técnicos
  */
-function getWeeklySeriesLimits(activityLevel?: string | null): WeeklySeriesLimits {
+function getWeeklySeriesLimits(
+  activityLevel?: string | null
+): WeeklySeriesLimits {
   const profile = getTrainingProfile(activityLevel);
 
   // Converter weeklySets do perfil para o formato WeeklySeriesLimits
@@ -190,10 +213,15 @@ function getMotorPatternLimits(): MotorPatternLimits {
  */
 function detectDeficit(objective?: string | null, imc?: number): DeficitConfig {
   const obj = normalize(objective || "");
-  const isEmagrecimento = obj.includes("emagrec") || obj.includes("perder") || obj.includes("queima");
-  
+  const isEmagrecimento =
+    obj.includes("emagrec") || obj.includes("perder") || obj.includes("queima");
+
   // Se IMC >= 25 e objetivo é "ganhar massa", também deve usar déficit (recomposição)
-  const isRecomposicao = (imc && imc >= 25) && (obj.includes("ganhar") || obj.includes("massa"));
+  const isRecomposicao = !!(
+    imc &&
+    imc >= 25 &&
+    (obj.includes("ganhar") || obj.includes("massa"))
+  );
 
   return {
     ativo: isEmagrecimento || isRecomposicao,
@@ -207,7 +235,7 @@ function detectDeficit(objective?: string | null, imc?: number): DeficitConfig {
 
 /**
  * 1️⃣ Validação por SÉRIES SEMANAIS (obrigatória)
- * 
+ *
  * Conta séries por exercício, soma por músculo,
  * multiplica pela frequência semanal e valida contra limites
  */
@@ -223,8 +251,11 @@ export function validateWeeklySeries(
   for (const day of plan.weeklySchedule) {
     for (const exercise of day.exercises) {
       const muscle = normalizeMuscle(exercise.primaryMuscle);
-      const sets = typeof exercise.sets === "number" ? exercise.sets : parseInt(exercise.sets) || 0;
-      
+      const sets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(exercise.sets) || 0;
+
       // Contar séries do músculo primário
       const current = weeklySeries.get(muscle) || 0;
       weeklySeries.set(muscle, current + sets);
@@ -234,7 +265,7 @@ export function validateWeeklySeries(
   // Validar contra limites
   for (const [muscle, totalSeries] of weeklySeries) {
     const limit = limits[muscle as keyof WeeklySeriesLimits];
-    
+
     if (limit && totalSeries > limit) {
       console.warn("Plano rejeitado: excesso de séries semanais", {
         muscle,
@@ -242,7 +273,7 @@ export function validateWeeklySeries(
         limit,
         trainingDays,
       });
-      
+
       recordPlanRejection("excesso_series_semanais", {
         activityLevel: activityLevel || undefined,
         trainingDays,
@@ -250,7 +281,7 @@ export function validateWeeklySeries(
         totalSeries,
         limit,
       }).catch(() => {});
-      
+
       return false;
     }
   }
@@ -260,7 +291,7 @@ export function validateWeeklySeries(
 
 /**
  * 2️⃣ Validação por PADRÃO MOTOR (não por músculo)
- * 
+ *
  * Valida que não há excesso de padrões motores repetidos no mesmo treino
  */
 export function validateMotorPatterns(plan: TrainingPlan): boolean {
@@ -281,7 +312,7 @@ export function validateMotorPatterns(plan: TrainingPlan): boolean {
     // Validar contra limites
     for (const [pattern, count] of patternCounts) {
       const limit = limits[pattern as keyof MotorPatternLimits];
-      
+
       if (limit && count > limit) {
         console.warn("Plano rejeitado: excesso de padrão motor no treino", {
           pattern,
@@ -289,14 +320,14 @@ export function validateMotorPatterns(plan: TrainingPlan): boolean {
           limit,
           day: day.day,
         });
-        
+
         recordPlanRejection("excesso_padrao_motor", {
           pattern,
           count,
           limit,
           day: day.day,
         }).catch(() => {});
-        
+
         return false;
       }
     }
@@ -307,7 +338,7 @@ export function validateMotorPatterns(plan: TrainingPlan): boolean {
 
 /**
  * 3️⃣ Validação de DÉFICIT CALÓRICO (flag global)
- * 
+ *
  * Se déficit ativo, reduz volume máximo em 30%
  */
 export function validateDeficitCompatibility(
@@ -317,7 +348,7 @@ export function validateDeficitCompatibility(
   activityLevel?: string | null
 ): boolean {
   const deficit = detectDeficit(objective, imc);
-  
+
   if (!deficit.ativo) {
     return true; // Sem déficit, validação passa
   }
@@ -332,8 +363,12 @@ export function validateDeficitCompatibility(
     ombro: Math.floor(limits.ombro * deficit.multiplicador_volume),
     triceps: Math.floor(limits.triceps * deficit.multiplicador_volume),
     biceps: Math.floor(limits.biceps * deficit.multiplicador_volume),
-    gluteos: limits.gluteos ? Math.floor(limits.gluteos * deficit.multiplicador_volume) : undefined,
-    panturrilhas: limits.panturrilhas ? Math.floor(limits.panturrilhas * deficit.multiplicador_volume) : undefined,
+    gluteos: limits.gluteos
+      ? Math.floor(limits.gluteos * deficit.multiplicador_volume)
+      : undefined,
+    panturrilhas: limits.panturrilhas
+      ? Math.floor(limits.panturrilhas * deficit.multiplicador_volume)
+      : undefined,
   };
 
   const weeklySeries = new Map<string, number>();
@@ -342,8 +377,11 @@ export function validateDeficitCompatibility(
   for (const day of plan.weeklySchedule) {
     for (const exercise of day.exercises) {
       const muscle = normalizeMuscle(exercise.primaryMuscle);
-      const sets = typeof exercise.sets === "number" ? exercise.sets : parseInt(exercise.sets) || 0;
-      
+      const sets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(exercise.sets) || 0;
+
       const current = weeklySeries.get(muscle) || 0;
       weeklySeries.set(muscle, current + sets);
     }
@@ -352,7 +390,7 @@ export function validateDeficitCompatibility(
   // Validar contra limites ajustados
   for (const [muscle, totalSeries] of weeklySeries) {
     const limit = adjustedLimits[muscle as keyof WeeklySeriesLimits];
-    
+
     if (limit && totalSeries > limit) {
       console.warn("Plano rejeitado: excesso de volume em déficit calórico", {
         muscle,
@@ -361,7 +399,7 @@ export function validateDeficitCompatibility(
         multiplicador: deficit.multiplicador_volume,
         objective,
       });
-      
+
       recordPlanRejection("excesso_volume_em_deficit", {
         activityLevel: activityLevel || undefined,
         muscle,
@@ -370,7 +408,7 @@ export function validateDeficitCompatibility(
         multiplicador: deficit.multiplicador_volume,
         objective: objective || undefined,
       }).catch(() => {});
-      
+
       return false;
     }
   }
@@ -380,7 +418,7 @@ export function validateDeficitCompatibility(
 
 /**
  * 4️⃣ Validação por FREQUÊNCIA × VOLUME
- * 
+ *
  * Se músculo é treinado 2x/semana, então séries por sessão ≤ 50% do teto semanal
  * Isso impede: Peito com 16 séries em um único treino (mesmo que número de exercícios esteja ok)
  */
@@ -389,30 +427,33 @@ export function validateFrequencyVolume(
   activityLevel?: string | null
 ): boolean {
   const limits = getWeeklySeriesLimits(activityLevel);
-  
+
   // Contar frequência semanal por músculo (quantos dias o músculo é treinado)
   const muscleFrequency = new Map<string, number>();
   const muscleSeriesPerDay = new Map<string, Map<number, number>>(); // músculo -> dia -> séries
 
   for (let dayIndex = 0; dayIndex < plan.weeklySchedule.length; dayIndex++) {
     const day = plan.weeklySchedule[dayIndex];
-    
+
     for (const exercise of day.exercises) {
       const muscle = normalizeMuscle(exercise.primaryMuscle);
-      const sets = typeof exercise.sets === "number" ? exercise.sets : parseInt(exercise.sets) || 0;
-      
+      const sets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(exercise.sets) || 0;
+
       // Contar frequência
       if (!muscleFrequency.has(muscle)) {
         muscleFrequency.set(muscle, 0);
         muscleSeriesPerDay.set(muscle, new Map());
       }
-      
+
       const currentFreq = muscleFrequency.get(muscle)!;
       if (!muscleSeriesPerDay.get(muscle)!.has(dayIndex)) {
         muscleFrequency.set(muscle, currentFreq + 1);
         muscleSeriesPerDay.get(muscle)!.set(dayIndex, 0);
       }
-      
+
       // Contar séries por dia
       const daySeries = muscleSeriesPerDay.get(muscle)!.get(dayIndex) || 0;
       muscleSeriesPerDay.get(muscle)!.set(dayIndex, daySeries + sets);
@@ -424,12 +465,13 @@ export function validateFrequencyVolume(
     const weeklyLimit = limits[muscle as keyof WeeklySeriesLimits];
     if (!weeklyLimit) continue;
 
-    const maxSeriesPerSession = frequency === 2 
-      ? Math.floor(weeklyLimit * 0.5) // 50% do teto semanal
-      : Math.floor(weeklyLimit / frequency); // Distribuição igual
+    const maxSeriesPerSession =
+      frequency === 2
+        ? Math.floor(weeklyLimit * 0.5) // 50% do teto semanal
+        : Math.floor(weeklyLimit / frequency); // Distribuição igual
 
     const daySeriesMap = muscleSeriesPerDay.get(muscle)!;
-    
+
     for (const [dayIndex, seriesInDay] of daySeriesMap) {
       if (seriesInDay > maxSeriesPerSession) {
         console.warn("Plano rejeitado: excesso de séries por sessão", {
@@ -440,7 +482,7 @@ export function validateFrequencyVolume(
           weeklyLimit,
           day: plan.weeklySchedule[dayIndex].day,
         });
-        
+
         recordPlanRejection("excesso_series_por_sessao", {
           activityLevel: activityLevel || undefined,
           muscle,
@@ -450,7 +492,7 @@ export function validateFrequencyVolume(
           weeklyLimit,
           day: plan.weeklySchedule[dayIndex].day,
         }).catch(() => {});
-        
+
         return false;
       }
     }
@@ -461,7 +503,7 @@ export function validateFrequencyVolume(
 
 /**
  * Validação completa avançada
- * 
+ *
  * Executa todas as validações avançadas em sequência
  */
 export function validateAdvancedRules(
@@ -493,4 +535,3 @@ export function validateAdvancedRules(
 
   return true;
 }
-

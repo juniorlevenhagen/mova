@@ -712,7 +712,7 @@ describe("Regressão - Validação de Planos", () => {
       const pushDay1 = createPushDay();
       const pullDay1 = createPullDay();
       const legsDay = createLegsDay();
-      
+
       const plan: TrainingPlan = {
         overview: "Plano Golden - Atleta",
         progression: "Progressão por carga e volume",
@@ -759,17 +759,13 @@ describe("Regressão - Validação de Planos", () => {
                 ? "quadriceps"
                 : "ombros",
         secondaryMuscles:
-          i % 4 === 0
-            ? ["triceps"]
-            : i % 4 === 1
-              ? ["biceps"]
-              : undefined,
+          i % 4 === 0 ? ["triceps"] : i % 4 === 1 ? ["biceps"] : undefined,
         sets: 3,
         reps: "10-12",
         rest: "60s",
         notes: "Nota",
       }));
-      
+
       const plan: TrainingPlan = {
         overview: "Plano com excesso de exercícios",
         progression: "Progressão",
@@ -799,7 +795,9 @@ describe("Regressão - Validação de Planos", () => {
       // Validar que métrica foi registrada
       const stats = planRejectionMetrics.getStatistics();
       expect(stats.total).toBeGreaterThan(0);
-      expect(stats.byReason["excesso_exercicios_nivel"] ?? 0).toBeGreaterThan(0);
+      expect(stats.byReason["excesso_exercicios_nivel"] ?? 0).toBeGreaterThan(
+        0
+      );
     });
 
     /**

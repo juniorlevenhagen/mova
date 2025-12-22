@@ -1,5 +1,8 @@
+import { getTrainingProfile } from "@/lib/profiles/trainingProfiles";
+
 /**
  * Valida se o número de exercícios por dia está dentro dos limites do nível
+ * Agora usa os perfis técnicos
  *
  * @param exerciseCount - Número de exercícios no dia
  * @param level - Nível do usuário (ex: "Idoso", "Iniciante", "Atleta Alto Rendimento")
@@ -9,29 +12,12 @@ export function validateExercisesCountByLevel(
   exerciseCount: number,
   level: string
 ): boolean {
-  // Limites absolutos
+  // Limites absolutos (safety check)
   if (exerciseCount < 3 || exerciseCount > 12) return false;
 
-  const limits: Record<string, number> = {
-    idoso: 5,
-    limitado: 5,
-    iniciante: 6,
-    moderado: 8,
-    intermediario: 8,
-    avancado: 10,
-    atleta: 10, // Atleta padrão: até 10 exercícios
-    atleta_altorendimento: 12, // Atleta alto rendimento: até 12 exercícios
-  };
-
-  // Normalização consistente
-  const key = level
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/\s+/g, "_") // Espaços viram underscore
-    .replace("atleta_alto_rendimento", "atleta_altorendimento"); // Ajuste específico
-
-  const max = limits[key] ?? 8;
+  // Usar perfil técnico
+  const profile = getTrainingProfile(level);
+  const max = profile.maxExercisesPerSession;
 
   return exerciseCount <= max;
 }

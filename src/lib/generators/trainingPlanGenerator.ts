@@ -1317,46 +1317,100 @@ function removeExercisesToFitTime(
 
 /**
  * Ajusta repetições baseado em IMC e objetivo
- * Garante que reps estejam adequadas para segurança e eficácia
+ * REGRA DE OURO: IMC é heurística, não verdade absoluta
+ * - IMC só influencia quando objetivo NÃO é força máxima
+ * - Limita alteração a máximo 30% da faixa original
+ * - Evita treinos "cardio disfarçados" e reps absurdamente altas
  */
 function adjustRepsForIMCAndObjective(
   baseReps: string,
   imc?: number,
   objective?: string
-): string {
+): { reps: string; adjustmentReason?: string } {
   // Se não há IMC ou objetivo, manter reps originais
   if (!imc || !objective) {
-    return baseReps;
+    return { reps: baseReps };
   }
 
   const normalizedObjective = objective.toLowerCase();
+
+  // REGRA DE OURO: IMC não influencia força máxima
+  if (
+    normalizedObjective.includes("força") ||
+    normalizedObjective.includes("forca") ||
+    normalizedObjective.includes("força máxima") ||
+    normalizedObjective.includes("forca maxima")
+  ) {
+    return { reps: baseReps };
+  }
 
   // Extrair faixa de reps (ex: "8-12" → {min: 8, max: 12})
   const repsMatch = baseReps.match(/(\d+)\s*-\s*(\d+)/);
   if (!repsMatch) {
     // Se não conseguir parsear, manter original
-    return baseReps;
+    return { reps: baseReps };
   }
 
   const baseMin = parseInt(repsMatch[1], 10);
   const baseMax = parseInt(repsMatch[2], 10);
+  const baseRange = baseMax - baseMin;
 
-  // Regras por IMC e objetivo
+  // Limite de alteração: máximo 30% da faixa original (arredondado para cima)
+  const imcRepAdjustmentCap = 0.3;
+  const maxAdjustment = Math.ceil(baseRange * imcRepAdjustmentCap);
+
+  let adjustedMin = baseMin;
+  let adjustedMax = baseMax;
+  let adjustmentReason: string | undefined;
+
+  // Regras por IMC e objetivo (com limite de 30%)
   if (imc >= 25 && imc < 30) {
     // Sobrepeso
     if (
       normalizedObjective.includes("emagrec") ||
       normalizedObjective.includes("perder")
     ) {
-      // Deve ser 10-15 reps para emagrecimento
-      return "10-15";
+      // Ajustar para 10-15, mas respeitando limite de 30%
+      const targetMin = 10;
+      const targetMax = 15;
+      const desiredMinAdjustment = targetMin - baseMin;
+      const desiredMaxAdjustment = targetMax - baseMax;
+
+      // Aplicar limite de 30% em cada direção
+      const minAdjustment = Math.min(
+        maxAdjustment,
+        Math.max(0, desiredMinAdjustment)
+      );
+      const maxAdjustmentValue = Math.min(
+        maxAdjustment,
+        Math.max(0, desiredMaxAdjustment)
+      );
+
+      adjustedMin = baseMin + minAdjustment;
+      adjustedMax = baseMax + maxAdjustmentValue;
+
+      if (minAdjustment > 0 || maxAdjustmentValue > 0) {
+        adjustmentReason = `IMC ${imc.toFixed(1)} (sobrepeso) + Emagrecimento → ajuste de ${baseReps} para ${adjustedMin}-${adjustedMax} (limite 30%: +${minAdjustment}/+${maxAdjustmentValue})`;
+      }
     } else if (
       normalizedObjective.includes("ganhar") ||
       normalizedObjective.includes("massa")
     ) {
-      // Recomposição: 8-12 reps (não 6-8)
+      // Recomposição: ajustar apenas se baseMax <= 8, respeitando limite de 30%
       if (baseMax <= 8) {
-        return "8-12";
+        const targetMax = 12;
+        const desiredMaxAdjustment = targetMax - baseMax;
+        const maxAdjustmentValue = Math.min(
+          maxAdjustment,
+          Math.max(0, desiredMaxAdjustment)
+        );
+
+        adjustedMin = baseMin;
+        adjustedMax = baseMax + maxAdjustmentValue;
+
+        if (maxAdjustmentValue > 0) {
+          adjustmentReason = `IMC ${imc.toFixed(1)} (sobrepeso) + Ganhar Massa (recomposição) → ajuste de ${baseReps} para ${adjustedMin}-${adjustedMax} (limite 30%: +${maxAdjustmentValue})`;
+        }
       }
     }
   } else if (imc >= 30 && imc < 35) {
@@ -1365,15 +1419,46 @@ function adjustRepsForIMCAndObjective(
       normalizedObjective.includes("emagrec") ||
       normalizedObjective.includes("perder")
     ) {
-      // Deve ser 12-18 reps
-      return "12-18";
+      // Ajustar para 12-18, mas respeitando limite de 30%
+      const targetMin = 12;
+      const targetMax = 18;
+      const desiredMinAdjustment = targetMin - baseMin;
+      const desiredMaxAdjustment = targetMax - baseMax;
+
+      const minAdjustment = Math.min(
+        maxAdjustment,
+        Math.max(0, desiredMinAdjustment)
+      );
+      const maxAdjustmentValue = Math.min(
+        maxAdjustment,
+        Math.max(0, desiredMaxAdjustment)
+      );
+
+      adjustedMin = baseMin + minAdjustment;
+      adjustedMax = baseMax + maxAdjustmentValue;
+
+      if (minAdjustment > 0 || maxAdjustmentValue > 0) {
+        adjustmentReason = `IMC ${imc.toFixed(1)} (obesidade grau I) + Emagrecimento → ajuste de ${baseReps} para ${adjustedMin}-${adjustedMax} (limite 30%: +${minAdjustment}/+${maxAdjustmentValue})`;
+      }
     } else if (
       normalizedObjective.includes("ganhar") ||
       normalizedObjective.includes("massa")
     ) {
-      // Recomposição: 10-15 reps (não menos de 10)
+      // Recomposição: ajustar apenas se baseMax < 10, respeitando limite de 30%
       if (baseMax < 10) {
-        return "10-15";
+        const targetMax = 15;
+        const desiredMaxAdjustment = targetMax - baseMax;
+        const maxAdjustmentValue = Math.min(
+          maxAdjustment,
+          Math.max(0, desiredMaxAdjustment)
+        );
+
+        adjustedMin = baseMin;
+        adjustedMax = baseMax + maxAdjustmentValue;
+
+        if (maxAdjustmentValue > 0) {
+          adjustmentReason = `IMC ${imc.toFixed(1)} (obesidade grau I) + Ganhar Massa (recomposição) → ajuste de ${baseReps} para ${adjustedMin}-${adjustedMax} (limite 30%: +${maxAdjustmentValue})`;
+        }
       }
     }
   } else if (imc >= 35) {
@@ -1382,21 +1467,61 @@ function adjustRepsForIMCAndObjective(
       normalizedObjective.includes("emagrec") ||
       normalizedObjective.includes("perder")
     ) {
-      // Deve ser 15-20 reps
-      return "15-20";
+      // Ajustar para 15-20, mas respeitando limite de 30%
+      const targetMin = 15;
+      const targetMax = 20;
+      const desiredMinAdjustment = targetMin - baseMin;
+      const desiredMaxAdjustment = targetMax - baseMax;
+
+      const minAdjustment = Math.min(
+        maxAdjustment,
+        Math.max(0, desiredMinAdjustment)
+      );
+      const maxAdjustmentValue = Math.min(
+        maxAdjustment,
+        Math.max(0, desiredMaxAdjustment)
+      );
+
+      adjustedMin = baseMin + minAdjustment;
+      adjustedMax = baseMax + maxAdjustmentValue;
+
+      if (minAdjustment > 0 || maxAdjustmentValue > 0) {
+        adjustmentReason = `IMC ${imc.toFixed(1)} (obesidade grau II/III) + Emagrecimento → ajuste de ${baseReps} para ${adjustedMin}-${adjustedMax} (limite 30%: +${minAdjustment}/+${maxAdjustmentValue})`;
+      }
     } else if (
       normalizedObjective.includes("ganhar") ||
       normalizedObjective.includes("massa")
     ) {
-      // Recomposição: 12-18 reps (nunca menos de 12)
+      // Recomposição: ajustar apenas se baseMax < 12, respeitando limite de 30%
       if (baseMax < 12) {
-        return "12-18";
+        const targetMax = 18;
+        const desiredMaxAdjustment = targetMax - baseMax;
+        const maxAdjustmentValue = Math.min(
+          maxAdjustment,
+          Math.max(0, desiredMaxAdjustment)
+        );
+
+        adjustedMin = baseMin;
+        adjustedMax = baseMax + maxAdjustmentValue;
+
+        if (maxAdjustmentValue > 0) {
+          adjustmentReason = `IMC ${imc.toFixed(1)} (obesidade grau II/III) + Ganhar Massa (recomposição) → ajuste de ${baseReps} para ${adjustedMin}-${adjustedMax} (limite 30%: +${maxAdjustmentValue})`;
+        }
       }
     }
   }
 
+  // Se houve ajuste, retornar com log
+  if (adjustmentReason) {
+    console.log(`📊 Ajuste de reps por IMC: ${adjustmentReason}`);
+    return {
+      reps: `${adjustedMin}-${adjustedMax}`,
+      adjustmentReason,
+    };
+  }
+
   // Se não precisar ajustar, manter original
-  return baseReps;
+  return { reps: baseReps };
 }
 
 /**
@@ -1480,19 +1605,32 @@ function selectDiverseExercises(
 
 /**
  * Converte template de exercício para Exercise
- * Agora aceita IMC e objetivo para ajustar reps
+ * Agora aceita IMC e objetivo para ajustar reps (com limite de 30% e log)
  */
 function convertTemplateToExercise(
   template: ExerciseTemplate,
   imc?: number,
   objective?: string
 ): Exercise {
+  const { reps, adjustmentReason } = adjustRepsForIMCAndObjective(
+    template.reps,
+    imc,
+    objective
+  );
+
+  // Log do ajuste se houver
+  if (adjustmentReason) {
+    console.log(
+      `  🔧 ${template.name}: ${adjustmentReason}`
+    );
+  }
+
   return {
     name: template.name,
     primaryMuscle: template.primaryMuscle,
     secondaryMuscles: template.secondaryMuscles,
     sets: template.sets,
-    reps: adjustRepsForIMCAndObjective(template.reps, imc, objective),
+    reps,
     rest: template.rest,
     notes: template.notes || "",
   };

@@ -17,7 +17,7 @@ const getClient = () => {
 
 // Valores dos produtos (em reais)
 const PRODUCT_PRICES = {
-  prompt_single: 1.99,
+  prompt_single: 17.99,
   prompt_triple: 39.99,
 };
 

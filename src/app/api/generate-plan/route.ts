@@ -3568,8 +3568,13 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
               imc,
               gender: profile.gender || "Não informado",
               age: profile.age || 0,
+              objective: profile.objective || undefined, // Incluir objetivo para validação de déficit
             }
-          : undefined
+          : profile
+            ? {
+                objective: profile.objective || undefined,
+              }
+            : undefined
       );
 
       if (!isTrainingValid) {

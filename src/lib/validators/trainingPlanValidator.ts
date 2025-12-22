@@ -8,6 +8,8 @@
 import { validateExercisesCountByLevel } from "@/lib/validators/exerciseCountValidator";
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { recordPlanCorrection } from "@/lib/metrics/planCorrectionMetrics";
+import { validateAdvancedRules } from "@/lib/validators/advancedPlanValidator";
+import { getTrainingProfile, isValidRepsForProfile, isIsolationExercise } from "@/lib/profiles/trainingProfiles";
 
 /* --------------------------------------------------------
    Tipos
@@ -709,6 +711,7 @@ export function isTrainingPlanUsable(
     imc?: number;
     gender?: string;
     age?: number;
+    objective?: string; // Novo: objetivo para validação de déficit calórico
   }
 ): boolean {
   if (!plan?.weeklySchedule || !Array.isArray(plan.weeklySchedule)) {
@@ -749,6 +752,21 @@ export function isTrainingPlanUsable(
 
   // Validação: dias do mesmo tipo devem ter os mesmos exercícios
   if (!validateSameTypeDaysHaveSameExercises(plan)) {
+    return false; // A função já registra a rejeição
+  }
+
+  // ✅ NOVAS VALIDAÇÕES AVANÇADAS (antes das validações por dia)
+  // 1. Séries semanais por grupamento
+  // 2. Padrões motores repetidos
+  // 3. Compatibilidade com déficit calórico
+  // 4. Frequência × Volume
+  if (!validateAdvancedRules(
+    plan,
+    trainingDays,
+    activityLevel,
+    context?.objective,
+    context?.imc
+  )) {
     return false; // A função já registra a rejeição
   }
 
@@ -818,8 +836,9 @@ export function isTrainingPlanUsable(
       return false;
     }
 
-    // Validação de limite de exercícios por nível
+    // Validação de limite de exercícios por nível (usando perfis)
     const level = activityLevel || "Moderado";
+    const profile = getTrainingProfile(level);
     const normalizedLevel = level
       .toLowerCase()
       .normalize("NFD")
@@ -827,18 +846,94 @@ export function isTrainingPlanUsable(
       .replace(/\s+/g, "_")
       .replace("atleta_alto_rendimento", "atleta_altorendimento");
 
-    if (!validateExercisesCountByLevel(day.exercises.length, level)) {
-      console.warn("Plano rejeitado: excesso de exercícios por nível", {
+    // Validar número máximo de exercícios por sessão (usando perfil)
+    if (day.exercises.length > profile.maxExercisesPerSession) {
+      console.warn("Plano rejeitado: excesso de exercícios por sessão", {
         level,
         exercises: day.exercises.length,
+        maxAllowed: profile.maxExercisesPerSession,
         day: day.day,
         type: day.type,
       });
-      recordPlanRejection("excesso_exercicios_nivel", {
+      recordPlanRejection("excesso_exercicios_sessao", {
         activityLevel: level,
         trainingDays,
         exerciseCount: day.exercises.length,
+        maxAllowed: profile.maxExercisesPerSession,
         dayType: day.type,
+        day: day.day,
+      }).catch(() => {});
+      return false;
+    }
+
+    // Validação de reps por exercício (usando perfil)
+    let lowRepCount = 0; // Contador de exercícios com reps baixas (3-5)
+    for (const exercise of day.exercises) {
+      // Validar se as reps estão dentro dos limites do perfil
+      if (!isValidRepsForProfile(exercise.reps, profile)) {
+        console.warn("Plano rejeitado: reps fora dos limites do perfil", {
+          level,
+          exercise: exercise.name,
+          reps: exercise.reps,
+          minReps: profile.minReps,
+          maxReps: profile.maxReps,
+          lowRepAllowed: profile.lowRepAllowed,
+          day: day.day,
+        });
+        recordPlanRejection("reps_fora_limites_perfil", {
+          activityLevel: level,
+          trainingDays,
+          exercise: exercise.name,
+          reps: exercise.reps,
+          minReps: profile.minReps,
+          maxReps: profile.maxReps,
+          day: day.day,
+        }).catch(() => {});
+        return false;
+      }
+
+      // Contar exercícios com reps baixas (3-5)
+      const repsMatch = exercise.reps.match(/(\d+)(?:-(\d+))?/);
+      if (repsMatch) {
+        const minRep = parseInt(repsMatch[1]);
+        if (minRep <= 5) {
+          lowRepCount++;
+          
+          // Validar se isoladores podem ter reps baixas
+          if (isIsolationExercise(exercise.name) && minRep <= 5) {
+            // Isoladores nunca devem ter reps baixas (3-5)
+            console.warn("Plano rejeitado: isolador com reps baixas", {
+              level,
+              exercise: exercise.name,
+              reps: exercise.reps,
+              day: day.day,
+            });
+            recordPlanRejection("isolador_com_reps_baixas", {
+              activityLevel: level,
+              trainingDays,
+              exercise: exercise.name,
+              reps: exercise.reps,
+              day: day.day,
+            }).catch(() => {});
+            return false;
+          }
+        }
+      }
+    }
+
+    // Validar limite de exercícios com reps baixas
+    if (profile.maxLowRepExercises !== undefined && lowRepCount > profile.maxLowRepExercises) {
+      console.warn("Plano rejeitado: excesso de exercícios com reps baixas", {
+        level,
+        lowRepCount,
+        maxAllowed: profile.maxLowRepExercises,
+        day: day.day,
+      });
+      recordPlanRejection("excesso_exercicios_reps_baixas", {
+        activityLevel: level,
+        trainingDays,
+        lowRepCount,
+        maxAllowed: profile.maxLowRepExercises,
         day: day.day,
       }).catch(() => {});
       return false;
@@ -1322,19 +1417,8 @@ export function isTrainingPlanUsable(
       }
     }
 
-    // NOVA VALIDAÇÃO: Limite de exercícios por músculo primário (por nível)
-    const maxPerMuscleByLevel: Record<string, number> = {
-      idoso: 3,
-      limitado: 3,
-      iniciante: 4,
-      intermediario: 5,
-      moderado: 5,
-      avancado: 6,
-      atleta: 8,
-      atleta_altorendimento: 8,
-    };
-
-    const maxPerMuscle = maxPerMuscleByLevel[normalizedLevel] || 5;
+    // NOVA VALIDAÇÃO: Limite de exercícios por músculo primário (usando perfil)
+    const maxPerMuscle = profile.maxExercisesPerMuscle;
 
     for (const [muscle, count] of primaryMuscleCounts) {
       if (count > maxPerMuscle) {

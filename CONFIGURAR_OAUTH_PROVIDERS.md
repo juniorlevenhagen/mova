@@ -76,8 +76,10 @@ Este guia mostra como configurar login com **Google**, **Azure** e **Facebook** 
 **Preencha:**
 
 - **Name**: `Mova+`
-- **Supported account types**: Escolha conforme necessário
-  - Recomendado: **"Accounts in any organizational directory and personal Microsoft accounts"**
+- **Supported account types**: ⚠️ **IMPORTANTE** - Selecione:
+  - **"Accounts in any organizational directory and personal Microsoft accounts"**
+  - Ou: **"Personal Microsoft accounts only"**
+  - ⚠️ **NÃO selecione apenas "Accounts in this organizational directory only"** - isso bloqueia contas pessoais!
 - **Redirect URI**:
   - Clique em **"Add a platform"** → **"Web"**
   - Adicione as seguintes URIs (uma por vez):
@@ -89,6 +91,18 @@ Este guia mostra como configurar login com **Google**, **Azure** e **Facebook** 
   - Substitua `[seu-projeto]` pela URL do seu projeto Supabase
 
 4. Clique em **"Register"**
+
+**⚠️ Se você já criou o app e está recebendo erro "unauthorized_client":**
+
+1. Vá em **"Authentication"** no menu lateral
+2. Em **"Supported account types"**, clique em **"Edit"**
+3. Selecione: **"Accounts in any organizational directory and personal Microsoft accounts"**
+4. **Ative "Permitir fluxos de cliente público"** (Allow public client flows)
+   - Role até **"Advanced settings"** ou **"Configurações avançadas"**
+   - Ative o toggle **"Allow public client flows"**
+   - ⚠️ **Isso é necessário para OAuth funcionar!**
+5. Clique em **"Save"**
+6. Aguarde alguns minutos para as mudanças propagarem
 
 ### 2️⃣ Obter Client ID e Secret
 
@@ -194,6 +208,11 @@ Para cada provider (Google, Azure, Facebook):
 6. Preencha:
    - **Client ID**: Cole o Client ID do provedor
    - **Client Secret**: Cole o Client Secret do provedor
+   - **Azure Tenant URL** (Opcional): Deixe em branco na maioria dos casos
+     - ⚠️ **Só preencha se** você quiser restringir login apenas para um tenant específico
+     - Formato: `https://login.microsoftonline.com/{tenant-id}`
+     - Exemplo: `https://login.microsoftonline.com/12345678-1234-1234-1234-123456789012`
+     - **Para permitir contas pessoais e organizacionais**: Deixe vazio
 7. Clique em **"Save"**
 
 ---

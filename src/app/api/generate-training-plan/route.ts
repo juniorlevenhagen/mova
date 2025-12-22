@@ -258,20 +258,22 @@ export async function POST(request: NextRequest) {
         division = "Upper/Lower";
       }
 
-      const generatedPlan = generateTrainingPlanStructure(
-        trainingDays,
-        profile?.nivel_atividade || "Moderado",
-        division,
-        availableTimeMinutes
-      );
-
-      // Validar o plano gerado
+      // Calcular IMC antes de gerar o plano
       const imc =
         profile?.height && profile?.weight
           ? parseFloat(
               (profile.weight / Math.pow(profile.height / 100, 2)).toFixed(1)
             )
-          : 0;
+          : undefined;
+
+      const generatedPlan = generateTrainingPlanStructure(
+        trainingDays,
+        profile?.nivel_atividade || "Moderado",
+        division,
+        availableTimeMinutes,
+        imc,
+        profile?.objective || undefined
+      );
 
       const isValid = isTrainingPlanUsable(
         generatedPlan,

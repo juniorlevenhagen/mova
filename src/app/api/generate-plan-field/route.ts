@@ -169,12 +169,25 @@ export async function POST(request: NextRequest) {
 
       const availableTimeMinutes = parseTrainingTime(userData.trainingTime);
 
-      // Gerar estrutura via padrões (com tempo disponível)
+      // Calcular IMC se disponível
+      const imc =
+        userData.height && userData.weight
+          ? parseFloat(
+              (
+                userData.weight /
+                Math.pow(userData.height / 100, 2)
+              ).toFixed(1)
+            )
+          : undefined;
+
+      // Gerar estrutura via padrões (com tempo disponível, IMC e objetivo)
       const generatedPlan = generateTrainingPlanStructure(
         trainingDays,
         activityLevel,
         division,
-        availableTimeMinutes
+        availableTimeMinutes,
+        imc,
+        userData.objective || undefined
       );
 
       // Corrigir dias do mesmo tipo

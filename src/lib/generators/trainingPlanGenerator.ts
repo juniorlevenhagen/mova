@@ -564,38 +564,38 @@ function getVolumeConfig(activityLevel: string): {
 
   if (level.includes("atleta") && level.includes("alto")) {
     return {
-      largeMuscleMin: 5,
-      largeMuscleMax: 8,
+      largeMuscleMin: 4, // Reduzido de 5 para 4
+      largeMuscleMax: 5, // Reduzido de 8 para 5 ⚠️ CRÍTICO
       smallMuscleMin: 2,
-      smallMuscleMax: 4,
-      totalExercisesMax: 12,
+      smallMuscleMax: 3, // Reduzido de 4 para 3
+      totalExercisesMax: 10, // Reduzido de 12 para 10 ⚠️ CRÍTICO
     };
   }
 
   if (level.includes("atleta") || level.includes("avancado")) {
     return {
-      largeMuscleMin: 5,
-      largeMuscleMax: 7,
+      largeMuscleMin: 4, // Reduzido de 5 para 4
+      largeMuscleMax: 5, // Reduzido de 7 para 5
       smallMuscleMin: 2,
       smallMuscleMax: 3,
-      totalExercisesMax: 10,
+      totalExercisesMax: 9, // Reduzido de 10 para 9
     };
   }
 
   if (level.includes("intermediario")) {
     return {
       largeMuscleMin: 3,
-      largeMuscleMax: 5,
+      largeMuscleMax: 4, // Reduzido de 5 para 4
       smallMuscleMin: 1,
       smallMuscleMax: 2,
-      totalExercisesMax: 8,
+      totalExercisesMax: 7, // Reduzido de 8 para 7
     };
   }
 
   if (level.includes("iniciante")) {
     return {
       largeMuscleMin: 2,
-      largeMuscleMax: 4,
+      largeMuscleMax: 3, // Reduzido de 4 para 3
       smallMuscleMin: 1,
       smallMuscleMax: 2,
       totalExercisesMax: 6,
@@ -605,10 +605,10 @@ function getVolumeConfig(activityLevel: string): {
   // Default: Moderado
   return {
     largeMuscleMin: 3,
-    largeMuscleMax: 5,
+    largeMuscleMax: 4, // Reduzido de 5 para 4
     smallMuscleMin: 1,
     smallMuscleMax: 2,
-    totalExercisesMax: 8,
+    totalExercisesMax: 7, // Reduzido de 8 para 7
   };
 }
 
@@ -681,7 +681,9 @@ export function generateTrainingPlanStructure(
   trainingDays: number,
   activityLevel: string,
   division: "PPL" | "Upper/Lower" | "Full Body" = "PPL",
-  availableTimeMinutes?: number
+  availableTimeMinutes?: number,
+  imc?: number,
+  objective?: string
 ): TrainingPlan {
   // 🔥 REGRA-MÃE: Determinar nível operacional baseado em tempo
   const operationalLevel = getOperationalLevel(activityLevel, availableTimeMinutes);
@@ -717,7 +719,9 @@ export function generateTrainingPlanStructure(
         volumeConfig,
         i % days.length, // Usar o índice do tipo para garantir repetição
         availableTimeMinutes,
-        operationalLevel
+        operationalLevel,
+        imc,
+        objective
       );
 
       weeklySchedule.push({
@@ -744,7 +748,9 @@ export function generateTrainingPlanStructure(
         volumeConfig,
         i % days.length,
         availableTimeMinutes,
-        operationalLevel
+        operationalLevel,
+        imc,
+        objective
       );
 
       weeklySchedule.push({
@@ -764,7 +770,9 @@ export function generateTrainingPlanStructure(
         volumeConfig,
         0,
         availableTimeMinutes,
-        operationalLevel
+        operationalLevel,
+        imc,
+        objective
       );
 
       weeklySchedule.push({
@@ -825,7 +833,9 @@ function generateDayExercises(
   volumeConfig: ReturnType<typeof getVolumeConfig>,
   dayIndex: number,
   availableTimeMinutes?: number,
-  operationalLevel?: string
+  operationalLevel?: string,
+  imc?: number,
+  objective?: string
 ): Exercise[] {
   const exercises: Exercise[] = [];
 
@@ -871,27 +881,33 @@ function generateDayExercises(
     );
 
     // Adicionar exercícios de peito (PRIMÁRIO - GRANDES PRIMEIRO)
-    // Ordenar: compostos primeiro, depois isoladores
-    const peitoTemplates = sortByType(EXERCISE_DATABASE.peitoral).slice(
-      0,
+    // Selecionar exercícios diversos para evitar múltiplas variações similares
+    const peitoTemplates = selectDiverseExercises(
+      sortByType(EXERCISE_DATABASE.peitoral),
       peitoCount
     );
-    exercises.push(...peitoTemplates.map(convertTemplateToExercise));
+    exercises.push(
+      ...peitoTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
 
     // Adicionar exercícios de ombros (SECUNDÁRIO - mínimo 1)
     // Priorizar compostos (desenvolvimento) primeiro
-    const ombrosTemplates = sortByType(EXERCISE_DATABASE.ombros).slice(
-      0,
+    const ombrosTemplates = selectDiverseExercises(
+      sortByType(EXERCISE_DATABASE.ombros),
       ombrosCount
     );
-    exercises.push(...ombrosTemplates.map(convertTemplateToExercise));
+    exercises.push(
+      ...ombrosTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
 
     // Adicionar exercícios de tríceps (PEQUENOS DEPOIS)
-    const tricepsTemplates = sortByType(EXERCISE_DATABASE.triceps).slice(
-      0,
+    const tricepsTemplates = selectDiverseExercises(
+      sortByType(EXERCISE_DATABASE.triceps),
       tricepsCount
     );
-    exercises.push(...tricepsTemplates.map(convertTemplateToExercise));
+    exercises.push(
+      ...tricepsTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
   } else if (dayType === "Pull") {
     // Pull: Costas (PRIMÁRIO - 60-70% do volume) + Posterior de ombro (SECUNDÁRIO - mínimo 1) + Bíceps (PEQUENO - máximo 30%)
     const totalExercises = Math.min(
@@ -932,22 +948,30 @@ function generateDayExercises(
     );
 
     // Adicionar exercícios de costas (PRIMÁRIO - GRANDES PRIMEIRO)
-    // Ordenar: compostos primeiro, depois isoladores
-    const costasTemplates = sortByType(EXERCISE_DATABASE.costas).slice(
-      0,
+    // Selecionar exercícios diversos para evitar múltiplas variações similares
+    const costasTemplates = selectDiverseExercises(
+      sortByType(EXERCISE_DATABASE.costas),
       costasCount
     );
-    exercises.push(...costasTemplates.map(convertTemplateToExercise));
+    exercises.push(
+      ...costasTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
 
     // Adicionar exercícios de ombros posteriores (SECUNDÁRIO - mínimo 1)
-    exercises.push(...ombrosPosteriorExercises.map(convertTemplateToExercise));
+    exercises.push(
+      ...ombrosPosteriorExercises.map((t) =>
+        convertTemplateToExercise(t, imc, objective)
+      )
+    );
 
     // Adicionar exercícios de bíceps (PEQUENOS DEPOIS)
-    const bicepsTemplates = sortByType(EXERCISE_DATABASE.biceps).slice(
-      0,
+    const bicepsTemplates = selectDiverseExercises(
+      sortByType(EXERCISE_DATABASE.biceps),
       bicepsCount
     );
-    exercises.push(...bicepsTemplates.map(convertTemplateToExercise));
+    exercises.push(
+      ...bicepsTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
   } else if (dayType === "Legs" || dayType === "Lower") {
     // Legs: Quadríceps (PRIMÁRIO) + Posterior (PRIMÁRIO) + Panturrilhas (PEQUENO)
     // Ajustar volume baseado no nível para evitar sobrecarga
@@ -976,26 +1000,33 @@ function generateDayExercises(
     const panturrilhasCount = volumeConfig.smallMuscleMin;
 
     // Adicionar exercícios de quadríceps (PRIMÁRIO - GRANDES PRIMEIRO)
-    // Ordenar: compostos primeiro (agachamento, leg press), depois isoladores (extensora)
-    const quadTemplates = sortByType(EXERCISE_DATABASE.quadriceps).slice(
-      0,
+    // Selecionar exercícios diversos para evitar múltiplas variações similares
+    const quadTemplates = selectDiverseExercises(
+      sortByType(EXERCISE_DATABASE.quadriceps),
       quadCount
     );
-    exercises.push(...quadTemplates.map(convertTemplateToExercise));
+    exercises.push(
+      ...quadTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
 
     // Adicionar exercícios de posterior (PRIMÁRIO - GRANDES DEPOIS)
-    // Ordenar: compostos primeiro (stiff, RDL, good morning), depois isoladores (flexora)
-    const posteriorTemplates = sortByType(
-      EXERCISE_DATABASE["posterior de coxa"]
-    ).slice(0, posteriorCount);
-    exercises.push(...posteriorTemplates.map(convertTemplateToExercise));
+    // Selecionar exercícios diversos para evitar múltiplas variações similares
+    const posteriorTemplates = selectDiverseExercises(
+      sortByType(EXERCISE_DATABASE["posterior de coxa"]),
+      posteriorCount
+    );
+    exercises.push(
+      ...posteriorTemplates.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
 
     // Adicionar exercícios de panturrilhas (PEQUENOS POR ÚLTIMO)
-    const panturrilhasExercises = EXERCISE_DATABASE.panturrilhas.slice(
-      0,
+    const panturrilhasExercises = selectDiverseExercises(
+      EXERCISE_DATABASE.panturrilhas,
       panturrilhasCount
     );
-    exercises.push(...panturrilhasExercises.map(convertTemplateToExercise));
+    exercises.push(
+      ...panturrilhasExercises.map((t) => convertTemplateToExercise(t, imc, objective))
+    );
   } else if (dayType === "Upper") {
     // Upper: Peito + Costas + Ombros + Bíceps + Tríceps
     const peitoCount = Math.floor(volumeConfig.largeMuscleMin / 2);
@@ -1005,64 +1036,74 @@ function generateDayExercises(
     const tricepsCount = 1;
 
     exercises.push(
-      ...EXERCISE_DATABASE.peitoral
-        .slice(0, peitoCount)
-        .map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.peitoral, peitoCount).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
     exercises.push(
-      ...EXERCISE_DATABASE.costas
-        .slice(0, costasCount)
-        .map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.costas, costasCount).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
     exercises.push(
-      ...EXERCISE_DATABASE.ombros
-        .slice(0, ombrosCount)
-        .map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.ombros, ombrosCount).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
     exercises.push(
-      ...EXERCISE_DATABASE.biceps
-        .slice(0, bicepsCount)
-        .map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.biceps, bicepsCount).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
     exercises.push(
-      ...EXERCISE_DATABASE.triceps
-        .slice(0, tricepsCount)
-        .map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.triceps, tricepsCount).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
   } else {
     // Full Body: 5 exercícios fixos e bem definidos
     // 1 Peito + 1 Costas + 1 Quadríceps OU Posterior + 1 Ombros + 1 Core/Braço
     exercises.push(
-      ...EXERCISE_DATABASE.peitoral.slice(0, 1).map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.peitoral, 1).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
     exercises.push(
-      ...EXERCISE_DATABASE.costas.slice(0, 1).map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.costas, 1).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
     // Alternar entre quadríceps e posterior a cada treino
     if (dayIndex % 2 === 0) {
       exercises.push(
-        ...EXERCISE_DATABASE.quadriceps
-          .slice(0, 1)
-          .map(convertTemplateToExercise)
+        ...selectDiverseExercises(EXERCISE_DATABASE.quadriceps, 1).map(
+          (t) => convertTemplateToExercise(t, imc, objective)
+        )
       );
     } else {
       exercises.push(
-        ...EXERCISE_DATABASE["posterior de coxa"]
-          .slice(0, 1)
-          .map(convertTemplateToExercise)
+        ...selectDiverseExercises(EXERCISE_DATABASE["posterior de coxa"], 1).map(
+          (t) => convertTemplateToExercise(t, imc, objective)
+        )
       );
     }
     exercises.push(
-      ...EXERCISE_DATABASE.ombros.slice(0, 1).map(convertTemplateToExercise)
+      ...selectDiverseExercises(EXERCISE_DATABASE.ombros, 1).map(
+        (t) => convertTemplateToExercise(t, imc, objective)
+      )
     );
     // Alternar entre bíceps e tríceps
     if (dayIndex % 2 === 0) {
       exercises.push(
-        ...EXERCISE_DATABASE.biceps.slice(0, 1).map(convertTemplateToExercise)
+        ...selectDiverseExercises(EXERCISE_DATABASE.biceps, 1).map(
+          (t) => convertTemplateToExercise(t, imc, objective)
+        )
       );
     } else {
       exercises.push(
-        ...EXERCISE_DATABASE.triceps.slice(0, 1).map(convertTemplateToExercise)
+        ...selectDiverseExercises(EXERCISE_DATABASE.triceps, 1).map(
+          (t) => convertTemplateToExercise(t, imc, objective)
+        )
       );
     }
   }
@@ -1275,15 +1316,183 @@ function removeExercisesToFitTime(
 }
 
 /**
- * Converte template de exercício para Exercise
+ * Ajusta repetições baseado em IMC e objetivo
+ * Garante que reps estejam adequadas para segurança e eficácia
  */
-function convertTemplateToExercise(template: ExerciseTemplate): Exercise {
+function adjustRepsForIMCAndObjective(
+  baseReps: string,
+  imc?: number,
+  objective?: string
+): string {
+  // Se não há IMC ou objetivo, manter reps originais
+  if (!imc || !objective) {
+    return baseReps;
+  }
+
+  const normalizedObjective = objective.toLowerCase();
+
+  // Extrair faixa de reps (ex: "8-12" → {min: 8, max: 12})
+  const repsMatch = baseReps.match(/(\d+)\s*-\s*(\d+)/);
+  if (!repsMatch) {
+    // Se não conseguir parsear, manter original
+    return baseReps;
+  }
+
+  const baseMin = parseInt(repsMatch[1], 10);
+  const baseMax = parseInt(repsMatch[2], 10);
+
+  // Regras por IMC e objetivo
+  if (imc >= 25 && imc < 30) {
+    // Sobrepeso
+    if (
+      normalizedObjective.includes("emagrec") ||
+      normalizedObjective.includes("perder")
+    ) {
+      // Deve ser 10-15 reps para emagrecimento
+      return "10-15";
+    } else if (
+      normalizedObjective.includes("ganhar") ||
+      normalizedObjective.includes("massa")
+    ) {
+      // Recomposição: 8-12 reps (não 6-8)
+      if (baseMax <= 8) {
+        return "8-12";
+      }
+    }
+  } else if (imc >= 30 && imc < 35) {
+    // Obesidade Grau I
+    if (
+      normalizedObjective.includes("emagrec") ||
+      normalizedObjective.includes("perder")
+    ) {
+      // Deve ser 12-18 reps
+      return "12-18";
+    } else if (
+      normalizedObjective.includes("ganhar") ||
+      normalizedObjective.includes("massa")
+    ) {
+      // Recomposição: 10-15 reps (não menos de 10)
+      if (baseMax < 10) {
+        return "10-15";
+      }
+    }
+  } else if (imc >= 35) {
+    // Obesidade Grau II/III
+    if (
+      normalizedObjective.includes("emagrec") ||
+      normalizedObjective.includes("perder")
+    ) {
+      // Deve ser 15-20 reps
+      return "15-20";
+    } else if (
+      normalizedObjective.includes("ganhar") ||
+      normalizedObjective.includes("massa")
+    ) {
+      // Recomposição: 12-18 reps (nunca menos de 12)
+      if (baseMax < 12) {
+        return "12-18";
+      }
+    }
+  }
+
+  // Se não precisar ajustar, manter original
+  return baseReps;
+}
+
+/**
+ * Seleciona exercícios diversos, evitando múltiplas variações similares
+ */
+function selectDiverseExercises(
+  templates: ExerciseTemplate[],
+  count: number
+): ExerciseTemplate[] {
+  const selected: ExerciseTemplate[] = [];
+  const usedBaseTypes = new Set<string>();
+
+  // Função para extrair tipo base (ex: "supino" de "supino inclinado")
+  const getBaseType = (name: string): string => {
+    const normalized = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    // Padrões conhecidos
+    if (normalized.includes("supino")) return "supino";
+    if (normalized.includes("remada")) return "remada";
+    if (normalized.includes("puxada")) return "puxada";
+    if (normalized.includes("agachamento")) return "agachamento";
+    if (normalized.includes("leg press")) return "leg press";
+    if (normalized.includes("desenvolvimento")) return "desenvolvimento";
+    if (normalized.includes("rosca")) return "rosca";
+    if (normalized.includes("triceps") || normalized.includes("tríceps")) return "triceps";
+    if (normalized.includes("crucifixo")) return "crucifixo";
+    if (normalized.includes("stiff")) return "stiff";
+    if (normalized.includes("rdl")) return "rdl";
+    if (normalized.includes("good morning")) return "good morning";
+    
+    // Fallback: primeira palavra
+    return normalized.split(" ")[0] || normalized;
+  };
+
+  // Priorizar compostos primeiro
+  const compounds = templates.filter((ex) => ex.type === "compound");
+  const isolations = templates.filter(
+    (ex) => ex.type === "isolation" || !ex.type
+  );
+
+  // Selecionar compostos diversos (máximo 3 do mesmo tipo base)
+  for (const ex of compounds) {
+    if (selected.length >= count) break;
+    const baseType = getBaseType(ex.name);
+    const countOfBaseType = Array.from(selected).filter(
+      (s) => getBaseType(s.name) === baseType
+    ).length;
+
+    // Permitir até 2 variações do mesmo tipo base (ex: supino reto + supino inclinado)
+    if (countOfBaseType < 2) {
+      selected.push(ex);
+      usedBaseTypes.add(baseType);
+    }
+  }
+
+  // Completar com isolados se necessário
+  for (const ex of isolations) {
+    if (selected.length >= count) break;
+    const baseType = getBaseType(ex.name);
+    const countOfBaseType = Array.from(selected).filter(
+      (s) => getBaseType(s.name) === baseType
+    ).length;
+
+    // Permitir até 1 isolado do mesmo tipo base
+    if (countOfBaseType < 1) {
+      selected.push(ex);
+    }
+  }
+
+  // Se ainda não tiver o suficiente, completar com qualquer exercício restante
+  const allTemplates = [...compounds, ...isolations];
+  for (const ex of allTemplates) {
+    if (selected.length >= count) break;
+    if (!selected.includes(ex)) {
+      selected.push(ex);
+    }
+  }
+
+  return selected.slice(0, count);
+}
+
+/**
+ * Converte template de exercício para Exercise
+ * Agora aceita IMC e objetivo para ajustar reps
+ */
+function convertTemplateToExercise(
+  template: ExerciseTemplate,
+  imc?: number,
+  objective?: string
+): Exercise {
   return {
     name: template.name,
     primaryMuscle: template.primaryMuscle,
     secondaryMuscles: template.secondaryMuscles,
     sets: template.sets,
-    reps: template.reps,
+    reps: adjustRepsForIMCAndObjective(template.reps, imc, objective),
     rest: template.rest,
     notes: template.notes || "",
   };

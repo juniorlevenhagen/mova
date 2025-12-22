@@ -34,11 +34,7 @@ interface MuscleGroupConfig {
   exercises: ExerciseTemplate[];
 }
 
-interface DayConfig {
-  type: string;
-  largeMuscleGroups: Record<string, MuscleGroupConfig>;
-  smallMuscleGroups: Record<string, MuscleGroupConfig>;
-}
+// DayConfig removido - não utilizado
 
 /* --------------------------------------------------------
    BANCO DE EXERCÍCIOS POR GRUPO MUSCULAR
@@ -706,19 +702,9 @@ export function generateTrainingPlanStructure(
   if (actualDivision === "PPL") {
     // PPL: Push, Pull, Legs (repetir conforme necessário)
     const days = ["Push", "Pull", "Legs"];
-    const dayNames = [
-      "Segunda-feira",
-      "Terça-feira",
-      "Quarta-feira",
-      "Quinta-feira",
-      "Sexta-feira",
-      "Sábado",
-      "Domingo",
-    ];
 
     for (let i = 0; i < trainingDays; i++) {
       const dayType = days[i % days.length];
-      const dayName = dayNames[i] || `Dia ${i + 1}`;
       const dayLabel =
         dayType === "Push"
           ? `Treino ${i < 3 ? "A" : "D"} – Peito/Tríceps`

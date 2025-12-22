@@ -59,6 +59,13 @@ export interface SameTypeDaysCorrectionPayload {
   exerciseCount: number;
 }
 
+export interface LevelDowngradeCorrectionPayload {
+  declaredLevel: string;
+  operationalLevel: string;
+  availableTimeMinutes: number;
+  timeRequired: number;
+}
+
 export type CorrectionPayload =
   | {
       reason: "proteina_ajustada_limite_seguranca";

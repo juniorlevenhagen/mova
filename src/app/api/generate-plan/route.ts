@@ -644,10 +644,10 @@ export async function POST(request: NextRequest) {
               usePrompt = true;
               trialMessage =
                 singlePrompts === 1
-                  ? "1 prompt unitário disponível (sem cooldown)"
-                  : `${singlePrompts} prompts unitários disponíveis (sem cooldown)`;
+                  ? "1 crédito unitário disponível (sem cooldown)"
+                  : `${singlePrompts} créditos unitários disponíveis (sem cooldown)`;
               console.log(
-                `✅ ${singlePrompts} prompt(s) unitário(s) disponível(is) - pode gerar sem cooldown`
+                `✅ ${singlePrompts} crédito(s) unitário(s) disponível(is) - pode gerar sem cooldown`
               );
             } else {
               // Só tem prompts do pacote - precisa aguardar cooldown
@@ -655,7 +655,7 @@ export async function POST(request: NextRequest) {
               const minutes = Math.floor((hoursRemaining - hours) * 60);
               canGenerate = false;
               usePrompt = false;
-              trialMessage = `Aguarde ${hours}h ${minutes}m para gerar um novo plano (cooldown do pacote). Você ainda tem ${packagePrompts} prompt(s) do pacote disponível(is).`;
+              trialMessage = `Aguarde ${hours}h ${minutes}m para gerar um novo plano (cooldown do pacote). Você ainda tem ${packagePrompts} crédito(s) do pacote disponível(is).`;
 
               console.log(
                 `⏳ Cooldown do pacote ativo: ${hoursSinceLastPlan.toFixed(
@@ -669,8 +669,8 @@ export async function POST(request: NextRequest) {
             usePrompt = true;
             trialMessage =
               availablePrompts === 1
-                ? "1 prompt disponível"
-                : `${availablePrompts} prompts disponíveis`;
+                ? "1 crédito disponível"
+                : `${availablePrompts} créditos disponíveis`;
 
             console.log(
               `✅ Cooldown do pacote passou. Pode gerar novo plano (${hoursSinceLastPlan.toFixed(
@@ -686,21 +686,21 @@ export async function POST(request: NextRequest) {
           if (singlePrompts > 0 && packagePrompts > 0) {
             trialMessage =
               singlePrompts === 1
-                ? `1 prompt unitário disponível (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`
-                : `${singlePrompts} prompts unitários disponíveis (sem cooldown). ${packagePrompts} prompt(s) do pacote também disponível(is).`;
+                ? `1 crédito unitário disponível (sem cooldown). ${packagePrompts} crédito(s) do pacote também disponível(is).`
+                : `${singlePrompts} créditos unitários disponíveis (sem cooldown). ${packagePrompts} crédito(s) do pacote também disponível(is).`;
           } else {
             trialMessage =
               availablePrompts === 1
-                ? "1 prompt disponível"
-                : `${availablePrompts} prompts disponíveis`;
+                ? "1 crédito disponível"
+                : `${availablePrompts} créditos disponíveis`;
           }
 
           if (packagePrompts === 0) {
             console.log(
-              `✅ ${availablePrompts} prompt(s) unitário(s) - pode gerar sem cooldown`
+              `✅ ${availablePrompts} crédito(s) unitário(s) - pode gerar sem cooldown`
             );
           } else {
-            console.log("✅ Primeiro plano com prompt do pacote - pode gerar");
+            console.log("✅ Primeiro plano com crédito do pacote - pode gerar");
           }
         }
       } else if (freePlansRemaining > 0) {
@@ -744,7 +744,7 @@ export async function POST(request: NextRequest) {
             error: "TRIAL_LIMIT_REACHED",
             errorCode: "NO_CREDITS",
             message:
-              "Você atingiu o limite de planos gratuitos. Compre prompts para gerar novos planos personalizados!",
+              "Você atingiu o limite de planos gratuitos. Compre créditos para gerar novos planos personalizados!",
             trialMessage,
             actionRequired: "purchase_prompts",
             availablePrompts: 0,

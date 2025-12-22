@@ -257,7 +257,7 @@ export function PromptPurchaseModal({
       <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto relative">
         <div className="mb-6 pr-8">
           <h3 className="text-2xl font-semibold text-gray-900">
-            Comprar Prompts
+            Comprar Créditos
           </h3>
         </div>
         {/* Botão X no canto superior direito */}
@@ -282,7 +282,7 @@ export function PromptPurchaseModal({
         </button>
 
         <p className="text-gray-600 mb-6 text-center">
-          Escolha quantos prompts você precisa para gerar seus planos
+          Escolha quantos créditos você precisa para gerar seus planos
           personalizados
         </p>
 
@@ -314,7 +314,7 @@ export function PromptPurchaseModal({
               </div>
               <div className="flex items-baseline">
                 <span className="text-4xl font-bold text-black">R$ 1,99</span>
-                <span className="text-gray-600 text-sm ml-2">por prompt</span>
+                <span className="text-gray-600 text-sm ml-2">por crédito</span>
               </div>
             </div>
 
@@ -334,7 +334,7 @@ export function PromptPurchaseModal({
                   />
                 </svg>
                 <span className="text-gray-700">
-                  1 prompt para gerar plano personalizado
+                  1 crédito para gerar plano personalizado
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -376,7 +376,7 @@ export function PromptPurchaseModal({
               disabled={loading !== null}
               className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto whitespace-nowrap"
             >
-              {loading === "single" ? "Processando..." : "Comprar 1 Prompt"}
+              {loading === "single" ? "Processando..." : "Comprar 1 Crédito"}
             </button>
           </div>
 
@@ -419,7 +419,7 @@ export function PromptPurchaseModal({
                 <span className="text-gray-600 text-sm ml-2">pacote</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Economia de R$ 13,98 (R$ 13,33 por prompt)
+                Economia de R$ 13,98 (R$ 13,33 por crédito)
               </p>
             </div>
 
@@ -439,7 +439,7 @@ export function PromptPurchaseModal({
                   />
                 </svg>
                 <span className="text-gray-700 font-medium">
-                  3 prompts para gerar planos personalizados
+                  3 créditos para gerar planos personalizados
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -497,7 +497,7 @@ export function PromptPurchaseModal({
             >
               {loading === "triple"
                 ? "Processando..."
-                : "Comprar Pacote (3 Prompts)"}
+                : "Comprar Pacote (3 Créditos)"}
             </button>
           </div>
         </div>

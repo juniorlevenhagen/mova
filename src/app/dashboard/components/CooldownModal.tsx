@@ -159,7 +159,7 @@ export function CooldownModal({
                   Aguarde para Gerar Novo Plano
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Cooldown ativo para uso responsável dos prompts
+                  Cooldown ativo para uso responsável dos créditos
                 </p>
               </div>
             </div>
@@ -236,12 +236,12 @@ export function CooldownModal({
                   </svg>
                   <div className="flex-1">
                     <p className="text-sm text-blue-800 font-medium mb-1">
-                      Você ainda tem {availablePrompts} prompt
+                      Você ainda tem {availablePrompts} crédito
                       {availablePrompts > 1 ? "s" : ""} disponível
                       {availablePrompts > 1 ? "is" : ""}
                     </p>
                     <p className="text-xs text-blue-600">
-                      Seus prompts estão seguros e aguardando o cooldown para
+                      Seus créditos estão seguros e aguardando o cooldown para
                       uso responsável.
                     </p>
                   </div>

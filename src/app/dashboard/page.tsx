@@ -112,13 +112,13 @@ export default function DashboardPage() {
       !hasAvailablePrompts &&
       !canGenerateNew
     ) {
-      // Apenas mostrar plano existente se NÃO há prompts disponíveis E NÃO pode gerar
-      console.log("📌 Mostrando plano existente (sem prompts disponíveis)");
+      // Apenas mostrar plano existente se NÃO há créditos disponíveis E NÃO pode gerar
+      console.log("📌 Mostrando plano existente (sem créditos disponíveis)");
       setShowPlanModal(true);
       return;
     }
 
-    // ✅ Gerar novo plano (tem prompts OU pode gerar)
+    // ✅ Gerar novo plano (tem créditos OU pode gerar)
     console.log("🔄 Gerando novo plano...", {
       hasAvailablePrompts,
       canGenerateNew,
@@ -137,7 +137,7 @@ export default function DashboardPage() {
           const errorMessage = planGenerationError;
           if (
             errorMessage.includes("limite de planos gratuitos") ||
-            errorMessage.includes("Compre prompts")
+            errorMessage.includes("Compre créditos")
           ) {
             console.log(
               "💳 Erro de créditos detectado (via planGenerationError), abrindo modal de compra"
@@ -177,7 +177,7 @@ export default function DashboardPage() {
           ((err as CreditsError).type === "TRIAL_LIMIT_REACHED" ||
             (err instanceof Error &&
               (err.message.includes("limite de planos gratuitos") ||
-                err.message.includes("Compre prompts"))))
+                err.message.includes("Compre créditos"))))
         );
       };
 

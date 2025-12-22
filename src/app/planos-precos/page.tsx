@@ -29,7 +29,7 @@ export default function PlanosPrecosPage() {
       discount: "50%",
       plansIncluded: 1,
       features: [
-        "1 prompt para gerar plano personalizado",
+        "1 crédito para gerar plano personalizado",
         "Acesso ao dashboard completo",
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
@@ -44,7 +44,7 @@ export default function PlanosPrecosPage() {
       discount: "50%",
       plansIncluded: 3,
       features: [
-        "3 prompts para gerar planos personalizados",
+        "3 créditos para gerar planos personalizados",
         "Acesso ao dashboard completo",
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
@@ -353,10 +353,10 @@ export default function PlanosPrecosPage() {
 
             <div className="rounded-[22px] p-6 border-2 border-black bg-white">
               <h3 className="font-bold text-lg text-black mb-3">
-                Posso comprar mais prompts depois?
+                Posso comprar mais créditos depois?
               </h3>
               <p className="text-gray-700">
-                Sim! Você pode comprar prompts adicionais a qualquer momento
+                Sim! Você pode comprar créditos adicionais a qualquer momento
                 pelo dashboard, conforme sua necessidade.
               </p>
             </div>

@@ -109,7 +109,7 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
               {status.availablePrompts > 0 && (
                 <div className="mt-3">
                   <p className="text-sm text-green-700">
-                    Prompts disponíveis:{" "}
+                    Créditos disponíveis:{" "}
                     <span className="font-semibold">
                       {status.availablePrompts}
                     </span>
@@ -205,13 +205,13 @@ export function TrialSection({ status, onBuyPrompts }: TrialSectionProps) {
                 Quer gerar novos planos?
               </h3>
               <p className="text-blue-700 text-sm mb-3">
-                Adquira prompts para liberar novas gerações a qualquer momento.
+                Adquira créditos para liberar novas gerações a qualquer momento.
               </p>
               <button
                 onClick={onBuyPrompts}
                 className="bg-black hover:bg-gray-900 text-white px-4 sm:px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap w-full sm:w-auto"
               >
-                Comprar Prompts
+                Comprar Créditos
               </button>
             </div>
           </div>

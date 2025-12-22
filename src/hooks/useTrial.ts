@@ -209,8 +209,8 @@ export function useTrial(user: User | null) {
               }
             }
           } else {
-            // Não há prompts disponíveis - sempre mostrar mensagem para comprar
-            message = "Compre prompts para gerar novos planos.";
+            // Não há créditos disponíveis - sempre mostrar mensagem para comprar
+            message = "Compre créditos para gerar novos planos.";
           }
 
           const plansRemaining =

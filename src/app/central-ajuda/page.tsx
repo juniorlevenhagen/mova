@@ -28,7 +28,7 @@ const helpCategories = [
       {
         title: "Como começar a usar o Mova+?",
         content:
-          "Após criar sua conta e configurar seu perfil, você pode comprar prompts para gerar planos personalizados. Oferecemos o Plano Básico (1 prompt) ou o Pacote Premium (3 prompts) para você escolher conforme sua necessidade.",
+          "Após criar sua conta e configurar seu perfil, você pode comprar créditos para gerar planos personalizados. Oferecemos o Plano Básico (1 crédito) ou o Pacote Premium (3 créditos) para você escolher conforme sua necessidade.",
       },
       {
         title: "Como configurar meu perfil?",
@@ -45,22 +45,22 @@ const helpCategories = [
       {
         title: "Quais são os planos disponíveis?",
         content:
-          "Oferecemos dois tipos de compra: Plano Básico (R$ 17,99 por 1 prompt) e Pacote Premium (R$ 39,99 por 3 prompts). Cada prompt permite gerar um plano personalizado completo com treinos e nutrição.",
+          "Oferecemos dois tipos de compra: Plano Básico (R$ 17,99 por 1 crédito) e Pacote Premium (R$ 39,99 por 3 créditos). Cada crédito permite gerar um plano personalizado completo com treinos e nutrição.",
       },
       {
         title: "Como funciona a cobrança?",
         content:
-          "A cobrança é única e acontece apenas quando você compra prompts. Não há assinatura mensal ou cobrança automática. Você paga somente pelo que usar, sem compromisso. Os prompts comprados têm validade de 1 ano para uso.",
+          "A cobrança é única e acontece apenas quando você compra créditos. Não há assinatura mensal ou cobrança automática. Você paga somente pelo que usar, sem compromisso. Os créditos comprados têm validade de 1 ano para uso.",
       },
       {
-        title: "Posso comprar mais prompts depois?",
+        title: "Posso comprar mais créditos depois?",
         content:
-          "Sim! Você pode comprar prompts adicionais a qualquer momento pelo dashboard, conforme sua necessidade. Não há limite de compras e você pode acumular prompts para usar quando quiser.",
+          "Sim! Você pode comprar créditos adicionais a qualquer momento pelo dashboard, conforme sua necessidade. Não há limite de compras e você pode acumular créditos para usar quando quiser.",
       },
       {
         title: "Há alguma restrição para gerar planos?",
         content:
-          "Prompts unitários podem ser usados imediatamente. Prompts do Pacote Premium (3 prompts) têm um intervalo de 24 horas entre cada geração de plano. Isso garante que você tenha tempo para seguir o plano antes de gerar um novo.",
+          "Créditos unitários podem ser usados imediatamente. Créditos do Pacote Premium (3 créditos) têm um intervalo de 24 horas entre cada geração de plano. Isso garante que você tenha tempo para seguir o plano antes de gerar um novo.",
       },
       {
         title: "O que está incluído em cada plano gerado?",
@@ -70,12 +70,12 @@ const helpCategories = [
       {
         title: "Quais métodos de pagamento são aceitos?",
         content:
-          "Aceitamos cartões de crédito e débito. O pagamento é processado de forma segura e instantânea através do Stripe. Seu pagamento é processado imediatamente e os prompts são liberados assim que a compra é confirmada.",
+          "Aceitamos cartões de crédito e débito. O pagamento é processado de forma segura e instantânea através do Stripe. Seu pagamento é processado imediatamente e os créditos são liberados assim que a compra é confirmada.",
       },
       {
         title: "O que acontece se eu não usar todos os prompts?",
         content:
-          "Os prompts comprados têm validade de 1 ano. Se você não usar todos os prompts dentro desse período, eles expirarão. Recomendamos usar seus prompts conforme sua necessidade para aproveitar ao máximo seu investimento.",
+          "Os créditos comprados têm validade de 1 ano. Se você não usar todos os créditos dentro desse período, eles expirarão. Recomendamos usar seus créditos conforme sua necessidade para aproveitar ao máximo seu investimento.",
       },
     ],
   },

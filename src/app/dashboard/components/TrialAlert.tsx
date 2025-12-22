@@ -19,7 +19,7 @@ export function TrialAlert({ trialStatus, onUpgrade }: TrialAlertProps) {
     if (onUpgrade) {
       onUpgrade();
     } else {
-      console.log("Comprar prompts clicked");
+      console.log("Comprar créditos clicked");
     }
   };
 
@@ -43,17 +43,17 @@ export function TrialAlert({ trialStatus, onUpgrade }: TrialAlertProps) {
         </div>
         <div className="flex-1">
           <h3 className="text-red-800 font-medium mb-1">
-            Sem prompts disponíveis
+            Sem créditos disponíveis
           </h3>
           <p className="text-red-700 text-sm mb-3">
-            Você não possui prompts disponíveis. Adquira prompts para gerar
+            Você não possui créditos disponíveis. Adquira créditos para gerar
             novos planos personalizados quando quiser.
           </p>
           <button
             onClick={handleUpgrade}
             className="bg-black hover:bg-gray-900 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
           >
-            Comprar Prompts
+            Comprar Créditos
           </button>
         </div>
       </div>

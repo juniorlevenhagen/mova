@@ -201,7 +201,7 @@ export function usePlanGeneration() {
 
           const creditsError = new Error(
             errorData.message ||
-              "Você atingiu o limite de planos gratuitos. Compre prompts para gerar novos planos personalizados!"
+              "Você atingiu o limite de planos gratuitos. Compre créditos para gerar novos planos personalizados!"
           ) as CreditsError;
           creditsError.type = "TRIAL_LIMIT_REACHED";
           creditsError.errorCode = errorData.errorCode || "NO_CREDITS";
@@ -337,7 +337,7 @@ export function usePlanGeneration() {
       // ✅ Verificar se é erro de créditos pela mensagem
       if (
         errorMessage.includes("limite de planos gratuitos") ||
-        errorMessage.includes("Compre prompts")
+        errorMessage.includes("Compre créditos")
       ) {
         throw error; // Relançar erro de créditos
       }

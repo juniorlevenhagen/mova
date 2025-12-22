@@ -89,22 +89,34 @@ export async function POST(request: NextRequest) {
 
         // 4. Excluir histórico de planos (se a tabela existir)
         deletionPromises.push(
-          supabaseAdmin
-            .from("plan_history")
-            .delete()
-            .eq("user_id", userId)
-            .then((result) => result)
-            .catch(() => ({ data: null, error: null }))
+          (async () => {
+            try {
+              return await supabaseAdmin
+                .from("plan_history")
+                .delete()
+                .eq("user_id", userId);
+            } catch (err) {
+              // Ignorar erro se a tabela não existir
+              console.log("Tabela plan_history não encontrada ou erro:", err);
+              return { data: null, error: null };
+            }
+          })()
         );
 
         // 5. Excluir métricas relacionadas (se houver)
         deletionPromises.push(
-          supabaseAdmin
-            .from("plan_rejection_metrics")
-            .delete()
-            .eq("user_id", userId)
-            .then((result) => result)
-            .catch(() => ({ data: null, error: null }))
+          (async () => {
+            try {
+              return await supabaseAdmin
+                .from("plan_rejection_metrics")
+                .delete()
+                .eq("user_id", userId);
+            } catch (err) {
+              // Ignorar erro se a tabela não existir
+              console.log("Tabela plan_rejection_metrics não encontrada ou erro:", err);
+              return { data: null, error: null };
+            }
+          })()
         );
 
         // Executar todas as exclusões

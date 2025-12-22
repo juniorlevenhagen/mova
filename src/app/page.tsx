@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FeaturesSection } from "@/components/ui/FeaturesSection";
 import { HowItWorksSection } from "@/components/ui/HowItWorksSection";
 import { PricingSection } from "@/components/ui/PricingSection";
@@ -10,7 +11,23 @@ import { FAQSection } from "@/components/ui/FAQSection";
 import { Navbar } from "@/components/ui/Navbar";
 import { ScrollGradientText } from "@/components/ui/ScrollGradientText";
 
-export default function Home() {
+function OAuthRedirectHandler() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Detectar código OAuth na URL e redirecionar para callback
+  useEffect(() => {
+    const code = searchParams?.get("code");
+    if (code) {
+      // Redirecionar para /auth/callback com o código
+      router.replace(`/auth/callback?code=${code}`);
+    }
+  }, [searchParams, router]);
+
+  return null;
+}
+
+function HomeContent() {
   const heroRef = useRef<HTMLElement>(null);
   const [isHeroVisible, setIsHeroVisible] = useState(false);
 
@@ -82,5 +99,16 @@ export default function Home() {
       <FAQSection />
       <Footer />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <>
+      <Suspense fallback={null}>
+        <OAuthRedirectHandler />
+      </Suspense>
+      <HomeContent />
+    </>
   );
 }

@@ -179,7 +179,7 @@ export function PromptPurchaseModal({
                   <p className="font-semibold text-gray-900">
                     Cartão de Crédito/Débito
                   </p>
-                  <p className="text-sm text-gray-600">Via Stripe</p>
+                  <p className="text-sm text-gray-600">Aprovação instantânea</p>
                 </div>
               </div>
               <svg

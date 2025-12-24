@@ -316,49 +316,43 @@ export function usePlanGeneration() {
         throw new Error(result.error || "Erro desconhecido");
       }
     } catch (error: unknown) {
-      console.error("❌ Erro ao gerar plano:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Erro desconhecido";
-      setError(errorMessage);
+
+      // ✅ Verificar se é erro de créditos (limite atingido)
+      const isCreditsError =
+        (error &&
+          typeof error === "object" &&
+          "type" in error &&
+          error.type === "TRIAL_LIMIT_REACHED") ||
+        errorMessage.includes("limite de planos gratuitos") ||
+        errorMessage.includes("Compre créditos");
+
+      // ✅ Verificar se é erro de cooldown
+      const isCooldownError =
+        (error &&
+          typeof error === "object" &&
+          "type" in error &&
+          error.type === "COOLDOWN_ACTIVE") ||
+        errorMessage.includes("Aguarde") ||
+        errorMessage.includes("cooldown") ||
+        errorMessage.includes("Cooldown");
+
+      // ✅ Só logar como erro se NÃO for erro de créditos ou cooldown (são tratados e o modal é aberto)
+      if (!isCreditsError && !isCooldownError) {
+        console.error("❌ Erro ao gerar plano:", error);
+        setError(errorMessage);
+      } else {
+        // Para erros de créditos/cooldown, apenas limpar o erro do estado (não mostrar mensagem)
+        setError(null);
+      }
 
       // ✅ Parar loading
       setIsGenerating(false);
 
-      // ✅ Verificar se é erro de créditos (limite atingido)
-      if (
-        error &&
-        typeof error === "object" &&
-        "type" in error &&
-        error.type === "TRIAL_LIMIT_REACHED"
-      ) {
-        throw error; // Relançar erro de créditos para ser tratado no componente
-      }
-
-      // ✅ Verificar se é erro de créditos pela mensagem
-      if (
-        errorMessage.includes("limite de planos gratuitos") ||
-        errorMessage.includes("Compre créditos")
-      ) {
-        throw error; // Relançar erro de créditos
-      }
-
-      // ✅ Relançar erros de cooldown para serem tratados no componente
-      if (
-        error &&
-        typeof error === "object" &&
-        "type" in error &&
-        error.type === "COOLDOWN_ACTIVE"
-      ) {
-        throw error; // Relançar erro de cooldown
-      }
-
-      // ✅ Verificar se é erro de cooldown pela mensagem
-      if (
-        errorMessage.includes("Aguarde") ||
-        errorMessage.includes("cooldown") ||
-        errorMessage.includes("Cooldown")
-      ) {
-        throw error; // Relançar erro de cooldown
+      // ✅ Relançar erros de créditos e cooldown para serem tratados no componente
+      if (isCreditsError || isCooldownError) {
+        throw error; // Relançar erro para ser tratado no componente (modal será aberto)
       }
 
       // ✅ Não re-lançar outros erros - apenas retornar null para indicar falha

@@ -152,15 +152,6 @@ export default function DashboardPage() {
       const errorMessage =
         error instanceof Error ? error.message : "Erro ao gerar plano";
 
-      console.log("🔍 Erro capturado no handleGeneratePlan:", {
-        error,
-        errorMessage,
-        errorType:
-          typeof error === "object" && error !== null && "type" in error
-            ? (error as { type?: string }).type
-            : undefined,
-      });
-
       // ✅ Type guard para erro de créditos
       interface CreditsError extends Error {
         type?: string;
@@ -193,14 +184,7 @@ export default function DashboardPage() {
           "type" in error &&
           (error as { type?: string }).type === "TRIAL_LIMIT_REACHED")
       ) {
-        console.log("💳 Erro de créditos detectado, abrindo modal de compra", {
-          creditsError,
-          errorMessage,
-          errorType:
-            typeof error === "object" && error !== null && "type" in error
-              ? (error as { type?: string }).type
-              : undefined,
-        });
+        // ✅ Erro de créditos detectado - abrir modal sem logar no console
         setShowUpgradeModal(true);
         setPlanError(null); // Limpar qualquer erro anterior
         // Não mostrar erro adicional, o modal já explica
@@ -259,13 +243,6 @@ export default function DashboardPage() {
 
         const availablePrompts =
           cooldownError?.availablePrompts || trialStatus?.availablePrompts || 0;
-
-        console.log("✅ Abrindo modal de cooldown com dados:", {
-          message: errorMessage,
-          hoursRemaining,
-          nextPlanAvailable,
-          availablePrompts,
-        });
 
         setCooldownData({
           message: errorMessage,

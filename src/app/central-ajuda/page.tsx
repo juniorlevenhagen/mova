@@ -70,7 +70,7 @@ const helpCategories = [
       {
         title: "Quais métodos de pagamento são aceitos?",
         content:
-          "Aceitamos cartões de crédito e débito. O pagamento é processado de forma segura e instantânea através do Stripe. Seu pagamento é processado imediatamente e os créditos são liberados assim que a compra é confirmada.",
+          "Aceitamos cartões de crédito e débito e PIX. O pagamento é processado de forma segura e instantânea. Seu pagamento é processado imediatamente e os créditos são liberados assim que a compra é confirmada.",
       },
       {
         title: "O que acontece se eu não usar todos os prompts?",

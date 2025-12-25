@@ -127,9 +127,28 @@ function validateDivisionByFrequency(
     usedDivisions.add(dayType);
   }
 
+  // Log para debug
+  console.log("🔍 Validação de divisão:", {
+    trainingDays,
+    level,
+    isAdvanced,
+    expectedDivisions,
+    usedDivisions: Array.from(usedDivisions),
+    dayTypes: plan.weeklySchedule.map((d) => ({
+      day: d.day,
+      originalType: d.type,
+      normalizedType: normalizeDivisionName(d.type || ""),
+    })),
+  });
+
   // Verificar se todas as divisões usadas são esperadas
   for (const division of usedDivisions) {
     if (!expectedDivisions.includes(division)) {
+      console.warn("❌ Divisão não esperada:", {
+        division,
+        expectedDivisions,
+        usedDivisions: Array.from(usedDivisions),
+      });
       return false; // Divisão incompatível com frequência
     }
   }
@@ -484,7 +503,34 @@ function validateExerciseOrder(day: TrainingDay): boolean {
     if (currentGroupIndex < exerciseGroups.length) {
       // Deve aparecer depois do conjunto anterior
       if (currentGroupIndex < lastGroupIndex) {
-        return false; // Ordem incorreta
+        // Ordem incorreta: aplicar correção automática reagrupando os exercícios
+        const reordered: typeof day.exercises = [];
+        const used = new Set<number>();
+
+        // Adicionar em ordem esperada
+        for (const groupSetInner of expectedOrder) {
+          for (let i = 0; i < day.exercises.length; i++) {
+            if (used.has(i)) continue;
+            const ex = day.exercises[i];
+            const primary = primaryGroup(ex);
+            if (!primary) continue;
+            const normalized = normalize(primary);
+            if (groupSetInner.some((g) => normalize(g) === normalized)) {
+              reordered.push(ex);
+              used.add(i);
+            }
+          }
+        }
+
+        // Adicionar qualquer exercício restante que não casou (fallback)
+        for (let i = 0; i < day.exercises.length; i++) {
+          if (!used.has(i)) {
+            reordered.push(day.exercises[i]);
+          }
+        }
+
+        day.exercises = reordered;
+        return true;
       }
       lastGroupIndex = currentGroupIndex;
     }
@@ -607,6 +653,147 @@ function rejectPlan(
   });
 }
 
+/**
+ * Ajusta séries semanais para respeitar limites antes da validação.
+ * Versão simplificada do ajuste usado no gerador, aplicada a qualquer plano.
+ */
+function adjustWeeklySeriesForValidation(
+  plan: TrainingPlan | null,
+  activityLevel?: string | null
+): TrainingPlan | null {
+  if (!plan?.weeklySchedule) return plan;
+
+  const profile = getTrainingProfile(activityLevel);
+  const normalizeMuscleLocal = (muscle: string): string => {
+    const normalized = normalize(muscle);
+    if (normalized.includes("peito") || normalized.includes("peitoral"))
+      return "peito";
+    if (normalized.includes("costas") || normalized.includes("dorsal"))
+      return "costas";
+    if (normalized.includes("quadriceps") || normalized.includes("quadríceps"))
+      return "quadriceps";
+    if (
+      normalized.includes("posterior") ||
+      normalized.includes("isquiotibiais")
+    )
+      return "posterior";
+    if (
+      normalized.includes("ombro") ||
+      normalized.includes("ombros") ||
+      normalized.includes("deltoide")
+    )
+      return "ombro";
+    if (normalized.includes("triceps") || normalized.includes("tríceps"))
+      return "triceps";
+    if (normalized.includes("biceps") || normalized.includes("bíceps"))
+      return "biceps";
+    if (normalized.includes("gluteo") || normalized.includes("glúteo"))
+      return "gluteos";
+    if (normalized.includes("panturrilha")) return "panturrilhas";
+    return normalized;
+  };
+  const weeklyLimits: Record<string, number> = {
+    peito: profile.weeklySets.large,
+    costas: profile.weeklySets.large,
+    quadriceps: profile.weeklySets.large,
+    posterior: Math.floor(profile.weeklySets.large * 0.8),
+    ombro: profile.weeklySets.small,
+    triceps: profile.weeklySets.small,
+    biceps: profile.weeklySets.small,
+    gluteos: Math.floor(profile.weeklySets.large * 0.6),
+    panturrilhas: Math.floor(profile.weeklySets.small * 0.5),
+  };
+
+  // Passo 1: coletar séries e posições de exercícios
+  const weeklySeries = new Map<string, number>();
+  const muscleExercises = new Map<
+    string,
+    Array<{ dayIndex: number; exerciseIndex: number }>
+  >();
+
+  for (let dayIndex = 0; dayIndex < plan.weeklySchedule.length; dayIndex++) {
+    const day = plan.weeklySchedule[dayIndex];
+    for (
+      let exerciseIndex = 0;
+      exerciseIndex < day.exercises.length;
+      exerciseIndex++
+    ) {
+      const exercise = day.exercises[exerciseIndex];
+      const muscle = normalizeMuscleLocal(exercise.primaryMuscle);
+      const sets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(String(exercise.sets), 10) || 0;
+
+      const current = weeklySeries.get(muscle) || 0;
+      weeklySeries.set(muscle, current + sets);
+
+      if (!muscleExercises.has(muscle)) {
+        muscleExercises.set(muscle, []);
+      }
+      muscleExercises.get(muscle)!.push({ dayIndex, exerciseIndex });
+    }
+  }
+
+  let adjustedPlan = plan;
+  for (const [muscle, totalSeries] of weeklySeries) {
+    const limit = weeklyLimits[muscle];
+    if (!limit || totalSeries <= limit) continue;
+
+    // Deep copy para não mutar o plano original
+    if (adjustedPlan === plan) {
+      adjustedPlan = JSON.parse(JSON.stringify(plan)) as TrainingPlan;
+    }
+
+    const reductionFactor = limit / totalSeries;
+    const exercises = muscleExercises.get(muscle) || [];
+
+    for (const { dayIndex, exerciseIndex } of exercises) {
+      const exercise =
+        adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
+      const currentSets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(String(exercise.sets), 10) || 0;
+
+      const newSets = Math.max(2, Math.round(currentSets * reductionFactor));
+      exercise.sets = newSets;
+    }
+  }
+
+  // Passo 2: validação final — se ainda exceder, clamp direto
+  if (adjustedPlan !== plan) {
+    const checkSeries = new Map<string, number>();
+    for (const day of adjustedPlan.weeklySchedule) {
+      for (const ex of day.exercises) {
+        const muscle = normalizeMuscleLocal(ex.primaryMuscle);
+        const sets =
+          typeof ex.sets === "number"
+            ? ex.sets
+            : parseInt(String(ex.sets), 10) || 0;
+        checkSeries.set(muscle, (checkSeries.get(muscle) || 0) + sets);
+      }
+    }
+    for (const [muscle, totalSeries] of checkSeries) {
+      const limit = weeklyLimits[muscle];
+      if (!limit || totalSeries <= limit) continue;
+      const factor = limit / totalSeries;
+      for (const { dayIndex, exerciseIndex } of muscleExercises.get(muscle) ||
+        []) {
+        const exercise =
+          adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
+        const currentSets =
+          typeof exercise.sets === "number"
+            ? exercise.sets
+            : parseInt(String(exercise.sets), 10) || 0;
+        exercise.sets = Math.max(1, Math.round(currentSets * factor));
+      }
+    }
+  }
+
+  return adjustedPlan;
+}
+
 /* --------------------------------------------------------
    CORREÇÃO AUTOMÁTICA DE PLANOS
 -------------------------------------------------------- */
@@ -718,7 +905,16 @@ export function isTrainingPlanUsable(
     objective?: string; // Novo: objetivo para validação de déficit calórico
   }
 ): boolean {
-  if (!plan?.weeklySchedule || !Array.isArray(plan.weeklySchedule)) {
+  // Ajustar séries para respeitar limites semanais antes de validar
+  const planForValidation = adjustWeeklySeriesForValidation(
+    plan,
+    activityLevel
+  );
+
+  if (
+    !planForValidation?.weeklySchedule ||
+    !Array.isArray(planForValidation.weeklySchedule)
+  ) {
     console.warn("Plano rejeitado: weeklySchedule inválido ou ausente");
     recordPlanRejection("weeklySchedule_invalido", {
       activityLevel: activityLevel || undefined,
@@ -726,22 +922,24 @@ export function isTrainingPlanUsable(
     }).catch(() => {});
     return false;
   }
-  if (plan.weeklySchedule.length !== trainingDays) {
+  if (planForValidation.weeklySchedule.length !== trainingDays) {
     console.warn("Plano rejeitado: número de dias incompatível", {
       expected: trainingDays,
-      received: plan.weeklySchedule.length,
+      received: planForValidation.weeklySchedule.length,
     });
     recordPlanRejection("numero_dias_incompativel", {
       activityLevel: activityLevel || undefined,
       trainingDays,
       expected: trainingDays,
-      received: plan.weeklySchedule.length,
+      received: planForValidation.weeklySchedule.length,
     }).catch(() => {});
     return false;
   }
 
   // Validação de divisão × frequência (hard rule)
-  if (!validateDivisionByFrequency(plan, trainingDays, activityLevel)) {
+  if (
+    !validateDivisionByFrequency(planForValidation, trainingDays, activityLevel)
+  ) {
     console.warn("Plano rejeitado: divisão incompatível com frequência", {
       frequency: trainingDays,
       level: activityLevel,
@@ -755,7 +953,7 @@ export function isTrainingPlanUsable(
   }
 
   // Validação: dias do mesmo tipo devem ter os mesmos exercícios
-  if (!validateSameTypeDaysHaveSameExercises(plan)) {
+  if (!validateSameTypeDaysHaveSameExercises(planForValidation)) {
     return false; // A função já registra a rejeição
   }
 
@@ -766,7 +964,7 @@ export function isTrainingPlanUsable(
   // 4. Frequência × Volume
   if (
     !validateAdvancedRules(
-      plan,
+      planForValidation,
       trainingDays,
       activityLevel,
       context?.objective,
@@ -778,7 +976,9 @@ export function isTrainingPlanUsable(
 
   // Detectar ajuste técnico de divisão (ex: PPL+UL para Atleta 5x)
   const usedDivisions = new Set(
-    plan.weeklySchedule.map((d) => normalizeDivisionName(d.type || ""))
+    planForValidation.weeklySchedule.map((d) =>
+      normalizeDivisionName(d.type || "")
+    )
   );
   if (trainingDays === 5 && usedDivisions.has("upper")) {
     recordPlanCorrection(
@@ -808,9 +1008,9 @@ export function isTrainingPlanUsable(
     "obrigatório para mulher",
   ];
   const allText = (
-    plan.overview +
-    plan.progression +
-    plan.weeklySchedule
+    planForValidation.overview +
+    planForValidation.progression +
+    planForValidation.weeklySchedule
       .map((d) => d.exercises.map((e) => e.notes || "").join(" "))
       .join(" ")
   ).toLowerCase();
@@ -827,7 +1027,7 @@ export function isTrainingPlanUsable(
     }
   }
 
-  for (const day of plan.weeklySchedule) {
+  for (const day of planForValidation.weeklySchedule) {
     if (!day.exercises?.length) {
       console.warn("Plano rejeitado: dia sem exercícios", {
         day: day.day,

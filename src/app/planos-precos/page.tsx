@@ -346,8 +346,8 @@ export default function PlanosPrecosPage() {
                 Qual método de pagamento aceito?
               </h3>
               <p className="text-gray-700">
-                Aceitamos cartões de crédito e débito e PIX. O pagamento é processado
-                de forma segura e instantânea.
+                Aceitamos cartões de crédito e débito e PIX. O pagamento é
+                processado de forma segura e instantânea.
               </p>
             </div>
 

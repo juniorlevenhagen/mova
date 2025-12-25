@@ -155,15 +155,17 @@ function detectMotorPattern(exercise: Exercise): string | null {
   }
 
   // VERTICAL PULL (puxar vertical)
+  // Excluir "Face pull" que é horizontal, não vertical
   if (
-    name.includes("puxada") ||
-    name.includes("pull") ||
-    name.includes("chin-up") ||
-    name.includes("lat pulldown") ||
-    (primary === "costas" &&
-      (name.includes("frente") ||
-        name.includes("atras") ||
-        name.includes("barra fixa")))
+    (name.includes("puxada") ||
+      name.includes("pull") ||
+      name.includes("chin-up") ||
+      name.includes("lat pulldown") ||
+      (primary === "costas" &&
+        (name.includes("frente") ||
+          name.includes("atras") ||
+          name.includes("barra fixa")))) &&
+    !name.includes("face pull")
   ) {
     return "vertical_pull";
   }

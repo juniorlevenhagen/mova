@@ -5,6 +5,7 @@ import {
   isTrainingPlanUsable,
   correctSameTypeDaysExercises,
   type TrainingPlan,
+  type TrainingDay,
 } from "@/lib/validators/trainingPlanValidator";
 import { generateTrainingPlanStructure } from "@/lib/generators/trainingPlanGenerator";
 
@@ -323,13 +324,30 @@ export async function POST(request: NextRequest) {
         });
       } else {
         console.warn(
-          "⚠️ Plano gerado via padrões falhou na validação, tentando via IA..."
+          "⚠️ Plano gerado via padrões falhou na validação. Retornando erro."
         );
-        // Continuar para geração via IA como fallback
+        return NextResponse.json(
+          {
+            error: "TRAINING_PLAN_INVALID",
+            message:
+              "O plano de treino gerado não atendeu às regras de validação. Tente novamente em alguns minutos.",
+          },
+          { status: 500 }
+        );
       }
     }
 
-    // 4) Prompts (fallback para IA se padrões não funcionarem)
+    // Se chegou aqui, USE_PATTERN_GENERATION está desativado (não deveria acontecer)
+    return NextResponse.json(
+      {
+        error: "TRAINING_PLAN_INVALID",
+        message:
+          "O plano de treino gerado não atendeu às regras de validação. Tente novamente em alguns minutos.",
+      },
+      { status: 500 }
+    );
+
+    // 4) Prompts (fallback para IA se padrões não funcionarem) - DESATIVADO
     // NOTA: Este prompt foi simplificado porque a estrutura (exercícios, volume, repetição)
     // é gerada por funções determinísticas. A IA só precisa preencher notas técnicas, overview e progression.
     const systemPrompt = `
@@ -494,12 +512,13 @@ Por favor, corrija o problema acima e gere um plano válido.`;
               daysByType.get(dayType)!.push(day);
             }
 
-            const firstRepeatedType = Array.from(daysByType.entries()).find(
-              ([, days]) => days.length > 1
-            );
+            const firstRepeatedTypeEntry = Array.from(
+              daysByType.entries()
+            ).find(([, days]) => days.length > 1);
 
-            if (firstRepeatedType) {
-              const [dayType, days] = firstRepeatedType;
+            if (firstRepeatedTypeEntry) {
+              const dayType = firstRepeatedTypeEntry![0];
+              const days: TrainingDay[] = firstRepeatedTypeEntry![1];
               recordPlanCorrection(
                 {
                   reason: "same_type_days_exercises",
@@ -646,9 +665,16 @@ Por favor, corrija o problema acima e gere um plano válido.`;
       );
     }
 
+    if (!activePlan) {
+      return NextResponse.json(
+        { error: "Nenhum plano ativo" },
+        { status: 404 }
+      );
+    }
+
     // 6) Salvar no Supabase
     const updated = {
-      ...(activePlan.plan_data || {}),
+      ...(activePlan!.plan_data || {}),
       trainingPlan,
       updated_at: new Date().toISOString(),
     };
@@ -656,7 +682,7 @@ Por favor, corrija o problema acima e gere um plano válido.`;
     const { error: updateError } = await supabase
       .from("user_plans")
       .update({ plan_data: updated })
-      .eq("id", activePlan.id);
+      .eq("id", activePlan!.id);
 
     if (updateError) {
       console.error("Erro ao atualizar plano:", updateError);
@@ -671,7 +697,7 @@ Por favor, corrija o problema acima e gere um plano válido.`;
       success: true,
       trainingPlan,
       alreadyExists: false,
-      planId: activePlan.id,
+      planId: activePlan!.id,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Erro desconhecido";

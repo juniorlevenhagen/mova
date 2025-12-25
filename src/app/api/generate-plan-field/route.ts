@@ -187,14 +187,12 @@ export async function POST(request: NextRequest) {
         userData.objective || undefined
       );
 
-      // Corrigir dias do mesmo tipo
-      const { plan: correctedPlan } =
-        correctSameTypeDaysExercises(generatedPlan);
-
+      // O generateTrainingPlanStructure já retorna o plano com séries ajustadas
+      // Não precisa chamar correctSameTypeDaysExercises novamente, pois já foi chamado dentro
       // Validar (usar o mesmo availableTimeMinutes já calculado)
 
       const isValid = isTrainingPlanUsable(
-        correctedPlan,
+        generatedPlan,
         trainingDays,
         activityLevel,
         availableTimeMinutes
@@ -204,13 +202,20 @@ export async function POST(request: NextRequest) {
         console.log("✅ TrainingPlan gerado via padrões e validado!");
         return NextResponse.json({
           success: true,
-          trainingPlan: correctedPlan,
+          trainingPlan: generatedPlan,
         });
       } else {
         console.warn(
-          "⚠️ TrainingPlan gerado via padrões falhou na validação, usando IA como fallback..."
+          "⚠️ TrainingPlan gerado via padrões falhou na validação. Retornando erro (fallback IA desativado)."
         );
-        // Continuar para geração via IA
+        return NextResponse.json(
+          {
+            error: "TRAINING_PLAN_INVALID",
+            message:
+              "O plano de treino gerado não atende às regras de validação. Tente novamente em alguns minutos.",
+          },
+          { status: 500 }
+        );
       }
     }
 
@@ -372,9 +377,13 @@ Use o NÍVEL DE ATIVIDADE como referência de quantos exercícios/séries o alun
      const n = parseInt(digits, 10);
      return n || 3;
    })()} elementos.
+   - ⚠️ REGRA OBRIGATÓRIA PARA 5 DIAS/SEMANA: SEMPRE use divisão PPL (Push/Pull/Legs) para 5 dias por semana.
+     • Para 5 dias, a divisão DEVE ser: Push, Pull, Legs, Push, Pull (repetindo o ciclo PPL)
+     • NUNCA use Upper/Lower ou Full Body para 5 dias
+     • Os tipos de dia devem ser: "Push", "Pull", "Legs" (ou "Lower" como sinônimo de "Legs")
    - Cada entrada (dia/treino) deve conter:
-     • day: nome do dia ou do treino (ex.: “Treino A – Peito/Tríceps”).
-     • type: “Upper”, “Lower”, “Pull”, “Push”, “Full Body”, “Legs”, etc.
+     • day: nome do dia ou do treino (ex.: "Treino A – Peito/Tríceps").
+     • type: "Upper", "Lower", "Pull", "Push", "Full Body", "Legs", etc.
      • exercises: lista de exercícios com:
        - name: nome do exercício (ex.: “Supino reto com barra”);
        - sets: número de séries (respeitando nível e objetivo);
@@ -395,6 +404,8 @@ Use o NÍVEL DE ATIVIDADE como referência de quantos exercícios/séries o alun
 Seja extremamente específico, detalhado e baseado em evidências, mas SEMPRE retornando um objeto JSON válido para o campo trainingPlan, conforme o schema fornecido.`;
 
       userPrompt = `Gere um plano de treino completo para este usuário:
+
+⚠️ CRÍTICO: Para frequência de 5 dias, a divisão DEVE ser PPL (Push/Pull/Legs). Não use Upper/Lower ou Full Body.
 
 Dados do usuário:
 - Objetivo: ${userData.objective || "Não informado"}

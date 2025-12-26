@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
 }
 
 // GET para validação inicial do Facebook
-export async function GET(request: NextRequest) {
+export async function GET() {
   return NextResponse.json({
     url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://movamais.fit"}/central-ajuda`,
     confirmation_code: "mova_data_deletion",

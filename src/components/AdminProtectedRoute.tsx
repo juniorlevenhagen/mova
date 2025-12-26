@@ -20,20 +20,14 @@ export function AdminProtectedRoute({
     if (!loading) {
       if (!user) {
         // Se não está autenticado, redireciona para login
-        console.log("🔒 Redirecionando para login - usuário não autenticado");
         router.push("/auth/login?redirect=/admin/blog");
         return;
       }
       if (!isAdmin) {
         // Se está autenticado mas não é admin, redireciona para dashboard
-        console.warn("🚫 Acesso negado - usuário não é admin:", {
-          email: user.email,
-          userId: user.id,
-        });
         router.push("/dashboard");
         return;
       }
-      console.log("✅ Acesso permitido - usuário é admin:", user.email);
     }
   }, [isAdmin, loading, user, router]);
 

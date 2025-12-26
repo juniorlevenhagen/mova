@@ -29,24 +29,11 @@ export function useAdminAuth() {
           .maybeSingle();
 
         if (error) {
-          console.error("❌ Erro ao verificar admin:", error);
-          console.error("Detalhes:", {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-          });
+          console.error("Erro ao verificar admin:", error);
           setIsAdmin(false);
         } else if (data?.admin === true) {
-          console.log("✅ Usuário é admin:", user.email);
           setIsAdmin(true);
         } else {
-          console.warn("⚠️ Usuário não é admin:", {
-            email: user.email,
-            userId: user.id,
-            adminValue: data?.admin,
-            dataExists: !!data,
-          });
           setIsAdmin(false);
         }
       } catch (error) {

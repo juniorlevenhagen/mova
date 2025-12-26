@@ -8,11 +8,7 @@
  * - Compatibilidade com déficit calórico
  */
 
-import type {
-  TrainingPlan,
-  TrainingDay,
-  Exercise,
-} from "./trainingPlanValidator";
+import type { TrainingPlan, Exercise } from "./trainingPlanValidator";
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { getTrainingProfile } from "@/lib/profiles/trainingProfiles";
 import { JOINT_RESTRICTION_RULES } from "../generators/contractRules";

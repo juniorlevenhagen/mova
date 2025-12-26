@@ -170,6 +170,8 @@ export default function AdminMetricsPage() {
     if (user) {
       if (activeTab === "rejections") {
         fetchRejectionMetrics(period);
+        // Buscar também dados de qualidade para calcular eficiência corretamente (silenciosamente)
+        fetchQualityMetrics(true);
       } else if (activeTab === "corrections") {
         fetchCorrectionMetrics();
       } else if (activeTab === "quality") {
@@ -243,10 +245,12 @@ export default function AdminMetricsPage() {
     }
   }
 
-  async function fetchQualityMetrics() {
+  async function fetchQualityMetrics(silent = false) {
     try {
-      setLoading(true);
-      setError(null);
+      if (!silent) {
+        setLoading(true);
+        setError(null);
+      }
 
       // Obter token de autenticação
       const {
@@ -267,9 +271,13 @@ export default function AdminMetricsPage() {
       setQualityData(json);
     } catch (err) {
       console.error("Erro ao buscar métricas de qualidade:", err);
-      setError("Não foi possível carregar as métricas de qualidade.");
+      if (!silent) {
+        setError("Não foi possível carregar as métricas de qualidade.");
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }
 
@@ -320,6 +328,7 @@ export default function AdminMetricsPage() {
               onClick={() => {
                 if (activeTab === "rejections") {
                   fetchRejectionMetrics(period);
+                  fetchQualityMetrics(true);
                 } else if (activeTab === "corrections") {
                   fetchCorrectionMetrics();
                 } else if (activeTab === "quality") {
@@ -393,9 +402,31 @@ export default function AdminMetricsPage() {
                     Eficiência da IA
                   </p>
                   <p className="text-2xl font-semibold text-gray-900">
-                    {rejectionData.statistics.total === 0
-                      ? "100%"
-                      : `${Math.max(0, 100 - rejectionData.statistics.total)}%`}
+                    {(() => {
+                      // Calcular eficiência baseada em planos gerados com sucesso vs rejeições
+                      const totalRejections = rejectionData.statistics.total;
+                      const totalSuccessfulPlans =
+                        qualityData?.stats?.total || 0;
+                      const totalAttempts =
+                        totalRejections + totalSuccessfulPlans;
+
+                      // Se não há tentativas registradas, mostrar N/A
+                      if (totalAttempts === 0) {
+                        return "N/A";
+                      }
+
+                      // Calcular eficiência: (sucessos / total de tentativas) * 100
+                      const efficiency = Math.round(
+                        (totalSuccessfulPlans / totalAttempts) * 100
+                      );
+                      return `${efficiency}%`;
+                    })()}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {qualityData?.stats?.total || 0} sucessos /{" "}
+                    {rejectionData.statistics.total +
+                      (qualityData?.stats?.total || 0)}{" "}
+                    tentativas
                   </p>
                 </div>
               </div>

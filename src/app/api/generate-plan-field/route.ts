@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { generateTrainingPlanStructure } from "@/lib/generators/trainingPlanGenerator";
-import {
-  isTrainingPlanUsable,
-  correctSameTypeDaysExercises,
-} from "@/lib/validators/trainingPlanValidator";
+import { isTrainingPlanUsable } from "@/lib/validators/trainingPlanValidator";
 
 const openaiApiKey = process.env.OPENAI_API_KEY!;
 

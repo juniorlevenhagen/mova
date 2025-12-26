@@ -566,6 +566,19 @@ Por favor, corrija o problema acima e gere um plano válido.`;
               )
             : 0;
 
+        // Detectar restrições articulares para validação
+        const hasShoulderRestriction =
+          profile?.limitations &&
+          (profile.limitations.toLowerCase().includes("ombro") ||
+            profile.limitations.toLowerCase().includes("shoulder") ||
+            profile.limitations.toLowerCase().includes("articular") ||
+            profile.limitations.toLowerCase().includes("limitação"));
+
+        const hasKneeRestriction =
+          profile?.limitations &&
+          (profile.limitations.toLowerCase().includes("joelho") ||
+            profile.limitations.toLowerCase().includes("knee"));
+
         const isValid = isTrainingPlanUsable(
           correctedPlan,
           trainingDays,
@@ -577,8 +590,8 @@ Por favor, corrija o problema acima e gere um plano válido.`;
                 gender: profile.gender || "Não informado",
                 age: profile.age || 0,
                 objective: profile.objective || undefined,
-                hasShoulderRestriction: hasJointLimitations,
-                hasKneeRestriction: hasKneeLimitations,
+                hasShoulderRestriction,
+                hasKneeRestriction,
               }
             : undefined
         );

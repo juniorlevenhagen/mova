@@ -177,9 +177,6 @@ export function canAddExerciseToWeek(
         muscle: primaryMuscle,
         current: currentWeeklySeries,
         limit: weeklyLimit,
-        attempted: setsToCheck, // Mostrar séries que seriam usadas
-        wouldBe: newTotal,
-        minSetsPerExercise, // Informar qual mínimo está sendo usado
       },
     };
   }

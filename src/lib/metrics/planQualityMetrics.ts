@@ -94,10 +94,7 @@ export class PlanQualityAccumulator {
   ): void {
     if (result.reasonType === "SOFT" && context.exercise) {
       // Determinar tipo do warning SOFT
-      const warningType = this.determineWarningType(
-        result.reason || "",
-        context.exercise
-      );
+      const warningType = this.determineWarningType(result.reason || "");
 
       this.softWarnings.push({
         exercise: context.exercise,
@@ -183,12 +180,8 @@ export class PlanQualityAccumulator {
   /**
    * Determina o tipo de warning SOFT baseado na razão e no exercício
    */
-  private determineWarningType(
-    reason: string,
-    exercise: Exercise
-  ): SoftWarning["type"] {
+  private determineWarningType(reason: string): SoftWarning["type"] {
     const reasonLower = reason.toLowerCase();
-    const exerciseNameLower = exercise.name.toLowerCase();
 
     if (reasonLower.includes("ombro") || reasonLower.includes("shoulder")) {
       return "joint_shoulder";

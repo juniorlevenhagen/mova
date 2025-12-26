@@ -36,7 +36,9 @@ export type RejectionReason =
   | "excesso_exercicios_sessao"
   | "reps_fora_limites_perfil"
   | "isolador_com_reps_baixas"
-  | "excesso_exercicios_reps_baixas";
+  | "excesso_exercicios_reps_baixas"
+  | "restricao_articular_ombro"
+  | "restricao_articular_joelho";
 
 export interface RejectionMetric {
   reason: RejectionReason;

@@ -5,7 +5,6 @@
  * Movido para arquivo separado para permitir uso em testes e outras partes do código.
  */
 
-import { validateExercisesCountByLevel } from "@/lib/validators/exerciseCountValidator";
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { recordPlanCorrection } from "@/lib/metrics/planCorrectionMetrics";
 import { validateAdvancedRules } from "@/lib/validators/advancedPlanValidator";

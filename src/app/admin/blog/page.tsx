@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,8 +22,7 @@ type BlogPost = {
 };
 
 export default function AdminBlogPage() {
-  const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -40,40 +38,9 @@ export default function AdminBlogPage() {
     postSlug: "",
   });
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth/login?redirect=/admin/blog");
-      return;
-    }
-  }, [user, authLoading, router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchPosts();
-    } else if (!authLoading) {
-      setLoading(false);
-    }
-  }, [user, authLoading]);
-
-  // Não renderizar nada se não estiver autenticado
-  if (!authLoading && !user) {
-    return null;
-  }
-
-  // Mostrar loading enquanto verifica autenticação
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando autenticação...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("blog_posts")
         .select(
@@ -92,7 +59,13 @@ export default function AdminBlogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchPosts();
+    }
+  }, [user, fetchPosts]);
 
   const handleDeleteClick = (id: string, title: string, slug: string) => {
     setDeleteModal({

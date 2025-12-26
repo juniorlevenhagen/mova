@@ -13,6 +13,44 @@ import {
   correctSameTypeDaysExercises,
 } from "@/lib/validators/trainingPlanValidator";
 import { getTrainingProfile } from "@/lib/profiles/trainingProfiles";
+import { detectMotorPattern } from "@/lib/validators/advancedPlanValidator";
+import { adaptUserProfileToConstraints } from "./trainingProfileAdapter";
+import {
+  initDayState,
+  addExerciseSafely,
+  type WeekState,
+} from "./dayStateManager";
+import type { GenerationConstraints } from "./trainingProfileAdapter";
+import {
+  buildApprovalContract,
+  type ApprovalContract,
+} from "./approvalContract";
+import {
+  validateContractIntegrity,
+  validatePlanAgainstContract,
+  validateInvariantProperties,
+} from "./contractValidator";
+import { PlanQualityAccumulator } from "@/lib/metrics/planQualityMetrics";
+import { recordPlanQuality } from "@/lib/metrics/planQualityMetrics";
+
+/* --------------------------------------------------------
+   FUNÇÕES AUXILIARES
+-------------------------------------------------------- */
+
+function normalize(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function normalizeDivisionName(name: string): string {
+  const normalized = normalize(name);
+  // Aceitar "legs" como sinônimo de "lower"
+  if (normalized === "legs") return "lower";
+  return normalized;
+}
 
 /* --------------------------------------------------------
    TIPOS E INTERFACES
@@ -630,93 +668,169 @@ function getVolumeConfig(activityLevel: string): {
  * @param division - Divisão do treino (PPL, Upper/Lower, Full Body)
  * @returns Plano de treino completo e válido
  */
-/**
- * Determina o nível operacional baseado no tempo disponível
- * REGRA-MÃE: O nível não é o declarado, mas sim o possível dentro do tempo
- */
-function getOperationalLevel(
-  declaredLevel: string,
-  availableTimeMinutes?: number
-): string {
-  if (!availableTimeMinutes) {
-    // Se não há tempo informado, usar nível declarado
-    return declaredLevel;
-  }
-
-  const level = declaredLevel
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-  // Mapeamento obrigatório de tempo mínimo por nível
-  if (level.includes("atleta")) {
-    // Atleta exige ≥ 75 minutos
-    if (availableTimeMinutes < 75) {
-      console.log(
-        `⚠️ Nível rebaixado: Atleta declarado, mas tempo disponível (${availableTimeMinutes}min) < 75min necessário. Usando nível Avançado.`
-      );
-      return "Avançado";
-    }
-    return "Atleta";
-  }
-
-  if (level.includes("avancado") || level.includes("avançado")) {
-    // Avançado exige ≥ 60 minutos
-    if (availableTimeMinutes < 60) {
-      console.log(
-        `⚠️ Nível rebaixado: Avançado declarado, mas tempo disponível (${availableTimeMinutes}min) < 60min necessário. Usando nível Intermediário.`
-      );
-      return "Intermediário";
-    }
-    return "Avançado";
-  }
-
-  if (level.includes("intermediario") || level.includes("intermediário")) {
-    // Intermediário exige ≥ 45 minutos
-    if (availableTimeMinutes < 45) {
-      console.log(
-        `⚠️ Nível rebaixado: Intermediário declarado, mas tempo disponível (${availableTimeMinutes}min) < 45min necessário. Usando nível Iniciante.`
-      );
-      return "Iniciante";
-    }
-    return "Intermediário";
-  }
-
-  // Para outros níveis, retornar como está
-  return declaredLevel;
-}
+// getOperationalLevel movido para trainingProfileAdapter.ts
 
 export function generateTrainingPlanStructure(
   trainingDays: number,
   activityLevel: string,
-  division: "PPL" | "Upper/Lower" | "Full Body" = "PPL",
+  division?: "PPL" | "Upper/Lower" | "Full Body", // 🔴 Removido valor padrão para permitir resolução automática
   availableTimeMinutes?: number,
   imc?: number,
-  objective?: string
+  objective?: string,
+  jointLimitations?: boolean, // 🥇 Passo 1: Restrição de ombro
+  kneeLimitations?: boolean // 🔴 Restrição de joelho
 ): TrainingPlan {
-  // 🔥 REGRA-MÃE: Determinar nível operacional baseado em tempo
-  const operationalLevel = getOperationalLevel(
+  // 📊 NOVO: Criar acumulador de qualidade para rastrear warnings SOFT/FLEXIBLE
+  const qualityAccumulator = new PlanQualityAccumulator();
+  // 🔥 NOVO: Obter constraints do ProfileAdapter (substitui lógica espalhada)
+  // 🔴 Passar division apenas se fornecida explicitamente (não undefined)
+  const constraints = adaptUserProfileToConstraints({
     activityLevel,
-    availableTimeMinutes
+    frequency: trainingDays,
+    ...(division !== undefined && { division }), // Só incluir division se não for undefined
+    availableTimeMinutes,
+    imc,
+    objective,
+    jointLimitations, // 🥇 Passo 1: Restrição de ombro
+    kneeLimitations, // 🔴 Restrição de joelho
+  });
+
+  // 🎯 NOVO: Construir ApprovalContract ANTES de gerar qualquer exercício
+  // O contrato consolida TODAS as regras do validador para consulta antecipada
+  const approvalContract = buildApprovalContract(
+    constraints,
+    trainingDays,
+    activityLevel,
+    objective,
+    imc,
+    jointLimitations,
+    kneeLimitations
   );
+
+  // 🔒 VALIDAÇÃO DE INTEGRIDADE DO CONTRATO (antes de gerar)
+  // ⚠️ IMPORTANTE: Esta validação apenas detecta bugs/inconsistências, não bloqueia geração
+  const contractValidation = validateContractIntegrity(approvalContract);
+  if (!contractValidation.valid) {
+    console.error(
+      `❌ [CONTRACT VALIDATION] Erros no ApprovalContract antes da geração (indicam bugs):`,
+      contractValidation.errors
+    );
+    // Não bloquear geração - se o contrato está mal formado, o gerador pode tentar continuar
+    // mas isso indica um bug que precisa ser corrigido
+  }
+  if (contractValidation.warnings.length > 0) {
+    console.warn(
+      `⚠️ [CONTRACT VALIDATION] Avisos no ApprovalContract (podem ser intencionais):`,
+      contractValidation.warnings
+    );
+  }
+
+  // Usar divisão do adapter (não mais fallback)
+  const actualDivision = constraints.division;
+  const operationalLevel = constraints.operationalLevel;
   const volumeConfig = getVolumeConfig(operationalLevel);
   const weeklySchedule: TrainingDay[] = [];
 
-  // Determinar divisão baseada na frequência e nível operacional
-  let actualDivision = division;
-  // 🔥 REGRA OBRIGATÓRIA: Para 5 dias, SEMPRE usar PPL (independente do nível)
-  if (trainingDays === 5) {
-    actualDivision = "PPL"; // PPL 5x para todos os níveis
-  } else if (trainingDays <= 3) {
-    actualDivision = "Full Body";
-  } else if (trainingDays === 4) {
-    actualDivision = "Upper/Lower";
+  // 🔴 CORREÇÃO ESTRUTURAL: Calcular limites semanais ANTES de gerar qualquer dia
+  // Detectar déficit calórico para ajustar limites
+  const obj = normalize(objective || "");
+  const isEmagrecimento =
+    obj.includes("emagrec") || obj.includes("perder") || obj.includes("queima");
+  const isRecomposicao = !!(
+    imc &&
+    imc >= 25 &&
+    (obj.includes("ganhar") || obj.includes("massa"))
+  );
+  const hasDeficit = isEmagrecimento || isRecomposicao;
+  const deficitMultiplier = hasDeficit ? 0.7 : 1.0;
+
+  // Normalizar músculo (mesma função do validador)
+  const normalizeMuscle = (muscle: string): string => {
+    const normalized = muscle
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+    if (normalized.includes("peito") || normalized.includes("peitoral"))
+      return "peito";
+    if (normalized.includes("costas") || normalized.includes("dorsal"))
+      return "costas";
+    if (normalized.includes("quadriceps") || normalized.includes("quadríceps"))
+      return "quadriceps";
+    if (
+      normalized.includes("posterior") ||
+      normalized.includes("isquiotibiais")
+    )
+      return "posterior";
+    if (normalized.includes("ombro") || normalized.includes("deltoide"))
+      return "ombro";
+    if (normalized.includes("triceps") || normalized.includes("tríceps"))
+      return "triceps";
+    if (normalized.includes("biceps") || normalized.includes("bíceps"))
+      return "biceps";
+    if (normalized.includes("gluteo") || normalized.includes("glúteo"))
+      return "gluteos";
+    if (normalized.includes("panturrilha")) return "panturrilhas";
+    return normalized;
+  };
+
+  // Criar weekState com limites semanais FIXADOS ANTES da geração
+  const weeklySeriesLimitsAdjusted = {
+    peito: Math.floor(constraints.weeklySeriesLimits.peito * deficitMultiplier),
+    costas: Math.floor(
+      constraints.weeklySeriesLimits.costas * deficitMultiplier
+    ),
+    quadriceps: Math.floor(
+      constraints.weeklySeriesLimits.quadriceps * deficitMultiplier
+    ),
+    posterior: Math.floor(
+      constraints.weeklySeriesLimits.posterior * deficitMultiplier
+    ),
+    ombro: Math.floor(constraints.weeklySeriesLimits.ombro * deficitMultiplier),
+    triceps: Math.floor(
+      constraints.weeklySeriesLimits.triceps * deficitMultiplier
+    ),
+    biceps: Math.floor(
+      constraints.weeklySeriesLimits.biceps * deficitMultiplier
+    ),
+    gluteos: constraints.weeklySeriesLimits.gluteos
+      ? Math.floor(constraints.weeklySeriesLimits.gluteos * deficitMultiplier)
+      : 0,
+    panturrilhas: constraints.weeklySeriesLimits.panturrilhas
+      ? Math.floor(
+          constraints.weeklySeriesLimits.panturrilhas * deficitMultiplier
+        )
+      : 0,
+  };
+
+  if (hasDeficit) {
+    console.log(
+      `🔴 [WEEKSTATE] Limites semanais ajustados para déficit (×${deficitMultiplier}):`,
+      {
+        peito: `${constraints.weeklySeriesLimits.peito} → ${weeklySeriesLimitsAdjusted.peito}`,
+        costas: `${constraints.weeklySeriesLimits.costas} → ${weeklySeriesLimitsAdjusted.costas}`,
+        quadriceps: `${constraints.weeklySeriesLimits.quadriceps} → ${weeklySeriesLimitsAdjusted.quadriceps}`,
+        ombro: `${constraints.weeklySeriesLimits.ombro} → ${weeklySeriesLimitsAdjusted.ombro}`,
+      }
+    );
   }
+
+  const weekState: WeekState = {
+    muscleWeeklySeries: new Map<string, number>(),
+    weeklySeriesLimits: weeklySeriesLimitsAdjusted,
+  };
 
   // Gerar dias baseado na divisão
   if (actualDivision === "PPL") {
-    // PPL: Push, Pull, Legs (repetir conforme necessário)
+    // 🥉 Passo 3: PPL - Criar pplState para variação leve entre dias do mesmo tipo
     const days = ["Push", "Pull", "Legs"];
+
+    // Rastrear exercícios já usados por tipo de dia (Push/Pull/Legs)
+    const pplState: Record<string, Set<string>> = {
+      Push: new Set(),
+      Pull: new Set(),
+      Legs: new Set(),
+    };
 
     for (let i = 0; i < trainingDays; i++) {
       const dayType = days[i % days.length];
@@ -727,16 +841,34 @@ export function generateTrainingPlanStructure(
             ? `Treino ${i < 3 ? "B" : "E"} – Costas/Bíceps`
             : `Treino ${i < 3 ? "C" : ""} – Pernas`;
 
+      // 🥉 Passo 3: Contar quantas vezes este tipo de dia já foi gerado
+      const dayTypeCount = Math.floor(i / days.length);
+      const isFirstOccurrence = dayTypeCount === 0;
+
       const exercises = generateDayExercises(
         dayType,
         volumeConfig,
-        i % days.length, // Usar o índice do tipo para garantir repetição
+        i % days.length,
         availableTimeMinutes,
         operationalLevel,
         imc,
         objective,
-        activityLevel
+        activityLevel,
+        constraints,
+        undefined, // weekState não usado em PPL (mas vamos usar o weekState semanal)
+        pplState, // 🥉 Passo 3: Passar pplState para variação leve
+        isFirstOccurrence, // 🥉 Passo 3: Indicar se é primeira ocorrência
+        weekState, // 🔴 NOVO: Passar weekState para verificar limites semanais
+        approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
+        qualityAccumulator // 📊 NOVO: Passar acumulador de qualidade
       );
+
+      // 🥉 Passo 3: Atualizar pplState com exercícios adicionados (apenas se não for primeira ocorrência)
+      if (!isFirstOccurrence) {
+        for (const exercise of exercises) {
+          pplState[dayType].add(exercise.name);
+        }
+      }
 
       weeklySchedule.push({
         day: dayLabel,
@@ -760,12 +892,19 @@ export function generateTrainingPlanStructure(
       const exercises = generateDayExercises(
         dayType,
         volumeConfig,
-        i % days.length,
+        i, // ✅ CORREÇÃO: Passar i (índice real) em vez de i % days.length para contar dias Lower corretamente
         availableTimeMinutes,
         operationalLevel,
         imc,
         objective,
-        activityLevel
+        activityLevel,
+        constraints,
+        undefined, // weekState não usado em Upper/Lower
+        undefined, // pplState não usado
+        undefined, // isFirstOccurrence não usado
+        weekState, // 🔴 NOVO: Passar weekState para verificar limites semanais
+        approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
+        qualityAccumulator // 📊 NOVO: Passar acumulador de qualidade
       );
 
       weeklySchedule.push({
@@ -775,21 +914,66 @@ export function generateTrainingPlanStructure(
       });
     }
   } else {
-    // Full Body
+    // 🥈 Passo 2: Full Body - Criar weekState para evitar repetição
     const dayNames = ["Segunda-feira", "Terça-feira", "Quarta-feira"];
+
+    // Rastrear exercícios já usados na semana por grupo muscular
+    const exerciseWeekState: Record<string, Set<string>> = {
+      peitoral: new Set(),
+      costas: new Set(),
+      quadriceps: new Set(),
+      "posterior de coxa": new Set(),
+      posterior: new Set(),
+      ombros: new Set(),
+      biceps: new Set(),
+      triceps: new Set(),
+    };
 
     for (let i = 0; i < trainingDays; i++) {
       const dayName = dayNames[i] || `Dia ${i + 1}`;
       const exercises = generateDayExercises(
         "Full Body",
         volumeConfig,
-        0,
+        i, // 🥈 Passo 2: Passar dayIndex correto
         availableTimeMinutes,
         operationalLevel,
         imc,
         objective,
-        activityLevel
+        activityLevel,
+        constraints,
+        exerciseWeekState, // 🥈 Passo 2: Passar exerciseWeekState para evitar repetição (exercícios)
+        undefined, // pplState não usado
+        undefined, // isFirstOccurrence não usado
+        weekState, // 🔴 NOVO: Passar weekState para verificar limites semanais (séries)
+        approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
+        qualityAccumulator // 📊 NOVO: Passar acumulador de qualidade
       );
+
+      // 🥈 Passo 2: Atualizar exerciseWeekState com exercícios adicionados
+      for (const exercise of exercises) {
+        const muscle = normalize(exercise.primaryMuscle);
+        // Mapear variações de nomes para chaves do exerciseWeekState
+        const muscleKey =
+          muscle.includes("peito") || muscle.includes("peitoral")
+            ? "peitoral"
+            : muscle.includes("costa")
+              ? "costas"
+              : muscle.includes("quadricep")
+                ? "quadriceps"
+                : muscle.includes("posterior") || muscle.includes("coxa")
+                  ? "posterior"
+                  : muscle.includes("ombro")
+                    ? "ombros"
+                    : muscle.includes("biceps")
+                      ? "biceps"
+                      : muscle.includes("triceps")
+                        ? "triceps"
+                        : muscle;
+
+        if (exerciseWeekState[muscleKey]) {
+          exerciseWeekState[muscleKey].add(exercise.name);
+        }
+      }
 
       weeklySchedule.push({
         day: `${dayName} – Corpo Inteiro`,
@@ -809,8 +993,46 @@ export function generateTrainingPlanStructure(
 
   const { plan: correctedPlan } = correctSameTypeDaysExercises(plan);
 
-  // 🔥 AJUSTAR SÉRIES PARA RESPEITAR LIMITES SEMANAIS
-  const adjustedPlan = adjustWeeklySeriesToLimits(correctedPlan, activityLevel);
+  // 🔥 LIMITES SEMANAIS JÁ SÃO APLICADOS DURANTE A GERAÇÃO VIA addExerciseSafely
+  // Não é necessário ajustar novamente após a geração
+
+  // 🔒 VALIDAÇÃO DE INTEGRIDADE DO PLANO GERADO (após geração)
+  // ⚠️ IMPORTANTE: Esta validação apenas detecta bugs, não substitui o validador principal
+  // Se o ApprovalContract foi usado corretamente, essas violações indicam bugs no gerador
+  const planIntegrity = validatePlanAgainstContract(
+    correctedPlan,
+    approvalContract,
+    weekState
+  );
+  if (!planIntegrity.valid) {
+    console.error(
+      `❌ [PLAN INTEGRITY] Violações HARD detectadas (indicam bugs no gerador):`,
+      planIntegrity.violations.filter((v) => v.type === "HARD")
+    );
+    // Não bloquear retorno - o validador principal fará a validação final
+    // Estas violações são para debug/métricas, não para bloquear geração
+  }
+
+  // 🔒 VALIDAÇÃO DE PROPRIEDADES INVARIANTES (apenas matemáticas puras)
+  // ⚠️ IMPORTANTE: Apenas detecta bugs matemáticos, não revalida regras de negócio
+  const invariantValidation = validateInvariantProperties(
+    correctedPlan,
+    approvalContract
+  );
+  if (!invariantValidation.valid) {
+    console.error(
+      `❌ [INVARIANT VALIDATION] Bugs matemáticos detectados:`,
+      invariantValidation.errors
+    );
+    // Não bloquear retorno - estas são propriedades matemáticas que não deveriam ser violadas
+    // Se violadas, indicam bugs no código, não problemas de regras
+  }
+  if (invariantValidation.warnings.length > 0) {
+    console.warn(
+      `⚠️ [INVARIANT VALIDATION] Avisos FLEXIBLE (não bloqueiam):`,
+      invariantValidation.warnings
+    );
+  }
 
   // 🔥 VALIDAÇÃO PÓS-GERAÇÃO OBRIGATÓRIA
   // Registrar métrica de rebaixamento se houve mudança de nível (async, não bloqueia retorno)
@@ -844,12 +1066,26 @@ export function generateTrainingPlanStructure(
       .catch(() => {});
   }
 
-  return adjustedPlan;
+  // 📊 NOVO: Gerar e persistir métrica de qualidade (async, não bloqueia retorno)
+  const qualityContext = {
+    imc: imc || 0,
+    gender: "Não informado", // Será preenchido pelo caller se disponível
+    activityLevel: operationalLevel,
+    age: 0, // Será preenchido pelo caller se disponível
+    objective: objective || undefined,
+    trainingDays,
+  };
+  const qualityMetric = qualityAccumulator.generateMetric(qualityContext);
+  recordPlanQuality(qualityMetric).catch(() => {}); // Não bloquear retorno
+
+  return correctedPlan;
 }
 
 /**
  * Gera exercícios para um dia específico
  * Garante que compostos venham antes de isoladores dentro de cada grupo
+ *
+ * NOVO: Usa DayState e constraints para validação em tempo real
  */
 function generateDayExercises(
   dayType: string,
@@ -859,9 +1095,286 @@ function generateDayExercises(
   operationalLevel?: string,
   imc?: number,
   objective?: string,
-  activityLevel?: string
+  activityLevel?: string,
+  constraints?: GenerationConstraints,
+  weekState?: Record<string, Set<string>>, // 🥈 Passo 2: WeekState para Full Body (exercícios usados)
+  pplState?: Record<string, Set<string>>, // 🥉 Passo 3: PPLState para variação leve
+  isFirstOccurrence?: boolean, // 🥉 Passo 3: Se é primeira ocorrência do tipo de dia
+  weeklySeriesState?: WeekState, // 🔴 NOVO: Estado semanal para limites de séries
+  approvalContract?: ApprovalContract, // 🎯 NOVO: Contrato de aprovação para consulta antecipada
+  qualityAccumulator?: PlanQualityAccumulator // 📊 NOVO: Acumulador de qualidade
 ): Exercise[] {
   let exercises: Exercise[] = [];
+
+  // 🔥 NOVO: Inicializar DayState se constraints fornecidas
+  const dayState = constraints ? initDayState(dayType, constraints) : null;
+
+  // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+  // As funções filterKneeExercises e filterShoulderExercises foram removidas
+  // O ApprovalContract.canAddExercise verifica restrições por padrão motor
+
+  // 🔴 Helper para normalizar músculo (usado em addTemplatesSafely)
+  const normalizeMuscle = (muscle: string): string => {
+    const normalized = muscle
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+    if (normalized.includes("peito") || normalized.includes("peitoral"))
+      return "peito";
+    if (normalized.includes("costas") || normalized.includes("dorsal"))
+      return "costas";
+    if (normalized.includes("quadriceps") || normalized.includes("quadríceps"))
+      return "quadriceps";
+    if (
+      normalized.includes("posterior") ||
+      normalized.includes("isquiotibiais")
+    )
+      return "posterior";
+    if (normalized.includes("ombro") || normalized.includes("deltoide"))
+      return "ombro";
+    if (normalized.includes("triceps") || normalized.includes("tríceps"))
+      return "triceps";
+    if (normalized.includes("biceps") || normalized.includes("bíceps"))
+      return "biceps";
+    if (normalized.includes("gluteo") || normalized.includes("glúteo"))
+      return "gluteos";
+    if (normalized.includes("panturrilha")) return "panturrilhas";
+    return normalized;
+  };
+
+  // 🥉 Passo 3: Helper para seleção com variação leve em PPL
+  const selectWithPPLVariation = (
+    database: ExerciseTemplate[],
+    count: number
+  ): ExerciseTemplate[] => {
+    // Se não há pplState ou é primeira ocorrência, usar seleção normal
+    if (!pplState || !dayType || isFirstOccurrence) {
+      return selectDiverseExercises(database, count);
+    }
+
+    // Se não há estado para este tipo de dia, usar seleção normal
+    if (!pplState[dayType]) {
+      return selectDiverseExercises(database, count);
+    }
+
+    // Filtrar exercícios já usados neste tipo de dia
+    const usedNames = pplState[dayType];
+    const available = database.filter((ex) => !usedNames.has(ex.name));
+
+    // Se há exercícios disponíveis, usar eles (variação leve)
+    if (available.length >= count) {
+      return selectDiverseExercises(available, count);
+    }
+
+    // Se não há exercícios suficientes disponíveis, usar todos (permitir repetição)
+    // Isso é "variação leve" - tenta variar, mas não é obrigatório
+    if (available.length > 0) {
+      // Usar os disponíveis + alguns já usados se necessário
+      const selected = selectDiverseExercises(available, available.length);
+      const stillNeeded = count - selected.length;
+      if (stillNeeded > 0) {
+        const used = database.filter((ex) => usedNames.has(ex.name));
+        const additional = selectDiverseExercises(used, stillNeeded);
+        return [...selected, ...additional];
+      }
+      return selected;
+    }
+
+    // Se não há nenhum disponível, usar todos (reset)
+    return selectDiverseExercises(database, count);
+  };
+
+  // 🔥 NOVO: Helper para adicionar templates com validação
+  // constraints e dayState são OBRIGATÓRIOS (sempre vêm do ProfileAdapter)
+  // 🔴 NOVO: Verifica limites semanais ANTES de adicionar
+  const addTemplatesSafely = (
+    templates: ExerciseTemplate[],
+    logGroup?: string
+  ) => {
+    if (!dayState || !constraints) {
+      throw new Error(
+        "DayState e constraints são obrigatórios. Verifique se adaptUserProfileToConstraints foi chamado."
+      );
+    }
+
+    // 🎯 NOVO: Consultar ApprovalContract ANTES de processar templates
+    // ✅ CORREÇÃO 1: Corte por sessão ANTES de processar templates
+    if (dayState.exercises.length >= constraints.maxExercisesPerSession) {
+      if (logGroup) {
+        console.warn(
+          `⚠️ [${logGroup}] Parando adição: limite de ${constraints.maxExercisesPerSession} exercícios por sessão atingido (atual: ${dayState.exercises.length})`
+        );
+      }
+      return; // Parar imediatamente, não processar mais templates
+    }
+
+    // 🔴 Calcular minSetsPerExercise baseado em déficit calórico
+    const obj = normalize(objective || "");
+    const isEmagrecimento =
+      obj.includes("emagrec") ||
+      obj.includes("perder") ||
+      obj.includes("queima");
+    const isRecomposicao = !!(
+      imc &&
+      imc >= 25 &&
+      (obj.includes("ganhar") || obj.includes("massa"))
+    );
+    const hasDeficit = isEmagrecimento || isRecomposicao;
+    const minSetsPerExercise = hasDeficit ? 1 : 2; // 1 série em déficit, 2 normalmente
+
+    // 🎯 NOVO: Consultar ApprovalContract ANTES de selecionar templates
+    // ✅ CORREÇÃO 2: Verificar capacidade semanal ANTES de selecionar templates
+    // Filtrar templates que não podem ser adicionados por falta de capacidade semanal
+    const templatesWithCapacity: ExerciseTemplate[] = [];
+    for (const template of templates) {
+      if (weeklySeriesState && approvalContract) {
+        const primaryMuscle = normalizeMuscle(template.primaryMuscle);
+        const currentWeeklySeries =
+          weeklySeriesState.muscleWeeklySeries.get(primaryMuscle) || 0;
+
+        // 🎯 Consultar ApprovalContract para verificar se pode adicionar exercício à semana
+        const weekCheck = approvalContract.canAddExerciseToWeek(
+          primaryMuscle,
+          minSetsPerExercise, // Usar séries mínimas para verificação conservadora
+          weeklySeriesState.muscleWeeklySeries
+        );
+
+        if (!weekCheck.allowed) {
+          // Não há capacidade semanal suficiente, pular este template
+          if (logGroup) {
+            console.warn(
+              `⚠️ [${logGroup}] Template ${template.name} pulado: ${weekCheck.reason || "capacidade semanal insuficiente"}`
+            );
+          }
+          continue;
+        }
+      } else if (weeklySeriesState) {
+        // Fallback para lógica antiga se não houver contrato
+        const primaryMuscle = normalizeMuscle(template.primaryMuscle);
+        const currentWeeklySeries =
+          weeklySeriesState.muscleWeeklySeries.get(primaryMuscle) || 0;
+        const weeklyLimit = weeklySeriesState.weeklySeriesLimits[primaryMuscle];
+
+        if (weeklyLimit) {
+          const remainingWeeklyCapacity = weeklyLimit - currentWeeklySeries;
+          if (remainingWeeklyCapacity < minSetsPerExercise) {
+            // Não há capacidade semanal suficiente, pular este template
+            if (logGroup) {
+              console.warn(
+                `⚠️ [${logGroup}] Template ${template.name} pulado: capacidade semanal insuficiente (${remainingWeeklyCapacity} < ${minSetsPerExercise})`
+              );
+            }
+            continue;
+          }
+        }
+      }
+      templatesWithCapacity.push(template);
+    }
+
+    // Processar apenas templates com capacidade semanal
+    for (const template of templatesWithCapacity) {
+      // ✅ CORREÇÃO 1 (repetida): Verificar limite de sessão antes de cada exercício
+      if (dayState.exercises.length >= constraints.maxExercisesPerSession) {
+        if (logGroup) {
+          console.warn(
+            `⚠️ [${logGroup}] Parando adição: limite de ${constraints.maxExercisesPerSession} exercícios por sessão atingido`
+          );
+        }
+        break; // Parar loop, não adicionar mais exercícios
+      }
+
+      const exercise = convertTemplateToExercise(
+        template,
+        imc,
+        objective,
+        activityLevel,
+        hasDeficit // ✅ CORREÇÃO 3: Passar hasDeficit para forçar séries = 1
+      );
+
+      // 🎯 NOVO: Consultar ApprovalContract ANTES de adicionar exercício
+      // 🔒 HARD RULE: Verificar restrições articulares e limites semanais
+      if (approvalContract && weeklySeriesState) {
+        // 1. Verificar restrições articulares e limites de sessão/padrão motor
+        const patternCounts = new Map<string, number>();
+        for (const ex of dayState.exercises) {
+          const pattern = detectMotorPattern(ex);
+          if (pattern && pattern !== "unknown") {
+            patternCounts.set(pattern, (patternCounts.get(pattern) || 0) + 1);
+          }
+        }
+
+        const sessionCheck = approvalContract.canAddExercise(exercise, {
+          currentDayExercises: dayState.exercises.length,
+          currentPatternCounts: patternCounts,
+        });
+
+        // 🔒 HARD: Rejeitar (nunca permitir)
+        if (!sessionCheck.allowed && sessionCheck.reasonType === "HARD") {
+          if (logGroup) {
+            console.warn(
+              `⚠️ [${logGroup}] Exercício ${exercise.name} rejeitado pelo contrato (HARD): ${sessionCheck.reason}`
+            );
+          }
+          continue; // Pular este exercício, não adicionar
+        }
+
+        // 📊 SOFT: Não bloqueia, mas indica preferência por evitar
+        // O gerador deve PREFERIR exercícios alternativos quando possível
+        // Se não houver alternativa, permite com warning (nunca bloqueia a geração)
+        if (sessionCheck.allowed && sessionCheck.reasonType === "SOFT") {
+          // ✅ SOFT permite adicionar, mas o gerador já prioriza alternativas
+          // (separação por padrão motor já faz isso - ex: ombrosNonVerticalPush vs ombrosVerticalPush)
+          // Se chegou aqui, não havia alternativa melhor disponível
+          if (logGroup) {
+            console.warn(
+              `⚠️ [${logGroup}] ${sessionCheck.reason} (adicionando por falta de alternativa melhor)`
+            );
+          }
+          // 📊 NOVO: Registrar warning SOFT no acumulador
+          if (qualityAccumulator) {
+            qualityAccumulator.register(sessionCheck, { exercise });
+          }
+          // Continuar adicionando (SOFT não bloqueia a geração do plano)
+        }
+
+        // 2. Verificar limites semanais
+        const primaryMuscle = normalizeMuscle(exercise.primaryMuscle);
+        const weekCheck = approvalContract.canAddExerciseToWeek(
+          primaryMuscle,
+          exercise.sets,
+          weeklySeriesState.muscleWeeklySeries
+        );
+
+        if (!weekCheck.allowed) {
+          if (logGroup) {
+            console.warn(
+              `⚠️ [${logGroup}] Exercício ${exercise.name} rejeitado pelo contrato (limite semanal): ${weekCheck.reason}`
+            );
+          }
+          continue; // Pular este exercício, não adicionar
+        }
+      }
+
+      const result = addExerciseSafely(
+        exercise,
+        dayState,
+        constraints,
+        exercises,
+        {
+          logRejections: true,
+          logLevel: "warn",
+          weekState: weeklySeriesState, // 🔴 NOVO: Passar weekState para verificar limites semanais
+          minSetsPerExercise, // 🔴 NOVO: Passar minSetsPerExercise para considerar mínimo em déficit
+        }
+      );
+      if (!result.allowed && logGroup) {
+        console.warn(
+          `⚠️ [${logGroup}] Exercício ${exercise.name} rejeitado: ${result.reason}`
+        );
+      }
+    }
+  };
 
   // Função auxiliar para ordenar: compostos primeiro, depois isoladores
   const sortByType = (templates: ExerciseTemplate[]): ExerciseTemplate[] => {
@@ -883,12 +1396,49 @@ function generateDayExercises(
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "");
 
+    // Excluir leg press e outros presses horizontais
+    if (
+      name.includes("leg press") ||
+      name.includes("bench press") ||
+      name.includes("supino")
+    ) {
+      return false;
+    }
+
     return (
       name.includes("desenvolvimento") ||
-      name.includes("press") ||
+      (name.includes("press") && primary.includes("ombro")) ||
       name.includes("military") ||
       name.includes("overhead") ||
       (primary.includes("ombro") && name.includes("desenvolvimento"))
+    );
+  };
+
+  // Função auxiliar para detectar padrão motor vertical_pull
+  const isVerticalPull = (template: ExerciseTemplate): boolean => {
+    const name = template.name
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    const primary = template.primaryMuscle
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    // Excluir "Face pull" que é horizontal, não vertical
+    if (name.includes("face pull")) {
+      return false;
+    }
+
+    return (
+      name.includes("puxada") ||
+      name.includes("pull") ||
+      name.includes("chin-up") ||
+      name.includes("lat pulldown") ||
+      (primary.includes("costas") &&
+        (name.includes("frente") ||
+          name.includes("atras") ||
+          name.includes("barra fixa")))
     );
   };
 
@@ -925,51 +1475,21 @@ function generateDayExercises(
       name.includes("leg press") ||
       name.includes("hack squat") ||
       name.includes("bulgarian") ||
+      name.includes("búlgaro") ||
       name.includes("afundo") ||
       name.includes("lunge")
     );
   };
 
-  // Função auxiliar para detectar padrão motor vertical_pull
-  // Usa a mesma lógica do validador para garantir consistência
-  const isVerticalPull = (template: ExerciseTemplate): boolean => {
-    const name = template.name
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
-    const primaryNormalized = template.primaryMuscle
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
-
-    // Normalizar músculo da mesma forma que o validador
-    let primary = primaryNormalized;
-    if (
-      primaryNormalized.includes("costas") ||
-      primaryNormalized.includes("dorsal")
-    ) {
-      primary = "costas";
-    }
-
-    return (
-      name.includes("puxada") ||
-      name.includes("pull") ||
-      name.includes("chin-up") ||
-      name.includes("lat pulldown") ||
-      (primary === "costas" &&
-        (name.includes("frente") ||
-          name.includes("atras") ||
-          name.includes("barra fixa")))
-    );
-  };
-
   if (dayType === "Push") {
     // Push: Peito (PRIMÁRIO - 60-70% do volume) + Ombros (SECUNDÁRIO - mínimo 1) + Tríceps (PEQUENO - máximo 30%)
+    // 🔴 Limitar totalExercises pelo maxExercisesPerSession se disponível
+    const pushMaxAllowed =
+      constraints?.maxExercisesPerSession || volumeConfig.totalExercisesMax;
     const totalExercises = Math.min(
       volumeConfig.totalExercisesMax,
-      volumeConfig.largeMuscleMax + volumeConfig.smallMuscleMax
+      volumeConfig.largeMuscleMax + volumeConfig.smallMuscleMax,
+      pushMaxAllowed // 🔴 Respeitar limite do perfil
     );
 
     // 🔥 PISO TÉCNICO: Grupos grandes mínimo 3, 4 quando nível operacional = Atleta
@@ -990,7 +1510,7 @@ function generateDayExercises(
 
     // 🔥 PISO TÉCNICO: Grupos médios mínimo 2 exercícios
     const minMediumMuscle = 2;
-    const ombrosCount = isOperationalAthlete
+    let ombrosCount = isOperationalAthlete
       ? Math.max(minMediumMuscle, Math.min(4, Math.floor(totalExercises * 0.2))) // Atleta: mínimo 2, ideal 3-4
       : Math.max(
           minMediumMuscle,
@@ -998,71 +1518,233 @@ function generateDayExercises(
         ); // Outros: mínimo 2
 
     // Tríceps: máximo 30% do total (PEQUENO)
-    const tricepsCount = Math.min(
+    let tricepsCount = Math.min(
       volumeConfig.smallMuscleMax,
       Math.floor(totalExercises * 0.3)
     );
 
+    // 🔴 Verificar se o total planejado excede maxExercisesPerSession
+    const totalPlanned = peitoCountLimited + ombrosCount + tricepsCount;
+    if (totalPlanned > pushMaxAllowed) {
+      // Reduzir proporcionalmente, priorizando grupos grandes
+      const excess = totalPlanned - pushMaxAllowed;
+      // Reduzir ombros primeiro (grupo médio, pode ter 1 em vez de 2)
+      if (ombrosCount > 1 && excess > 0) {
+        ombrosCount = Math.max(1, ombrosCount - Math.min(excess, 1));
+      }
+      // Se ainda há excesso, reduzir tríceps
+      const remainingExcess =
+        totalPlanned - (peitoCountLimited + ombrosCount + tricepsCount);
+      if (remainingExcess > 0 && tricepsCount > 0) {
+        tricepsCount = Math.max(0, tricepsCount - remainingExcess);
+      }
+    }
+
     // Adicionar exercícios de peito (PRIMÁRIO - GRANDES PRIMEIRO)
-    // Selecionar exercícios diversos para evitar múltiplas variações similares
-    const peitoTemplates = selectDiverseExercises(
+    // 🥉 Passo 3: Selecionar com variação leve em PPL
+    const peitoTemplates = selectWithPPLVariation(
       sortByType(EXERCISE_DATABASE.peitoral),
       peitoCountLimited
     );
-    exercises.push(
-      ...peitoTemplates.map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
-    );
+
+    // 🔥 NOVO: Adicionar com validação em tempo real
+    addTemplatesSafely(peitoTemplates, "Peito");
 
     // Adicionar exercícios de ombros (SECUNDÁRIO - mínimo 1)
-    // Limitar padrão motor vertical_push: no máximo 1 exercício
-    const ombrosSorted = sortByType(EXERCISE_DATABASE.ombros);
+    // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    // Limitar padrão motor vertical_push: no máximo 1 exercício NO TOTAL
+    const ombrosSorted = sortByType(ombrosAvailable);
     const ombrosVerticalPush = ombrosSorted.filter(isVerticalPush);
     const ombrosNonVerticalPush = ombrosSorted.filter(
       (t) => !isVerticalPush(t)
     );
 
-    // Selecionar no máximo 1 exercício com padrão vertical_push
-    // Forçar limite de 1 mesmo que selectDiverseExercises retorne mais
+    console.log(
+      `🔍 [ANTES] Ombros disponíveis: ${ombrosVerticalPush.length} vertical_push, ${ombrosNonVerticalPush.length} não-vertical`
+    );
+
+    // Verificar quantos exercícios vertical_push já foram adicionados
+    const currentVerticalPushCount = exercises.filter((ex) => {
+      const name = ex.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const primary = ex.primaryMuscle
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      // Excluir leg press e outros presses horizontais
+      if (
+        name.includes("leg press") ||
+        name.includes("bench press") ||
+        name.includes("supino")
+      ) {
+        return false;
+      }
+
+      return (
+        name.includes("desenvolvimento") ||
+        (name.includes("press") && primary.includes("ombro")) ||
+        name.includes("military") ||
+        name.includes("overhead") ||
+        (primary.includes("ombro") && name.includes("desenvolvimento"))
+      );
+    }).length;
+
+    // Limitar padrão motor vertical_push: no máximo 1 exercício no total
+    const remainingVerticalPushSlots = Math.max(
+      0,
+      1 - currentVerticalPushCount
+    );
+
+    console.log(
+      `🔍 [CONTAGEM] currentVerticalPush=${currentVerticalPushCount}, remainingSlots=${remainingVerticalPushSlots}, ombrosCount=${ombrosCount}`
+    );
+
+    // Selecionar no máximo 1 exercício vertical_push (se permitido)
+    // GARANTIR: nunca selecionar mais que remainingVerticalPushSlots (máximo 1)
     const verticalPushSelected =
-      ombrosVerticalPush.length > 0
-        ? selectDiverseExercises(ombrosVerticalPush, 1).slice(0, 1)
+      remainingVerticalPushSlots > 0 && ombrosVerticalPush.length > 0
+        ? selectDiverseExercises(
+            ombrosVerticalPush,
+            Math.min(remainingVerticalPushSlots, 1) // FORÇAR máximo 1
+          ).slice(0, Math.min(remainingVerticalPushSlots, 1)) // DUPLA GARANTIA
         : [];
+
+    console.log(
+      `🔍 [SELEÇÃO] verticalPushSelected=${verticalPushSelected.length}, nomes=${verticalPushSelected.map((t) => t.name).join(", ")}`
+    );
+
+    // Garantir que sempre temos pelo menos 1 exercício de ombro
+    // Se não há vertical_push disponível ou já temos 1, usar apenas non-vertical
+    const minOmbrosNeeded = Math.max(1, ombrosCount);
     const remainingCount = Math.max(
       0,
-      ombrosCount - verticalPushSelected.length
+      minOmbrosNeeded - verticalPushSelected.length
     );
+
     const nonVerticalPushSelected =
-      remainingCount > 0
-        ? selectDiverseExercises(ombrosNonVerticalPush, remainingCount)
+      remainingCount > 0 && ombrosNonVerticalPush.length > 0
+        ? selectDiverseExercises(
+            ombrosNonVerticalPush,
+            Math.min(remainingCount, ombrosNonVerticalPush.length)
+          )
         : [];
 
-    const ombrosTemplates = [
+    // Se ainda precisamos de mais exercícios, adicionar apenas non-vertical
+    let additionalTemplates: ExerciseTemplate[] = [];
+    const totalSelected =
+      verticalPushSelected.length + nonVerticalPushSelected.length;
+    if (totalSelected < ombrosCount && ombrosNonVerticalPush.length > 0) {
+      const stillNeeded = ombrosCount - totalSelected;
+      const alreadySelectedNames = new Set([
+        ...nonVerticalPushSelected.map((t) => t.name),
+        ...verticalPushSelected.map((t) => t.name),
+      ]);
+      const available = ombrosNonVerticalPush.filter(
+        (t) => !alreadySelectedNames.has(t.name)
+      );
+      if (available.length > 0) {
+        additionalTemplates = selectDiverseExercises(
+          available,
+          Math.min(stillNeeded, available.length)
+        );
+      }
+    }
+
+    // Validação final CRÍTICA: garantir que não exceda o limite de vertical_push
+    // Separar templates em vertical_push e não-vertical_push
+    const allSelectedTemplates = [
       ...verticalPushSelected,
       ...nonVerticalPushSelected,
+      ...additionalTemplates,
     ];
-    exercises.push(
-      ...ombrosTemplates.map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+
+    const verticalPushTemplates = allSelectedTemplates.filter((t) =>
+      isVerticalPush(t)
+    );
+    const nonVerticalTemplates = allSelectedTemplates.filter(
+      (t) => !isVerticalPush(t)
     );
 
+    // Calcular quantos vertical_push podemos adicionar (máximo 1 no total)
+    const allowedVerticalPush = Math.max(0, 1 - currentVerticalPushCount);
+    const verticalPushToAdd = verticalPushTemplates.slice(
+      0,
+      Math.min(allowedVerticalPush, 1) // FORÇAR máximo 1
+    );
+
+    // Adicionar todos os não-vertical disponíveis
+    const nonVerticalToAdd = nonVerticalTemplates;
+
+    // Combinar: vertical_push permitidos + todos os não-vertical
+    const finalTemplates = [...verticalPushToAdd, ...nonVerticalToAdd];
+
+    // Garantir pelo menos 1 exercício de ombro
+    if (finalTemplates.length === 0 && allSelectedTemplates.length > 0) {
+      // Fallback: se não há nenhum, pegar o primeiro não-vertical disponível
+      const fallback =
+        nonVerticalTemplates.length > 0
+          ? nonVerticalTemplates[0]
+          : allSelectedTemplates[0];
+      if (fallback) {
+        finalTemplates.push(fallback);
+      }
+    }
+
+    console.log(
+      `🔍 [FINAL] allSelectedTemplates=${allSelectedTemplates.length} (${verticalPushTemplates.length} vertical_push, ${nonVerticalTemplates.length} não-vertical)`
+    );
+    console.log(
+      `🔍 [FINAL] allowedVerticalPush=${allowedVerticalPush}, verticalPushToAdd=${verticalPushToAdd.length}, nonVerticalToAdd=${nonVerticalToAdd.length}`
+    );
+    console.log(
+      `🔍 [FINAL] finalTemplates=${finalTemplates.length}, nomes=${finalTemplates.map((t) => t.name).join(", ")}`
+    );
+
+    // VALIDAÇÃO FINAL ABSOLUTA: verificar quantos vertical_push teremos após adicionar
+    const verticalPushInFinal = finalTemplates.filter((t) =>
+      isVerticalPush(t)
+    ).length;
+    const totalVerticalPushAfter =
+      currentVerticalPushCount + verticalPushInFinal;
+
+    if (totalVerticalPushAfter > 1) {
+      console.error(
+        `❌ [ERRO CRÍTICO] Tentando adicionar ${verticalPushInFinal} vertical_push quando já temos ${currentVerticalPushCount}. Total seria ${totalVerticalPushAfter}, mas limite é 1!`
+      );
+      // Forçar apenas 1 vertical_push no máximo
+      const safeVerticalPush = finalTemplates
+        .filter((t) => isVerticalPush(t))
+        .slice(0, Math.max(0, 1 - currentVerticalPushCount));
+      const safeNonVertical = finalTemplates.filter((t) => !isVerticalPush(t));
+      const safeFinal = [...safeVerticalPush, ...safeNonVertical];
+      console.log(
+        `🔧 [CORREÇÃO] Ajustando para ${safeFinal.length} templates (${safeVerticalPush.length} vertical_push, ${safeNonVertical.length} não-vertical)`
+      );
+      addTemplatesSafely(safeFinal, "Ombros (corrigido)");
+    } else {
+      addTemplatesSafely(finalTemplates, "Ombros");
+    }
+
     // Adicionar exercícios de tríceps (PEQUENOS DEPOIS)
-    const tricepsTemplates = selectDiverseExercises(
+    // 🥉 Passo 3: Selecionar com variação leve em PPL
+    const tricepsTemplates = selectWithPPLVariation(
       sortByType(EXERCISE_DATABASE.triceps),
       tricepsCount
     );
-    exercises.push(
-      ...tricepsTemplates.map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
-    );
+    addTemplatesSafely(tricepsTemplates, "Tríceps");
   } else if (dayType === "Pull") {
     // Pull: Costas (PRIMÁRIO - 60-70% do volume) + Posterior de ombro (SECUNDÁRIO - mínimo 1) + Bíceps (PEQUENO - máximo 30%)
+    // 🔴 Limitar totalExercises pelo maxExercisesPerSession se disponível
+    const pullMaxAllowed =
+      constraints?.maxExercisesPerSession || volumeConfig.totalExercisesMax;
     const totalExercises = Math.min(
       volumeConfig.totalExercisesMax,
-      volumeConfig.largeMuscleMax + volumeConfig.smallMuscleMax
+      volumeConfig.largeMuscleMax + volumeConfig.smallMuscleMax,
+      pullMaxAllowed // 🔴 Respeitar limite do perfil
     );
 
     // 🔥 PISO TÉCNICO: Grupos grandes mínimo 3, 4 quando nível operacional = Atleta
@@ -1086,7 +1768,9 @@ function generateDayExercises(
       Math.min(2, Math.floor(totalExercises * 0.15))
     );
     // Usar face pull e elevação lateral invertida para posterior
-    const ombrosPosteriorExercises = EXERCISE_DATABASE.ombros
+    // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    const ombrosPosteriorExercises = ombrosAvailable
       .filter(
         (ex) => ex.name.includes("Face pull") || ex.name.includes("invertida")
       )
@@ -1115,10 +1799,10 @@ function generateDayExercises(
     );
 
     // Selecionar no máximo 1 exercício com padrão vertical_pull
-    // Forçar limite de 1 mesmo que selectDiverseExercises retorne mais
+    // 🥉 Passo 3: Aplicar variação leve
     const verticalPullSelected =
       costasVerticalPull.length > 0
-        ? selectDiverseExercises(costasVerticalPull, 1).slice(0, 1)
+        ? selectWithPPLVariation(costasVerticalPull, 1).slice(0, 1)
         : [];
     const remainingCostasCount = Math.max(
       0,
@@ -1126,7 +1810,7 @@ function generateDayExercises(
     );
     const nonVerticalPullSelected =
       remainingCostasCount > 0
-        ? selectDiverseExercises(costasNonVerticalPull, remainingCostasCount)
+        ? selectWithPPLVariation(costasNonVerticalPull, remainingCostasCount)
         : [];
 
     let costasTemplates = [...verticalPullSelected, ...nonVerticalPullSelected];
@@ -1199,11 +1883,7 @@ function generateDayExercises(
       `🔍 [Pull Day] vertical_pull selecionados: ${verticalPullSelected.map((e) => e.name).join(", ")} (total: ${verticalPullSelected.length})`
     );
 
-    exercises.push(
-      ...costasTemplates.map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
-    );
+    addTemplatesSafely(costasTemplates, "Costas");
 
     // Adicionar exercícios de ombros posteriores (SECUNDÁRIO - mínimo 1)
     // IMPORTANTE: Se já houver 1 exercício vertical_pull, não adicionar "Face pull"
@@ -1216,7 +1896,9 @@ function generateDayExercises(
     // Se filtramos "Face pull" e não há outros exercícios de ombros posteriores,
     // adicionar um exercício alternativo de ombros
     if (hasVerticalPull && ombrosPosteriorFiltered.length === 0) {
-      const alternativeOmbros = EXERCISE_DATABASE.ombros.filter(
+      // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+      const ombrosAvailable = EXERCISE_DATABASE.ombros;
+      const alternativeOmbros = ombrosAvailable.filter(
         (ex) =>
           !ex.name.includes("Face pull") &&
           !ex.name.includes("desenvolvimento") &&
@@ -1230,24 +1912,24 @@ function generateDayExercises(
       }
     }
 
-    exercises.push(
-      ...ombrosPosteriorFiltered.map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
-    );
+    addTemplatesSafely(ombrosPosteriorFiltered, "Ombros Posterior");
 
     // Adicionar exercícios de bíceps (PEQUENOS DEPOIS)
-    const bicepsTemplates = selectDiverseExercises(
+    // 🥉 Passo 3: Selecionar com variação leve em PPL
+    const bicepsTemplates = selectWithPPLVariation(
       sortByType(EXERCISE_DATABASE.biceps),
       bicepsCount
     );
-    exercises.push(
-      ...bicepsTemplates.map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
-    );
+    addTemplatesSafely(bicepsTemplates, "Bíceps");
   } else if (dayType === "Legs" || dayType === "Lower") {
     // Legs: Quadríceps (PRIMÁRIO) + Posterior (PRIMÁRIO) + Panturrilhas (PEQUENO)
+    // Obter limite máximo de exercícios por músculo do perfil
+    const profile = getTrainingProfile(activityLevel || "Moderado");
+    const maxExercisesPerMuscle = profile.maxExercisesPerMuscle;
+    // 🔴 Obter limite máximo de exercícios por sessão
+    const maxExercisesPerSession =
+      constraints?.maxExercisesPerSession || profile.maxExercisesPerSession;
+
     // Ajustar volume baseado no nível para evitar sobrecarga
     const isAthlete = volumeConfig.largeMuscleMin >= 5;
     const isAdvanced =
@@ -1271,23 +1953,97 @@ function generateDayExercises(
       posteriorCount = Math.max(volumeConfig.largeMuscleMin - 1, 2);
     }
 
+    // Ajustar para respeitar limite máximo de exercícios por músculo
+    quadCount = Math.min(quadCount, maxExercisesPerMuscle);
+    posteriorCount = Math.min(posteriorCount, maxExercisesPerMuscle);
+
+    // 🎯 NOVO: Usar ApprovalContract para calcular quadCount baseado em limite semanal
+    if (approvalContract && weeklySeriesState) {
+      const primaryMuscle = "quadriceps";
+      const currentWeeklySeries =
+        weeklySeriesState.muscleWeeklySeries.get(primaryMuscle) || 0;
+      const weeklyLimit = approvalContract.weeklySeriesLimits[primaryMuscle];
+
+      if (weeklyLimit) {
+        const remainingWeeklyCapacity = weeklyLimit - currentWeeklySeries;
+
+        // ✅ CORREÇÃO: Calcular quantos dias Lower RESTAM para serem gerados
+        // Para Upper/Lower com 4 dias, são 2 dias Lower no total
+        // Contar quantos dias Lower já foram gerados baseado no dayIndex
+        // Para Upper/Lower: dias 0,2 = Upper; dias 1,3 = Lower
+        const totalLowerDays = 2; // Upper/Lower com 4 dias = 2 dias Lower
+
+        // Contar quantos dias Lower já foram gerados (dayIndex ímpar = Lower)
+        // dayIndex=0: Upper (0 Lower gerados)
+        // dayIndex=1: Lower (1 Lower gerado)
+        // dayIndex=2: Upper (1 Lower gerado)
+        // dayIndex=3: Lower (2 Lower gerados)
+        const lowerDaysGenerated = Math.floor((dayIndex + 1) / 2);
+
+        const remainingLowerDays = Math.max(
+          1,
+          totalLowerDays - lowerDaysGenerated
+        );
+
+        // 🎯 Usar ApprovalContract para calcular máximo de exercícios
+        const maxExercisesPerLowerDay =
+          approvalContract.getMaxExercisesForMuscle(
+            primaryMuscle,
+            remainingWeeklyCapacity,
+            remainingLowerDays
+          );
+
+        console.log(
+          `🔍 [APPROVAL CONTRACT] dayIndex=${dayIndex}, dayType=${dayType}, currentWeeklySeries=${currentWeeklySeries}, weeklyLimit=${weeklyLimit}, remainingWeeklyCapacity=${remainingWeeklyCapacity}, lowerDaysGenerated=${lowerDaysGenerated}, remainingLowerDays=${remainingLowerDays}, maxExercisesPerLowerDay=${maxExercisesPerLowerDay}, quadCount atual=${quadCount}`
+        );
+
+        // Ajustar quadCount para não exceder capacidade semanal
+        if (maxExercisesPerLowerDay < quadCount) {
+          console.log(
+            `🔴 [APPROVAL CONTRACT] Ajustando quadCount: ${quadCount} → ${maxExercisesPerLowerDay} (capacidade semanal restante: ${remainingWeeklyCapacity}, ${remainingLowerDays} dias Lower restantes, dayIndex=${dayIndex})`
+          );
+          quadCount = Math.max(1, maxExercisesPerLowerDay); // Mínimo 1 exercício
+        }
+      }
+    }
+
     const panturrilhasCount = volumeConfig.smallMuscleMin;
 
+    // 🔴 Verificar se o total planejado excede maxExercisesPerSession
+    const totalPlanned = quadCount + posteriorCount + panturrilhasCount;
+    if (totalPlanned > maxExercisesPerSession) {
+      // Reduzir proporcionalmente, priorizando grupos grandes
+      const excess = totalPlanned - maxExercisesPerSession;
+      // Reduzir panturrilhas primeiro (grupo pequeno)
+      if (panturrilhasCount > 0 && excess > 0) {
+        const panturrilhasReduced = Math.max(0, panturrilhasCount - excess);
+        // Se ainda há excesso, reduzir posterior
+        const remainingExcess =
+          excess - (panturrilhasCount - panturrilhasReduced);
+        if (remainingExcess > 0 && posteriorCount > 2) {
+          posteriorCount = Math.max(2, posteriorCount - remainingExcess);
+        }
+      }
+    }
+
     // Adicionar exercícios de quadríceps (PRIMÁRIO - GRANDES PRIMEIRO)
+    // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+    const quadAvailable = EXERCISE_DATABASE.quadriceps;
     // Limitar padrão motor squat: no máximo 2 exercícios
-    const quadSorted = sortByType(EXERCISE_DATABASE.quadriceps);
+    const quadSorted = sortByType(quadAvailable);
     const quadSquat = quadSorted.filter(isSquat);
     const quadNonSquat = quadSorted.filter((t) => !isSquat(t));
 
     // Selecionar no máximo 2 exercícios com padrão squat
+    // 🥉 Passo 3: Aplicar variação leve
     const squatSelected =
       quadSquat.length > 0
-        ? selectDiverseExercises(quadSquat, 2).slice(0, 2)
+        ? selectWithPPLVariation(quadSquat, 2).slice(0, 2)
         : [];
     const remainingQuadCount = Math.max(0, quadCount - squatSelected.length);
     const nonSquatSelected =
       remainingQuadCount > 0
-        ? selectDiverseExercises(quadNonSquat, remainingQuadCount)
+        ? selectWithPPLVariation(quadNonSquat, remainingQuadCount)
         : [];
 
     const quadTemplates = [...squatSelected, ...nonSquatSelected];
@@ -1308,17 +2064,9 @@ function generateDayExercises(
           .map((e) => e.name)
           .join(", ")}`
       );
-      exercises.push(
-        ...quadTemplatesFiltered.map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
-      );
+      addTemplatesSafely(quadTemplatesFiltered, "Quadríceps (corrigido)");
     } else {
-      exercises.push(
-        ...quadTemplates.map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
-      );
+      addTemplatesSafely(quadTemplates, "Quadríceps");
     }
 
     // Adicionar exercícios de posterior (PRIMÁRIO - GRANDES DEPOIS)
@@ -1335,12 +2083,15 @@ function generateDayExercises(
         name.includes("leg press") ||
         name.includes("hack squat") ||
         name.includes("bulgarian") ||
+        name.includes("búlgaro") ||
         name.includes("afundo") ||
         name.includes("lunge")
       );
     }).length;
 
-    const posteriorSorted = sortByType(EXERCISE_DATABASE["posterior de coxa"]);
+    // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+    const posteriorAvailable = EXERCISE_DATABASE["posterior de coxa"];
+    const posteriorSorted = sortByType(posteriorAvailable);
     const posteriorSquat = posteriorSorted.filter(isSquat);
     const posteriorHinge = posteriorSorted.filter(isHinge);
     const posteriorOther = posteriorSorted.filter(
@@ -1367,9 +2118,10 @@ function generateDayExercises(
 
     // Limitar padrão motor hinge: no máximo 1 exercício
     const remainingHingeSlots = Math.max(0, 1 - currentHingeCount);
+    // 🥉 Passo 3: Aplicar variação leve
     const posteriorHingeSelected =
       remainingHingeSlots > 0 && posteriorHinge.length > 0
-        ? selectDiverseExercises(posteriorHinge, remainingHingeSlots).slice(
+        ? selectWithPPLVariation(posteriorHinge, remainingHingeSlots).slice(
             0,
             remainingHingeSlots
           )
@@ -1377,9 +2129,10 @@ function generateDayExercises(
 
     // Se já há 2 exercícios squat, não adicionar mais
     const remainingSquatSlots = Math.max(0, 2 - currentSquatCount);
+    // 🥉 Passo 3: Aplicar variação leve
     const posteriorSquatSelected =
       remainingSquatSlots > 0 && posteriorSquat.length > 0
-        ? selectDiverseExercises(posteriorSquat, remainingSquatSlots).slice(
+        ? selectWithPPLVariation(posteriorSquat, remainingSquatSlots).slice(
             0,
             remainingSquatSlots
           )
@@ -1391,9 +2144,10 @@ function generateDayExercises(
         posteriorHingeSelected.length -
         posteriorSquatSelected.length
     );
+    // 🥉 Passo 3: Aplicar variação leve
     const posteriorOtherSelected =
       remainingPosteriorCount > 0
-        ? selectDiverseExercises(posteriorOther, remainingPosteriorCount)
+        ? selectWithPPLVariation(posteriorOther, remainingPosteriorCount)
         : [];
 
     const posteriorTemplates = [
@@ -1415,17 +2169,9 @@ function generateDayExercises(
       console.log(
         `🔧 [Legs Day] Removidos ${excessSquat} exercícios squat do posterior para respeitar limite de 2`
       );
-      exercises.push(
-        ...posteriorTemplatesFiltered.map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
-      );
+      addTemplatesSafely(posteriorTemplatesFiltered, "Posterior (corrigido)");
     } else {
-      exercises.push(
-        ...posteriorTemplates.map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
-      );
+      addTemplatesSafely(posteriorTemplates, "Posterior");
     }
 
     // Adicionar exercícios de panturrilhas (PEQUENOS POR ÚLTIMO)
@@ -1433,11 +2179,7 @@ function generateDayExercises(
       EXERCISE_DATABASE.panturrilhas,
       panturrilhasCount
     );
-    exercises.push(
-      ...panturrilhasExercises.map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
-    );
+    addTemplatesSafely(panturrilhasExercises, "Panturrilhas");
 
     // Verificação final: garantir que os limites de padrões motores sejam respeitados
     const finalSquatCount = exercises.filter((ex) => {
@@ -1452,6 +2194,7 @@ function generateDayExercises(
         name.includes("leg press") ||
         name.includes("hack squat") ||
         name.includes("bulgarian") ||
+        name.includes("búlgaro") ||
         name.includes("afundo") ||
         name.includes("lunge")
       );
@@ -1490,6 +2233,7 @@ function generateDayExercises(
           name.includes("leg press") ||
           name.includes("hack squat") ||
           name.includes("bulgarian") ||
+          name.includes("búlgaro") ||
           name.includes("afundo") ||
           name.includes("lunge")
         );
@@ -1537,85 +2281,371 @@ function generateDayExercises(
     }
   } else if (dayType === "Upper") {
     // Upper: Peito + Costas + Ombros + Bíceps + Tríceps
-    const peitoCount = Math.floor(volumeConfig.largeMuscleMin / 2);
-    const costasCount = Math.floor(volumeConfig.largeMuscleMin / 2);
-    const ombrosCount = 2;
-    const bicepsCount = 1;
-    const tricepsCount = 1;
+    // 🔴 Usar constraints?.maxExercisesPerSession para respeitar ajustes (tempo limitado, restrições)
+    const maxExercisesPerSession =
+      constraints?.maxExercisesPerSession || volumeConfig.totalExercisesMax;
 
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.peitoral, peitoCount).map(
-        (t) => convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+    // Garantir mínimo de 2 exercícios para grupos grandes (validador exige)
+    let peitoCount = Math.max(2, Math.floor(volumeConfig.largeMuscleMin / 2));
+    let costasCount = Math.max(2, Math.floor(volumeConfig.largeMuscleMin / 2));
+    let ombrosCount = 2;
+    let bicepsCount = 1;
+    let tricepsCount = 1;
+
+    // Ajustar para respeitar limite máximo de exercícios por sessão
+    let totalPlanned =
+      peitoCount + costasCount + ombrosCount + bicepsCount + tricepsCount;
+    while (totalPlanned > maxExercisesPerSession) {
+      // Reduzir proporcionalmente, priorizando grupos pequenos
+
+      // Reduzir bíceps primeiro (menos crítico)
+      if (bicepsCount > 0) {
+        bicepsCount = 0;
+        totalPlanned =
+          peitoCount + costasCount + ombrosCount + bicepsCount + tricepsCount;
+        continue;
+      }
+
+      // Se ainda houver excesso, remover tríceps
+      if (tricepsCount > 0) {
+        tricepsCount = 0;
+        totalPlanned =
+          peitoCount + costasCount + ombrosCount + bicepsCount + tricepsCount;
+        continue;
+      }
+
+      // Se ainda houver excesso, reduzir ombros (grupo médio, pode ter 1 em vez de 2)
+      if (ombrosCount > 1) {
+        ombrosCount = Math.max(1, ombrosCount - 1);
+        totalPlanned =
+          peitoCount + costasCount + ombrosCount + bicepsCount + tricepsCount;
+        continue;
+      }
+
+      // Se ainda houver excesso, reduzir um dos grupos grandes (peito ou costas)
+      // Isso só deve acontecer em casos extremos (limite muito baixo)
+      if (peitoCount > 1) {
+        peitoCount = Math.max(1, peitoCount - 1);
+        totalPlanned =
+          peitoCount + costasCount + ombrosCount + bicepsCount + tricepsCount;
+        continue;
+      }
+
+      if (costasCount > 1) {
+        costasCount = Math.max(1, costasCount - 1);
+        totalPlanned =
+          peitoCount + costasCount + ombrosCount + bicepsCount + tricepsCount;
+        continue;
+      }
+
+      // Último recurso: se ainda houver excesso, quebrar o loop
+      break;
+    }
+
+    addTemplatesSafely(
+      selectDiverseExercises(EXERCISE_DATABASE.peitoral, peitoCount),
+      "Peito (Upper)"
     );
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.costas, costasCount).map(
-        (t) => convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+
+    // Adicionar exercícios de costas com validação de padrão motor vertical_pull
+    const costasSorted = sortByType(EXERCISE_DATABASE.costas);
+    const costasVerticalPull = costasSorted.filter(isVerticalPull);
+    const costasNonVerticalPull = costasSorted.filter(
+      (t) => !isVerticalPull(t)
     );
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.ombros, ombrosCount).map(
-        (t) => convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+
+    // Verificar quantos exercícios vertical_pull já foram adicionados
+    const currentVerticalPullCount = exercises.filter((ex) => {
+      const name = ex.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const primary = ex.primaryMuscle
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      if (name.includes("face pull")) {
+        return false;
+      }
+
+      return (
+        name.includes("puxada") ||
+        name.includes("pull") ||
+        name.includes("chin-up") ||
+        name.includes("lat pulldown") ||
+        (primary.includes("costas") &&
+          (name.includes("frente") ||
+            name.includes("atras") ||
+            name.includes("barra fixa")))
+      );
+    }).length;
+
+    const remainingVerticalPullSlots = Math.max(
+      0,
+      1 - currentVerticalPullCount
     );
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.biceps, bicepsCount).map(
-        (t) => convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+
+    // Selecionar no máximo 1 exercício vertical_pull
+    const verticalPullSelected =
+      remainingVerticalPullSlots > 0 && costasVerticalPull.length > 0
+        ? selectDiverseExercises(
+            costasVerticalPull,
+            Math.min(remainingVerticalPullSlots, 1)
+          ).slice(0, Math.min(remainingVerticalPullSlots, 1))
+        : [];
+
+    // Selecionar exercícios não-vertical para completar costasCount
+    const remainingCostasCount = Math.max(
+      0,
+      costasCount - verticalPullSelected.length
     );
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.triceps, tricepsCount).map(
-        (t) => convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+    const nonVerticalPullSelected =
+      remainingCostasCount > 0 && costasNonVerticalPull.length > 0
+        ? selectDiverseExercises(
+            costasNonVerticalPull,
+            Math.min(remainingCostasCount, costasNonVerticalPull.length)
+          )
+        : [];
+
+    // Combinar e adicionar
+    const costasTemplates = [
+      ...verticalPullSelected,
+      ...nonVerticalPullSelected,
+    ];
+    addTemplatesSafely(costasTemplates, "Costas (Upper)");
+
+    // Adicionar exercícios de ombros com validação de padrão motor vertical_push
+    // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    const ombrosSorted = sortByType(ombrosAvailable);
+    const ombrosVerticalPush = ombrosSorted.filter(isVerticalPush);
+    const ombrosNonVerticalPush = ombrosSorted.filter(
+      (t) => !isVerticalPush(t)
     );
+
+    // Verificar quantos exercícios vertical_push já foram adicionados
+    const currentVerticalPushCount = exercises.filter((ex) => {
+      const name = ex.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const primary = ex.primaryMuscle
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      if (
+        name.includes("leg press") ||
+        name.includes("bench press") ||
+        name.includes("supino")
+      ) {
+        return false;
+      }
+
+      return (
+        name.includes("desenvolvimento") ||
+        (name.includes("press") && primary.includes("ombro")) ||
+        name.includes("military") ||
+        name.includes("overhead") ||
+        (primary.includes("ombro") && name.includes("desenvolvimento"))
+      );
+    }).length;
+
+    const remainingVerticalPushSlots = Math.max(
+      0,
+      1 - currentVerticalPushCount
+    );
+
+    // Selecionar no máximo 1 exercício vertical_push
+    const verticalPushSelected =
+      remainingVerticalPushSlots > 0 && ombrosVerticalPush.length > 0
+        ? selectDiverseExercises(
+            ombrosVerticalPush,
+            Math.min(remainingVerticalPushSlots, 1)
+          ).slice(0, Math.min(remainingVerticalPushSlots, 1))
+        : [];
+
+    // Selecionar exercícios não-vertical para completar ombrosCount
+    const remainingCount = Math.max(
+      0,
+      ombrosCount - verticalPushSelected.length
+    );
+    const nonVerticalPushSelected =
+      remainingCount > 0 && ombrosNonVerticalPush.length > 0
+        ? selectDiverseExercises(
+            ombrosNonVerticalPush,
+            Math.min(remainingCount, ombrosNonVerticalPush.length)
+          )
+        : [];
+
+    // Combinar e adicionar
+    const ombrosTemplates = [
+      ...verticalPushSelected,
+      ...nonVerticalPushSelected,
+    ];
+    addTemplatesSafely(ombrosTemplates, "Ombros (Upper)");
+
+    addTemplatesSafely(
+      selectDiverseExercises(EXERCISE_DATABASE.biceps, bicepsCount),
+      "Bíceps (Upper)"
+    );
+    addTemplatesSafely(
+      selectDiverseExercises(EXERCISE_DATABASE.triceps, tricepsCount),
+      "Tríceps (Upper)"
+    );
+
+    // 🔴 Verificação final: garantir que não exceda maxExercisesPerSession
+    if (constraints?.maxExercisesPerSession) {
+      const maxAllowed = constraints.maxExercisesPerSession;
+      while (exercises.length > maxAllowed) {
+        // Remover exercícios isolados primeiro (bíceps/tríceps)
+        const isolatedExercises = exercises.filter(
+          (ex) =>
+            ex.primaryMuscle.toLowerCase().includes("biceps") ||
+            ex.primaryMuscle.toLowerCase().includes("triceps")
+        );
+        if (isolatedExercises.length > 0) {
+          exercises = exercises.filter((ex) => !isolatedExercises.includes(ex));
+          continue;
+        }
+        // Se ainda há excesso, remover ombros
+        const shoulderExercises = exercises.filter((ex) =>
+          ex.primaryMuscle.toLowerCase().includes("ombro")
+        );
+        if (shoulderExercises.length > 0) {
+          exercises = exercises.filter((ex) => !shoulderExercises.includes(ex));
+          continue;
+        }
+        // Se ainda há excesso, remover um exercício de peito ou costas (último recurso)
+        if (exercises.length > maxAllowed) {
+          exercises = exercises.slice(0, maxAllowed);
+          break;
+        }
+      }
+    }
   } else {
-    // Full Body: 5 exercícios fixos e bem definidos
+    // 🥈 Passo 2: Full Body - Evitar repetição usando weekState
     // 1 Peito + 1 Costas + 1 Quadríceps OU Posterior + 1 Ombros + 1 Core/Braço
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.peitoral, 1).map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+
+    // Helper para selecionar exercício não usado ainda
+    const selectUnusedExercise = (
+      database: ExerciseTemplate[],
+      muscleGroup: string,
+      count: number = 1
+    ): ExerciseTemplate[] => {
+      if (!weekState || !weekState[muscleGroup]) {
+        // Se não há weekState, usar seleção normal
+        return selectDiverseExercises(database, count);
+      }
+
+      // Filtrar exercícios já usados
+      const usedNames = weekState[muscleGroup];
+      const available = database.filter((ex) => !usedNames.has(ex.name));
+
+      if (available.length === 0) {
+        // Se todos foram usados, resetar e usar todos
+        console.warn(
+          `⚠️ [Full Body] Todos os exercícios de ${muscleGroup} já foram usados. Resetando...`
+        );
+        return selectDiverseExercises(database, count);
+      }
+
+      // Selecionar dos disponíveis
+      return selectDiverseExercises(
+        available,
+        Math.min(count, available.length)
+      );
+    };
+
+    // Peito - evitar repetição
+    addTemplatesSafely(
+      selectUnusedExercise(EXERCISE_DATABASE.peitoral, "peitoral", 1),
+      "Peito (Full Body)"
     );
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.costas, 1).map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+
+    // Costas - evitar repetição
+    addTemplatesSafely(
+      selectUnusedExercise(EXERCISE_DATABASE.costas, "costas", 1),
+      "Costas (Full Body)"
     );
+
     // Alternar entre quadríceps e posterior a cada treino
+    // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+    const quadAvailable = EXERCISE_DATABASE.quadriceps;
+    const posteriorAvailable = EXERCISE_DATABASE["posterior de coxa"];
     if (dayIndex % 2 === 0) {
-      exercises.push(
-        ...selectDiverseExercises(EXERCISE_DATABASE.quadriceps, 1).map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
+      addTemplatesSafely(
+        selectUnusedExercise(quadAvailable, "quadriceps", 1),
+        "Quadríceps (Full Body)"
       );
     } else {
-      exercises.push(
-        ...selectDiverseExercises(
-          EXERCISE_DATABASE["posterior de coxa"],
-          1
-        ).map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
+      addTemplatesSafely(
+        selectUnusedExercise(posteriorAvailable, "posterior", 1),
+        "Posterior (Full Body)"
       );
     }
-    exercises.push(
-      ...selectDiverseExercises(EXERCISE_DATABASE.ombros, 1).map((t) =>
-        convertTemplateToExercise(t, imc, objective, activityLevel)
-      )
+
+    // Ombros - evitar repetição
+    // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
+    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    addTemplatesSafely(
+      selectUnusedExercise(ombrosAvailable, "ombros", 1),
+      "Ombros (Full Body)"
     );
-    // Alternar entre bíceps e tríceps
+
+    // Alternar entre bíceps e tríceps - evitar repetição
     if (dayIndex % 2 === 0) {
-      exercises.push(
-        ...selectDiverseExercises(EXERCISE_DATABASE.biceps, 1).map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
+      addTemplatesSafely(
+        selectUnusedExercise(EXERCISE_DATABASE.biceps, "biceps", 1),
+        "Bíceps (Full Body)"
       );
     } else {
-      exercises.push(
-        ...selectDiverseExercises(EXERCISE_DATABASE.triceps, 1).map((t) =>
-          convertTemplateToExercise(t, imc, objective, activityLevel)
-        )
+      addTemplatesSafely(
+        selectUnusedExercise(EXERCISE_DATABASE.triceps, "triceps", 1),
+        "Tríceps (Full Body)"
       );
+    }
+
+    // 🔴 Verificar se o total de exercícios excede maxExercisesPerSession (Full Body)
+    if (constraints?.maxExercisesPerSession) {
+      const maxAllowed = constraints.maxExercisesPerSession;
+      while (exercises.length > maxAllowed) {
+        // Remover exercícios isolados primeiro (bíceps/tríceps)
+        const isolatedExercises = exercises.filter(
+          (ex) =>
+            ex.primaryMuscle.toLowerCase().includes("biceps") ||
+            ex.primaryMuscle.toLowerCase().includes("triceps")
+        );
+        if (isolatedExercises.length > 0) {
+          exercises = exercises.filter((ex) => !isolatedExercises.includes(ex));
+          continue;
+        }
+        // Se ainda há excesso, remover ombros
+        const shoulderExercises = exercises.filter((ex) =>
+          ex.primaryMuscle.toLowerCase().includes("ombro")
+        );
+        if (shoulderExercises.length > 0) {
+          exercises = exercises.filter((ex) => !shoulderExercises.includes(ex));
+          continue;
+        }
+        // Se ainda há excesso, remover um exercício de pernas (quadríceps/posterior)
+        const legExercises = exercises.filter(
+          (ex) =>
+            ex.primaryMuscle.toLowerCase().includes("quadriceps") ||
+            ex.primaryMuscle.toLowerCase().includes("posterior") ||
+            ex.primaryMuscle.toLowerCase().includes("coxa")
+        );
+        if (legExercises.length > 0) {
+          exercises = exercises.filter(
+            (ex) => !legExercises.slice(0, 1).includes(ex)
+          );
+          continue;
+        }
+        // Último recurso: remover qualquer exercício até o limite
+        exercises = exercises.slice(0, maxAllowed);
+        break;
+      }
     }
   }
 
@@ -2130,26 +3160,50 @@ function selectDiverseExercises(
 /**
  * Ajusta as séries dos exercícios para respeitar os limites semanais
  * Reduz proporcionalmente as séries quando o limite é excedido
+ *
+ * 🔴 Considera déficit calórico: se objetivo é emagrecimento, reduz limites em 30%
  */
 function adjustWeeklySeriesToLimits(
   plan: TrainingPlan,
-  activityLevel?: string | null
+  activityLevel?: string | null,
+  objective?: string,
+  imc?: number
 ): TrainingPlan {
   console.log("🔧 adjustWeeklySeriesToLimits chamada para", activityLevel);
   const profile = getTrainingProfile(activityLevel);
 
+  // 🔴 Detectar déficit calórico (mesma lógica do validador)
+  const obj = normalize(objective || "");
+  const isEmagrecimento =
+    obj.includes("emagrec") || obj.includes("perder") || obj.includes("queima");
+  const isRecomposicao = !!(
+    imc &&
+    imc >= 25 &&
+    (obj.includes("ganhar") || obj.includes("massa"))
+  );
+  const hasDeficit = isEmagrecimento || isRecomposicao;
+  const deficitMultiplier = hasDeficit ? 0.7 : 1.0; // Reduz volume em 30% quando em déficit
+
+  // 🔴 REGRA CRÍTICA: Em déficit calórico, séries mínimas são flexíveis (1 série permitida)
+  // Volume total é HARD, séries mínimas são SOFT em déficit
+  const minSetsPerExercise = hasDeficit ? 1 : 2; // Permitir 1 série em déficit, 2 séries normalmente
+
   // Limites semanais por músculo (usar mesma normalização do validador)
   const weeklyLimits: Record<string, number> = {
-    peito: profile.weeklySets.large,
-    costas: profile.weeklySets.large,
-    quadriceps: profile.weeklySets.large,
-    "posterior de coxa": Math.floor(profile.weeklySets.large * 0.8),
-    posterior: Math.floor(profile.weeklySets.large * 0.8),
-    ombro: profile.weeklySets.small, // Validador usa "ombro" (singular)
-    triceps: profile.weeklySets.small,
-    biceps: profile.weeklySets.small,
-    gluteos: Math.floor(profile.weeklySets.large * 0.6),
-    panturrilhas: Math.floor(profile.weeklySets.small * 0.5),
+    peito: Math.floor(profile.weeklySets.large * deficitMultiplier),
+    costas: Math.floor(profile.weeklySets.large * deficitMultiplier),
+    quadriceps: Math.floor(profile.weeklySets.large * deficitMultiplier),
+    "posterior de coxa": Math.floor(
+      profile.weeklySets.large * 0.8 * deficitMultiplier
+    ),
+    posterior: Math.floor(profile.weeklySets.large * 0.8 * deficitMultiplier),
+    ombro: Math.floor(profile.weeklySets.small * deficitMultiplier), // Validador usa "ombro" (singular)
+    triceps: Math.floor(profile.weeklySets.small * deficitMultiplier),
+    biceps: Math.floor(profile.weeklySets.small * deficitMultiplier),
+    gluteos: Math.floor(profile.weeklySets.large * 0.6 * deficitMultiplier),
+    panturrilhas: Math.floor(
+      profile.weeklySets.small * 0.5 * deficitMultiplier
+    ),
   };
 
   // Normalizar nome do músculo
@@ -2230,19 +3284,317 @@ function adjustWeeklySeriesToLimits(
       `📊 Ajustando séries de ${muscle}: ${totalSeries} → ${limit} (fator: ${reductionFactor.toFixed(2)}, ${exercises.length} exercícios)`
     );
 
-    // Aplicar redução proporcional
-    for (const { dayIndex, exerciseIndex } of exercises) {
-      const exercise =
-        adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
-      const currentSets =
+    // Calcular quantas séries cada exercício deve ter para não exceder o limite
+    // Se o mínimo de séries por exercício resultar em excesso, reduzir alguns para o mínimo permitido
+    const numExercises = exercises.length;
+    const maxPossibleWithMin = numExercises * minSetsPerExercise;
+
+    if (maxPossibleWithMin > limit) {
+      // Se mesmo com mínimo de 2 séries exceder, precisamos reduzir alguns para 1 série
+      // ou remover exercícios. Vamos distribuir as séries de forma inteligente.
+      const setsToDistribute = limit;
+      const excessSets = maxPossibleWithMin - setsToDistribute;
+
+      console.log(
+        `⚠️ ${muscle}: ${numExercises} exercícios com mínimo de 2 séries = ${maxPossibleWithMin} séries (limite: ${limit}). Excesso: ${excessSets} séries.`
+      );
+
+      // Agrupar exercícios por nome e tipo de dia para garantir consistência
+      const exerciseGroups = new Map<
+        string,
+        Array<{ dayIndex: number; exerciseIndex: number; dayType: string }>
+      >();
+
+      for (const { dayIndex, exerciseIndex } of exercises) {
+        const exercise =
+          adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
+        const day = adjustedPlan.weeklySchedule[dayIndex];
+        const dayType = normalizeDivisionName(day.type || "");
+        const exerciseKey = `${normalize(exercise.name)}_${dayType}`;
+
+        if (!exerciseGroups.has(exerciseKey)) {
+          exerciseGroups.set(exerciseKey, []);
+        }
+        exerciseGroups.get(exerciseKey)!.push({
+          dayIndex,
+          exerciseIndex,
+          dayType,
+        });
+      }
+
+      // Calcular distribuição inteligente de séries
+      // Cada grupo pode ter múltiplas ocorrências (mesmo exercício em múltiplos dias)
+      const uniqueGroups = Array.from(exerciseGroups.entries());
+      let remainingSets = limit;
+      const groupsDistribution: Array<{
+        group: (typeof uniqueGroups)[0][1];
+        sets: number;
+      }> = [];
+
+      // Tentar distribuir de forma otimizada
+      for (const [, group] of uniqueGroups) {
+        const occurrences = group.length; // Quantas vezes o exercício aparece
+        const setsIfTwo = occurrences * 2;
+        const setsIfOne = occurrences * 1;
+
+        if (remainingSets >= setsIfTwo) {
+          // Pode ter 2 séries
+          remainingSets -= setsIfTwo;
+          groupsDistribution.push({ group, sets: 2 });
+        } else if (remainingSets >= setsIfOne) {
+          // Pode ter o mínimo de séries permitido
+          remainingSets -= setsIfOne;
+          groupsDistribution.push({ group, sets: minSetsPerExercise });
+        } else {
+          // Não cabe nem com o mínimo - usar o mínimo mesmo assim (o clamp final vai ajustar)
+          groupsDistribution.push({ group, sets: minSetsPerExercise });
+          console.log(
+            `⚠️ ${muscle}: Grupo com ${occurrences} ocorrência(s) não cabe completamente no limite, usando ${minSetsPerExercise} série(s) (clamp final ajustará)`
+          );
+        }
+      }
+
+      // Aplicar séries aos grupos
+      for (const { group, sets } of groupsDistribution) {
+        for (const { dayIndex, exerciseIndex } of group) {
+          const exercise =
+            adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
+          exercise.sets = sets;
+        }
+      }
+
+      console.log(
+        `🔧 ${muscle}: ${groupsDistribution.filter((g) => g.sets === 2).length} grupo(s) com 2 séries, ${groupsDistribution.filter((g) => g.sets === 1).length} grupo(s) com 1 série`
+      );
+    } else {
+      // Caso normal: aplicar redução proporcional respeitando mínimo de 2
+      // Agrupar por nome de exercício e tipo de dia para garantir consistência
+      const exerciseGroups = new Map<
+        string,
+        Array<{ dayIndex: number; exerciseIndex: number }>
+      >();
+
+      for (const { dayIndex, exerciseIndex } of exercises) {
+        const exercise =
+          adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
+        const day = adjustedPlan.weeklySchedule[dayIndex];
+        const dayType = normalizeDivisionName(day.type || "");
+        const exerciseKey = `${normalize(exercise.name)}_${dayType}`;
+
+        if (!exerciseGroups.has(exerciseKey)) {
+          exerciseGroups.set(exerciseKey, []);
+        }
+        exerciseGroups.get(exerciseKey)!.push({ dayIndex, exerciseIndex });
+      }
+
+      // Aplicar redução proporcional de forma consistente por grupo
+      for (const [, group] of exerciseGroups.entries()) {
+        // Calcular séries baseado no primeiro exercício do grupo
+        const firstExercise =
+          adjustedPlan.weeklySchedule[group[0].dayIndex].exercises[
+            group[0].exerciseIndex
+          ];
+        const currentSets =
+          typeof firstExercise.sets === "number"
+            ? firstExercise.sets
+            : parseInt(String(firstExercise.sets), 10) || 0;
+
+        // Usar minSetsPerExercise em vez de valor fixo 2
+        const newSets = Math.max(
+          minSetsPerExercise,
+          Math.round(currentSets * reductionFactor)
+        );
+
+        // Aplicar mesma quantidade de séries para todos os exercícios do grupo
+        for (const { dayIndex, exerciseIndex } of group) {
+          const exercise =
+            adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
+          exercise.sets = newSets;
+        }
+      }
+    }
+  }
+
+  // Validação final: garantir que o total não exceda o limite após ajustes
+  // Recalcular séries e exercícios após ajuste proporcional
+  const finalWeeklySeries = new Map<string, number>();
+  const finalMuscleExercises = new Map<
+    string,
+    Array<{ dayIndex: number; exerciseIndex: number; currentSets: number }>
+  >();
+
+  for (
+    let dayIndex = 0;
+    dayIndex < adjustedPlan.weeklySchedule.length;
+    dayIndex++
+  ) {
+    const day = adjustedPlan.weeklySchedule[dayIndex];
+    for (
+      let exerciseIndex = 0;
+      exerciseIndex < day.exercises.length;
+      exerciseIndex++
+    ) {
+      const exercise = day.exercises[exerciseIndex];
+      const muscle = normalizeMuscle(exercise.primaryMuscle);
+      const sets =
         typeof exercise.sets === "number"
           ? exercise.sets
           : parseInt(String(exercise.sets), 10) || 0;
 
-      // Reduzir proporcionalmente, mas garantir mínimo de 2 séries
-      const newSets = Math.max(2, Math.round(currentSets * reductionFactor));
+      const current = finalWeeklySeries.get(muscle) || 0;
+      finalWeeklySeries.set(muscle, current + sets);
 
-      exercise.sets = newSets;
+      if (!finalMuscleExercises.has(muscle)) {
+        finalMuscleExercises.set(muscle, []);
+      }
+      finalMuscleExercises.get(muscle)!.push({
+        dayIndex,
+        exerciseIndex,
+        currentSets: sets,
+      });
+    }
+  }
+
+  // Se ainda exceder, aplicar clamp direto (reduzir do último exercício)
+  // 🔴 IMPORTANTE: Agrupar por nome de exercício e tipo de dia para manter consistência
+  // 🔴 Recalcular após cada ajuste para garantir que não exceda o limite
+  let clampIterations = 0;
+  const maxClampIterations = 10; // Prevenir loop infinito
+
+  while (clampIterations < maxClampIterations) {
+    // Recalcular séries semanais após ajustes
+    const currentWeeklySeries = new Map<string, number>();
+    const currentMuscleExercises = new Map<
+      string,
+      Array<{ dayIndex: number; exerciseIndex: number; currentSets: number }>
+    >();
+
+    for (
+      let dayIndex = 0;
+      dayIndex < adjustedPlan.weeklySchedule.length;
+      dayIndex++
+    ) {
+      const day = adjustedPlan.weeklySchedule[dayIndex];
+      for (
+        let exerciseIndex = 0;
+        exerciseIndex < day.exercises.length;
+        exerciseIndex++
+      ) {
+        const exercise = day.exercises[exerciseIndex];
+        const muscle = normalizeMuscle(exercise.primaryMuscle);
+        const sets =
+          typeof exercise.sets === "number"
+            ? exercise.sets
+            : parseInt(String(exercise.sets), 10) || 0;
+
+        const current = currentWeeklySeries.get(muscle) || 0;
+        currentWeeklySeries.set(muscle, current + sets);
+
+        if (!currentMuscleExercises.has(muscle)) {
+          currentMuscleExercises.set(muscle, []);
+        }
+        currentMuscleExercises.get(muscle)!.push({
+          dayIndex,
+          exerciseIndex,
+          currentSets: sets,
+        });
+      }
+    }
+
+    // Verificar se ainda há excesso
+    let hasExcess = false;
+    for (const [muscle, totalSeries] of currentWeeklySeries) {
+      const limit = weeklyLimits[muscle];
+      if (limit && totalSeries > limit) {
+        hasExcess = true;
+        break;
+      }
+    }
+
+    if (!hasExcess) break; // Não há mais excesso, sair do loop
+
+    clampIterations++;
+
+    // Aplicar clamp para cada músculo que ainda excede
+    for (const [muscle, totalSeries] of currentWeeklySeries) {
+      const limit = weeklyLimits[muscle];
+      if (!limit || totalSeries <= limit) continue;
+
+      let excess = totalSeries - limit;
+      const exercises = currentMuscleExercises.get(muscle) || [];
+
+      if (clampIterations === 1) {
+        console.log(
+          `⚠️ Clamp necessário para ${muscle}: ${totalSeries} séries (limite: ${limit}, excesso: ${excess})`
+        );
+      }
+
+      // 🔴 Agrupar exercícios por nome e tipo de dia para manter consistência
+      const exerciseGroups = new Map<
+        string,
+        Array<{ dayIndex: number; exerciseIndex: number; currentSets: number }>
+      >();
+
+      for (const exerciseData of exercises) {
+        const exercise =
+          adjustedPlan.weeklySchedule[exerciseData.dayIndex].exercises[
+            exerciseData.exerciseIndex
+          ];
+        const day = adjustedPlan.weeklySchedule[exerciseData.dayIndex];
+        const dayType = normalizeDivisionName(day.type || "");
+        const exerciseKey = `${normalize(exercise.name)}_${dayType}`;
+
+        if (!exerciseGroups.has(exerciseKey)) {
+          exerciseGroups.set(exerciseKey, []);
+        }
+        exerciseGroups.get(exerciseKey)!.push(exerciseData);
+      }
+
+      // Reduzir de grupos de exercícios (mantendo consistência entre dias do mesmo tipo)
+      const groupsArray = Array.from(exerciseGroups.entries()).sort((a, b) => {
+        // Ordenar por maior número de séries primeiro (reduzir dos mais volumosos)
+        const aSets = a[1][0].currentSets;
+        const bSets = b[1][0].currentSets;
+        return bSets - aSets;
+      });
+
+      for (const [, group] of groupsArray) {
+        if (excess <= 0) break;
+
+        const firstExercise = group[0];
+        const currentSets = firstExercise.currentSets;
+        // Usar minSetsPerExercise (1 em déficit, 2 normalmente), exceto panturrilhas que sempre podem ter 1
+        const minSets = muscle === "panturrilhas" ? 1 : minSetsPerExercise;
+        // Calcular redução por exercício (dividir excesso pelo número de exercícios no grupo)
+        const reductionPerExercise = Math.min(
+          Math.ceil(excess / group.length),
+          currentSets - minSets
+        );
+
+        if (reductionPerExercise > 0) {
+          const newSets = Math.max(minSets, currentSets - reductionPerExercise);
+          // Aplicar mesma quantidade de séries para todos os exercícios do grupo
+          for (const { dayIndex, exerciseIndex } of group) {
+            const exercise =
+              adjustedPlan.weeklySchedule[dayIndex].exercises[exerciseIndex];
+            exercise.sets = newSets;
+          }
+          // Reduzir excesso pelo total de séries removidas (redução × número de exercícios)
+          excess -= reductionPerExercise * group.length;
+          if (clampIterations === 1) {
+            console.log(
+              `🔧 Clamp final: ${muscle} - grupo de ${group.length} exercício(s) "${adjustedPlan.weeklySchedule[firstExercise.dayIndex].exercises[firstExercise.exerciseIndex].name}": ${currentSets} → ${newSets} séries (excesso restante: ${excess}, mínimo: ${minSets})`
+            );
+          }
+        }
+      }
+
+      if (excess > 0) {
+        const minSets = muscle === "panturrilhas" ? 1 : minSetsPerExercise;
+        console.warn(
+          `⚠️ Ainda há excesso de ${excess} séries para ${muscle} após clamp (mínimo de ${minSets} série(s) por exercício atingido)`
+        );
+      }
     }
   }
 
@@ -2311,7 +3663,8 @@ function convertTemplateToExercise(
   template: ExerciseTemplate,
   imc?: number,
   objective?: string,
-  activityLevel?: string
+  activityLevel?: string,
+  hasDeficit?: boolean // ✅ CORREÇÃO 3: Parâmetro para déficit calórico
 ): Exercise {
   // Primeiro ajustar por IMC/objetivo
   let { reps, adjustmentReason } = adjustRepsForIMCAndObjective(
@@ -2329,6 +3682,17 @@ function convertTemplateToExercise(
     reps = adjustedReps;
   }
 
+  // ✅ CORREÇÃO 3: Déficit força séries = 1 na geração (sem ajuste depois)
+  let sets = template.sets;
+  if (hasDeficit) {
+    sets = 1; // Forçar 1 série em déficit calórico
+    if (adjustmentReason) {
+      adjustmentReason = `${adjustmentReason} + déficit: séries = 1`;
+    } else {
+      adjustmentReason = `Déficit calórico: séries = 1`;
+    }
+  }
+
   // Log do ajuste se houver
   if (adjustmentReason) {
     console.log(`  🔧 ${template.name}: ${adjustmentReason}`);
@@ -2338,7 +3702,7 @@ function convertTemplateToExercise(
     name: template.name,
     primaryMuscle: template.primaryMuscle,
     secondaryMuscles: template.secondaryMuscles,
-    sets: template.sets,
+    sets: sets, // ✅ CORREÇÃO 3: Usar sets ajustado (1 em déficit)
     reps,
     rest: template.rest,
     notes: template.notes || "",

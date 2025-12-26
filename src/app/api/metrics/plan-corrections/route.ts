@@ -1,11 +1,43 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export async function GET() {
+/**
+ * Endpoint para consultar métricas de correção de planos
+ *
+ * REQUER AUTENTICAÇÃO: Apenas usuários autenticados podem acessar
+ *
+ * GET /api/metrics/plan-corrections
+ * Headers:
+ *   - Authorization: Bearer <token>
+ */
+export async function GET(request: NextRequest) {
   try {
+    // Verificar autenticação
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Token de autorização não encontrado" },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Token inválido ou usuário não autenticado" },
+        { status: 401 }
+      );
+    }
+
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(
         { error: "Configuração do Supabase ausente" },
@@ -13,10 +45,11 @@ export async function GET() {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Usar service role key para acessar dados (já validamos autenticação acima)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Buscar as últimas 100 correções
-    const { data: corrections, error } = await supabase
+    const { data: corrections, error } = await supabaseAdmin
       .from("plan_correction_metrics")
       .select("*")
       .order("created_at", { ascending: false })

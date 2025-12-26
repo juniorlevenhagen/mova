@@ -15,6 +15,7 @@ import type {
 } from "./trainingPlanValidator";
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { getTrainingProfile } from "@/lib/profiles/trainingProfiles";
+import { JOINT_RESTRICTION_RULES } from "../generators/contractRules";
 
 /* --------------------------------------------------------
    TIPOS E INTERFACES
@@ -84,7 +85,7 @@ function normalizeMuscle(muscle: string): string {
 /**
  * Detecta o padrão motor de um exercício baseado no nome e músculo primário
  */
-function detectMotorPattern(exercise: Exercise): string | null {
+export function detectMotorPattern(exercise: Exercise): string | null {
   const name = normalize(exercise.name);
   const primary = normalizeMuscle(exercise.primaryMuscle);
 
@@ -130,6 +131,20 @@ function detectMotorPattern(exercise: Exercise): string | null {
     return "horizontal_push";
   }
 
+  // OVERHEAD MOVEMENT (movimento acima da cabeça - pode ser SOFT ou HARD dependendo do contexto)
+  // Detectar antes de vertical_push para ter prioridade
+  // Verificar tanto no nome normalizado quanto nas notas
+  const normalizedNotes = exercise.notes ? normalize(exercise.notes) : "";
+  if (
+    primary === "ombro" &&
+    (name.includes("elevacao lateral") || name.includes("elevação lateral")) &&
+    (name.includes("acima de 90") ||
+      name.includes("acima de 90°") ||
+      normalizedNotes.includes("acima de 90"))
+  ) {
+    return "overhead_movement";
+  }
+
   // VERTICAL PUSH (empurrar vertical)
   if (
     name.includes("desenvolvimento") ||
@@ -170,14 +185,16 @@ function detectMotorPattern(exercise: Exercise): string | null {
     return "vertical_pull";
   }
 
-  return null;
+  // Fallback explícito: padrão desconhecido
+  // "unknown" não conta para limites e não é permitido em compostos grandes
+  return "unknown";
 }
 
 /**
  * Obtém limites de séries semanais baseado no nível de atividade
  * Agora usa os perfis técnicos
  */
-function getWeeklySeriesLimits(
+export function getWeeklySeriesLimits(
   activityLevel?: string | null
 ): WeeklySeriesLimits {
   const profile = getTrainingProfile(activityLevel);
@@ -389,18 +406,62 @@ export function validateDeficitCompatibility(
     }
   }
 
+  // 🔍 INSTRUMENTAÇÃO: Coletar informações detalhadas sobre exercícios por músculo
+  const muscleExercises = new Map<
+    string,
+    Array<{ name: string; sets: number; day: string }>
+  >();
+  for (const day of plan.weeklySchedule) {
+    for (const exercise of day.exercises) {
+      const muscle = normalizeMuscle(exercise.primaryMuscle);
+      const sets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(exercise.sets) || 0;
+
+      if (!muscleExercises.has(muscle)) {
+        muscleExercises.set(muscle, []);
+      }
+      muscleExercises.get(muscle)!.push({
+        name: exercise.name,
+        sets,
+        day: day.day,
+      });
+    }
+  }
+
   // Validar contra limites ajustados
   for (const [muscle, totalSeries] of weeklySeries) {
     const limit = adjustedLimits[muscle as keyof WeeklySeriesLimits];
 
     if (limit && totalSeries > limit) {
-      console.warn("Plano rejeitado: excesso de volume em déficit calórico", {
-        muscle,
-        totalSeries,
-        limit,
-        multiplicador: deficit.multiplicador_volume,
-        objective,
-      });
+      const exercises = muscleExercises.get(muscle) || [];
+      const exerciseCount = exercises.length;
+
+      // 🔍 LOG DETALHADO para diagnóstico
+      console.error(
+        "🔴 [DIAGNÓSTICO DÉFICIT] Plano rejeitado: excesso de volume em déficit calórico",
+        {
+          muscle,
+          totalSeries,
+          limit,
+          multiplicador: deficit.multiplicador_volume,
+          objective,
+          exerciseCount, // Quantidade de exercícios
+          minSeriesPerExercise: 1, // Em déficit, mínimo é 1
+          maxPossibleWithMinSets: exerciseCount * 1, // Máximo possível com 1 série cada
+          exercises: exercises.map((ex) => ({
+            name: ex.name,
+            sets: ex.sets,
+            day: ex.day,
+          })),
+          // Análise: se mesmo com 1 série por exercício excede, problema é quantidade de exercícios
+          analysis:
+            exerciseCount * 1 > limit
+              ? `PROBLEMA: ${exerciseCount} exercícios × 1 série = ${exerciseCount} séries > limite ${limit}. Precisa reduzir quantidade de exercícios.`
+              : `OK: ${exerciseCount} exercícios × 1 série = ${exerciseCount} séries ≤ limite ${limit}. Problema pode ser séries individuais > 1.`,
+        }
+      );
 
       recordPlanRejection("excesso_volume_em_deficit", {
         activityLevel: activityLevel || undefined,
@@ -409,6 +470,7 @@ export function validateDeficitCompatibility(
         limit,
         multiplicador: deficit.multiplicador_volume,
         objective: objective || undefined,
+        exerciseCount,
       }).catch(() => {});
 
       return false;
@@ -504,6 +566,83 @@ export function validateFrequencyVolume(
 }
 
 /**
+ * 5️⃣ Validação de RESTRIÇÕES ARTICULARES (defesa em profundidade)
+ *
+ * Valida que nenhum exercício viola restrições articulares baseadas em padrão motor
+ * 🔒 HARD RULE: Restrições articulares nunca podem ser violadas
+ */
+export function validateJointRestrictions(
+  plan: TrainingPlan,
+  hasShoulderRestriction?: boolean,
+  hasKneeRestriction?: boolean
+): boolean {
+  if (!hasShoulderRestriction && !hasKneeRestriction) {
+    return true; // Sem restrições, não há o que validar
+  }
+
+  for (const day of plan.weeklySchedule) {
+    for (const exercise of day.exercises) {
+      const pattern = detectMotorPattern(exercise);
+      if (!pattern || pattern === "unknown") continue;
+
+      // Verificar restrição de ombro
+      if (hasShoulderRestriction) {
+        const restrictedPatterns =
+          JOINT_RESTRICTION_RULES.shoulder.restrictedPatterns;
+        if (
+          restrictedPatterns.includes(
+            pattern as "vertical_push" | "overhead_movement"
+          )
+        ) {
+          console.warn(
+            "Plano rejeitado: violação de restrição articular (ombro)",
+            {
+              exercise: exercise.name,
+              pattern,
+              day: day.day,
+            }
+          );
+          recordPlanRejection("restricao_articular_ombro", {
+            exercise: exercise.name,
+            pattern,
+            day: day.day,
+          }).catch(() => {});
+          return false;
+        }
+      }
+
+      // Verificar restrição de joelho
+      if (hasKneeRestriction) {
+        const restrictedPatterns =
+          JOINT_RESTRICTION_RULES.knee.restrictedPatterns;
+        if (
+          restrictedPatterns.includes(
+            pattern as "squat" | "deep_flexion" | "impact"
+          )
+        ) {
+          console.warn(
+            "Plano rejeitado: violação de restrição articular (joelho)",
+            {
+              exercise: exercise.name,
+              pattern,
+              day: day.day,
+            }
+          );
+          recordPlanRejection("restricao_articular_joelho", {
+            exercise: exercise.name,
+            pattern,
+            day: day.day,
+          }).catch(() => {});
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
  * Validação completa avançada
  *
  * Executa todas as validações avançadas em sequência
@@ -513,7 +652,9 @@ export function validateAdvancedRules(
   trainingDays: number,
   activityLevel?: string | null,
   objective?: string | null,
-  imc?: number
+  imc?: number,
+  hasShoulderRestriction?: boolean,
+  hasKneeRestriction?: boolean
 ): boolean {
   // 1. Séries semanais
   if (!validateWeeklySeries(plan, trainingDays, activityLevel)) {
@@ -532,6 +673,13 @@ export function validateAdvancedRules(
 
   // 4. Frequência × Volume
   if (!validateFrequencyVolume(plan, activityLevel)) {
+    return false;
+  }
+
+  // 5. Restrições articulares (defesa em profundidade)
+  if (
+    !validateJointRestrictions(plan, hasShoulderRestriction, hasKneeRestriction)
+  ) {
     return false;
   }
 

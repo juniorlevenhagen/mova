@@ -1,16 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { planRejectionMetrics } from "@/lib/metrics/planRejectionMetrics";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Endpoint para consultar métricas de rejeição de planos
  *
+ * REQUER AUTENTICAÇÃO: Apenas usuários autenticados podem acessar
+ *
  * GET /api/metrics/plan-rejections
+ * Headers:
+ *   - Authorization: Bearer <token>
  * Query params:
  *   - period: "all" | "24h" (default: "all")
  *   - source: "db" | "memory" (default: "db" - tenta banco primeiro)
  */
 export async function GET(request: NextRequest) {
   try {
+    // Verificar autenticação
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Token de autorização não encontrado" },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: "Token inválido ou usuário não autenticado" },
+        { status: 401 }
+      );
+    }
     const searchParams = request.nextUrl.searchParams;
     const period = searchParams.get("period") || "all";
     const source = searchParams.get("source") || "db";

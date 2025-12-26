@@ -267,13 +267,29 @@ export async function POST(request: NextRequest) {
             )
           : undefined;
 
+      // 🥇 Passo 1: Detectar restrição de ombro
+      // Verificar se há limitações articulares no perfil
+      const hasJointLimitations =
+        profile?.limitations &&
+        (profile.limitations.toLowerCase().includes("ombro") ||
+          profile.limitations.toLowerCase().includes("shoulder") ||
+          profile.limitations.toLowerCase().includes("articular") ||
+          profile.limitations.toLowerCase().includes("limitação"));
+
+      const hasKneeLimitations =
+        profile?.limitations &&
+        (profile.limitations.toLowerCase().includes("joelho") ||
+          profile.limitations.toLowerCase().includes("knee"));
+
       const generatedPlan = generateTrainingPlanStructure(
         trainingDays,
         profile?.nivel_atividade || "Moderado",
         division,
         availableTimeMinutes,
         imc,
-        profile?.objective || undefined
+        profile?.objective || undefined,
+        hasJointLimitations, // 🥇 Passo 1: Restrição de ombro
+        hasKneeLimitations // 🔴 Restrição de joelho
       );
 
       const isValid = isTrainingPlanUsable(
@@ -286,6 +302,9 @@ export async function POST(request: NextRequest) {
               imc,
               gender: profile.gender || "Não informado",
               age: profile.age || 0,
+              objective: profile.objective || undefined,
+              hasShoulderRestriction: hasJointLimitations,
+              hasKneeRestriction: hasKneeLimitations,
             }
           : undefined
       );
@@ -557,6 +576,9 @@ Por favor, corrija o problema acima e gere um plano válido.`;
                 imc: imcForValidation,
                 gender: profile.gender || "Não informado",
                 age: profile.age || 0,
+                objective: profile.objective || undefined,
+                hasShoulderRestriction: hasJointLimitations,
+                hasKneeRestriction: hasKneeLimitations,
               }
             : undefined
         );

@@ -177,6 +177,23 @@ export async function POST(request: NextRequest) {
             )
           : undefined;
 
+      // 🥇 Passo 1: Detectar restrição de ombro
+      // Verificar se há limitações articulares no userData
+      const hasJointLimitations =
+        (userData.limitations &&
+          (userData.limitations.toLowerCase().includes("ombro") ||
+            userData.limitations.toLowerCase().includes("shoulder") ||
+            userData.limitations.toLowerCase().includes("articular") ||
+            userData.limitations.toLowerCase().includes("limitação"))) ||
+        (userData.hasPain &&
+          (userData.hasPain.toLowerCase().includes("ombro") ||
+            userData.hasPain.toLowerCase().includes("shoulder")));
+
+      const hasKneeLimitations =
+        userData.limitations &&
+        (userData.limitations.toLowerCase().includes("joelho") ||
+          userData.limitations.toLowerCase().includes("knee"));
+
       // Gerar estrutura via padrões (com tempo disponível, IMC e objetivo)
       const generatedPlan = generateTrainingPlanStructure(
         trainingDays,
@@ -184,7 +201,9 @@ export async function POST(request: NextRequest) {
         division,
         availableTimeMinutes,
         imc,
-        userData.objective || undefined
+        userData.objective || undefined,
+        hasJointLimitations, // 🥇 Passo 1: Restrição de ombro
+        hasKneeLimitations // 🔴 Restrição de joelho
       );
 
       // O generateTrainingPlanStructure já retorna o plano com séries ajustadas

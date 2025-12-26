@@ -73,6 +73,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     const isPromptPurchase =
       purchaseType === "prompt_single" ||
       purchaseType === "prompt_triple" ||
+      purchaseType === "prompt_pro_5" ||
       session.mode === "payment";
 
     if (!isPromptPurchase) {
@@ -106,16 +107,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       );
 
       // ✅ Se for pacote de 3 prompts, também adicionar à coluna package_prompts
+      // ✅ Pacote Pro (5) e Elite (10) são tratados como singlePrompts (sem cooldown)
       const updateData: Record<string, number | string> = {
         available_prompts: newPrompts,
         updated_at: now,
       };
 
       if (purchaseType === "prompt_triple") {
+        // Apenas pacote de 3 tem cooldown
         const newPackagePrompts = currentPackagePrompts + promptsToAdd;
         updateData.package_prompts = newPackagePrompts;
         console.log(
-          `📦 Adicionando ${promptsToAdd} prompt(s) do pacote. Total do pacote: ${newPackagePrompts}`
+          `📦 Adicionando ${promptsToAdd} prompt(s) do pacote (com cooldown). Total do pacote: ${newPackagePrompts}`
+        );
+      } else if (purchaseType === "prompt_pro_5") {
+        // Pacote Pro = sem cooldown (não adicionar package_prompts)
+        console.log(
+          `✅ Adicionando ${promptsToAdd} prompt(s) do Pacote Pro (sem cooldown). Total disponível: ${newPrompts}`
         );
       }
 

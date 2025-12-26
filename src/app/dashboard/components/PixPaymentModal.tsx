@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 interface PixPaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  purchaseType: "single" | "triple";
+  purchaseType: "single" | "triple" | "pro";
   onPaymentSuccess: () => void;
 }
 
@@ -99,7 +99,12 @@ export function PixPaymentModal({
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          type: purchaseType === "single" ? "prompt_single" : "prompt_triple",
+          type:
+            purchaseType === "single"
+              ? "prompt_single"
+              : purchaseType === "triple"
+                ? "prompt_triple"
+                : "prompt_pro_5",
         }),
       });
 

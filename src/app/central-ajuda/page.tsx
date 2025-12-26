@@ -45,7 +45,7 @@ const helpCategories = [
       {
         title: "Quais são os planos disponíveis?",
         content:
-          "Oferecemos dois tipos de compra: Plano Básico (R$ 17,99 por 1 crédito) e Pacote Premium (R$ 39,99 por 3 créditos). Cada crédito permite gerar um plano personalizado completo com treinos e nutrição.",
+          "Oferecemos três tipos de compra: Plano Básico (R$ 49,90 por 1 crédito), Pacote Premium (R$ 119,90 por 3 créditos) e Pacote Pro (R$ 179,90 por 5 créditos). Cada crédito permite gerar um plano personalizado completo com treinos e nutrição.",
       },
       {
         title: "Como funciona a cobrança?",
@@ -60,7 +60,7 @@ const helpCategories = [
       {
         title: "Há alguma restrição para gerar planos?",
         content:
-          "Créditos unitários podem ser usados imediatamente. Créditos do Pacote Premium (3 créditos) têm um intervalo de 24 horas entre cada geração de plano. Isso garante que você tenha tempo para seguir o plano antes de gerar um novo.",
+          "Créditos unitários (Plano Básico) e do Pacote Pro (5 créditos) podem ser usados imediatamente, sem intervalo de espera. Créditos do Pacote Premium (3 créditos) têm um intervalo de 24 horas entre cada geração de plano. Isso garante que você tenha tempo para seguir o plano antes de gerar um novo.",
       },
       {
         title: "O que está incluído em cada plano gerado?",

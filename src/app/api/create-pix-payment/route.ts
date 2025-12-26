@@ -17,8 +17,9 @@ const getClient = () => {
 
 // Valores dos produtos (em reais)
 const PRODUCT_PRICES = {
-  prompt_single: 17.99,
-  prompt_triple: 39.99,
+  prompt_single: 49.9,
+  prompt_triple: 119.9,
+  prompt_pro_5: 179.9,
 };
 
 export async function POST(request: NextRequest) {
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Ler body da requisição
     const body = await request.json().catch(() => ({}));
-    const purchaseType = body.type || "prompt_single"; // 'prompt_single' ou 'prompt_triple'
+    const purchaseType = body.type || "prompt_single"; // 'prompt_single', 'prompt_triple' ou 'prompt_pro_5'
 
     // Buscar dados do usuário usando cliente autenticado
     const { data: userProfile } = await supabaseUser
@@ -86,7 +87,12 @@ export async function POST(request: NextRequest) {
 
     // Determinar valor e quantidade
     const amount = PRODUCT_PRICES[purchaseType as keyof typeof PRODUCT_PRICES];
-    const promptsAmount = purchaseType === "prompt_triple" ? 3 : 1;
+    const promptsAmount =
+      purchaseType === "prompt_triple"
+        ? 3
+        : purchaseType === "prompt_pro_5"
+          ? 5
+          : 1;
 
     if (!amount) {
       return NextResponse.json(

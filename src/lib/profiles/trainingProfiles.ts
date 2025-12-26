@@ -240,6 +240,10 @@ function applyRestrictionFlags(
   // Flag: Limitações articulares
   if (flags.jointLimitations) {
     adjusted.volumeMultiplier *= 0.8; // Reduz volume em 20%
+    adjusted.maxExercisesPerSession = Math.max(
+      4,
+      adjusted.maxExercisesPerSession - 1
+    ); // Reduz exercícios por sessão
     adjusted.minReps = Math.max(10, adjusted.minReps); // Mínimo 10 reps
     adjusted.lowRepAllowed = false; // Bloqueia reps baixas
     // Bloqueia exercícios complexos (será validado em outro lugar)
@@ -274,7 +278,12 @@ export function normalizeUserLevel(
     .replace(/\s+/g, "");
 
   // Mapear para os 4 níveis válidos
-  if (normalized.includes("sedentario") || normalized.includes("sedentary")) {
+  // Verificar se começa com "sedent" para cobrir casos como "Sedentária" que podem ser normalizados incorretamente
+  if (
+    normalized.startsWith("sedent") ||
+    normalized.includes("sedentario") ||
+    normalized.includes("sedentary")
+  ) {
     return "Sedentario";
   }
   if (

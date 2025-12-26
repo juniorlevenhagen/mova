@@ -24,8 +24,8 @@ export default function PlanosPrecosPage() {
   const plans = [
     {
       name: "Plano Básico",
-      price: "17,99",
-      originalPrice: "35,90",
+      price: "49,90",
+      originalPrice: "99,90",
       discount: "50%",
       plansIncluded: 1,
       features: [
@@ -34,14 +34,15 @@ export default function PlanosPrecosPage() {
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
         "Suporte por e-mail",
+        "Use quando quiser (sem cooldown)",
       ],
       popular: false,
     },
     {
       name: "Pacote Premium",
-      price: "39,99",
-      originalPrice: "79,90",
-      discount: "50%",
+      price: "119,90",
+      originalPrice: "299,70",
+      discount: "60%",
       plansIncluded: 3,
       features: [
         "3 créditos para gerar planos personalizados",
@@ -49,7 +50,24 @@ export default function PlanosPrecosPage() {
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
         "Suporte prioritário",
-        "Atualizações ilimitadas de planos",
+        "Intervalo de 24h entre gerações",
+      ],
+      popular: false,
+    },
+    {
+      name: "Pacote Pro",
+      price: "179,90",
+      originalPrice: "499,50",
+      discount: "64%",
+      plansIncluded: 5,
+      features: [
+        "5 créditos para gerar planos personalizados",
+        "Acesso ao dashboard completo",
+        "Acompanhamento de evolução",
+        "Registro de atividades diárias",
+        "Suporte prioritário",
+        "Use quando quiser (sem cooldown)",
+        "Melhor custo-benefício",
       ],
       popular: true,
     },
@@ -112,7 +130,7 @@ export default function PlanosPrecosPage() {
             Escolha o plano ideal para sua jornada de transformação fitness
           </p>
 
-          <div className="grid md:grid-cols-2 gap-12 md:gap-24 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12 max-w-7xl mx-auto">
             {plans.map((plan, index) =>
               plan.popular ? (
                 <BackgroundGradient

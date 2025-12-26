@@ -13,14 +13,14 @@ export function PromptPurchaseModal({
   isOpen,
   onClose,
 }: PromptPurchaseModalProps) {
-  const [loading, setLoading] = useState<string | null>(null); // 'single' | 'triple' | null
-  const [selectedType, setSelectedType] = useState<"single" | "triple" | null>(
-    null
-  );
+  const [loading, setLoading] = useState<string | null>(null); // 'single' | 'triple' | 'pro' | null
+  const [selectedType, setSelectedType] = useState<
+    "single" | "triple" | "pro" | null
+  >(null);
   const [showPaymentMethod, setShowPaymentMethod] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
 
-  const handlePurchase = async (type: "single" | "triple") => {
+  const handlePurchase = async (type: "single" | "triple" | "pro") => {
     setSelectedType(type);
     setShowPaymentMethod(true);
   };
@@ -57,7 +57,12 @@ export function PromptPurchaseModal({
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          type: selectedType === "single" ? "prompt_single" : "prompt_triple",
+          type:
+            selectedType === "single"
+              ? "prompt_single"
+              : selectedType === "triple"
+                ? "prompt_triple"
+                : "prompt_pro_5",
         }),
       });
 
@@ -254,9 +259,9 @@ export function PromptPurchaseModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto relative">
-        <div className="mb-6 pr-8">
-          <h3 className="text-2xl font-semibold text-gray-900">
+      <div className="bg-white rounded-2xl shadow-xl max-w-6xl w-full p-6 md:p-8 max-h-[90vh] overflow-y-auto relative">
+        <div className="mb-4 md:mb-6 pr-8">
+          <h3 className="text-xl md:text-2xl font-semibold text-gray-900">
             Comprar Créditos
           </h3>
         </div>
@@ -281,14 +286,14 @@ export function PromptPurchaseModal({
           </svg>
         </button>
 
-        <p className="text-gray-600 mb-6 text-center">
+        <p className="text-gray-600 mb-4 md:mb-6 text-center text-sm md:text-base">
           Escolha quantos créditos você precisa para gerar seus planos
           personalizados
         </p>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
           {/* Plano Básico - 1 Prompt */}
-          <div className="rounded-xl border-2 border-gray-200 p-6 hover:border-black transition-colors duration-200 flex flex-col">
+          <div className="rounded-xl border-2 border-gray-200 p-4 md:p-6 hover:border-black transition-colors duration-200 flex flex-col">
             <div className="flex justify-end mb-4">
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
                 <svg
@@ -301,26 +306,32 @@ export function PromptPurchaseModal({
               </div>
             </div>
 
-            <h3 className="text-xl font-bold text-black mb-4">Plano Básico</h3>
+            <h3 className="text-lg md:text-xl font-bold text-black mb-3 md:mb-4">
+              Plano Básico
+            </h3>
 
-            <div className="mb-4">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-sm text-gray-400 line-through">
-                  R$ 35,90
+            <div className="mb-3 md:mb-4">
+              <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                <span className="text-xs md:text-sm text-gray-400 line-through">
+                  R$ 99,90
                 </span>
                 <span className="bg-black text-white px-2 py-1 rounded text-xs font-bold">
                   50% OFF
                 </span>
               </div>
-              <div className="flex items-baseline">
-                <span className="text-4xl font-bold text-black">R$ 1,99</span>
-                <span className="text-gray-600 text-sm ml-2">por crédito</span>
+              <div className="flex items-baseline flex-wrap">
+                <span className="text-3xl md:text-4xl font-bold text-black">
+                  R$ 49,90
+                </span>
+                <span className="text-gray-600 text-xs md:text-sm ml-2">
+                  por crédito
+                </span>
               </div>
             </div>
 
             <div className="border-t border-gray-200 my-4"></div>
 
-            <ul className="space-y-2 mb-6 flex-grow">
+            <ul className="space-y-1.5 md:space-y-2 mb-4 md:mb-6 flex-grow">
               <li className="flex items-start gap-2">
                 <svg
                   className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
@@ -333,7 +344,7 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">
+                <span className="text-gray-700 font-medium text-sm md:text-base">
                   1 crédito para gerar plano personalizado
                 </span>
               </li>
@@ -349,7 +360,7 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">
+                <span className="text-gray-700 text-sm md:text-base">
                   Acesso ao dashboard completo
                 </span>
               </li>
@@ -365,7 +376,7 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">
+                <span className="text-gray-700 text-sm md:text-base">
                   Acompanhamento de evolução
                 </span>
               </li>
@@ -374,21 +385,14 @@ export function PromptPurchaseModal({
             <button
               onClick={() => handlePurchase("single")}
               disabled={loading !== null}
-              className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto whitespace-nowrap"
+              className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-black text-white rounded-lg text-sm md:text-base font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
             >
               {loading === "single" ? "Processando..." : "Comprar 1 Crédito"}
             </button>
           </div>
 
           {/* Pacote Premium - 3 Prompts */}
-          <div className="rounded-xl border-2 border-black p-6 bg-gray-50 relative flex flex-col">
-            {/* Badge Mais Popular */}
-            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-              <span className="bg-black text-white px-4 py-1 rounded-full text-xs font-bold">
-                Mais Popular
-              </span>
-            </div>
-
+          <div className="rounded-xl border-2 border-gray-200 p-4 md:p-6 hover:border-black transition-colors duration-200 flex flex-col">
             <div className="flex justify-end mb-4">
               <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
                 <svg
@@ -401,31 +405,35 @@ export function PromptPurchaseModal({
               </div>
             </div>
 
-            <h3 className="text-xl font-bold text-black mb-4">
+            <h3 className="text-lg md:text-xl font-bold text-black mb-3 md:mb-4">
               Pacote Premium
             </h3>
 
-            <div className="mb-4">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-sm text-gray-400 line-through">
-                  R$ 79,90
+            <div className="mb-3 md:mb-4">
+              <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+                <span className="text-xs md:text-sm text-gray-400 line-through">
+                  R$ 299,70
                 </span>
                 <span className="bg-black text-white px-2 py-1 rounded text-xs font-bold">
-                  50% OFF
+                  60% OFF
                 </span>
               </div>
-              <div className="flex items-baseline">
-                <span className="text-4xl font-bold text-black">R$ 39,99</span>
-                <span className="text-gray-600 text-sm ml-2">pacote</span>
+              <div className="flex items-baseline flex-wrap">
+                <span className="text-3xl md:text-4xl font-bold text-black">
+                  R$ 119,90
+                </span>
+                <span className="text-gray-600 text-xs md:text-sm ml-2">
+                  pacote
+                </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Economia de R$ 13,98 (R$ 13,33 por crédito)
+                Economia de R$ 29,80 (R$ 39,97 por crédito)
               </p>
             </div>
 
             <div className="border-t border-gray-300 my-4"></div>
 
-            <ul className="space-y-2 mb-6 flex-grow">
+            <ul className="space-y-1.5 md:space-y-2 mb-4 md:mb-6 flex-grow">
               <li className="flex items-start gap-2">
                 <svg
                   className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
@@ -438,7 +446,7 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700 font-medium">
+                <span className="text-gray-700 font-medium text-sm md:text-base">
                   3 créditos para gerar planos personalizados
                 </span>
               </li>
@@ -454,7 +462,7 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">
+                <span className="text-gray-700 text-sm md:text-base">
                   Acesso ao dashboard completo
                 </span>
               </li>
@@ -470,7 +478,7 @@ export function PromptPurchaseModal({
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-gray-700">
+                <span className="text-gray-700 text-sm md:text-base">
                   Acompanhamento de evolução
                 </span>
               </li>
@@ -488,16 +496,165 @@ export function PromptPurchaseModal({
                 </svg>
                 <span className="text-gray-700">Suporte prioritário</span>
               </li>
+              <li className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-gray-700">
+                  Intervalo de 24h entre gerações
+                </span>
+              </li>
             </ul>
 
             <button
               onClick={() => handlePurchase("triple")}
               disabled={loading !== null}
-              className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto whitespace-nowrap"
+              className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-black text-white rounded-lg text-sm md:text-base font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
             >
               {loading === "triple"
                 ? "Processando..."
-                : "Comprar Pacote (3 Créditos)"}
+                : "Comprar Pacote Premium"}
+            </button>
+          </div>
+
+          {/* Pacote Pro - 5 Prompts */}
+          <div className="rounded-xl border-2 border-black p-4 md:p-6 bg-gray-50 relative flex flex-col">
+            {/* Badge Mais Popular */}
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <span className="bg-black text-white px-3 md:px-4 py-1 rounded-full text-xs font-bold">
+                Mais Popular
+              </span>
+            </div>
+
+            <div className="flex justify-end mb-4">
+              <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-7 h-7 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z" />
+                </svg>
+              </div>
+            </div>
+
+            <h3 className="text-xl font-bold text-black mb-4">Pacote Pro</h3>
+
+            <div className="mb-4">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-sm text-gray-400 line-through">
+                  R$ 499,50
+                </span>
+                <span className="bg-black text-white px-2 py-1 rounded text-xs font-bold">
+                  64% OFF
+                </span>
+              </div>
+              <div className="flex items-baseline">
+                <span className="text-4xl font-bold text-black">R$ 179,90</span>
+                <span className="text-gray-600 text-sm ml-2">pacote</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Economia de R$ 69,60 (R$ 35,98 por crédito)
+              </p>
+            </div>
+
+            <div className="border-t border-gray-300 my-4"></div>
+
+            <ul className="space-y-1.5 md:space-y-2 mb-4 md:mb-6 flex-grow">
+              <li className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-gray-700 font-medium text-sm md:text-base">
+                  5 créditos para gerar planos personalizados
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-gray-700 text-sm md:text-base">
+                  Acesso ao dashboard completo
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-gray-700 text-sm md:text-base">
+                  Acompanhamento de evolução
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-gray-700">Suporte prioritário</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <svg
+                  className="w-5 h-5 text-black flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="text-gray-700 font-medium text-sm md:text-base">
+                  Use quando quiser (sem cooldown)
+                </span>
+              </li>
+            </ul>
+
+            <button
+              onClick={() => handlePurchase("pro")}
+              disabled={loading !== null}
+              className="w-full px-3 md:px-4 py-2.5 md:py-3 bg-black text-white rounded-lg text-sm md:text-base font-medium hover:bg-gray-900 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-auto"
+            >
+              {loading === "pro" ? "Processando..." : "Comprar Pacote Pro"}
             </button>
           </div>
         </div>

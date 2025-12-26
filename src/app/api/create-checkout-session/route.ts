@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 
     // Ler body da requisição para determinar o tipo de compra
     const body = await request.json().catch(() => ({}));
-    const purchaseType = body.type || "prompt_single"; // 'prompt_single' ou 'prompt_triple'
+    const purchaseType = body.type || "prompt_single"; // 'prompt_single', 'prompt_triple' ou 'prompt_pro_5'
 
     // Buscar dados do usuário
     const { data: userProfile } = await supabase
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (purchaseType === "prompt_single") {
-      // Compra de 1 prompt - R$ 17,99
+      // Compra de 1 prompt - R$ 49,90
       lineItems = [
         {
           price_data: {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
               name: "Mova+ - 1 Prompt",
               description: "1 prompt para gerar plano personalizado",
             },
-            unit_amount: 1799, // R$ 17,99 em centavos
+            unit_amount: 4990, // R$ 49,90 em centavos
           },
           quantity: 1,
         },
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       metadata.purchase_type = "prompt_single";
       metadata.prompts_amount = "1";
     } else if (purchaseType === "prompt_triple") {
-      // Compra de 3 prompts - R$ 39,99
+      // Compra de 3 prompts - R$ 119,90
       lineItems = [
         {
           price_data: {
@@ -114,13 +114,31 @@ export async function POST(request: NextRequest) {
               name: "Mova+ - Pacote com 3 Prompts",
               description: "3 prompts para gerar planos personalizados",
             },
-            unit_amount: 3999, // R$ 39,99 em centavos
+            unit_amount: 11990, // R$ 119,90 em centavos
           },
           quantity: 1,
         },
       ];
       metadata.purchase_type = "prompt_triple";
       metadata.prompts_amount = "3";
+    } else if (purchaseType === "prompt_pro_5") {
+      // Compra de 5 prompts - R$ 179,90
+      lineItems = [
+        {
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: "Mova+ - Pacote Pro com 5 Prompts",
+              description:
+                "5 prompts para gerar planos personalizados (sem cooldown)",
+            },
+            unit_amount: 17990, // R$ 179,90 em centavos
+          },
+          quantity: 1,
+        },
+      ];
+      metadata.purchase_type = "prompt_pro_5";
+      metadata.prompts_amount = "5";
     } else {
       // Fallback para compra de 1 prompt caso o tipo seja desconhecido
       lineItems = [
@@ -131,7 +149,7 @@ export async function POST(request: NextRequest) {
               name: "Mova+ - 1 Prompt",
               description: "1 prompt para gerar plano personalizado",
             },
-            unit_amount: 1799, // R$ 17,99 em centavos
+            unit_amount: 4990, // R$ 49,90 em centavos
           },
           quantity: 1,
         },

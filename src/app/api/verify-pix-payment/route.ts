@@ -188,8 +188,17 @@ async function addPromptsToUser(
       };
 
       if (purchaseType === "prompt_triple") {
+        // Apenas pacote de 3 tem cooldown
         const newPackagePrompts = currentPackagePrompts + promptsAmount;
         updateData.package_prompts = newPackagePrompts;
+        console.log(
+          `📦 Adicionando ${promptsAmount} prompt(s) do pacote (com cooldown). Total do pacote: ${newPackagePrompts}`
+        );
+      } else if (purchaseType === "prompt_pro_5") {
+        // Pacote Pro = sem cooldown (não adicionar package_prompts)
+        console.log(
+          `✅ Adicionando ${promptsAmount} prompt(s) do Pacote Pro (sem cooldown). Total disponível: ${newPrompts}`
+        );
       }
 
       await supabaseClient
@@ -216,8 +225,10 @@ async function addPromptsToUser(
       };
 
       if (purchaseType === "prompt_triple") {
+        // Apenas pacote de 3 tem cooldown
         insertData.package_prompts = promptsAmount;
       }
+      // Pacote Pro (5) não adiciona package_prompts (sem cooldown)
 
       await supabaseClient.from("user_trials").insert(insertData);
 

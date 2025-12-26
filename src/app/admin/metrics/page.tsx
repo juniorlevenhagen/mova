@@ -33,6 +33,7 @@ const CORRECTION_LABELS: Record<CorrectionReason, string> = {
 };
 import { useAuth } from "@/hooks/useAuth";
 import { AdminNav } from "@/components/admin/AdminNav";
+import { supabase } from "@/lib/supabase";
 
 type RejectionReason =
   | "weeklySchedule_invalido"
@@ -111,9 +112,9 @@ function formatDateTime(ts: number) {
 export default function AdminMetricsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<"rejections" | "corrections">(
-    "rejections"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "rejections" | "corrections" | "quality"
+  >("rejections");
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"all" | "24h">("24h");
   const [rejectionData, setRejectionData] = useState<MetricsResponse | null>(
@@ -126,6 +127,35 @@ export default function AdminMetricsPage() {
       byActivityLevel: Record<string, number>;
     };
     corrections: CorrectionMetric[];
+  } | null>(null);
+  const [qualityData, setQualityData] = useState<{
+    success: boolean;
+    stats: {
+      total: number;
+      averageScore: number;
+      totalSoftWarnings: number;
+      totalFlexibleWarnings: number;
+      byScoreRange: {
+        excellent: number;
+        good: number;
+        acceptable: number;
+        needsImprovement: number;
+      };
+      softWarningsByType: Record<string, number>;
+      byActivityLevel: Record<string, number>;
+    };
+    metrics: Array<{
+      id: string;
+      plan_id: string | null;
+      soft_warnings_count: number;
+      flexible_warnings_count: number;
+      soft_warnings_by_type: Record<string, number>;
+      exercises_with_soft_warnings: string[];
+      alternatives_used_count: number;
+      quality_score: number;
+      context: Record<string, unknown>;
+      created_at: string;
+    }>;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,8 +170,10 @@ export default function AdminMetricsPage() {
     if (user) {
       if (activeTab === "rejections") {
         fetchRejectionMetrics(period);
-      } else {
+      } else if (activeTab === "corrections") {
         fetchCorrectionMetrics();
+      } else if (activeTab === "quality") {
+        fetchQualityMetrics();
       }
     } else if (!authLoading) {
       setLoading(false);
@@ -152,8 +184,23 @@ export default function AdminMetricsPage() {
     try {
       setLoading(true);
       setError(null);
+
+      // Obter token de autenticação
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const res = await fetch(
-        `/api/metrics/plan-rejections?period=${selectedPeriod}`
+        `/api/metrics/plan-rejections?period=${selectedPeriod}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
       );
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json = await res.json();
@@ -170,13 +217,57 @@ export default function AdminMetricsPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/metrics/plan-corrections`);
+
+      // Obter token de autenticação
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const res = await fetch(`/api/metrics/plan-corrections`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json = await res.json();
       setCorrectionData(json);
     } catch (err) {
       console.error("Erro ao buscar métricas de correção:", err);
       setError("Não foi possível carregar as métricas de correção.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchQualityMetrics() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Obter token de autenticação
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const res = await fetch(`/api/metrics/plan-quality`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const json = await res.json();
+      setQualityData(json);
+    } catch (err) {
+      console.error("Erro ao buscar métricas de qualidade:", err);
+      setError("Não foi possível carregar as métricas de qualidade.");
     } finally {
       setLoading(false);
     }
@@ -197,8 +288,8 @@ export default function AdminMetricsPage() {
               Dashboard de Inteligência
             </h1>
             <p className="text-sm text-gray-600 mt-1 max-w-2xl">
-              Monitore a eficácia do sistema: onde a IA falha (rejeições) e onde
-              o código corrige (defesa).
+              Monitore a eficácia do sistema: onde a IA falha (rejeições), onde
+              o código corrige (defesa) e a qualidade dos planos gerados.
             </p>
           </div>
 
@@ -216,15 +307,25 @@ export default function AdminMetricsPage() {
               >
                 Correções Aplicadas
               </button>
+              <button
+                onClick={() => setActiveTab("quality")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === "quality" ? "bg-white shadow-sm text-black" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Qualidade
+              </button>
             </div>
 
             <button
               type="button"
-              onClick={() =>
-                activeTab === "rejections"
-                  ? fetchRejectionMetrics(period)
-                  : fetchCorrectionMetrics()
-              }
+              onClick={() => {
+                if (activeTab === "rejections") {
+                  fetchRejectionMetrics(period);
+                } else if (activeTab === "corrections") {
+                  fetchCorrectionMetrics();
+                } else if (activeTab === "quality") {
+                  fetchQualityMetrics();
+                }
+              }}
               className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
             >
               <Activity className="h-4 w-4" />
@@ -511,6 +612,200 @@ export default function AdminMetricsPage() {
               </section>
             </>
           )}
+
+        {/* VISÃO DE QUALIDADE */}
+        {!loading && !error && activeTab === "quality" && qualityData && (
+          <>
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-8">
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-50 text-green-600">
+                  <BarChart2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Score Médio
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {qualityData.stats.averageScore}/100
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-50 text-yellow-600">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Warnings SOFT
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {qualityData.stats.totalSoftWarnings}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Planos Analisados
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {qualityData.stats.total}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-50 text-purple-600">
+                  <Activity className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    Warnings FLEXIBLE
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {qualityData.stats.totalFlexibleWarnings}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-8">
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                  Excelente (90-100)
+                </p>
+                <p className="text-3xl font-semibold text-green-600">
+                  {qualityData.stats.byScoreRange.excellent}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                  Bom (80-89)
+                </p>
+                <p className="text-3xl font-semibold text-blue-600">
+                  {qualityData.stats.byScoreRange.good}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                  Aceitável (70-79)
+                </p>
+                <p className="text-3xl font-semibold text-yellow-600">
+                  {qualityData.stats.byScoreRange.acceptable}
+                </p>
+              </div>
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-2">
+                  Precisa Melhorar (&lt;70)
+                </p>
+                <p className="text-3xl font-semibold text-red-600">
+                  {qualityData.stats.byScoreRange.needsImprovement}
+                </p>
+              </div>
+            </section>
+
+            {Object.keys(qualityData.stats.softWarningsByType).length > 0 && (
+              <section className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Warnings SOFT por Tipo
+                </h2>
+                <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {Object.entries(qualityData.stats.softWarningsByType).map(
+                      ([type, count]) => (
+                        <div key={type} className="text-center">
+                          <p className="text-xs font-medium text-gray-500 mb-1">
+                            {type
+                              .replace(/_/g, " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase())}
+                          </p>
+                          <p className="text-2xl font-semibold text-gray-900">
+                            {count}
+                          </p>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Planos Recentes ({qualityData.metrics.length})
+              </h2>
+              <div className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Data
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Score
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          SOFT
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          FLEXIBLE
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Nível
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {qualityData.metrics.slice(0, 20).map((m) => (
+                        <tr key={m.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {new Date(m.created_at).toLocaleString("pt-BR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span
+                              className={`font-semibold ${
+                                m.quality_score >= 90
+                                  ? "text-green-600"
+                                  : m.quality_score >= 80
+                                    ? "text-blue-600"
+                                    : m.quality_score >= 70
+                                      ? "text-yellow-600"
+                                      : "text-red-600"
+                              }`}
+                            >
+                              {m.quality_score}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {m.soft_warnings_count}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {m.flexible_warnings_count}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {(m.context as { activityLevel?: string })
+                              ?.activityLevel || "N/A"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
       </div>
     </div>
   );

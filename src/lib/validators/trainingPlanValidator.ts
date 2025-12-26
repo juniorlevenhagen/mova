@@ -659,11 +659,28 @@ function rejectPlan(
  */
 function adjustWeeklySeriesForValidation(
   plan: TrainingPlan | null,
-  activityLevel?: string | null
+  activityLevel?: string | null,
+  context?: {
+    imc?: number;
+    objective?: string;
+  }
 ): TrainingPlan | null {
   if (!plan?.weeklySchedule) return plan;
 
   const profile = getTrainingProfile(activityLevel);
+
+  // 🔴 Detectar déficit calórico e definir séries mínimas flexíveis
+  const obj = normalize(context?.objective || "");
+  const isEmagrecimento =
+    obj.includes("emagrec") || obj.includes("perder") || obj.includes("queima");
+  const isRecomposicao = !!(
+    context?.imc &&
+    context.imc >= 25 &&
+    (obj.includes("ganhar") || obj.includes("massa"))
+  );
+  const hasDeficit = isEmagrecimento || isRecomposicao;
+  // 🔴 REGRA CRÍTICA: Em déficit calórico, séries mínimas são flexíveis (1 série permitida)
+  const minSetsPerExercise = hasDeficit ? 1 : 2;
   const normalizeMuscleLocal = (muscle: string): string => {
     const normalized = normalize(muscle);
     if (normalized.includes("peito") || normalized.includes("peitoral"))
@@ -756,7 +773,11 @@ function adjustWeeklySeriesForValidation(
           ? exercise.sets
           : parseInt(String(exercise.sets), 10) || 0;
 
-      const newSets = Math.max(2, Math.round(currentSets * reductionFactor));
+      // Usar minSetsPerExercise em vez de valor fixo 2
+      const newSets = Math.max(
+        minSetsPerExercise,
+        Math.round(currentSets * reductionFactor)
+      );
       exercise.sets = newSets;
     }
   }
@@ -786,7 +807,9 @@ function adjustWeeklySeriesForValidation(
           typeof exercise.sets === "number"
             ? exercise.sets
             : parseInt(String(exercise.sets), 10) || 0;
-        exercise.sets = Math.max(1, Math.round(currentSets * factor));
+        // Usar minSetsPerExercise em vez de valor fixo 1 (panturrilhas podem ter 1, outros músculos usam minSetsPerExercise)
+        const minSets = muscle === "panturrilhas" ? 1 : minSetsPerExercise;
+        exercise.sets = Math.max(minSets, Math.round(currentSets * factor));
       }
     }
   }
@@ -903,12 +926,15 @@ export function isTrainingPlanUsable(
     gender?: string;
     age?: number;
     objective?: string; // Novo: objetivo para validação de déficit calórico
+    hasShoulderRestriction?: boolean; // 🔒 Restrições articulares
+    hasKneeRestriction?: boolean; // 🔒 Restrições articulares
   }
 ): boolean {
   // Ajustar séries para respeitar limites semanais antes de validar
   const planForValidation = adjustWeeklySeriesForValidation(
     plan,
-    activityLevel
+    activityLevel,
+    context // Passar context para detectar déficit calórico
   );
 
   if (
@@ -962,13 +988,16 @@ export function isTrainingPlanUsable(
   // 2. Padrões motores repetidos
   // 3. Compatibilidade com déficit calórico
   // 4. Frequência × Volume
+  // 5. Restrições articulares (defesa em profundidade)
   if (
     !validateAdvancedRules(
       planForValidation,
       trainingDays,
       activityLevel,
       context?.objective,
-      context?.imc
+      context?.imc,
+      context?.hasShoulderRestriction,
+      context?.hasKneeRestriction
     )
   ) {
     return false; // A função já registra a rejeição
@@ -1052,20 +1081,49 @@ export function isTrainingPlanUsable(
       .replace(/\s+/g, "_")
       .replace("atleta_alto_rendimento", "atleta_altorendimento");
 
-    // Validar número máximo de exercícios por sessão (usando perfil)
-    if (day.exercises.length > profile.maxExercisesPerSession) {
+    // 🔴 Ajustar maxExercisesPerSession considerando objetivo e tempo disponível (mesma lógica do gerador)
+    let adjustedMaxExercises = profile.maxExercisesPerSession;
+
+    // Ajuste para sedentários com pouco tempo (≤40min) - limitar a 4 exercícios
+    const isSedentary =
+      normalizedLevel.includes("sedentario") ||
+      normalizedLevel.includes("sedentary");
+    if (isSedentary && availableTimeMinutes && availableTimeMinutes <= 40) {
+      adjustedMaxExercises = Math.min(adjustedMaxExercises, 4);
+    }
+
+    // Ajuste para emagrecimento com pouco tempo e Upper/Lower
+    const dayTypeForLimit = normalizeDivisionName(day.type || "");
+    const isEmagrecimento =
+      context?.objective &&
+      (context.objective.toLowerCase().includes("emagrecimento") ||
+        context.objective.toLowerCase().includes("perda") ||
+        context.objective.toLowerCase().includes("perder"));
+    const hasLimitedTime = availableTimeMinutes && availableTimeMinutes <= 50;
+    const isUpperLower =
+      dayTypeForLimit === "upper" || dayTypeForLimit === "lower";
+
+    if (isEmagrecimento && hasLimitedTime && isUpperLower) {
+      adjustedMaxExercises = Math.min(adjustedMaxExercises, 5);
+    }
+
+    // Validar número máximo de exercícios por sessão (usando perfil ajustado)
+    if (day.exercises.length > adjustedMaxExercises) {
       console.warn("Plano rejeitado: excesso de exercícios por sessão", {
         level,
         exercises: day.exercises.length,
-        maxAllowed: profile.maxExercisesPerSession,
+        maxAllowed: adjustedMaxExercises,
+        baseMax: profile.maxExercisesPerSession,
         day: day.day,
         type: day.type,
+        objective: context?.objective,
+        availableTimeMinutes,
       });
       recordPlanRejection("excesso_exercicios_sessao", {
         activityLevel: level,
         trainingDays,
         exerciseCount: day.exercises.length,
-        maxAllowed: profile.maxExercisesPerSession,
+        maxAllowed: adjustedMaxExercises,
         dayType: day.type,
         day: day.day,
       }).catch(() => {});

@@ -289,7 +289,13 @@ export async function POST(request: NextRequest) {
         imc,
         profile?.objective || undefined,
         hasJointLimitations, // 🥇 Passo 1: Restrição de ombro
-        hasKneeLimitations // 🔴 Restrição de joelho
+        hasKneeLimitations, // 🔴 Restrição de joelho
+        profile?.training_location as
+          | "academia"
+          | "casa"
+          | "ambos"
+          | "ar_livre"
+          | undefined // 🏠 Novo: Ambiente de treino
       );
 
       const isValid = isTrainingPlanUsable(

@@ -365,11 +365,27 @@ export function isValidRepsForProfile(
   if (typeof reps === "number") {
     minRep = maxRep = reps;
   } else {
+    // Aceitar formatos especiais válidos
+    const specialFormats = [
+      "até a falha",
+      "até falha",
+      "falha",
+      "máximo de repetições",
+      "amrap",
+    ];
+
+    const normalizedReps = reps.toLowerCase().trim();
+    if (specialFormats.some((format) => normalizedReps.includes(format))) {
+      // Formato especial é sempre válido (não há como violar limites)
+      return true;
+    }
+
     const match = reps.match(/(\d+)(?:-(\d+))?/);
     if (match) {
       minRep = parseInt(match[1]);
       maxRep = match[2] ? parseInt(match[2]) : minRep;
     } else {
+      // Se não é número nem formato especial, rejeitar
       return false;
     }
   }

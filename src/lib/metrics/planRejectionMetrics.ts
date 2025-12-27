@@ -38,7 +38,9 @@ export type RejectionReason =
   | "isolador_com_reps_baixas"
   | "excesso_exercicios_reps_baixas"
   | "restricao_articular_ombro"
-  | "restricao_articular_joelho";
+  | "restricao_articular_joelho"
+  | "excesso_exercicios_alto_risco_idoso" // 🛡️ Novo: Idosos com exercícios de alto risco
+  | "contract_violation"; // 📋 Violação de contrato muscular
 
 export interface RejectionMetric {
   reason: RejectionReason;

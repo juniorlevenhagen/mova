@@ -32,6 +32,54 @@ import {
 } from "./contractValidator";
 import { PlanQualityAccumulator } from "@/lib/metrics/planQualityMetrics";
 import { recordPlanQuality } from "@/lib/metrics/planQualityMetrics";
+import {
+  mapTypeToRole,
+  getContractKey,
+  type ExerciseRole,
+  type MovementPattern,
+} from "@/lib/contracts/exerciseTypes";
+import {
+  getContractForMuscleGroup,
+  isPatternAllowed,
+  type MuscleGroupContract,
+} from "@/lib/contracts/muscleGroupContracts";
+import { auditContract } from "@/lib/contracts/contractAuditor";
+
+/* --------------------------------------------------------
+   FUNDAMENTAIS PARA TREINO EM CASA
+-------------------------------------------------------- */
+
+/**
+ * Exercícios fundamentais por tipo de dia para ambiente doméstico.
+ * Estes são estruturais funcionais mínimos que garantem eficácia
+ * do treino em casa, priorizando compostos multiarticulares.
+ */
+const HOME_FUNDAMENTALS: Record<string, string[]> = {
+  push: [
+    "Flexão de braços",
+    "Flexão declinada",
+    "Flexão diamante",
+    "Flexão inclinada",
+  ],
+  pull: [
+    "Barra fixa",
+    "Barra fixa assistida",
+    "Puxada na barra fixa",
+    "Remada invertida",
+  ],
+  legs: [
+    "Agachamento livre",
+    "Afundo com halteres",
+    "Afundo livre",
+    "Agachamento búlgaro",
+  ],
+  lower: [
+    "Agachamento livre",
+    "Afundo com halteres",
+    "Afundo livre",
+    "Agachamento búlgaro",
+  ],
+};
 
 /* --------------------------------------------------------
    FUNÇÕES AUXILIARES
@@ -43,6 +91,42 @@ function normalize(str: string): string {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
+}
+
+/**
+ * Determina o nível de risco de um exercício
+ * @param exerciseName Nome do exercício
+ * @returns Nível de risco: "low", "moderate" ou "high"
+ */
+function getExerciseRiskLevel(
+  exerciseName: string
+): "low" | "moderate" | "high" {
+  const normalized = normalize(exerciseName);
+
+  // Alto risco: Levantamentos olímpicos e terra
+  if (
+    normalized.includes("deadlift") ||
+    normalized.includes("clean") ||
+    normalized.includes("snatch") ||
+    normalized.includes("arranco") ||
+    normalized.includes("arremesso") ||
+    normalized.includes("terra")
+  ) {
+    return "high";
+  }
+
+  // Risco moderado: Agachamento e desenvolvimento com barra
+  if (
+    (normalized.includes("agachamento") && normalized.includes("barra")) ||
+    (normalized.includes("squat") && normalized.includes("bar")) ||
+    (normalized.includes("desenvolvimento") && normalized.includes("barra")) ||
+    (normalized.includes("press") && normalized.includes("bar"))
+  ) {
+    return "moderate";
+  }
+
+  // Baixo risco: Demais exercícios
+  return "low";
 }
 
 /* --------------------------------------------------------
@@ -57,7 +141,20 @@ interface ExerciseTemplate {
   reps: string;
   rest: string;
   notes?: string;
-  type?: "compound" | "isolation"; // Tipo de exercício
+  type?: "compound" | "isolation"; // Tipo de exercício (mantido para retrocompatibilidade)
+  equipment?: "gym" | "home" | "both" | "outdoor"; // Equipamento necessário
+
+  // ✅ NOVO: Classificação funcional explícita (opcional, retrocompatível)
+  role?: "structural" | "isolated";
+  pattern?:
+    | "knee_dominant"
+    | "hip_dominant"
+    | "horizontal_push"
+    | "vertical_push"
+    | "horizontal_pull"
+    | "vertical_pull"
+    | "unilateral";
+  muscles?: string[]; // MuscleGroup[] padronizado
 }
 
 // DayConfig removido - não utilizado
@@ -66,7 +163,7 @@ interface ExerciseTemplate {
    BANCO DE EXERCÍCIOS POR GRUPO MUSCULAR
 -------------------------------------------------------- */
 
-const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
+export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
   peitoral: [
     {
       name: "Supino reto com barra",
@@ -76,6 +173,10 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       reps: "6-10",
       rest: "90-120s",
       notes: "Focar na técnica e aumentar a carga gradualmente",
+      equipment: "gym",
+      type: "compound",
+      role: "structural",
+      pattern: "horizontal_push",
     },
     {
       name: "Supino inclinado com halteres",
@@ -86,6 +187,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Controlar a descida e evitar que os halteres se toquem",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "horizontal_push",
     },
     {
       name: "Supino declinado com barra",
@@ -96,6 +200,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Manter a postura correta",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "horizontal_push",
     },
     {
       name: "Supino com halteres",
@@ -106,6 +213,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Amplitude completa de movimento",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "horizontal_push",
     },
     {
       name: "Crucifixo com halteres",
@@ -115,6 +225,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Foco na fase excêntrica",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
+      pattern: "horizontal_push",
     },
     {
       name: "Crossover com cabos",
@@ -124,6 +237,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Contração no final do movimento",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
+      pattern: "horizontal_push",
     },
     {
       name: "Supino inclinado com barra",
@@ -134,6 +250,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Angulação de 30-45 graus",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "horizontal_push",
     },
     {
       name: "Flexão de braços",
@@ -144,10 +263,105 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Pode ser feito com peso adicional",
       type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "horizontal_push",
+    },
+    {
+      name: "Flexão inclinada",
+      primaryMuscle: "peitoral",
+      secondaryMuscles: ["triceps"],
+      sets: 3,
+      reps: "até a falha",
+      rest: "60-90s",
+      notes: "Pés elevados, maior dificuldade",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "horizontal_push",
+    },
+    {
+      name: "Flexão declinada",
+      primaryMuscle: "peitoral",
+      secondaryMuscles: ["triceps"],
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Mãos elevadas, menor dificuldade",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "horizontal_push",
+    },
+    {
+      name: "Flexão diamante",
+      primaryMuscle: "peitoral",
+      secondaryMuscles: ["triceps"],
+      sets: 3,
+      reps: "até a falha",
+      rest: "60-90s",
+      notes: "Mãos em formato de diamante, maior ativação de tríceps",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "horizontal_push",
+    },
+    {
+      name: "Flexão com pés elevados",
+      primaryMuscle: "peitoral",
+      secondaryMuscles: ["triceps"],
+      sets: 3,
+      reps: "até a falha",
+      rest: "60-90s",
+      notes: "Pés em elevação, maior dificuldade",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "horizontal_push",
+    },
+    {
+      name: "Paralelas (Dips)",
+      primaryMuscle: "peitoral",
+      secondaryMuscles: ["triceps", "ombros"],
+      sets: 3,
+      reps: "8-12",
+      rest: "90-120s",
+      notes:
+        "Exercício fundamental. Inclinar tronco para frente para maior ativação de peitoral",
+      type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "horizontal_push",
+    },
+    {
+      name: "Cable Fly",
+      primaryMuscle: "peitoral",
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Crucifixo na polia, maior amplitude e tensão constante",
+      type: "isolation",
+      equipment: "gym",
+      role: "isolated",
+      pattern: "horizontal_push",
     },
   ],
 
   costas: [
+    {
+      name: "Deadlift (Terra)",
+      primaryMuscle: "costas",
+      secondaryMuscles: ["gluteos", "posterior de coxa", "trapezio"],
+      sets: 4,
+      reps: "5-8",
+      rest: "120-180s",
+      notes:
+        "Exercício fundamental. Manter coluna neutra, puxar barra próximo ao corpo",
+      type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "hip_dominant",
+    },
     {
       name: "Puxada na barra fixa",
       primaryMuscle: "costas",
@@ -157,6 +371,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Focar na ativação das costas, evitando usar impulso",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "vertical_pull",
     },
     {
       name: "Barra fixa assistida",
@@ -168,6 +385,31 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       notes:
         "Usar máquina assistida ou elástico para facilitar o movimento. Focar na técnica e progressão gradual",
       type: "compound",
+      equipment: "both",
+    },
+    {
+      name: "Remada invertida",
+      primaryMuscle: "costas",
+      secondaryMuscles: ["biceps"],
+      sets: 3,
+      reps: "8-12",
+      rest: "60-90s",
+      notes: "Peso corporal, pode usar barra ou mesa",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "horizontal_pull",
+    },
+    {
+      name: "Superman",
+      primaryMuscle: "costas",
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Peso corporal, fortalecimento lombar",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
     },
     {
       name: "Remada curvada com barra",
@@ -178,6 +420,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Manter a coluna neutra e puxar a barra em direção ao abdômen",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "horizontal_pull",
     },
     {
       name: "Remada unilateral com halteres",
@@ -188,6 +433,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Controlar o movimento e evitar torcer o tronco",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "horizontal_pull",
     },
     {
       name: "Puxada na frente com barra",
@@ -198,6 +446,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Puxar até o peito, não atrás do pescoço",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "vertical_pull",
     },
     {
       name: "Remada baixa com polia",
@@ -208,6 +459,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Manter as escápulas em depressão",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "horizontal_pull",
     },
     {
       name: "Puxada aberta",
@@ -218,6 +472,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Foco na amplitude",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "vertical_pull",
     },
     {
       name: "Puxada com pegada supinada",
@@ -228,6 +485,48 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Maior ativação de bíceps",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "vertical_pull",
+    },
+    {
+      name: "Lat Pulldown",
+      primaryMuscle: "costas",
+      secondaryMuscles: ["biceps"],
+      sets: 3,
+      reps: "8-12",
+      rest: "90-120s",
+      notes: "Puxada na máquina, foco em latíssimo do dorso",
+      type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "vertical_pull",
+    },
+    {
+      name: "Seated Cable Row",
+      primaryMuscle: "costas",
+      secondaryMuscles: ["biceps"],
+      sets: 3,
+      reps: "8-12",
+      rest: "90-120s",
+      notes: "Remada sentada com cabo, manter coluna neutra",
+      type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "horizontal_pull",
+    },
+    {
+      name: "T-Bar Row",
+      primaryMuscle: "costas",
+      secondaryMuscles: ["biceps"],
+      sets: 3,
+      reps: "8-12",
+      rest: "90-120s",
+      notes: "Remada T, maior amplitude de movimento",
+      type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "horizontal_pull",
     },
   ],
 
@@ -240,6 +539,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Manter os cotovelos fixos e descer a barra até a testa",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
     {
       name: "Tríceps na polia alta",
@@ -249,6 +550,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Extensão completa dos braços",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
     {
       name: "Tríceps francês",
@@ -258,6 +561,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Controle na fase excêntrica",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
     },
     {
       name: "Mergulho entre bancos",
@@ -268,6 +573,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Manter os cotovelos próximos ao corpo",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "horizontal_push",
     },
     {
       name: "Tríceps coice com halteres",
@@ -277,6 +585,32 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Isolamento do tríceps",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
+    },
+    {
+      name: "Flexão de braços fechada",
+      primaryMuscle: "triceps",
+      secondaryMuscles: ["peitoral"],
+      sets: 3,
+      reps: "até a falha",
+      rest: "60-90s",
+      notes: "Mãos próximas, maior ativação de tríceps",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "horizontal_push",
+    },
+    {
+      name: "Extensão de tríceps no chão",
+      primaryMuscle: "triceps",
+      sets: 3,
+      reps: "10-15",
+      rest: "60-90s",
+      notes: "Peso corporal, extensão de braços",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
     },
   ],
 
@@ -289,6 +623,7 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Evitar balançar o corpo e manter os cotovelos fixos",
       type: "isolation",
+      equipment: "gym",
     },
     {
       name: "Rosca martelo com halteres",
@@ -298,6 +633,7 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Focar na contração do bíceps ao final do movimento",
       type: "isolation",
+      equipment: "both",
     },
     {
       name: "Rosca concentrada",
@@ -307,6 +643,7 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Focar na contração do bíceps",
       type: "isolation",
+      equipment: "both",
     },
     {
       name: "Rosca alternada com halteres",
@@ -316,6 +653,7 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Controle no movimento",
       type: "isolation",
+      equipment: "both",
     },
     {
       name: "Rosca com barra W",
@@ -325,6 +663,17 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Pegada neutra",
       type: "isolation",
+      equipment: "gym",
+    },
+    {
+      name: "Rosca isométrica na parede",
+      primaryMuscle: "biceps",
+      sets: 3,
+      reps: "30-45s",
+      rest: "60-90s",
+      notes: "Peso corporal, isometria",
+      type: "isolation",
+      equipment: "home",
     },
   ],
 
@@ -339,6 +688,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       notes:
         "Manter a postura correta e descer até a coxa ficar paralela ao chão",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "knee_dominant",
     },
     {
       name: "Leg press",
@@ -349,6 +701,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Controlar a descida e evitar estender completamente os joelhos",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "knee_dominant",
     },
     {
       name: "Cadeira extensora",
@@ -358,6 +713,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Focar na contração do quadríceps",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
     {
       name: "Agachamento frontal",
@@ -368,6 +725,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Maior ativação do quadríceps",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "knee_dominant",
     },
     {
       name: "Afundo com halteres",
@@ -378,6 +738,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Passo largo para maior ativação",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "unilateral",
     },
     {
       name: "Agachamento búlgaro",
@@ -388,6 +751,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Unilateral, maior intensidade",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "unilateral",
     },
     {
       name: "Hack squat",
@@ -398,6 +764,61 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Máquina, mais seguro",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "knee_dominant",
+    },
+    {
+      name: "Agachamento livre",
+      primaryMuscle: "quadriceps",
+      secondaryMuscles: ["gluteos", "posterior de coxa"],
+      sets: 4,
+      reps: "10-15",
+      rest: "60-90s",
+      notes: "Peso corporal, manter postura correta",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "knee_dominant",
+    },
+    {
+      name: "Agachamento com salto",
+      primaryMuscle: "quadriceps",
+      secondaryMuscles: ["gluteos"],
+      sets: 3,
+      reps: "10-12",
+      rest: "60-90s",
+      notes: "Pliométrico, maior intensidade",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "knee_dominant",
+    },
+    {
+      name: "Afundo livre",
+      primaryMuscle: "quadriceps",
+      secondaryMuscles: ["gluteos"],
+      sets: 3,
+      reps: "10-12 cada perna",
+      rest: "60-90s",
+      notes: "Peso corporal, passo largo",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "unilateral",
+    },
+    {
+      name: "Agachamento sumô",
+      primaryMuscle: "quadriceps",
+      secondaryMuscles: ["gluteos", "adutores"],
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Pernas abertas, maior amplitude",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "knee_dominant",
     },
   ],
 
@@ -410,6 +831,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Controlar o movimento e evitar usar impulso",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
     {
       name: "Stiff com barra",
@@ -420,6 +843,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Manter as pernas levemente flexionadas",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "hip_dominant",
     },
     {
       name: "Leg curl deitado",
@@ -429,6 +855,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Isolamento do posterior",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
     {
       name: "Leg curl sentado",
@@ -438,6 +866,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Maior amplitude",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
     {
       name: "Good morning",
@@ -448,6 +878,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Manter a coluna neutra",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "hip_dominant",
     },
     {
       name: "RDL (Romanian Deadlift)",
@@ -458,6 +891,35 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Foco no posterior de coxa",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "hip_dominant",
+    },
+    {
+      name: "Stiff com peso corporal",
+      primaryMuscle: "posterior de coxa",
+      secondaryMuscles: ["gluteos"],
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Peso corporal, manter coluna neutra",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "hip_dominant",
+    },
+    {
+      name: "Nordic Curl",
+      primaryMuscle: "posterior de coxa",
+      sets: 3,
+      reps: "6-10",
+      rest: "90-120s",
+      notes:
+        "Exercício avançado para posterior. Pode ser feito com assistência ou peso corporal",
+      type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "hip_dominant",
     },
   ],
 
@@ -470,6 +932,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Focar na amplitude do movimento",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
     },
     {
       name: "Elevação de panturrilha sentado",
@@ -479,6 +943,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Foco no sóleo",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
     },
     {
       name: "Elevação de panturrilha no leg press",
@@ -488,6 +954,19 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Com carga adicional",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
+    },
+    {
+      name: "Elevação de panturrilha unipodal",
+      primaryMuscle: "panturrilhas",
+      sets: 3,
+      reps: "15-20 cada perna",
+      rest: "60-90s",
+      notes: "Peso corporal, maior intensidade",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
     },
   ],
 
@@ -501,6 +980,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Manter a postura correta e evitar arquear as costas",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "vertical_push",
     },
     {
       name: "Desenvolvimento com halteres",
@@ -511,6 +993,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Maior amplitude de movimento",
       type: "compound",
+      equipment: "both",
+      role: "structural",
+      pattern: "vertical_push",
     },
     {
       name: "Elevação lateral com halteres",
@@ -521,6 +1006,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       notes:
         "Realizar o movimento de forma controlada, evitando balançar o corpo",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
     },
     {
       name: "Elevação frontal com halteres",
@@ -530,6 +1017,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Realizar o movimento de forma controlada",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
     },
     {
       name: "Face pull",
@@ -539,6 +1028,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Foco no deltoide posterior",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
     {
       name: "Elevação lateral invertida",
@@ -548,6 +1039,54 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Deltoide posterior",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
+    },
+    {
+      name: "Flexão pike",
+      primaryMuscle: "ombros",
+      secondaryMuscles: ["triceps"],
+      sets: 3,
+      reps: "10-15",
+      rest: "60-90s",
+      notes: "Peso corporal, posição pike",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "vertical_push",
+    },
+    {
+      name: "Prancha com elevação de braço",
+      primaryMuscle: "ombros",
+      sets: 3,
+      reps: "10-12 cada braço",
+      rest: "60-90s",
+      notes: "Peso corporal, estabilização",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+    },
+    {
+      name: "Elevação lateral com cabo",
+      primaryMuscle: "ombros",
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Tensão constante, maior amplitude",
+      type: "isolation",
+      equipment: "gym",
+      role: "isolated",
+    },
+    {
+      name: "Reverse Fly com cabo",
+      primaryMuscle: "ombros",
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Deltoide posterior com cabo, maior controle",
+      type: "isolation",
+      equipment: "gym",
+      role: "isolated",
     },
   ],
 
@@ -561,6 +1100,9 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "90-120s",
       notes: "Cotovelos próximos ao corpo - foco em trapézio",
       type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "vertical_pull",
     },
     {
       name: "Encolhimento com halteres",
@@ -570,6 +1112,8 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Isolamento do trapézio",
       type: "isolation",
+      equipment: "both",
+      role: "isolated",
     },
     {
       name: "Encolhimento com barra",
@@ -579,6 +1123,171 @@ const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       rest: "60-90s",
       notes: "Foco na contração do trapézio",
       type: "isolation",
+      equipment: "gym",
+      role: "isolated",
+    },
+  ],
+
+  // ✅ NOVO: Grupo Glúteos (estratégico)
+  gluteos: [
+    {
+      name: "Hip Thrust",
+      primaryMuscle: "gluteos",
+      secondaryMuscles: ["posterior de coxa"],
+      sets: 4,
+      reps: "8-12",
+      rest: "90-120s",
+      notes:
+        "Exercício fundamental para glúteos. Elevar quadril até alinhar com joelhos",
+      type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "hip_dominant",
+    },
+    {
+      name: "Hip Thrust com barra",
+      primaryMuscle: "gluteos",
+      secondaryMuscles: ["posterior de coxa"],
+      sets: 4,
+      reps: "8-12",
+      rest: "90-120s",
+      notes: "Com barra apoiada no quadril para maior carga",
+      type: "compound",
+      equipment: "gym",
+      role: "structural",
+      pattern: "hip_dominant",
+    },
+    {
+      name: "Ponte de glúteo",
+      primaryMuscle: "gluteos",
+      secondaryMuscles: ["posterior de coxa"],
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Peso corporal, pode elevar uma perna para maior intensidade",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "hip_dominant",
+    },
+    {
+      name: "Ponte de glúteo unilateral",
+      primaryMuscle: "gluteos",
+      secondaryMuscles: ["posterior de coxa"],
+      sets: 3,
+      reps: "10-12 cada perna",
+      rest: "60-90s",
+      notes: "Uma perna elevada, maior ativação de glúteos",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+      pattern: "unilateral",
+    },
+    {
+      name: "Clamshell",
+      primaryMuscle: "gluteos",
+      sets: 3,
+      reps: "15-20 cada lado",
+      rest: "30-45s",
+      notes: "Ativação de glúteo médio, peso corporal",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
+    },
+    {
+      name: "Fire Hydrant",
+      primaryMuscle: "gluteos",
+      sets: 3,
+      reps: "12-15 cada lado",
+      rest: "30-45s",
+      notes: "Ativação de glúteo médio e máximo, peso corporal",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
+    },
+  ],
+
+  // ✅ NOVO: Grupo Abdômen/Core (estratégico)
+  abdomen: [
+    {
+      name: "Plank",
+      primaryMuscle: "abdomen",
+      secondaryMuscles: ["ombros", "gluteos"],
+      sets: 3,
+      reps: "30-60s",
+      rest: "60-90s",
+      notes: "Manter corpo alinhado, contrair core",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+    },
+    {
+      name: "Plank lateral",
+      primaryMuscle: "abdomen",
+      secondaryMuscles: ["ombros"],
+      sets: 3,
+      reps: "20-40s cada lado",
+      rest: "60-90s",
+      notes: "Foco em oblíquos, manter corpo alinhado",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
+    },
+    {
+      name: "Abdominal Crunch",
+      primaryMuscle: "abdomen",
+      sets: 3,
+      reps: "15-20",
+      rest: "60-90s",
+      notes: "Foco no reto abdominal, evitar puxar pescoço",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
+    },
+    {
+      name: "Russian Twist",
+      primaryMuscle: "abdomen",
+      sets: 3,
+      reps: "20-30 cada lado",
+      rest: "60-90s",
+      notes: "Foco em oblíquos, pode usar peso",
+      type: "isolation",
+      equipment: "both",
+      role: "isolated",
+    },
+    {
+      name: "Leg Raises",
+      primaryMuscle: "abdomen",
+      sets: 3,
+      reps: "12-15",
+      rest: "60-90s",
+      notes: "Elevação de pernas, foco em inferiores do abdômen",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
+    },
+    {
+      name: "Dead Bug",
+      primaryMuscle: "abdomen",
+      sets: 3,
+      reps: "10-12 cada lado",
+      rest: "60-90s",
+      notes: "Core stability, movimento controlado",
+      type: "isolation",
+      equipment: "home",
+      role: "isolated",
+    },
+    {
+      name: "Mountain Climber",
+      primaryMuscle: "abdomen",
+      secondaryMuscles: ["ombros", "quadriceps"],
+      sets: 3,
+      reps: "20-30 cada perna",
+      rest: "60-90s",
+      notes: "Core + cardio, movimento rápido",
+      type: "compound",
+      equipment: "home",
+      role: "structural",
     },
   ],
 };
@@ -671,7 +1380,9 @@ export function generateTrainingPlanStructure(
   imc?: number,
   objective?: string,
   jointLimitations?: boolean, // 🥇 Passo 1: Restrição de ombro
-  kneeLimitations?: boolean // 🔴 Restrição de joelho
+  kneeLimitations?: boolean, // 🔴 Restrição de joelho
+  trainingLocation?: "academia" | "casa" | "ambos" | "ar_livre", // 🏠 Novo: Ambiente de treino
+  age?: number // 🛡️ Idade para validação de risco (idosos ≥60 anos)
 ): TrainingPlan {
   // 📊 NOVO: Criar acumulador de qualidade para rastrear warnings SOFT/FLEXIBLE
   const qualityAccumulator = new PlanQualityAccumulator();
@@ -823,7 +1534,9 @@ export function generateTrainingPlanStructure(
         isFirstOccurrence, // 🥉 Passo 3: Indicar se é primeira ocorrência
         weekState, // 🔴 NOVO: Passar weekState para verificar limites semanais
         approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
-        qualityAccumulator // 📊 NOVO: Passar acumulador de qualidade
+        qualityAccumulator, // 📊 NOVO: Passar acumulador de qualidade
+        trainingLocation, // 🏠 Novo: Ambiente de treino
+        age // 🛡️ Idade para validação de risco
       );
 
       // 🥉 Passo 3: Atualizar pplState com exercícios adicionados (apenas se não for primeira ocorrência)
@@ -867,7 +1580,9 @@ export function generateTrainingPlanStructure(
         undefined, // isFirstOccurrence não usado
         weekState, // 🔴 NOVO: Passar weekState para verificar limites semanais
         approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
-        qualityAccumulator // 📊 NOVO: Passar acumulador de qualidade
+        qualityAccumulator, // 📊 NOVO: Passar acumulador de qualidade
+        trainingLocation, // 🏠 Novo: Ambiente de treino
+        age // 🛡️ Idade para validação de risco
       );
 
       weeklySchedule.push({
@@ -892,6 +1607,9 @@ export function generateTrainingPlanStructure(
       triceps: new Set(),
     };
 
+    // 🛡️ Rastrear exercícios de alto risco usados na semana (para idosos)
+    const highRiskExercisesUsedThisWeek = new Set<string>();
+
     for (let i = 0; i < trainingDays; i++) {
       const dayName = dayNames[i] || `Dia ${i + 1}`;
       const exercises = generateDayExercises(
@@ -909,7 +1627,10 @@ export function generateTrainingPlanStructure(
         undefined, // isFirstOccurrence não usado
         weekState, // 🔴 NOVO: Passar weekState para verificar limites semanais (séries)
         approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
-        qualityAccumulator // 📊 NOVO: Passar acumulador de qualidade
+        qualityAccumulator, // 📊 NOVO: Passar acumulador de qualidade
+        trainingLocation, // 🏠 Novo: Ambiente de treino
+        age, // 🛡️ Idade para validação de risco
+        highRiskExercisesUsedThisWeek // 🛡️ Exercícios de alto risco usados na semana
       );
 
       // 🥈 Passo 2: Atualizar exerciseWeekState com exercícios adicionados
@@ -955,13 +1676,32 @@ export function generateTrainingPlanStructure(
   };
 
   // 🔒 Passar activityLevel para validar limites semanais antes de duplicar
-  const { plan: correctedPlan } = correctSameTypeDaysExercises(
-    plan,
-    activityLevel
+  // 🛡️ IDOSOS: Não corrigir dias Full Body para serem iguais (permite variedade)
+  const shouldCorrectDays = !(
+    age &&
+    age >= 60 &&
+    actualDivision === "Full Body"
   );
+  const { plan: correctedPlan } = shouldCorrectDays
+    ? correctSameTypeDaysExercises(plan, activityLevel)
+    : { plan }; // Não corrigir para idosos em Full Body
+
+  if (!shouldCorrectDays) {
+    console.log(
+      `🛡️ [IDOSO] Mantendo variedade de exercícios entre dias (sem correção automática para dias Full Body)`
+    );
+  }
 
   // 🔥 LIMITES SEMANAIS JÁ SÃO APLICADOS DURANTE A GERAÇÃO VIA addExerciseSafely
   // Não é necessário ajustar novamente após a geração
+
+  // ✅ NOVO: Auditoria de contratos (apenas registra métricas, não bloqueia)
+  // Audita se o plano final satisfaz os contratos de grupo muscular
+  if (activityLevel) {
+    auditContract(correctedPlan, {
+      activityLevel,
+    });
+  }
 
   // 🔒 VALIDAÇÃO DE INTEGRIDADE DO PLANO GERADO (após geração)
   // ⚠️ IMPORTANTE: Esta validação apenas detecta bugs, não substitui o validador principal
@@ -1048,11 +1788,392 @@ export function generateTrainingPlanStructure(
   return correctedPlan;
 }
 
+/* --------------------------------------------------------
+   FUNÇÕES AUXILIARES - GERAÇÃO GUIADA POR CONTRATO
+-------------------------------------------------------- */
+
+/**
+ * Obtém o role de um exercício (structural/isolated)
+ * Usa campo explícito se disponível, senão mapeia do type
+ */
+function getExerciseRole(exercise: ExerciseTemplate): ExerciseRole {
+  if (exercise.role) {
+    return exercise.role;
+  }
+  return mapTypeToRole(exercise.type);
+}
+
+/**
+ * Detecta padrão motor diretamente de ExerciseTemplate
+ * Usa campo explícito se disponível, senão detecta por nome (similar a detectMotorPattern)
+ */
+function getExercisePattern(
+  exercise: ExerciseTemplate
+): MovementPattern | null {
+  if (exercise.pattern) {
+    return exercise.pattern;
+  }
+
+  // Fallback: detectar por nome (mesma lógica de detectMotorPattern)
+  const name = normalize(exercise.name);
+  const primary = normalize(exercise.primaryMuscle || "");
+
+  // HINGE (hip_dominant)
+  if (
+    name.includes("stiff") ||
+    name.includes("rdl") ||
+    name.includes("romanian") ||
+    name.includes("good morning") ||
+    name.includes("hip thrust") ||
+    name.includes("glute bridge") ||
+    (name.includes("deadlift") && !name.includes("romanian"))
+  ) {
+    return "hip_dominant";
+  }
+
+  // SQUAT (knee_dominant)
+  if (
+    name.includes("agachamento") ||
+    name.includes("squat") ||
+    name.includes("leg press") ||
+    name.includes("hack squat") ||
+    name.includes("bulgarian") ||
+    name.includes("afundo") ||
+    name.includes("lunge")
+  ) {
+    return "knee_dominant";
+  }
+
+  // HORIZONTAL PUSH
+  if (
+    name.includes("supino") ||
+    name.includes("bench") ||
+    name.includes("crucifixo") ||
+    name.includes("crossover") ||
+    name.includes("flexao") ||
+    name.includes("flexão") ||
+    name.includes("push-up") ||
+    (primary.includes("peito") &&
+      (name.includes("inclinado") ||
+        name.includes("declinado") ||
+        name.includes("reto")))
+  ) {
+    return "horizontal_push";
+  }
+
+  // VERTICAL PUSH
+  if (
+    name.includes("desenvolvimento") ||
+    name.includes("press") ||
+    name.includes("military") ||
+    name.includes("overhead") ||
+    (primary.includes("ombro") && name.includes("desenvolvimento"))
+  ) {
+    return "vertical_push";
+  }
+
+  // HORIZONTAL PULL
+  if (
+    name.includes("remada") ||
+    name.includes("row") ||
+    name.includes("t-bar") ||
+    (primary.includes("costa") &&
+      (name.includes("curvada") ||
+        name.includes("unilateral") ||
+        name.includes("baixa")))
+  ) {
+    return "horizontal_pull";
+  }
+
+  // VERTICAL PULL
+  if (
+    (name.includes("puxada") ||
+      name.includes("pull") ||
+      name.includes("chin-up") ||
+      name.includes("lat pulldown") ||
+      (primary.includes("costa") &&
+        (name.includes("frente") ||
+          name.includes("atras") ||
+          name.includes("barra fixa")))) &&
+    !name.includes("face pull")
+  ) {
+    return "vertical_pull";
+  }
+
+  // UNILATERAL (afundo, agachamento búlgaro, remada unilateral)
+  if (
+    name.includes("unilateral") ||
+    name.includes("afundo") ||
+    name.includes("lunge") ||
+    name.includes("bulgarian")
+  ) {
+    return "unilateral";
+  }
+
+  return null; // Padrão desconhecido
+}
+
+/**
+ * Seleciona exercícios estruturais baseado em contrato
+ * Garante requisitos mínimos e padrões obrigatórios
+ *
+ * ✅ CRÍTICO: Evita duplicação usando Set<string>
+ */
+function pickStructuralByContract(
+  contract: MuscleGroupContract,
+  context: {
+    muscleGroup: string;
+    activityLevel: string;
+    availableExercises: ExerciseTemplate[];
+    approvalContract?: ApprovalContract;
+    usedExercises?: Set<string>; // ✅ Previne duplicação
+    equipment?: string; // 🏠 Ambiente de treino
+    dayType?: string; // 🏋️ Tipo de dia para priorização em casa
+    age?: number; // 🛡️ Idade para validação de risco
+    highRiskExercisesUsed?: Set<string>; // 🛡️ Exercícios de alto risco usados na semana
+  }
+): ExerciseTemplate[] {
+  const contractKey = getContractKey(context.activityLevel);
+  const minRequired = contract.minStructural[contractKey] || 1;
+
+  // Filtrar apenas estruturais
+  const structuralExercises = context.availableExercises.filter(
+    (ex) => getExerciseRole(ex) === "structural"
+  );
+
+  if (structuralExercises.length === 0) {
+    return []; // Sem estruturais disponíveis
+  }
+
+  const selected: ExerciseTemplate[] = [];
+  const used = context.usedExercises || new Set<string>(); // ✅ Previne duplicação
+
+  // 🏠 PRIORIZAR FUNDAMENTAIS PARA TREINO EM CASA
+  // Em ambiente doméstico, garantir presença de exercícios estruturais funcionais
+  const isHomeEnvironment =
+    context.equipment === "casa" ||
+    context.equipment === "home" ||
+    context.equipment === "ar_livre" ||
+    context.equipment === "outdoor";
+
+  if (isHomeEnvironment && context.dayType) {
+    const dayTypeNormalized = context.dayType.toLowerCase();
+    const fundamentals = HOME_FUNDAMENTALS[dayTypeNormalized];
+
+    if (fundamentals?.length) {
+      // Buscar primeiro fundamental disponível que não foi usado
+      const fundamentalExercise = structuralExercises.find(
+        (ex) =>
+          fundamentals.includes(ex.name) &&
+          !used.has(ex.name) &&
+          !selected.includes(ex)
+      );
+
+      if (fundamentalExercise) {
+        selected.push(fundamentalExercise);
+        used.add(fundamentalExercise.name);
+        console.log(
+          `🏠 [HOME FUNDAMENTAL] ${context.dayType}: ${fundamentalExercise.name} priorizado`
+        );
+      }
+    }
+  }
+
+  // 🛡️ FILTRAR EXERCÍCIOS DE ALTO RISCO PARA IDOSOS
+  // Para usuários ≥60 anos, filtrar exercícios de alto risco que já foram usados NA SEMANA
+  let availableStructuralPool = structuralExercises;
+  if (context.age && context.age >= 60 && context.highRiskExercisesUsed) {
+    // Contar quantos exercícios de alto risco já foram usados NA SEMANA
+    const highRiskCount = context.highRiskExercisesUsed.size;
+
+    // Se já usou 1 exercício de alto risco, remover TODOS os de alto risco do pool
+    if (highRiskCount >= 1) {
+      availableStructuralPool = structuralExercises.filter(
+        (ex) => getExerciseRiskLevel(ex.name) !== "high"
+      );
+      console.log(
+        `🛡️ [IDOSO] Removendo exercícios de alto risco do pool (já usado na semana: ${highRiskCount})`
+      );
+    }
+  }
+
+  // 1. Preencher padrões obrigatórios primeiro
+  if (contract.requiredPatterns) {
+    for (const requiredPattern of contract.requiredPatterns) {
+      // Verificar se já temos este padrão
+      const hasPattern = selected.some((ex) => {
+        const pattern = getExercisePattern(ex);
+        return pattern === requiredPattern;
+      });
+
+      if (!hasPattern) {
+        // Buscar exercício com este padrão (usando pool filtrado)
+        const found = availableStructuralPool.find((ex) => {
+          if (used.has(ex.name)) return false; // ✅ Evitar duplicação
+
+          const pattern = getExercisePattern(ex);
+          if (pattern === requiredPattern) return true;
+
+          // Verificar se é unilateral e o contrato permite como estrutural
+          if (
+            requiredPattern === "knee_dominant" &&
+            pattern === "unilateral" &&
+            contract.allowUnilateralAsStructural
+          ) {
+            return true;
+          }
+          if (
+            requiredPattern === "hip_dominant" &&
+            pattern === "unilateral" &&
+            contract.allowUnilateralAsStructural
+          ) {
+            return true;
+          }
+
+          return false;
+        });
+
+        if (found) {
+          selected.push(found);
+          used.add(found.name); // ✅ Marcar como usado
+        }
+      }
+    }
+  }
+
+  // 2. Completar até mínimo (evitando duplicação, usando pool filtrado)
+  while (selected.length < minRequired && availableStructuralPool.length > 0) {
+    const available = availableStructuralPool.filter(
+      (ex) => !used.has(ex.name) && !selected.includes(ex)
+    );
+
+    if (available.length === 0) break; // Sem mais opções
+
+    // Selecionar um exercício disponível
+    // Priorizar exercícios que não violam padrões permitidos
+    const candidate =
+      available.find((ex) => {
+        const pattern = getExercisePattern(ex);
+        if (!pattern) return true; // Sem padrão definido, aceitar
+        return isPatternAllowed(contract, pattern);
+      }) || available[0]; // Fallback: primeiro disponível
+
+    selected.push(candidate);
+    used.add(candidate.name); // ✅ Marcar como usado
+  }
+
+  // 🛡️ Rastrear exercícios de alto risco selecionados (para idosos)
+  if (context.age && context.age >= 60 && context.highRiskExercisesUsed) {
+    for (const ex of selected) {
+      if (getExerciseRiskLevel(ex.name) === "high") {
+        context.highRiskExercisesUsed.add(ex.name);
+        console.log(
+          `🛡️ [IDOSO] Exercício de alto risco registrado: ${ex.name} (total na semana: ${context.highRiskExercisesUsed.size})`
+        );
+      }
+    }
+  }
+
+  return selected;
+}
+
+/**
+ * Seleciona exercícios isolados para completar volume
+ * Não substitui estruturais, apenas adiciona
+ */
+function pickIsolated(context: {
+  muscleGroup: string;
+  availableExercises: ExerciseTemplate[];
+  maxCount: number;
+  usedExercises?: Set<string>; // ✅ Previne duplicação
+}): ExerciseTemplate[] {
+  const isolatedExercises = context.availableExercises.filter(
+    (ex) => getExerciseRole(ex) === "isolated"
+  );
+
+  const used = context.usedExercises || new Set<string>();
+  const available = isolatedExercises.filter((ex) => !used.has(ex.name));
+
+  // Selecionar até maxCount, evitando duplicação
+  const selected: ExerciseTemplate[] = [];
+  for (const ex of available) {
+    if (selected.length >= context.maxCount) break;
+    if (!used.has(ex.name)) {
+      selected.push(ex);
+      used.add(ex.name); // ✅ Marcar como usado
+    }
+  }
+
+  return selected;
+}
+
+/**
+ * Gera treino para um grupo muscular seguindo contrato
+ * Ordem: Estruturais obrigatórios → Isolados
+ */
+function generateWorkoutByGroup(context: {
+  muscleGroup: string;
+  activityLevel: string;
+  availableExercises: ExerciseTemplate[];
+  approvalContract?: ApprovalContract;
+  maxExercises?: number;
+  usedExercises?: Set<string>; // ✅ Previne duplicação
+  equipment?: string; // 🏠 Ambiente de treino
+  dayType?: string; // 🏋️ Tipo de dia
+  age?: number; // 🛡️ Idade para validação de risco
+  highRiskExercisesUsed?: Set<string>; // 🛡️ Exercícios de alto risco usados na semana
+}): ExerciseTemplate[] {
+  const contract = getContractForMuscleGroup(context.muscleGroup);
+  const exercises: ExerciseTemplate[] = [];
+  const used = context.usedExercises || new Set<string>();
+
+  // Se não há contrato específico, usar lógica padrão (retrocompatibilidade)
+  if (!contract) {
+    // Selecionar exercícios normalmente (comportamento atual)
+    const available = context.availableExercises.filter(
+      (ex) => !used.has(ex.name)
+    );
+    const maxCount = context.maxExercises || available.length;
+    return available.slice(0, maxCount);
+  }
+
+  // 1. Preencher estruturais obrigatórios PRIMEIRO
+  const structural = pickStructuralByContract(contract, {
+    muscleGroup: context.muscleGroup,
+    activityLevel: context.activityLevel,
+    availableExercises: context.availableExercises,
+    approvalContract: context.approvalContract,
+    usedExercises: used, // ✅ Passar Set para evitar duplicação
+    equipment: context.equipment, // 🏠 Propagar equipment
+    dayType: context.dayType, // 🏋️ Propagar dayType
+    age: context.age, // 🛡️ Propagar age para validação de risco
+    highRiskExercisesUsed: context.highRiskExercisesUsed, // 🛡️ Propagar exercícios de alto risco usados
+  });
+
+  exercises.push(...structural);
+
+  // 2. Completar volume com isolados (se houver espaço)
+  const remaining = (context.maxExercises || 10) - exercises.length;
+  if (remaining > 0) {
+    const isolated = pickIsolated({
+      muscleGroup: context.muscleGroup,
+      availableExercises: context.availableExercises,
+      maxCount: remaining,
+      usedExercises: used, // ✅ Passar Set para evitar duplicação
+    });
+
+    exercises.push(...isolated);
+  }
+
+  return exercises;
+}
+
 /**
  * Gera exercícios para um dia específico
  * Garante que compostos venham antes de isoladores dentro de cada grupo
  *
  * NOVO: Usa DayState e constraints para validação em tempo real
+ * NOVO: Suporta geração guiada por contrato (com fallback)
  */
 function generateDayExercises(
   dayType: string,
@@ -1069,7 +2190,10 @@ function generateDayExercises(
   isFirstOccurrence?: boolean, // 🥉 Passo 3: Se é primeira ocorrência do tipo de dia
   weeklySeriesState?: WeekState, // 🔴 NOVO: Estado semanal para limites de séries
   approvalContract?: ApprovalContract, // 🎯 NOVO: Contrato de aprovação para consulta antecipada
-  qualityAccumulator?: PlanQualityAccumulator // 📊 NOVO: Acumulador de qualidade
+  qualityAccumulator?: PlanQualityAccumulator, // 📊 NOVO: Acumulador de qualidade
+  trainingLocation?: "academia" | "casa" | "ambos" | "ar_livre", // 🏠 Novo: Ambiente de treino
+  age?: number, // 🛡️ Idade para validação de risco
+  highRiskExercisesUsed?: Set<string> // 🛡️ Exercícios de alto risco usados na semana
 ): Exercise[] {
   let exercises: Exercise[] = [];
 
@@ -1110,24 +2234,171 @@ function generateDayExercises(
     return normalized;
   };
 
+  // 🏠 Novo: Helper para filtrar exercícios por ambiente
+  const filterByLocation = (
+    database: ExerciseTemplate[],
+    location?: "academia" | "casa" | "ambos" | "ar_livre"
+  ): ExerciseTemplate[] => {
+    const loc = location || trainingLocation;
+
+    if (!loc || loc === "academia") {
+      // Academia pode usar todos os exercícios
+      return database;
+    }
+
+    if (loc === "casa") {
+      // Casa: apenas exercícios de casa ou ambos
+      return database.filter(
+        (ex) => ex.equipment === "home" || ex.equipment === "both"
+      );
+    }
+
+    if (loc === "ar_livre") {
+      // Ar livre: apenas exercícios de casa, ambos ou outdoor
+      return database.filter(
+        (ex) =>
+          ex.equipment === "home" ||
+          ex.equipment === "both" ||
+          ex.equipment === "outdoor"
+      );
+    }
+
+    if (loc === "ambos") {
+      // Ambos: priorizar exercícios que funcionam em ambos, mas permitir todos
+      // Ordenar para priorizar "both" e "home"
+      return [...database].sort((a, b) => {
+        const aPriority =
+          a.equipment === "both" ? 0 : a.equipment === "home" ? 1 : 2;
+        const bPriority =
+          b.equipment === "both" ? 0 : b.equipment === "home" ? 1 : 2;
+        return aPriority - bPriority;
+      });
+    }
+
+    return database;
+  };
+
+  // 🏠 Novo: Helper para obter banco de exercícios filtrado por ambiente
+  const getFilteredDatabase = (
+    loc?: "academia" | "casa" | "ambos" | "ar_livre"
+  ): typeof EXERCISE_DATABASE => {
+    const location = loc || trainingLocation;
+    if (!location || location === "academia") {
+      return EXERCISE_DATABASE;
+    }
+
+    const filtered: typeof EXERCISE_DATABASE = {} as typeof EXERCISE_DATABASE;
+    for (const [muscle, exercises] of Object.entries(EXERCISE_DATABASE)) {
+      const filteredExercises = filterByLocation(exercises, location);
+
+      // 🏠 Novo: Lógica de substituição - se não há exercícios suficientes para o ambiente
+      if (filteredExercises.length === 0) {
+        if (location === "casa") {
+          // Casa: tentar "both" como fallback, depois todos
+          const fallback = exercises.filter(
+            (ex) => ex.equipment === "both" || !ex.equipment
+          );
+          filtered[muscle as keyof typeof EXERCISE_DATABASE] = (
+            fallback.length > 0 ? fallback : exercises
+          ) as ExerciseTemplate[];
+          if (fallback.length === 0) {
+            console.warn(
+              `⚠️ [Ambiente] Nenhum exercício compatível para ${muscle} em casa. Usando todos como fallback.`
+            );
+          }
+        } else if (location === "ar_livre") {
+          // Ar livre: tentar "both" e "home" como fallback
+          const fallback = exercises.filter(
+            (ex) =>
+              ex.equipment === "both" ||
+              ex.equipment === "home" ||
+              !ex.equipment
+          );
+          filtered[muscle as keyof typeof EXERCISE_DATABASE] = (
+            fallback.length > 0 ? fallback : exercises
+          ) as ExerciseTemplate[];
+        } else {
+          // Ambos: usar todos (já filtrado)
+          filtered[muscle as keyof typeof EXERCISE_DATABASE] =
+            exercises as ExerciseTemplate[];
+        }
+      } else {
+        filtered[muscle as keyof typeof EXERCISE_DATABASE] =
+          filteredExercises as ExerciseTemplate[];
+      }
+    }
+    return filtered;
+  };
+
+  // 🏠 Novo: Obter banco filtrado uma vez por chamada de generateDayExercises
+  // trainingLocation é um parâmetro opcional, então passamos undefined se não estiver definido
+  const FILTERED_DATABASE = getFilteredDatabase(trainingLocation || undefined);
+
   // 🥉 Passo 3: Helper para seleção com variação leve em PPL
+  // ✅ NOVO: Suporta geração guiada por contrato (com fallback)
   const selectWithPPLVariation = (
     database: ExerciseTemplate[],
-    count: number
+    count: number,
+    muscleGroup?: string // ✅ NOVO: Para geração guiada por contrato
   ): ExerciseTemplate[] => {
+    // 🏠 Novo: Filtrar por ambiente primeiro
+    const filteredDatabase = filterByLocation(database);
+
+    // ✅ NOVO: Tentar geração guiada por contrato se muscleGroup fornecido
+    if (muscleGroup && activityLevel) {
+      const contract = getContractForMuscleGroup(muscleGroup);
+      if (contract) {
+        // Criar Set de exercícios já usados (para evitar duplicação)
+        const usedExercises = new Set<string>();
+        if (pplState && pplState[dayType]) {
+          pplState[dayType].forEach((name) => usedExercises.add(name));
+        }
+
+        // Usar geração guiada por contrato
+        const guidedExercises = generateWorkoutByGroup({
+          muscleGroup,
+          activityLevel,
+          availableExercises: filteredDatabase,
+          approvalContract,
+          maxExercises: count,
+          usedExercises, // ✅ Previne duplicação
+          equipment: trainingLocation, // 🏠 Propagar ambiente
+          dayType, // 🏋️ Propagar tipo de dia
+          age, // 🛡️ Propagar idade para validação de risco
+          highRiskExercisesUsed, // 🛡️ Propagar exercícios de alto risco usados
+        });
+
+        // Se geração guiada retornou exercícios, usar eles
+        if (guidedExercises.length > 0) {
+          // Atualizar pplState com exercícios selecionados (para variação em PPL)
+          if (pplState && dayType && !isFirstOccurrence) {
+            guidedExercises.forEach((ex) => {
+              if (!pplState[dayType]) {
+                pplState[dayType] = new Set();
+              }
+              pplState[dayType].add(ex.name);
+            });
+          }
+          return guidedExercises;
+        }
+        // Se geração guiada não retornou nada, continuar com fallback
+      }
+    }
+
+    // Fallback: comportamento original (variação leve em PPL)
     // Se não há pplState ou é primeira ocorrência, usar seleção normal
     if (!pplState || !dayType || isFirstOccurrence) {
-      return selectDiverseExercises(database, count);
+      return selectDiverseExercises(filteredDatabase, count);
     }
 
     // Se não há estado para este tipo de dia, usar seleção normal
     if (!pplState[dayType]) {
-      return selectDiverseExercises(database, count);
+      return selectDiverseExercises(filteredDatabase, count);
     }
 
     // Filtrar exercícios já usados neste tipo de dia
     const usedNames = pplState[dayType];
-    const available = database.filter((ex) => !usedNames.has(ex.name));
+    const available = filteredDatabase.filter((ex) => !usedNames.has(ex.name));
 
     // Se há exercícios disponíveis, usar eles (variação leve)
     if (available.length >= count) {
@@ -1149,7 +2420,7 @@ function generateDayExercises(
     }
 
     // Se não há nenhum disponível, usar todos (reset)
-    return selectDiverseExercises(database, count);
+    return selectDiverseExercises(filteredDatabase, count);
   };
 
   // 🔥 NOVO: Helper para adicionar templates com validação
@@ -1507,9 +2778,12 @@ function generateDayExercises(
 
     // Adicionar exercícios de peito (PRIMÁRIO - GRANDES PRIMEIRO)
     // 🥉 Passo 3: Selecionar com variação leve em PPL
+    // 🏠 Novo: Usar banco filtrado por ambiente
+    // ✅ NOVO: Geração guiada por contrato (com fallback)
     const peitoTemplates = selectWithPPLVariation(
-      sortByType(EXERCISE_DATABASE.peitoral),
-      peitoCountLimited
+      sortByType(FILTERED_DATABASE.peitoral),
+      peitoCountLimited,
+      "peitoral" // ✅ Passar muscleGroup para geração guiada
     );
 
     // 🔥 NOVO: Adicionar com validação em tempo real
@@ -1517,7 +2791,8 @@ function generateDayExercises(
 
     // Adicionar exercícios de ombros (SECUNDÁRIO - mínimo 1)
     // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    // 🏠 Novo: Usar banco filtrado por ambiente
+    const ombrosAvailable = FILTERED_DATABASE.ombros;
     // Limitar padrão motor vertical_push: no máximo 1 exercício NO TOTAL
     const ombrosSorted = sortByType(ombrosAvailable);
     const ombrosVerticalPush = ombrosSorted.filter(isVerticalPush);
@@ -1697,7 +2972,7 @@ function generateDayExercises(
     // Adicionar exercícios de tríceps (PEQUENOS DEPOIS)
     // 🥉 Passo 3: Selecionar com variação leve em PPL
     const tricepsTemplates = selectWithPPLVariation(
-      sortByType(EXERCISE_DATABASE.triceps),
+      sortByType(FILTERED_DATABASE.triceps),
       tricepsCount
     );
     addTemplatesSafely(tricepsTemplates, "Tríceps");
@@ -1734,7 +3009,7 @@ function generateDayExercises(
     );
     // Usar face pull e elevação lateral invertida para posterior
     // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    const ombrosAvailable = FILTERED_DATABASE.ombros;
     const ombrosPosteriorExercises = ombrosAvailable
       .filter(
         (ex) => ex.name.includes("Face pull") || ex.name.includes("invertida")
@@ -1749,7 +3024,7 @@ function generateDayExercises(
 
     // Adicionar exercícios de costas (PRIMÁRIO - GRANDES PRIMEIRO)
     // Limitar padrão motor vertical_pull: no máximo 1 exercício
-    const costasSorted = sortByType(EXERCISE_DATABASE.costas);
+    const costasSorted = sortByType(FILTERED_DATABASE.costas);
     const costasVerticalPull = costasSorted.filter(isVerticalPull);
     const costasNonVerticalPull = costasSorted.filter(
       (t) => !isVerticalPull(t)
@@ -1765,9 +3040,10 @@ function generateDayExercises(
 
     // Selecionar no máximo 1 exercício com padrão vertical_pull
     // 🥉 Passo 3: Aplicar variação leve
+    // ✅ NOVO: Geração guiada por contrato (com fallback)
     const verticalPullSelected =
       costasVerticalPull.length > 0
-        ? selectWithPPLVariation(costasVerticalPull, 1).slice(0, 1)
+        ? selectWithPPLVariation(costasVerticalPull, 1, "costas").slice(0, 1)
         : [];
     const remainingCostasCount = Math.max(
       0,
@@ -1775,7 +3051,11 @@ function generateDayExercises(
     );
     const nonVerticalPullSelected =
       remainingCostasCount > 0
-        ? selectWithPPLVariation(costasNonVerticalPull, remainingCostasCount)
+        ? selectWithPPLVariation(
+            costasNonVerticalPull,
+            remainingCostasCount,
+            "costas"
+          )
         : [];
 
     let costasTemplates = [...verticalPullSelected, ...nonVerticalPullSelected];
@@ -1802,7 +3082,7 @@ function generateDayExercises(
         `🔍 [Pull Day] Índice de "Puxada na barra fixa": ${barraFixaIndex}`
       );
       if (barraFixaIndex !== -1) {
-        const barraAssistida = EXERCISE_DATABASE.costas.find(
+        const barraAssistida = FILTERED_DATABASE.costas.find(
           (t) => t.name === "Barra fixa assistida"
         );
         console.log(
@@ -1862,7 +3142,7 @@ function generateDayExercises(
     // adicionar um exercício alternativo de ombros
     if (hasVerticalPull && ombrosPosteriorFiltered.length === 0) {
       // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-      const ombrosAvailable = EXERCISE_DATABASE.ombros;
+      const ombrosAvailable = FILTERED_DATABASE.ombros;
       const alternativeOmbros = ombrosAvailable.filter(
         (ex) =>
           !ex.name.includes("Face pull") &&
@@ -1882,7 +3162,7 @@ function generateDayExercises(
     // Adicionar exercícios de bíceps (PEQUENOS DEPOIS)
     // 🥉 Passo 3: Selecionar com variação leve em PPL
     const bicepsTemplates = selectWithPPLVariation(
-      sortByType(EXERCISE_DATABASE.biceps),
+      sortByType(FILTERED_DATABASE.biceps),
       bicepsCount
     );
     addTemplatesSafely(bicepsTemplates, "Bíceps");
@@ -1993,7 +3273,7 @@ function generateDayExercises(
 
     // Adicionar exercícios de quadríceps (PRIMÁRIO - GRANDES PRIMEIRO)
     // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-    const quadAvailable = EXERCISE_DATABASE.quadriceps;
+    const quadAvailable = FILTERED_DATABASE.quadriceps;
     // Limitar padrão motor squat: no máximo 2 exercícios
     const quadSorted = sortByType(quadAvailable);
     const quadSquat = quadSorted.filter(isSquat);
@@ -2001,14 +3281,15 @@ function generateDayExercises(
 
     // Selecionar no máximo 2 exercícios com padrão squat
     // 🥉 Passo 3: Aplicar variação leve
+    // ✅ NOVO: Geração guiada por contrato (com fallback)
     const squatSelected =
       quadSquat.length > 0
-        ? selectWithPPLVariation(quadSquat, 2).slice(0, 2)
+        ? selectWithPPLVariation(quadSquat, 2, "quadriceps").slice(0, 2)
         : [];
     const remainingQuadCount = Math.max(0, quadCount - squatSelected.length);
     const nonSquatSelected =
       remainingQuadCount > 0
-        ? selectWithPPLVariation(quadNonSquat, remainingQuadCount)
+        ? selectWithPPLVariation(quadNonSquat, remainingQuadCount, "quadriceps")
         : [];
 
     const quadTemplates = [...squatSelected, ...nonSquatSelected];
@@ -2055,7 +3336,7 @@ function generateDayExercises(
     }).length;
 
     // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-    const posteriorAvailable = EXERCISE_DATABASE["posterior de coxa"];
+    const posteriorAvailable = FILTERED_DATABASE["posterior de coxa"];
     const posteriorSorted = sortByType(posteriorAvailable);
     const posteriorSquat = posteriorSorted.filter(isSquat);
     const posteriorHinge = posteriorSorted.filter(isHinge);
@@ -2084,23 +3365,27 @@ function generateDayExercises(
     // Limitar padrão motor hinge: no máximo 1 exercício
     const remainingHingeSlots = Math.max(0, 1 - currentHingeCount);
     // 🥉 Passo 3: Aplicar variação leve
+    // ✅ NOVO: Geração guiada por contrato (com fallback)
     const posteriorHingeSelected =
       remainingHingeSlots > 0 && posteriorHinge.length > 0
-        ? selectWithPPLVariation(posteriorHinge, remainingHingeSlots).slice(
-            0,
-            remainingHingeSlots
-          )
+        ? selectWithPPLVariation(
+            posteriorHinge,
+            remainingHingeSlots,
+            "posterior de coxa"
+          ).slice(0, remainingHingeSlots)
         : [];
 
     // Se já há 2 exercícios squat, não adicionar mais
     const remainingSquatSlots = Math.max(0, 2 - currentSquatCount);
     // 🥉 Passo 3: Aplicar variação leve
+    // ✅ NOVO: Geração guiada por contrato (com fallback)
     const posteriorSquatSelected =
       remainingSquatSlots > 0 && posteriorSquat.length > 0
-        ? selectWithPPLVariation(posteriorSquat, remainingSquatSlots).slice(
-            0,
-            remainingSquatSlots
-          )
+        ? selectWithPPLVariation(
+            posteriorSquat,
+            remainingSquatSlots,
+            "posterior de coxa"
+          ).slice(0, remainingSquatSlots)
         : [];
 
     const remainingPosteriorCount = Math.max(
@@ -2141,7 +3426,7 @@ function generateDayExercises(
 
     // Adicionar exercícios de panturrilhas (PEQUENOS POR ÚLTIMO)
     const panturrilhasExercises = selectDiverseExercises(
-      EXERCISE_DATABASE.panturrilhas,
+      FILTERED_DATABASE.panturrilhas,
       panturrilhasCount
     );
     addTemplatesSafely(panturrilhasExercises, "Panturrilhas");
@@ -2308,12 +3593,12 @@ function generateDayExercises(
     }
 
     addTemplatesSafely(
-      selectDiverseExercises(EXERCISE_DATABASE.peitoral, peitoCount),
+      selectDiverseExercises(FILTERED_DATABASE.peitoral, peitoCount),
       "Peito (Upper)"
     );
 
     // Adicionar exercícios de costas com validação de padrão motor vertical_pull
-    const costasSorted = sortByType(EXERCISE_DATABASE.costas);
+    const costasSorted = sortByType(FILTERED_DATABASE.costas);
     const costasVerticalPull = costasSorted.filter(isVerticalPull);
     const costasNonVerticalPull = costasSorted.filter(
       (t) => !isVerticalPull(t)
@@ -2382,7 +3667,7 @@ function generateDayExercises(
 
     // Adicionar exercícios de ombros com validação de padrão motor vertical_push
     // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    const ombrosAvailable = FILTERED_DATABASE.ombros;
     const ombrosSorted = sortByType(ombrosAvailable);
     const ombrosVerticalPush = ombrosSorted.filter(isVerticalPush);
     const ombrosNonVerticalPush = ombrosSorted.filter(
@@ -2452,11 +3737,11 @@ function generateDayExercises(
     addTemplatesSafely(ombrosTemplates, "Ombros (Upper)");
 
     addTemplatesSafely(
-      selectDiverseExercises(EXERCISE_DATABASE.biceps, bicepsCount),
+      selectDiverseExercises(FILTERED_DATABASE.biceps, bicepsCount),
       "Bíceps (Upper)"
     );
     addTemplatesSafely(
-      selectDiverseExercises(EXERCISE_DATABASE.triceps, tricepsCount),
+      selectDiverseExercises(FILTERED_DATABASE.triceps, tricepsCount),
       "Tríceps (Upper)"
     );
 
@@ -2506,7 +3791,22 @@ function generateDayExercises(
 
       // Filtrar exercícios já usados
       const usedNames = weekState[muscleGroup];
-      const available = database.filter((ex) => !usedNames.has(ex.name));
+      let available = database.filter((ex) => !usedNames.has(ex.name));
+
+      // 🛡️ FILTRAR exercícios de alto risco para idosos (≥60 anos)
+      if (age && age >= 60 && highRiskExercisesUsed) {
+        const highRiskCount = highRiskExercisesUsed.size;
+
+        // Se já usou 1 exercício de alto risco na semana, remover todos os de alto risco do pool
+        if (highRiskCount >= 1) {
+          available = available.filter(
+            (ex) => getExerciseRiskLevel(ex.name) !== "high"
+          );
+          console.log(
+            `🛡️ [IDOSO FULL BODY] Removendo exercícios de alto risco do pool para ${muscleGroup} (já usado na semana: ${highRiskCount})`
+          );
+        }
+      }
 
       if (available.length === 0) {
         // Se todos foram usados, resetar e usar todos
@@ -2517,28 +3817,42 @@ function generateDayExercises(
       }
 
       // Selecionar dos disponíveis
-      return selectDiverseExercises(
+      const selected = selectDiverseExercises(
         available,
         Math.min(count, available.length)
       );
+
+      // 🛡️ Rastrear exercícios de alto risco selecionados (para idosos)
+      if (age && age >= 60 && highRiskExercisesUsed) {
+        for (const ex of selected) {
+          if (getExerciseRiskLevel(ex.name) === "high") {
+            highRiskExercisesUsed.add(ex.name);
+            console.log(
+              `🛡️ [IDOSO FULL BODY] Exercício de alto risco registrado: ${ex.name} (total na semana: ${highRiskExercisesUsed.size})`
+            );
+          }
+        }
+      }
+
+      return selected;
     };
 
     // Peito - evitar repetição
     addTemplatesSafely(
-      selectUnusedExercise(EXERCISE_DATABASE.peitoral, "peitoral", 1),
+      selectUnusedExercise(FILTERED_DATABASE.peitoral, "peitoral", 1),
       "Peito (Full Body)"
     );
 
     // Costas - evitar repetição
     addTemplatesSafely(
-      selectUnusedExercise(EXERCISE_DATABASE.costas, "costas", 1),
+      selectUnusedExercise(FILTERED_DATABASE.costas, "costas", 1),
       "Costas (Full Body)"
     );
 
     // Alternar entre quadríceps e posterior a cada treino
     // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-    const quadAvailable = EXERCISE_DATABASE.quadriceps;
-    const posteriorAvailable = EXERCISE_DATABASE["posterior de coxa"];
+    const quadAvailable = FILTERED_DATABASE.quadriceps;
+    const posteriorAvailable = FILTERED_DATABASE["posterior de coxa"];
     if (dayIndex % 2 === 0) {
       addTemplatesSafely(
         selectUnusedExercise(quadAvailable, "quadriceps", 1),
@@ -2553,7 +3867,7 @@ function generateDayExercises(
 
     // Ombros - evitar repetição
     // 🔒 Restrições articulares agora são validadas pelo ApprovalContract
-    const ombrosAvailable = EXERCISE_DATABASE.ombros;
+    const ombrosAvailable = FILTERED_DATABASE.ombros;
     addTemplatesSafely(
       selectUnusedExercise(ombrosAvailable, "ombros", 1),
       "Ombros (Full Body)"
@@ -2562,12 +3876,12 @@ function generateDayExercises(
     // Alternar entre bíceps e tríceps - evitar repetição
     if (dayIndex % 2 === 0) {
       addTemplatesSafely(
-        selectUnusedExercise(EXERCISE_DATABASE.biceps, "biceps", 1),
+        selectUnusedExercise(FILTERED_DATABASE.biceps, "biceps", 1),
         "Bíceps (Full Body)"
       );
     } else {
       addTemplatesSafely(
-        selectUnusedExercise(EXERCISE_DATABASE.triceps, "triceps", 1),
+        selectUnusedExercise(FILTERED_DATABASE.triceps, "triceps", 1),
         "Tríceps (Full Body)"
       );
     }

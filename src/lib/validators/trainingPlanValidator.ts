@@ -71,6 +71,8 @@ function normalizeDivisionName(name: string): string {
   const normalized = normalize(name);
   // Aceitar "legs" como sinônimo de "lower"
   if (normalized === "legs") return "lower";
+  // Aceitar "full body" (com espaço) como "fullbody"
+  if (normalized === "full body") return "fullbody";
   return normalized;
 }
 
@@ -93,6 +95,42 @@ function isBig(muscle: string): boolean {
 function isMedium(muscle: string): boolean {
   const medium = ["ombros", "trapezio"];
   return medium.includes(normalize(muscle));
+}
+
+/**
+ * Detecta nível de risco de um exercício baseado no nome
+ * - high: Exercícios estruturais pesados (deadlift, clean, snatch)
+ * - moderate: Agachamentos, desenvolvimentos
+ * - low: Isolados e máquinas
+ */
+function getExerciseRiskLevel(
+  exerciseName: string
+): "low" | "moderate" | "high" {
+  const normalized = normalize(exerciseName);
+
+  // Alto risco: Olímpicos e variações de deadlift
+  if (
+    normalized.includes("deadlift") ||
+    normalized.includes("terra") ||
+    normalized.includes("clean") ||
+    normalized.includes("snatch") ||
+    normalized.includes("arranco")
+  ) {
+    return "high";
+  }
+
+  // Risco moderado: Agachamentos pesados e desenvolvimentos com barra
+  if (
+    (normalized.includes("agachamento") && normalized.includes("barra")) ||
+    (normalized.includes("squat") && normalized.includes("bar")) ||
+    (normalized.includes("desenvolvimento") && normalized.includes("barra")) ||
+    (normalized.includes("press") && normalized.includes("bar"))
+  ) {
+    return "moderate";
+  }
+
+  // Baixo risco: todo o resto (isolados, máquinas, peso corporal)
+  return "low";
 }
 
 /**
@@ -545,8 +583,12 @@ function validateExerciseOrder(day: TrainingDay): boolean {
 /**
  * Valida se treinos do mesmo tipo têm os mesmos exercícios
  * Quando Push A e Push D existem, devem ter exatamente os mesmos exercícios
+ * EXCEÇÃO: Full Body para idosos (≥60 anos) permite variedade de exercícios
  */
-function validateSameTypeDaysHaveSameExercises(plan: TrainingPlan): boolean {
+function validateSameTypeDaysHaveSameExercises(
+  plan: TrainingPlan,
+  age?: number
+): boolean {
   if (!plan?.weeklySchedule) return true;
 
   // Agrupar dias por tipo
@@ -562,6 +604,14 @@ function validateSameTypeDaysHaveSameExercises(plan: TrainingPlan): boolean {
   // Para cada tipo que aparece múltiplas vezes, verificar se os exercícios são iguais
   for (const [dayType, days] of daysByType.entries()) {
     if (days.length <= 1) continue; // Apenas tipos que aparecem 2+ vezes
+
+    // 🛡️ EXCEÇÃO: Idosos (≥60 anos) podem ter exercícios diferentes em Full Body para variedade e segurança
+    if (age && age >= 60 && dayType === "fullbody") {
+      console.log(
+        `🛡️ [IDOSO VALIDATOR] Permitindo variedade de exercícios em Full Body para idade=${age}`
+      );
+      continue; // Pular validação de exercícios iguais
+    }
 
     // Comparar o primeiro dia com todos os outros
     const firstDay = days[0];
@@ -1223,6 +1273,7 @@ export function isTrainingPlanUsable(
     objective?: string; // Novo: objetivo para validação de déficit calórico
     hasShoulderRestriction?: boolean; // 🔒 Restrições articulares
     hasKneeRestriction?: boolean; // 🔒 Restrições articulares
+    equipment?: string; // 🏋️ Ambiente de treino (casa, academia, ar_livre)
   }
 ): boolean {
   // Ajustar séries para respeitar limites semanais antes de validar
@@ -1274,7 +1325,7 @@ export function isTrainingPlanUsable(
   }
 
   // Validação: dias do mesmo tipo devem ter os mesmos exercícios
-  if (!validateSameTypeDaysHaveSameExercises(planForValidation)) {
+  if (!validateSameTypeDaysHaveSameExercises(planForValidation, context?.age)) {
     return false; // A função já registra a rejeição
   }
 
@@ -1292,7 +1343,8 @@ export function isTrainingPlanUsable(
       context?.objective,
       context?.imc,
       context?.hasShoulderRestriction,
-      context?.hasKneeRestriction
+      context?.hasKneeRestriction,
+      context?.equipment
     )
   ) {
     return false; // A função já registra a rejeição
@@ -1351,6 +1403,43 @@ export function isTrainingPlanUsable(
     }
   }
 
+  // 🛡️ VALIDAÇÃO DE RISCO PARA IDOSOS (SEMANAL)
+  // Para pessoas com 60+ anos, limitar exposição total a exercícios de alto risco
+  // Não importa se estão em dias diferentes: 2 deadlifts na semana = 2 exposições
+  if (context?.age && context.age >= 60) {
+    let totalHighRiskExercises = 0;
+    const highRiskExercisesList: string[] = [];
+
+    for (const day of planForValidation.weeklySchedule) {
+      const dayHighRisk = day.exercises.filter(
+        (ex) => getExerciseRiskLevel(ex.name) === "high"
+      );
+      totalHighRiskExercises += dayHighRisk.length;
+      highRiskExercisesList.push(...dayHighRisk.map((ex) => ex.name));
+    }
+
+    if (totalHighRiskExercises > 1) {
+      console.warn(
+        "Plano rejeitado: excesso de exercícios de alto risco para idoso (semanal)",
+        {
+          age: context.age,
+          totalHighRiskExercises,
+          maxAllowed: 1,
+          exercises: highRiskExercisesList,
+        }
+      );
+      recordPlanRejection("excesso_exercicios_alto_risco_idoso", {
+        activityLevel: activityLevel || undefined,
+        trainingDays,
+        age: context.age,
+        totalHighRiskExercises,
+        maxAllowed: 1,
+        exercises: highRiskExercisesList.join(", "),
+      }).catch(() => {});
+      return false;
+    }
+  }
+
   for (const day of planForValidation.weeklySchedule) {
     if (!day.exercises?.length) {
       console.warn("Plano rejeitado: dia sem exercícios", {
@@ -1379,16 +1468,30 @@ export function isTrainingPlanUsable(
     // 🔴 Ajustar maxExercisesPerSession considerando objetivo e tempo disponível (mesma lógica do gerador)
     let adjustedMaxExercises = profile.maxExercisesPerSession;
 
-    // Ajuste para sedentários com pouco tempo (≤40min) - limitar a 4 exercícios
+    // 🎯 FULL BODY COMPACTO: Exceção estrutural necessária
+    // Full Body precisa de 5 exercícios mínimos para cobertura muscular completa
+    // mesmo com tempo limitado (1 lower, 1 push, 1 pull, 1 posterior/core, 1 complementar)
+    const dayTypeForLimit = normalizeDivisionName(day.type || "");
+    const isFullBody = dayTypeForLimit === "fullbody";
     const isSedentary =
       normalizedLevel.includes("sedentario") ||
       normalizedLevel.includes("sedentary");
-    if (isSedentary && availableTimeMinutes && availableTimeMinutes <= 40) {
+    const hasVeryLimitedTime =
+      availableTimeMinutes && availableTimeMinutes <= 40;
+
+    if (isFullBody && isSedentary && hasVeryLimitedTime) {
+      // Full Body Compacto: permite 5 exercícios (cobertura muscular mínima)
+      adjustedMaxExercises = Math.min(adjustedMaxExercises, 5);
+    } else if (
+      isSedentary &&
+      availableTimeMinutes &&
+      availableTimeMinutes <= 40
+    ) {
+      // Outras divisões (Upper/Lower, etc): limitar a 4 exercícios
       adjustedMaxExercises = Math.min(adjustedMaxExercises, 4);
     }
 
     // Ajuste para emagrecimento com pouco tempo e Upper/Lower
-    const dayTypeForLimit = normalizeDivisionName(day.type || "");
     const isEmagrecimento =
       context?.objective &&
       (context.objective.toLowerCase().includes("emagrecimento") ||
@@ -1934,10 +2037,13 @@ export function isTrainingPlanUsable(
 
       if (count < minRequired) {
         // Decisão técnica automática: Se estiver perto do mínimo, aceitamos mas registramos correção.
-        // Se estiver muito longe (ex: 1 exercício para grupo grande em atleta), rejeitamos.
-        const isWayTooLow = isBig(muscle) && count <= 1;
+        // Se estiver muito longe (ex: 0 exercícios para grupo grande), rejeitamos.
 
-        if (isWayTooLow) {
+        // 🔴 EXCEÇÃO: Full Body em déficit calórico pode ter 1 exercício por grupo grande
+        const isFullBodyDeficit = dayType === "fullbody" && context?.objective;
+        const isWayTooLow = isBig(muscle) && count === 0; // Apenas 0 é crítico
+
+        if (isWayTooLow && !isFullBodyDeficit) {
           rejectPlan(
             "volume_insuficiente_critico",
             {
@@ -2014,27 +2120,53 @@ export function isTrainingPlanUsable(
       return false;
     }
 
-    // NOVA VALIDAÇÃO: Validar secondaryMuscles (máximo 2)
+    // NOVA VALIDAÇÃO: Validar secondaryMuscles (contexto: exercícios compostos podem ter até 3)
     for (const ex of day.exercises) {
-      if (ex.secondaryMuscles && ex.secondaryMuscles.length > 2) {
-        rejectPlan(
-          "secondaryMuscles_excede_limite",
-          {
-            activityLevel: level,
-            trainingDays,
-            dayType,
-            exercise: ex.name,
-            secondaryMusclesCount: ex.secondaryMuscles.length,
-            day: day.day,
-          },
-          "secondaryMuscles excede limite de 2",
-          {
-            exercise: ex.name,
-            secondaryMuscles: ex.secondaryMuscles.length,
-            day: day.day,
-          }
-        );
-        return false;
+      if (ex.secondaryMuscles && ex.secondaryMuscles.length > 0) {
+        // 🔍 Detectar se é exercício estrutural/composto baseado no nome
+        const exerciseName = normalize(ex.name);
+        const isStructuralExercise =
+          exerciseName.includes("deadlift") ||
+          exerciseName.includes("terra") ||
+          exerciseName.includes("agachamento") ||
+          exerciseName.includes("squat") ||
+          exerciseName.includes("supino") ||
+          exerciseName.includes("bench") ||
+          exerciseName.includes("remada") ||
+          exerciseName.includes("row") ||
+          exerciseName.includes("puxada") ||
+          exerciseName.includes("pulldown") ||
+          exerciseName.includes("desenvolvimento") ||
+          exerciseName.includes("press");
+
+        // Exercícios estruturais: até 3 músculos secundários
+        // Exercícios isolados: até 2 músculos secundários
+        const maxSecondaryMuscles = isStructuralExercise ? 3 : 2;
+
+        if (ex.secondaryMuscles.length > maxSecondaryMuscles) {
+          rejectPlan(
+            "secondaryMuscles_excede_limite",
+            {
+              activityLevel: level,
+              trainingDays,
+              dayType,
+              exercise: ex.name,
+              secondaryMusclesCount: ex.secondaryMuscles.length,
+              maxAllowed: maxSecondaryMuscles,
+              isStructural: isStructuralExercise,
+              day: day.day,
+            },
+            `secondaryMuscles excede limite de ${maxSecondaryMuscles}`,
+            {
+              exercise: ex.name,
+              secondaryMuscles: ex.secondaryMuscles.length,
+              maxAllowed: maxSecondaryMuscles,
+              isStructural: isStructuralExercise,
+              day: day.day,
+            }
+          );
+          return false;
+        }
       }
     }
 

@@ -200,7 +200,13 @@ export async function POST(request: NextRequest) {
         imc,
         userData.objective || undefined,
         hasJointLimitations, // 🥇 Passo 1: Restrição de ombro
-        hasKneeLimitations // 🔴 Restrição de joelho
+        hasKneeLimitations, // 🔴 Restrição de joelho
+        userData.trainingLocation as
+          | "academia"
+          | "casa"
+          | "ambos"
+          | "ar_livre"
+          | undefined // 🏠 Novo: Ambiente de treino
       );
 
       // O generateTrainingPlanStructure já retorna o plano com séries ajustadas

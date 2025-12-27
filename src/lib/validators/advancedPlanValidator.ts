@@ -254,14 +254,34 @@ function detectDeficit(objective?: string | null, imc?: number): DeficitConfig {
  *
  * Conta séries por exercício, soma por músculo,
  * multiplica pela frequência semanal e valida contra limites
+ *
+ * 🏠 Volume Density Modifier: Em casa/ao ar livre, volume vem de frequência
+ * e variedade (menos carga externa), então limites são 15% maiores
  */
 export function validateWeeklySeries(
   plan: TrainingPlan,
   trainingDays: number,
-  activityLevel?: string | null
+  activityLevel?: string | null,
+  equipment?: string | null
 ): boolean {
   const limits = getWeeklySeriesLimits(activityLevel);
   const weeklySeries = new Map<string, number>();
+
+  // 🏋️ Volume Density Modifier por Ambiente
+  // Casa/ar livre = menos carga externa = compensar com volume/variedade
+  const environmentVolumeModifier: Record<string, number> = {
+    gym: 1.0,
+    academia: 1.0,
+    home: 1.15,
+    casa: 1.15,
+    outdoor: 1.15,
+    ar_livre: 1.15,
+    both: 1.0,
+    ambos: 1.0,
+  };
+
+  const normalizedEquipment = equipment?.toLowerCase() || "gym";
+  const volumeModifier = environmentVolumeModifier[normalizedEquipment] || 1.0;
 
   // Contar séries semanais por músculo
   for (const day of plan.weeklySchedule) {
@@ -278,27 +298,43 @@ export function validateWeeklySeries(
     }
   }
 
-  // Validar contra limites
+  // Validar contra limites (com margem de tolerância + modificador de ambiente)
   for (const [muscle, totalSeries] of weeklySeries) {
     const limit = limits[muscle as keyof WeeklySeriesLimits];
 
-    if (limit && totalSeries > limit) {
-      console.warn("Plano rejeitado: excesso de séries semanais", {
-        muscle,
-        totalSeries,
-        limit,
-        trainingDays,
-      });
+    if (limit) {
+      // Aplicar margem de tolerância de 10% para compensar arredondamentos
+      // Exemplo: limite de 16 → tolerância até 17.6 → aceita até 17
+      const toleranceMargin = Math.ceil(limit * 0.1);
 
-      recordPlanRejection("excesso_series_semanais", {
-        activityLevel: activityLevel || undefined,
-        trainingDays,
-        muscle,
-        totalSeries,
-        limit,
-      }).catch(() => {});
+      // Aplicar modificador de ambiente (15% extra para casa/ar livre)
+      const baseEffectiveLimit = limit + toleranceMargin;
+      const effectiveLimit = Math.ceil(baseEffectiveLimit * volumeModifier);
 
-      return false;
+      if (totalSeries > effectiveLimit) {
+        console.warn("Plano rejeitado: excesso de séries semanais", {
+          muscle,
+          totalSeries,
+          limit,
+          baseEffectiveLimit,
+          effectiveLimit,
+          equipment: normalizedEquipment,
+          volumeModifier,
+          trainingDays,
+        });
+
+        recordPlanRejection("excesso_series_semanais", {
+          activityLevel: activityLevel || undefined,
+          trainingDays,
+          muscle,
+          totalSeries,
+          limit,
+          effectiveLimit,
+          equipment: normalizedEquipment,
+        }).catch(() => {});
+
+        return false;
+      }
     }
   }
 
@@ -785,10 +821,11 @@ export function validateAdvancedRules(
   objective?: string | null,
   imc?: number,
   hasShoulderRestriction?: boolean,
-  hasKneeRestriction?: boolean
+  hasKneeRestriction?: boolean,
+  equipment?: string | null
 ): boolean {
-  // 1. Séries semanais
-  if (!validateWeeklySeries(plan, trainingDays, activityLevel)) {
+  // 1. Séries semanais (com modificador de ambiente)
+  if (!validateWeeklySeries(plan, trainingDays, activityLevel, equipment)) {
     return false;
   }
 

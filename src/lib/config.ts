@@ -16,3 +16,16 @@ export const config = {
   // Email remetente (deve ser um domínio verificado no Resend)
   fromEmail: process.env.RESEND_FROM_EMAIL || "noreply@movamais.fit",
 } as const;
+
+/**
+ * Configurações de validação de planos de treino
+ */
+export const TRAINING_PLAN_CONFIG = {
+  /**
+   * Bônus de séries por sessão para músculos primários em seu tipo de dia
+   * Ex: ombro em Push pode ter até 20% mais séries que o limite padrão
+   * Valor: 0.2 = 20% de bônus
+   */
+  PRIMARY_MUSCLE_SESSION_BONUS:
+    parseFloat(process.env.PRIMARY_MUSCLE_SESSION_BONUS || "0.2") || 0.2,
+} as const;

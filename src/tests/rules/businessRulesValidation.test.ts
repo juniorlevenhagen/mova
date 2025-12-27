@@ -46,10 +46,7 @@ describe("Regras de Negócio - Validação de Casos Reais", () => {
         dailyCalories: 1800,
         macros: { protein: "336g", carbs: "50g", fats: "30g" },
       };
-      const result = validateAndCorrectNutrition(
-        nutritionPlan as PersonalizedPlan["nutritionPlan"],
-        profile
-      );
+      const result = validateAndCorrectNutrition(nutritionPlan as any, profile);
       expect(result.wasAdjusted).toBe(true);
       expect(result.plan.macros.protein).toBe("180g");
     });
@@ -71,10 +68,7 @@ describe("Regras de Negócio - Validação de Casos Reais", () => {
         dailyCalories: 2500,
         macros: { protein: "180g", carbs: "300g", fats: "70g" },
       };
-      const result = validateAndCorrectNutrition(
-        nutritionPlan as PersonalizedPlan["nutritionPlan"],
-        profile
-      );
+      const result = validateAndCorrectNutrition(nutritionPlan as any, profile);
       // Homem IMC 19, BF est ~15%. Massa magra ~52.7kg. Protein max (2.2) ~116g.
       expect(result.wasAdjusted).toBe(true);
       expect(result.plan.macros.protein).toBe("116g");
@@ -106,16 +100,13 @@ describe("Regras de Negócio - Validação de Casos Reais", () => {
         hydration: "3L por dia",
       };
 
-      const result = validateAndCorrectNutrition(
-        nutritionPlan as PersonalizedPlan["nutritionPlan"],
-        profile
-      );
+      const result = validateAndCorrectNutrition(nutritionPlan as any, profile);
 
       expect(result.wasAdjusted).toBe(true);
       expect(result.plan.macros.protein).toBe("155g"); // Capped by lean mass
-      expect(result.plan.mealPlan).toBeDefined();
-      expect(result.plan.mealPlan?.length).toBe(1);
-      expect(result.plan.hydration).toBe("3L por dia");
+      expect((result.plan as any).mealPlan).toBeDefined();
+      expect((result.plan as any).mealPlan?.length).toBe(1);
+      expect((result.plan as any).hydration).toBe("3L por dia");
     });
   });
 });

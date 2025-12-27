@@ -495,8 +495,9 @@ Por favor, corrija o problema acima e gere um plano válido.`;
 
       if (candidate) {
         // 🔧 CORREÇÃO AUTOMÁTICA: Garantir que dias do mesmo tipo tenham os mesmos exercícios
+        // 🔒 Passar activityLevel para validar limites semanais antes de duplicar
         const { plan: correctedPlan, wasCorrected } =
-          correctSameTypeDaysExercises(candidate);
+          correctSameTypeDaysExercises(candidate, profile?.nivel_atividade);
 
         if (wasCorrected) {
           console.log(

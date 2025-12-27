@@ -12,6 +12,7 @@ import type { TrainingPlan, Exercise } from "./trainingPlanValidator";
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { getTrainingProfile } from "@/lib/profiles/trainingProfiles";
 import { JOINT_RESTRICTION_RULES } from "../generators/contractRules";
+import { TRAINING_PLAN_CONFIG } from "@/lib/config";
 
 /* --------------------------------------------------------
    TIPOS E INTERFACES
@@ -477,10 +478,82 @@ export function validateDeficitCompatibility(
 }
 
 /**
- * 4️⃣ Validação por FREQUÊNCIA × VOLUME
+ * Identifica se um músculo é primário em um tipo de dia
+ * Músculos primários podem ter limites maiores por sessão
+ */
+function isPrimaryMuscleInDayType(muscle: string, dayType: string): boolean {
+  const normalizedMuscle = normalizeMuscle(muscle);
+  const normalizedDayType = normalize(dayType);
+
+  if (normalizedDayType === "push") {
+    return (
+      normalizedMuscle.includes("peito") ||
+      normalizedMuscle.includes("peitoral") ||
+      normalizedMuscle.includes("ombro") ||
+      normalizedMuscle.includes("deltoide")
+    );
+  }
+
+  if (normalizedDayType === "pull") {
+    return (
+      normalizedMuscle.includes("costas") ||
+      normalizedMuscle.includes("dorsal") ||
+      normalizedMuscle.includes("biceps") ||
+      normalizedMuscle.includes("bíceps")
+    );
+  }
+
+  if (normalizedDayType === "lower" || normalizedDayType === "legs") {
+    return (
+      normalizedMuscle.includes("quadriceps") ||
+      normalizedMuscle.includes("quadríceps") ||
+      normalizedMuscle.includes("posterior") ||
+      normalizedMuscle.includes("isquiotibiais") ||
+      normalizedMuscle.includes("gluteos") ||
+      normalizedMuscle.includes("glúteos")
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Identifica se um músculo é secundário em um tipo de dia
+ * Músculos secundários devem ter prioridade menor ao ajustar séries
+ */
+function isSecondaryMuscleInDayType(muscle: string, dayType: string): boolean {
+  const normalizedMuscle = normalizeMuscle(muscle);
+  const normalizedDayType = normalize(dayType);
+
+  if (normalizedDayType === "push") {
+    return (
+      normalizedMuscle.includes("triceps") ||
+      normalizedMuscle.includes("tríceps")
+    );
+  }
+
+  if (normalizedDayType === "pull") {
+    return (
+      normalizedMuscle.includes("ombro") ||
+      normalizedMuscle.includes("deltoide")
+    );
+  }
+
+  if (normalizedDayType === "lower" || normalizedDayType === "legs") {
+    return normalizedMuscle.includes("panturrilha");
+  }
+
+  return false;
+}
+
+/**
+ * 4️⃣ Validação de FREQUÊNCIA × VOLUME (CONTEXTUAL)
  *
- * Se músculo é treinado 2x/semana, então séries por sessão ≤ 50% do teto semanal
- * Isso impede: Peito com 16 séries em um único treino (mesmo que número de exercícios esteja ok)
+ * Valida que a distribuição de séries por sessão é compatível com a frequência semanal
+ * REGRA CONTEXTUAL: Limites variam conforme o tipo de dia e papel do músculo
+ * - Músculos primários em seu tipo de dia podem ter limites maiores (até 20% mais)
+ * - Músculos secundários têm limites mais restritivos
+ * - Nunca rejeitar se for possível reduzir séries de exercícios secundários
  */
 export function validateFrequencyVolume(
   plan: TrainingPlan,
@@ -491,9 +564,12 @@ export function validateFrequencyVolume(
   // Contar frequência semanal por músculo (quantos dias o músculo é treinado)
   const muscleFrequency = new Map<string, number>();
   const muscleSeriesPerDay = new Map<string, Map<number, number>>(); // músculo -> dia -> séries
+  const dayTypeMap = new Map<number, string>(); // dia -> tipo
 
   for (let dayIndex = 0; dayIndex < plan.weeklySchedule.length; dayIndex++) {
     const day = plan.weeklySchedule[dayIndex];
+    const dayType = normalize(day.type || "");
+    dayTypeMap.set(dayIndex, dayType);
 
     for (const exercise of day.exercises) {
       const muscle = normalizeMuscle(exercise.primaryMuscle);
@@ -520,40 +596,99 @@ export function validateFrequencyVolume(
     }
   }
 
-  // Validar: se músculo treinado 2x/semana, séries por sessão ≤ 50% do teto semanal
+  // Validar com limites contextuais baseados no tipo de dia
   for (const [muscle, frequency] of muscleFrequency) {
     const weeklyLimit = limits[muscle as keyof WeeklySeriesLimits];
     if (!weeklyLimit) continue;
 
-    const maxSeriesPerSession =
-      frequency === 2
-        ? Math.floor(weeklyLimit * 0.5) // 50% do teto semanal
-        : Math.floor(weeklyLimit / frequency); // Distribuição igual
-
     const daySeriesMap = muscleSeriesPerDay.get(muscle)!;
 
     for (const [dayIndex, seriesInDay] of daySeriesMap) {
+      const dayType = dayTypeMap.get(dayIndex) || "";
+      const isPrimary = isPrimaryMuscleInDayType(muscle, dayType);
+      const isSecondary = isSecondaryMuscleInDayType(muscle, dayType);
+
+      // Calcular limite base por sessão
+      const baseMaxSeriesPerSession =
+        frequency === 2
+          ? Math.floor(weeklyLimit * 0.5) // 50% do teto semanal
+          : Math.floor(weeklyLimit / frequency); // Distribuição igual
+
+      // 🔒 REGRA CONTEXTUAL: Ajustar limite baseado no papel do músculo no tipo de dia
+      let maxSeriesPerSession = baseMaxSeriesPerSession;
+
+      if (isPrimary) {
+        // Músculos primários podem ter bônus configurável de séries por sessão
+        // Ex: ombro em Push pode ter mais séries que o padrão
+        // 🔒 PROTEÇÃO: Garantir que o bônus só seja aplicado se o limite base for >= 2
+        // Para limites muito baixos (ex: 1 série), o bônus pode não ser apropriado
+        if (baseMaxSeriesPerSession >= 2) {
+          const bonusMultiplier =
+            1 + TRAINING_PLAN_CONFIG.PRIMARY_MUSCLE_SESSION_BONUS;
+          maxSeriesPerSession = Math.ceil(
+            baseMaxSeriesPerSession * bonusMultiplier
+          );
+        } else {
+          // Para limites muito baixos, manter o limite base (sem bônus)
+          maxSeriesPerSession = baseMaxSeriesPerSession;
+        }
+      } else if (isSecondary) {
+        // Músculos secundários mantêm o limite padrão (sem aumento)
+        maxSeriesPerSession = baseMaxSeriesPerSession;
+      }
+
+      // Verificar se excede o limite contextual
       if (seriesInDay > maxSeriesPerSession) {
-        console.warn("Plano rejeitado: excesso de séries por sessão", {
-          muscle,
-          frequency,
-          seriesInDay,
-          maxSeriesPerSession,
-          weeklyLimit,
-          day: plan.weeklySchedule[dayIndex].day,
-        });
+        // 🔒 REGRA: Nunca rejeitar se for músculo secundário
+        // A correção automática deve reduzir séries de secundários primeiro
+        if (isSecondary) {
+          // Logar como warning, mas não rejeitar
+          // A função correctSameTypeDaysExercises vai ajustar
+          console.warn(
+            `⚠️ Músculo secundário ${muscle} excede limite por sessão no ${dayType} day, mas será ajustado automaticamente`,
+            {
+              muscle,
+              frequency,
+              seriesInDay,
+              maxSeriesPerSession,
+              weeklyLimit,
+              day: plan.weeklySchedule[dayIndex].day,
+            }
+          );
+          // Continuar validação (não rejeitar)
+          continue;
+        }
 
-        recordPlanRejection("excesso_series_por_sessao", {
-          activityLevel: activityLevel || undefined,
-          muscle,
-          frequency,
-          seriesInDay,
-          maxSeriesPerSession,
-          weeklyLimit,
-          day: plan.weeklySchedule[dayIndex].day,
-        }).catch(() => {});
+        // Para músculos primários, rejeitar apenas se exceder muito (mais de 25% do limite)
+        const excessPercent =
+          ((seriesInDay - maxSeriesPerSession) / maxSeriesPerSession) * 100;
+        if (excessPercent > 25) {
+          console.warn("Plano rejeitado: excesso de séries por sessão", {
+            muscle,
+            frequency,
+            seriesInDay,
+            maxSeriesPerSession,
+            weeklyLimit,
+            day: plan.weeklySchedule[dayIndex].day,
+            dayType,
+            isPrimary,
+            excessPercent,
+          });
 
-        return false;
+          recordPlanRejection("excesso_series_por_sessao", {
+            activityLevel: activityLevel || undefined,
+            muscle,
+            frequency,
+            seriesInDay,
+            maxSeriesPerSession,
+            weeklyLimit,
+            day: plan.weeklySchedule[dayIndex].day,
+            dayType,
+          }).catch(() => {});
+
+          return false;
+        }
+        // Se exceder pouco (≤25%), permitir (será ajustado pela correção automática)
       }
     }
   }

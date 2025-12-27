@@ -954,7 +954,11 @@ export function generateTrainingPlanStructure(
       "Aumentar a carga em 2-5% quando conseguir realizar o topo da faixa de repetições em todas as séries. Após 4-6 semanas, considerar aumentar o número de séries para exercícios principais, se a recuperação permitir.",
   };
 
-  const { plan: correctedPlan } = correctSameTypeDaysExercises(plan);
+  // 🔒 Passar activityLevel para validar limites semanais antes de duplicar
+  const { plan: correctedPlan } = correctSameTypeDaysExercises(
+    plan,
+    activityLevel
+  );
 
   // 🔥 LIMITES SEMANAIS JÁ SÃO APLICADOS DURANTE A GERAÇÃO VIA addExerciseSafely
   // Não é necessário ajustar novamente após a geração

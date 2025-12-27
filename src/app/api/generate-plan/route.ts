@@ -3481,8 +3481,12 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
         await import("@/lib/validators/trainingPlanValidator");
 
       // 🔧 CORREÇÃO AUTOMÁTICA: Garantir que dias do mesmo tipo tenham os mesmos exercícios
+      // 🔒 Passar activityLevel para validar limites semanais antes de duplicar
       const { plan: correctedTrainingPlan, wasCorrected } =
-        correctSameTypeDaysExercises(plan.trainingPlan);
+        correctSameTypeDaysExercises(
+          plan.trainingPlan,
+          profile?.nivel_atividade
+        );
 
       if (wasCorrected) {
         console.log(

@@ -113,7 +113,7 @@ export default function AdminMetricsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<
-    "rejections" | "corrections" | "quality"
+    "rejections" | "corrections" | "quality" | "summary"
   >("rejections");
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"all" | "24h">("24h");
@@ -158,6 +158,64 @@ export default function AdminMetricsPage() {
     }>;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [summaryData, setSummaryData] = useState<{
+    success: boolean;
+    summary: {
+      period: "daily" | "weekly" | "monthly";
+      current: {
+        totalRejections: number;
+        totalCorrections: number;
+        totalQualityMetrics: number;
+        averageQualityScore: number;
+        topRejectionReasons: Array<{
+          reason: string;
+          count: number;
+          percentage: number;
+        }>;
+        topCorrectionReasons: Array<{
+          reason: string;
+          count: number;
+          percentage: number;
+        }>;
+        rejectionRate: number;
+        correctionSuccessRate: number;
+        byActivityLevel: Record<
+          string,
+          { rejections: number; corrections: number; qualityScore: number }
+        >;
+        byDayType: Record<string, { rejections: number; corrections: number }>;
+        byMuscle: Record<string, { rejections: number; corrections: number }>;
+      };
+      previous?: {
+        totalRejections: number;
+        totalCorrections: number;
+        averageQualityScore: number;
+        rejectionRate: number;
+        correctionSuccessRate: number;
+      };
+      trends: {
+        rejectionRate: "increasing" | "decreasing" | "stable";
+        qualityScore: "improving" | "degrading" | "stable";
+        correctionRate: "increasing" | "decreasing" | "stable";
+      };
+      insights: Array<{
+        type: "problem" | "success" | "warning" | "info";
+        severity: "high" | "medium" | "low";
+        title: string;
+        description: string;
+        suggestion?: string;
+        affectedLevels?: string[];
+        affectedDayTypes?: string[];
+        affectedMuscles?: string[];
+        metric?: string;
+        trend?: "increasing" | "decreasing" | "stable";
+        changePercent?: number;
+      }>;
+    };
+  } | null>(null);
+  const [summaryPeriod, setSummaryPeriod] = useState<
+    "daily" | "weekly" | "monthly"
+  >("weekly");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -176,6 +234,8 @@ export default function AdminMetricsPage() {
         fetchCorrectionMetrics();
       } else if (activeTab === "quality") {
         fetchQualityMetrics();
+      } else if (activeTab === "summary") {
+        fetchSummaryMetrics(summaryPeriod);
       }
     } else if (!authLoading) {
       setLoading(false);
@@ -281,6 +341,37 @@ export default function AdminMetricsPage() {
     }
   }
 
+  async function fetchSummaryMetrics(
+    selectedPeriod: "daily" | "weekly" | "monthly"
+  ) {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const res = await fetch(`/api/metrics/summary?period=${selectedPeriod}`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const json = await res.json();
+      setSummaryData(json);
+    } catch (err) {
+      console.error("Erro ao buscar resumo de métricas:", err);
+      setError("Não foi possível carregar o resumo de métricas.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   if (!authLoading && !user) {
     return null;
   }
@@ -321,6 +412,12 @@ export default function AdminMetricsPage() {
               >
                 Qualidade
               </button>
+              <button
+                onClick={() => setActiveTab("summary")}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${activeTab === "summary" ? "bg-white shadow-sm text-black" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Resumos & Insights
+              </button>
             </div>
 
             <button
@@ -333,6 +430,8 @@ export default function AdminMetricsPage() {
                   fetchCorrectionMetrics();
                 } else if (activeTab === "quality") {
                   fetchQualityMetrics();
+                } else if (activeTab === "summary") {
+                  fetchSummaryMetrics(summaryPeriod);
                 }
               }}
               className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
@@ -351,6 +450,24 @@ export default function AdminMetricsPage() {
               >
                 <option value="24h">Últimas 24h</option>
                 <option value="all">Histórico completo</option>
+              </select>
+            )}
+            {activeTab === "summary" && (
+              <select
+                value={summaryPeriod}
+                onChange={(e) => {
+                  const newPeriod = e.target.value as
+                    | "daily"
+                    | "weekly"
+                    | "monthly";
+                  setSummaryPeriod(newPeriod);
+                  fetchSummaryMetrics(newPeriod);
+                }}
+                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-black/80"
+              >
+                <option value="daily">Diário</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensal</option>
               </select>
             )}
           </div>
@@ -835,6 +952,286 @@ export default function AdminMetricsPage() {
                 </div>
               </div>
             </section>
+          </>
+        )}
+
+        {/* VISÃO DE RESUMOS E INSIGHTS */}
+        {!loading && !error && activeTab === "summary" && summaryData && (
+          <>
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Resumo{" "}
+                {summaryData.summary.period === "daily"
+                  ? "Diário"
+                  : summaryData.summary.period === "weekly"
+                    ? "Semanal"
+                    : "Mensal"}
+              </h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mb-6">
+                <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                    Rejeições
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {summaryData.summary.current.totalRejections}
+                  </p>
+                  {summaryData.summary.previous && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {summaryData.summary.current.totalRejections >
+                      summaryData.summary.previous.totalRejections ? (
+                        <span className="text-red-600">
+                          ↑{" "}
+                          {summaryData.summary.current.totalRejections -
+                            summaryData.summary.previous.totalRejections}
+                        </span>
+                      ) : summaryData.summary.current.totalRejections <
+                        summaryData.summary.previous.totalRejections ? (
+                        <span className="text-green-600">
+                          ↓{" "}
+                          {summaryData.summary.previous.totalRejections -
+                            summaryData.summary.current.totalRejections}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">→ Sem mudança</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                    Correções
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {summaryData.summary.current.totalCorrections}
+                  </p>
+                  {summaryData.summary.previous && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {summaryData.summary.current.totalCorrections >
+                      summaryData.summary.previous.totalCorrections ? (
+                        <span className="text-blue-600">
+                          ↑{" "}
+                          {summaryData.summary.current.totalCorrections -
+                            summaryData.summary.previous.totalCorrections}
+                        </span>
+                      ) : summaryData.summary.current.totalCorrections <
+                        summaryData.summary.previous.totalCorrections ? (
+                        <span className="text-gray-600">
+                          ↓{" "}
+                          {summaryData.summary.previous.totalCorrections -
+                            summaryData.summary.current.totalCorrections}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">→ Sem mudança</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                    Score Médio
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {summaryData.summary.current.averageQualityScore}/100
+                  </p>
+                  {summaryData.summary.previous && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {summaryData.summary.current.averageQualityScore >
+                      summaryData.summary.previous.averageQualityScore ? (
+                        <span className="text-green-600">
+                          ↑ +
+                          {(
+                            summaryData.summary.current.averageQualityScore -
+                            summaryData.summary.previous.averageQualityScore
+                          ).toFixed(1)}
+                        </span>
+                      ) : summaryData.summary.current.averageQualityScore <
+                        summaryData.summary.previous.averageQualityScore ? (
+                        <span className="text-red-600">
+                          ↓{" "}
+                          {(
+                            summaryData.summary.current.averageQualityScore -
+                            summaryData.summary.previous.averageQualityScore
+                          ).toFixed(1)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500">→ Sem mudança</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+                  <p className="text-xs font-medium uppercase tracking-wide text-gray-500 mb-1">
+                    Taxa de Rejeição
+                  </p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {summaryData.summary.current.rejectionRate.toFixed(1)}%
+                  </p>
+                  {summaryData.summary.previous && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {summaryData.summary.trends.rejectionRate ===
+                      "increasing" ? (
+                        <span className="text-red-600">↑ Aumentando</span>
+                      ) : summaryData.summary.trends.rejectionRate ===
+                        "decreasing" ? (
+                        <span className="text-green-600">↓ Diminuindo</span>
+                      ) : (
+                        <span className="text-gray-500">→ Estável</span>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* INSIGHTS */}
+            {summaryData.summary.insights.length > 0 && (
+              <section className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Insights Automáticos
+                </h2>
+                <div className="space-y-4">
+                  {summaryData.summary.insights.map((insight, index) => {
+                    const bgColor =
+                      insight.type === "problem"
+                        ? "bg-red-50 border-red-200"
+                        : insight.type === "success"
+                          ? "bg-green-50 border-green-200"
+                          : insight.type === "warning"
+                            ? "bg-yellow-50 border-yellow-200"
+                            : "bg-blue-50 border-blue-200";
+
+                    const iconColor =
+                      insight.type === "problem"
+                        ? "text-red-600"
+                        : insight.type === "success"
+                          ? "text-green-600"
+                          : insight.type === "warning"
+                            ? "text-yellow-600"
+                            : "text-blue-600";
+
+                    const severityBadge =
+                      insight.severity === "high"
+                        ? "bg-red-100 text-red-800"
+                        : insight.severity === "medium"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800";
+
+                    return (
+                      <div
+                        key={index}
+                        className={`rounded-lg border ${bgColor} p-4`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className={`h-5 w-5 ${iconColor}`} />
+                            <h3 className="font-semibold text-gray-900">
+                              {insight.title}
+                            </h3>
+                            <span
+                              className={`px-2 py-0.5 text-xs font-medium rounded ${severityBadge}`}
+                            >
+                              {insight.severity === "high"
+                                ? "Alta"
+                                : insight.severity === "medium"
+                                  ? "Média"
+                                  : "Baixa"}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-700 mb-2">
+                          {insight.description}
+                        </p>
+                        {insight.suggestion && (
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs font-medium text-gray-600 mb-1">
+                              💡 Sugestão:
+                            </p>
+                            <p className="text-sm text-gray-700">
+                              {insight.suggestion}
+                            </p>
+                          </div>
+                        )}
+                        {(insight.affectedLevels ||
+                          insight.affectedDayTypes ||
+                          insight.affectedMuscles) && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {insight.affectedLevels?.map((level, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded"
+                              >
+                                Nível: {level}
+                              </span>
+                            ))}
+                            {insight.affectedDayTypes?.map((dayType, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded"
+                              >
+                                Dia: {dayType}
+                              </span>
+                            ))}
+                            {insight.affectedMuscles?.map((muscle, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded"
+                              >
+                                Músculo: {muscle}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* TOP MOTIVOS DE REJEIÇÃO */}
+            {summaryData.summary.current.topRejectionReasons.length > 0 && (
+              <section className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Top Motivos de Rejeição
+                </h2>
+                <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Motivo
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Quantidade
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Percentual
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {summaryData.summary.current.topRejectionReasons.map(
+                        (reason, index) => (
+                          <tr key={index}>
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              {REASON_LABELS[
+                                reason.reason as RejectionReason
+                              ] || reason.reason}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {reason.count}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {reason.percentage.toFixed(1)}%
+                            </td>
+                          </tr>
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>

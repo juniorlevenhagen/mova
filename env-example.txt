@@ -42,3 +42,10 @@ NEXT_PUBLIC_NEWSLETTER_EMAIL=juniorlevenhagen@gmail.com
 # 4. Copie a senha gerada (16 caracteres) e cole abaixo
 GMAIL_USER=juniorlevenhagen@gmail.com
 GMAIL_APP_PASSWORD=sua_senha_de_app_aqui
+
+# Configurações de Validação de Planos de Treino
+# Bônus de séries por sessão para músculos primários em seu tipo de dia
+# Ex: ombro em Push pode ter até 20% mais séries que o limite padrão
+# Valor padrão: 0.2 (20% de bônus)
+# Exemplo: 0.2 = 20%, 0.3 = 30%, 0.0 = sem bônus
+PRIMARY_MUSCLE_SESSION_BONUS=0.2

@@ -7,12 +7,16 @@
 
 import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
 import { recordPlanCorrection } from "@/lib/metrics/planCorrectionMetrics";
-import { validateAdvancedRules } from "@/lib/validators/advancedPlanValidator";
+import {
+  validateAdvancedRules,
+  getWeeklySeriesLimits,
+} from "@/lib/validators/advancedPlanValidator";
 import {
   getTrainingProfile,
   isValidRepsForProfile,
   isIsolationExercise,
 } from "@/lib/profiles/trainingProfiles";
+import { TRAINING_PLAN_CONFIG } from "@/lib/config";
 
 /* --------------------------------------------------------
    Tipos
@@ -827,10 +831,17 @@ function adjustWeeklySeriesForValidation(
  * Esta função é chamada APÓS a geração para garantir consistência, evitando
  * rejeições e regenerações desnecessárias.
  *
+ * 🔒 NOVO: Valida limites semanais antes de duplicar exercícios para evitar
+ * exceder os limites permitidos por nível de atividade.
+ *
  * @param plan - Plano de treino a ser corrigido
+ * @param activityLevel - Nível de atividade (opcional, usado para validar limites)
  * @returns Plano corrigido e flag indicando se houve correção
  */
-export function correctSameTypeDaysExercises(plan: TrainingPlan): {
+export function correctSameTypeDaysExercises(
+  plan: TrainingPlan,
+  activityLevel?: string | null
+): {
   plan: TrainingPlan;
   wasCorrected: boolean;
 } {
@@ -840,6 +851,109 @@ export function correctSameTypeDaysExercises(plan: TrainingPlan): {
 
   let wasCorrected = false;
   const correctedSchedule = [...plan.weeklySchedule];
+
+  // 🔒 NOVO: Obter limites semanais se activityLevel fornecido
+  const weeklyLimits = activityLevel
+    ? getWeeklySeriesLimits(activityLevel)
+    : null;
+
+  // 🔒 NOVO: Funções auxiliares para identificar papel do músculo no tipo de dia
+  const isPrimaryMuscleInDayTypeLocal = (
+    muscle: string,
+    dayType: string
+  ): boolean => {
+    const normalizedMuscle = normalizeMuscleLocal(muscle);
+    const normalizedDayType = normalize(dayType);
+
+    if (normalizedDayType === "push") {
+      return (
+        normalizedMuscle.includes("peito") ||
+        normalizedMuscle.includes("peitoral") ||
+        normalizedMuscle.includes("ombro") ||
+        normalizedMuscle.includes("deltoide")
+      );
+    }
+
+    if (normalizedDayType === "pull") {
+      return (
+        normalizedMuscle.includes("costas") ||
+        normalizedMuscle.includes("dorsal") ||
+        normalizedMuscle.includes("biceps") ||
+        normalizedMuscle.includes("bíceps")
+      );
+    }
+
+    if (normalizedDayType === "lower" || normalizedDayType === "legs") {
+      return (
+        normalizedMuscle.includes("quadriceps") ||
+        normalizedMuscle.includes("quadríceps") ||
+        normalizedMuscle.includes("posterior") ||
+        normalizedMuscle.includes("isquiotibiais") ||
+        normalizedMuscle.includes("gluteos") ||
+        normalizedMuscle.includes("glúteos")
+      );
+    }
+
+    return false;
+  };
+
+  const isSecondaryMuscleInDayTypeLocal = (
+    muscle: string,
+    dayType: string
+  ): boolean => {
+    const normalizedMuscle = normalizeMuscleLocal(muscle);
+    const normalizedDayType = normalize(dayType);
+
+    if (normalizedDayType === "push") {
+      return (
+        normalizedMuscle.includes("triceps") ||
+        normalizedMuscle.includes("tríceps")
+      );
+    }
+
+    if (normalizedDayType === "pull") {
+      return (
+        normalizedMuscle.includes("ombro") ||
+        normalizedMuscle.includes("deltoide")
+      );
+    }
+
+    if (normalizedDayType === "lower" || normalizedDayType === "legs") {
+      return normalizedMuscle.includes("panturrilha");
+    }
+
+    return false;
+  };
+
+  // Função auxiliar para normalizar músculo (mesma lógica de normalizeMuscleLocal)
+  const normalizeMuscleLocal = (muscle: string): string => {
+    const normalized = normalize(muscle);
+    if (normalized.includes("peito") || normalized.includes("peitoral"))
+      return "peito";
+    if (normalized.includes("costas") || normalized.includes("dorsal"))
+      return "costas";
+    if (normalized.includes("quadriceps") || normalized.includes("quadríceps"))
+      return "quadriceps";
+    if (
+      normalized.includes("posterior") ||
+      normalized.includes("isquiotibiais")
+    )
+      return "posterior";
+    if (
+      normalized.includes("ombro") ||
+      normalized.includes("ombros") ||
+      normalized.includes("deltoide")
+    )
+      return "ombro";
+    if (normalized.includes("triceps") || normalized.includes("tríceps"))
+      return "triceps";
+    if (normalized.includes("biceps") || normalized.includes("bíceps"))
+      return "biceps";
+    if (normalized.includes("gluteo") || normalized.includes("glúteo"))
+      return "gluteos";
+    if (normalized.includes("panturrilha")) return "panturrilhas";
+    return normalized;
+  };
 
   // Agrupar dias por tipo
   const daysByType = new Map<string, TrainingDay[]>();
@@ -882,21 +996,203 @@ export function correctSameTypeDaysExercises(plan: TrainingPlan): {
         }
       }
 
-      // Se precisa corrigir, copiar exercícios do primeiro dia para os demais
+      // Se precisa corrigir, validar limites antes de duplicar
       if (needsCorrection) {
+        // 🔒 NOVO: Calcular séries que seriam adicionadas ao duplicar
+        const seriesToAdd = new Map<string, number>();
+        for (const exercise of firstDayExercises) {
+          const muscle = normalizeMuscleLocal(exercise.primaryMuscle);
+          const sets =
+            typeof exercise.sets === "number"
+              ? exercise.sets
+              : parseInt(String(exercise.sets), 10) || 0;
+          const current = seriesToAdd.get(muscle) || 0;
+          seriesToAdd.set(muscle, current + sets);
+        }
+
+        // 🔒 NOVO: Verificar se a duplicação excederia limites semanais E por sessão
+        let wouldExceedLimits = false;
+        const adjustments = new Map<string, number>(); // músculo -> fator de ajuste
+
+        if (weeklyLimits) {
+          // Calcular frequência real de cada músculo no plano completo
+          const muscleFrequency = new Map<string, number>();
+          for (const day of correctedSchedule) {
+            const dayMuscles = new Set<string>();
+            for (const ex of day.exercises) {
+              const muscle = normalizeMuscleLocal(ex.primaryMuscle);
+              dayMuscles.add(muscle);
+            }
+            for (const muscle of dayMuscles) {
+              muscleFrequency.set(
+                muscle,
+                (muscleFrequency.get(muscle) || 0) + 1
+              );
+            }
+          }
+
+          for (const [muscle] of seriesToAdd.entries()) {
+            const limit = weeklyLimits[muscle as keyof typeof weeklyLimits];
+
+            if (limit !== undefined) {
+              // Calcular séries do primeiro dia para esse músculo
+              let firstDaySeries = 0;
+              for (const ex of firstDayExercises) {
+                const exMuscle = normalizeMuscleLocal(ex.primaryMuscle);
+                if (exMuscle === muscle) {
+                  const exSets =
+                    typeof ex.sets === "number"
+                      ? ex.sets
+                      : parseInt(String(ex.sets), 10) || 0;
+                  firstDaySeries += exSets;
+                }
+              }
+
+              // Se todos os dias tiverem as mesmas séries do primeiro dia, o total será:
+              // séries_por_dia * número_de_dias_do_mesmo_tipo
+              const numberOfDaysOfSameType = days.length;
+              const totalIfDuplicated = firstDaySeries * numberOfDaysOfSameType;
+
+              // Calcular frequência real do músculo (quantos dias ele é treinado)
+              const frequency =
+                muscleFrequency.get(muscle) || numberOfDaysOfSameType;
+
+              // 🔒 NOVO: Calcular limite contextual baseado no tipo de dia e papel do músculo
+              const isPrimary = isPrimaryMuscleInDayTypeLocal(muscle, dayType);
+              const isSecondary = isSecondaryMuscleInDayTypeLocal(
+                muscle,
+                dayType
+              );
+
+              // Calcular limite base por sessão
+              const baseMaxSeriesPerSession =
+                frequency === 2
+                  ? Math.floor(limit * 0.5) // 50% do teto semanal
+                  : Math.floor(limit / frequency); // Distribuição igual
+
+              // 🔒 REGRA CONTEXTUAL: Ajustar limite baseado no papel do músculo no tipo de dia
+              let maxSeriesPerSession = baseMaxSeriesPerSession;
+
+              if (isPrimary) {
+                // Músculos primários podem ter bônus configurável de séries por sessão
+                // 🔒 PROTEÇÃO: Garantir que o bônus só seja aplicado se o limite base for >= 2
+                // Para limites muito baixos (ex: 1 série), o bônus pode não ser apropriado
+                if (baseMaxSeriesPerSession >= 2) {
+                  const bonusMultiplier =
+                    1 + TRAINING_PLAN_CONFIG.PRIMARY_MUSCLE_SESSION_BONUS;
+                  maxSeriesPerSession = Math.ceil(
+                    baseMaxSeriesPerSession * bonusMultiplier
+                  );
+                } else {
+                  // Para limites muito baixos, manter o limite base (sem bônus)
+                  maxSeriesPerSession = baseMaxSeriesPerSession;
+                }
+              } else if (isSecondary) {
+                // Músculos secundários mantêm o limite padrão (sem aumento)
+                maxSeriesPerSession = baseMaxSeriesPerSession;
+              }
+
+              // Verificar se excede limite semanal
+              const exceedsWeeklyLimit = totalIfDuplicated > limit;
+
+              // Verificar se excede limite por sessão (contextual)
+              const exceedsSessionLimit = firstDaySeries > maxSeriesPerSession;
+
+              // Se exceder qualquer limite, calcular fator de ajuste
+              if (exceedsWeeklyLimit || exceedsSessionLimit) {
+                wouldExceedLimits = true;
+                // Usar o menor entre: limite semanal/dias e limite por sessão
+                const maxSetsPerDayByWeekly = Math.floor(
+                  limit / numberOfDaysOfSameType
+                );
+                const maxSetsPerDay = Math.min(
+                  maxSetsPerDayByWeekly,
+                  maxSeriesPerSession
+                );
+
+                // 🔒 REGRA: Priorizar redução em músculos secundários
+                // Músculos secundários podem ter redução maior (até 40% do original)
+                // Músculos primários têm redução mínima (mínimo 60% do original)
+                const minReductionFactor = isSecondary ? 0.4 : 0.6;
+
+                const adjustmentFactor =
+                  firstDaySeries > 0
+                    ? Math.max(
+                        minReductionFactor,
+                        maxSetsPerDay / firstDaySeries
+                      )
+                    : 0;
+                adjustments.set(muscle, adjustmentFactor);
+              }
+            }
+          }
+        }
+
         wasCorrected = true;
-        for (let i = 1; i < days.length; i++) {
-          const currentDay = days[i];
-          // Criar cópia profunda dos exercícios
-          currentDay.exercises = firstDayExercises.map((ex) => ({
-            ...ex,
-            secondaryMuscles: ex.secondaryMuscles
-              ? [...ex.secondaryMuscles]
-              : undefined,
-          }));
+
+        // 🔒 NOVO: Se precisar ajustar séries, aplicar em TODOS os dias do mesmo tipo (incluindo o primeiro)
+        // Isso garante que todos os dias do mesmo tipo tenham séries idênticas
+        if (wouldExceedLimits && adjustments.size > 0) {
+          // Criar exercícios ajustados uma vez
+          const adjustedExercises = firstDayExercises.map((ex) => {
+            const muscle = normalizeMuscleLocal(ex.primaryMuscle);
+            const adjustmentFactor = adjustments.get(muscle);
+
+            if (adjustmentFactor !== undefined) {
+              const originalSets =
+                typeof ex.sets === "number"
+                  ? ex.sets
+                  : parseInt(String(ex.sets), 10) || 0;
+              const adjustedSets = Math.max(
+                1,
+                Math.round(originalSets * adjustmentFactor)
+              );
+
+              return {
+                ...ex,
+                sets: adjustedSets,
+                secondaryMuscles: ex.secondaryMuscles
+                  ? [...ex.secondaryMuscles]
+                  : undefined,
+              };
+            }
+
+            return {
+              ...ex,
+              secondaryMuscles: ex.secondaryMuscles
+                ? [...ex.secondaryMuscles]
+                : undefined,
+            };
+          });
+
+          // Aplicar os exercícios ajustados em TODOS os dias (incluindo o primeiro)
+          for (let i = 0; i < days.length; i++) {
+            days[i].exercises = adjustedExercises.map((ex) => ({
+              ...ex,
+              secondaryMuscles: ex.secondaryMuscles
+                ? [...ex.secondaryMuscles]
+                : undefined,
+            }));
+          }
 
           console.log(
-            `🔧 Correção automática: ${currentDay.day} agora tem os mesmos exercícios de ${firstDay.day} (tipo: ${dayType})`
+            `🔧 Correção automática: Todos os dias do tipo ${dayType} agora têm os mesmos exercícios com séries ajustadas para respeitar limites semanais`
+          );
+        } else {
+          // Sem ajuste necessário, apenas copiar exercícios do primeiro para os demais
+          for (let i = 1; i < days.length; i++) {
+            const currentDay = days[i];
+            // Criar cópia profunda dos exercícios (sem ajuste)
+            currentDay.exercises = firstDayExercises.map((ex) => ({
+              ...ex,
+              secondaryMuscles: ex.secondaryMuscles
+                ? [...ex.secondaryMuscles]
+                : undefined,
+            }));
+          }
+
+          console.log(
+            `🔧 Correção automática: Dias do tipo ${dayType} agora têm os mesmos exercícios`
           );
         }
       }

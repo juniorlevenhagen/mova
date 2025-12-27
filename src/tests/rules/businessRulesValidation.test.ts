@@ -1,8 +1,10 @@
 import { describe, test, expect } from "vitest";
 import { interpretObjective } from "@/lib/rules/objectiveInterpretation";
-import { validateAndCorrectNutrition } from "@/lib/rules/nutritionValidation";
+import {
+  validateAndCorrectNutrition,
+  type NutritionPlan,
+} from "@/lib/rules/nutritionValidation";
 import { determineCardioProgression } from "@/lib/rules/cardioProgression";
-import { PersonalizedPlan } from "@/types/personalized-plan";
 
 describe("Regras de Negócio - Validação de Casos Reais", () => {
   describe("PERFIL 1 - Obesidade Grave Sedentária (IMC 58)", () => {
@@ -42,11 +44,11 @@ describe("Regras de Negócio - Validação de Casos Reais", () => {
     });
 
     test("deve corrigir proteína excessiva (336g → máximo 180g para mulheres)", () => {
-      const nutritionPlan = {
+      const nutritionPlan: NutritionPlan = {
         dailyCalories: 1800,
         macros: { protein: "336g", carbs: "50g", fats: "30g" },
       };
-      const result = validateAndCorrectNutrition(nutritionPlan as any, profile);
+      const result = validateAndCorrectNutrition(nutritionPlan, profile);
       expect(result.wasAdjusted).toBe(true);
       expect(result.plan.macros.protein).toBe("180g");
     });
@@ -64,11 +66,11 @@ describe("Regras de Negócio - Validação de Casos Reais", () => {
     };
 
     test("deve validar proteína baseada em massa magra (IMC normal usa massa magra, não cap absoluto)", () => {
-      const nutritionPlan = {
+      const nutritionPlan: NutritionPlan = {
         dailyCalories: 2500,
         macros: { protein: "180g", carbs: "300g", fats: "70g" },
       };
-      const result = validateAndCorrectNutrition(nutritionPlan as any, profile);
+      const result = validateAndCorrectNutrition(nutritionPlan, profile);
       // Homem IMC 19, BF est ~15%. Massa magra ~52.7kg. Protein max (2.2) ~116g.
       expect(result.wasAdjusted).toBe(true);
       expect(result.plan.macros.protein).toBe("116g");
@@ -87,7 +89,10 @@ describe("Regras de Negócio - Validação de Casos Reais", () => {
     };
 
     test("deve validar plano nutricional preservando campos após correção de proteína", () => {
-      const nutritionPlan = {
+      const nutritionPlan: NutritionPlan & {
+        mealPlan?: unknown;
+        hydration?: string;
+      } = {
         dailyCalories: 3000,
         macros: { protein: "165g", carbs: "400g", fats: "80g" },
         mealPlan: [
@@ -100,12 +105,15 @@ describe("Regras de Negócio - Validação de Casos Reais", () => {
         hydration: "3L por dia",
       };
 
-      const result = validateAndCorrectNutrition(nutritionPlan as any, profile);
+      const result = validateAndCorrectNutrition(nutritionPlan, profile);
 
       expect(result.wasAdjusted).toBe(true);
       expect(result.plan.macros.protein).toBe("155g"); // Capped by lean mass
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((result.plan as any).mealPlan).toBeDefined();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((result.plan as any).mealPlan?.length).toBe(1);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect((result.plan as any).hydration).toBe("3L por dia");
     });
   });

@@ -179,6 +179,7 @@ export async function GET(request: NextRequest) {
  * Busca rejeições por período
  */
 async function getRejectionsByPeriod(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: ReturnType<typeof createClient<any, "public", any>>,
   startTime: number,
   endTime: number
@@ -205,6 +206,7 @@ async function getRejectionsByPeriod(
  * Busca correções por período
  */
 async function getCorrectionsByPeriod(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: ReturnType<typeof createClient<any, "public", any>>,
   startTime: number,
   endTime: number
@@ -237,6 +239,7 @@ async function getCorrectionsByPeriod(
  * Busca métricas de qualidade por período
  */
 async function getQualityByPeriod(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: ReturnType<typeof createClient<any, "public", any>>,
   startTime: number,
   endTime: number

@@ -134,8 +134,7 @@ export function generateInsights(summary: MetricsSummary): Insight[] {
       // Motivo específico muito frequente
       const reasonInsight = analyzeRejectionReason(
         topReason.reason,
-        topReason.percentage,
-        summary
+        topReason.percentage
       );
       if (reasonInsight) {
         insights.push(reasonInsight);
@@ -256,8 +255,7 @@ export function generateInsights(summary: MetricsSummary): Insight[] {
  */
 function analyzeRejectionReason(
   reason: RejectionReason,
-  percentage: number,
-  summary: MetricsSummary
+  percentage: number
 ): Insight | null {
   switch (reason) {
     case "excesso_series_por_sessao":

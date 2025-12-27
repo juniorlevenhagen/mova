@@ -1,13 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   generateInsights,
   type MetricsSummary,
 } from "@/lib/metrics/metricsInsights";
-import { recordPlanRejection } from "@/lib/metrics/planRejectionMetrics";
-import { recordPlanCorrection } from "@/lib/metrics/planCorrectionMetrics";
-import { recordPlanQuality } from "@/lib/metrics/planQualityMetrics";
 import type { RejectionReason } from "@/lib/metrics/planRejectionMetrics";
-import type { CorrectionReason } from "@/lib/metrics/types";
 
 // Mock das funções de persistência para não depender do banco
 vi.mock("@/lib/metrics/planCorrectionMetrics", () => ({

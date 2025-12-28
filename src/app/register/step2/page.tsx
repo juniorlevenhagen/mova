@@ -362,9 +362,7 @@ export default function Step2Page() {
               <option value="Sedentário">Sedentário</option>
               <option value="Moderado">Moderado</option>
               <option value="Atleta">Atleta</option>
-              <option value="Atleta Alto Rendimento">
-                Atleta Alto Rendimento
-              </option>
+              <option value="Atleta Alto Rendimento">Avançado</option>
             </select>
           </div>
 

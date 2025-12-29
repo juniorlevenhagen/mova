@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createClient();
-    const { error: exchangeError, data: sessionData } =
+    const { error: exchangeError } =
       await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
@@ -29,36 +29,6 @@ export async function GET(request: Request) {
       return NextResponse.redirect(
         new URL("/auth/login?error=exchange_error", request.url)
       );
-    }
-
-    // Verificar se o usuário tem perfil completo
-    const user = sessionData?.user;
-    if (user) {
-      // Verificar se existe perfil do usuário
-      const { data: profile, error: profileError } = await supabase
-        .from("user_profiles")
-        .select("user_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      // Se não houver perfil ou houver erro (exceto "não encontrado"), redirecionar para completar cadastro
-      if (!profile) {
-        console.log(
-          "Usuário sem perfil completo, redirecionando para registro"
-        );
-        return NextResponse.redirect(new URL("/register/step2", request.url));
-      }
-
-      // Se houver erro e não for o código "não encontrado", redirecionar para completar cadastro
-      if (
-        profileError &&
-        typeof profileError === "object" &&
-        "code" in profileError &&
-        (profileError as { code: string }).code !== "PGRST116"
-      ) {
-        console.log("Erro ao verificar perfil, redirecionando para registro");
-        return NextResponse.redirect(new URL("/register/step2", request.url));
-      }
     }
 
     // Redirecionar para dashboard após login bem-sucedido

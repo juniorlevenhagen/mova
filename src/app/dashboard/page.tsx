@@ -85,13 +85,6 @@ export default function DashboardPage() {
   } | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
 
-  // Verificar se precisa completar o registro e redirecionar
-  useEffect(() => {
-    if (!authLoading && !profileLoading && !profile && user) {
-      router.replace("/register/step2");
-    }
-  }, [profile, profileLoading, authLoading, user, router]);
-
   // Função combinada para refresh após upload de PDF
   const handlePdfUploadRefresh = async () => {
     // Refresh do perfil

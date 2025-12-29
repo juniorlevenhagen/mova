@@ -16,51 +16,6 @@ export default function Step3Page() {
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
-        // Verificar se usuário está autenticado
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        // Se usuário está autenticado, verificar se tem perfil completo
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from("user_profiles")
-            .select("user_id")
-            .eq("user_id", session.user.id)
-            .maybeSingle();
-
-          // Se não tem perfil, redirecionar para step2
-          if (!profile) {
-            router.replace("/register/step2");
-            return;
-          }
-
-          // Se tem perfil, verificar trial e permitir acesso
-          if (session?.access_token) {
-            const response = await fetch("/api/check-trial-status", {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            });
-
-            if (response.ok) {
-              const trialStatus = await response.json();
-
-              // Se já tem trial ativo ou já usou trial, redirecionar para dashboard
-              if (trialStatus.hasActiveTrial || trialStatus.hasUsedTrial) {
-                router.replace("/dashboard");
-                return;
-              }
-            }
-          }
-
-          // Usuário autenticado com perfil - permitir acesso
-          setCanRender(true);
-          return;
-        }
-
-        // Fluxo normal de registro - verificar localStorage
         const step2Data = localStorage.getItem("registerStep2");
         const step1Data = localStorage.getItem("registerStep1");
 
@@ -69,7 +24,11 @@ export default function Step3Page() {
           return;
         }
 
-        // Verificar se usuário já tem trial ativo ou já usou trial (fluxo normal)
+        // Verificar se usuário já tem trial ativo ou já usou trial
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (session?.access_token) {
           // Verificar status do trial
           const response = await fetch("/api/check-trial-status", {

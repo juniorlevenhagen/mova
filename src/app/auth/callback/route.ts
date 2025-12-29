@@ -42,10 +42,21 @@ export async function GET(request: Request) {
         .maybeSingle();
 
       // Se não houver perfil ou houver erro (exceto "não encontrado"), redirecionar para completar cadastro
-      if (!profile || (profileError && profileError.code !== "PGRST116")) {
+      if (!profile) {
         console.log(
           "Usuário sem perfil completo, redirecionando para registro"
         );
+        return NextResponse.redirect(new URL("/register/step2", request.url));
+      }
+
+      // Se houver erro e não for o código "não encontrado", redirecionar para completar cadastro
+      if (
+        profileError &&
+        typeof profileError === "object" &&
+        "code" in profileError &&
+        (profileError as { code: string }).code !== "PGRST116"
+      ) {
+        console.log("Erro ao verificar perfil, redirecionando para registro");
         return NextResponse.redirect(new URL("/register/step2", request.url));
       }
     }

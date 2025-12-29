@@ -26,7 +26,8 @@ export type MovementPattern =
   | "vertical_push"
   | "horizontal_pull"
   | "vertical_pull"
-  | "unilateral";
+  | "unilateral"
+  | "core_stability";
 
 /**
  * Mapeia o tipo existente (compound/isolation) para ExerciseRole

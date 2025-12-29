@@ -117,7 +117,10 @@ export default function Step2Page() {
           if (createUserError) {
             // Se já existe (duplicate key), ignorar o erro
             if (!createUserError.message.includes("duplicate key")) {
-              console.error("Erro ao criar registro na tabela users:", createUserError);
+              console.error(
+                "Erro ao criar registro na tabela users:",
+                createUserError
+              );
               throw createUserError;
             }
           }
@@ -196,28 +199,39 @@ export default function Step2Page() {
       localStorage.setItem("registerStep2", JSON.stringify(formData));
 
       router.push("/register/step3");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro ao salvar perfil:", error);
-      
+
       // Mensagens de erro mais específicas
       let errorMessage = "Erro ao salvar perfil. Tente novamente.";
-      
-      if (error?.message) {
-        if (error.message.includes("Dados de registro não encontrados")) {
-          errorMessage = "Dados de registro não encontrados. Por favor, faça o registro novamente.";
-        } else if (error.message.includes("Usuário não encontrado")) {
-          errorMessage = "Usuário não encontrado. Por favor, faça login novamente.";
-        } else if (error.message.includes("Data de nascimento inválida")) {
-          errorMessage = "Data de nascimento inválida. Verifique o formato.";
-        } else if (error.message.includes("Não foi possível identificar o usuário")) {
-          errorMessage = "Não foi possível identificar o usuário. Por favor, faça login novamente.";
-        } else if (error.message?.includes("permission denied") || error.message?.includes("RLS")) {
-          errorMessage = "Erro de permissão. Entre em contato com o suporte.";
-        } else if (error.message) {
-          errorMessage = `Erro: ${error.message}`;
+
+      if (error && typeof error === "object" && "message" in error) {
+        const errorObj = error as { message: string };
+        if (errorObj.message) {
+          if (errorObj.message.includes("Dados de registro não encontrados")) {
+            errorMessage =
+              "Dados de registro não encontrados. Por favor, faça o registro novamente.";
+          } else if (errorObj.message.includes("Usuário não encontrado")) {
+            errorMessage =
+              "Usuário não encontrado. Por favor, faça login novamente.";
+          } else if (errorObj.message.includes("Data de nascimento inválida")) {
+            errorMessage = "Data de nascimento inválida. Verifique o formato.";
+          } else if (
+            errorObj.message.includes("Não foi possível identificar o usuário")
+          ) {
+            errorMessage =
+              "Não foi possível identificar o usuário. Por favor, faça login novamente.";
+          } else if (
+            errorObj.message.includes("permission denied") ||
+            errorObj.message.includes("RLS")
+          ) {
+            errorMessage = "Erro de permissão. Entre em contato com o suporte.";
+          } else {
+            errorMessage = `Erro: ${errorObj.message}`;
+          }
         }
       }
-      
+
       alert(errorMessage);
     } finally {
       setLoading(false);

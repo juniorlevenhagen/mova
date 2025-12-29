@@ -4688,9 +4688,10 @@ function convertTemplateToExercise(
 
   // 🆕 DIFERENCIAÇÃO: +1 série para exercícios compostos de músculos grandes
   // Apenas para exercícios principais (compound/structural), nunca isolados
-  const isCompound = template.type === "compound" || template.role === "structural";
+  const isCompound =
+    template.type === "compound" || template.role === "structural";
   const isLarge = isLargeMuscle(template.primaryMuscle);
-  
+
   if (isCompound && isLarge && protocol === "normal") {
     minSets += 1; // +1 série para músculos grandes compostos
   }
@@ -4709,7 +4710,15 @@ function convertTemplateToExercise(
     sets = Math.max(sets, minSets);
     if (sets > template.sets) {
       const reasonParts = [];
-      if (sets > getMinimumSetsPerExercise({ gender, activityLevel, objective, protocol })) {
+      if (
+        sets >
+        getMinimumSetsPerExercise({
+          gender,
+          activityLevel,
+          objective,
+          protocol,
+        })
+      ) {
         // Se foi ajustado além do mínimo base, incluir informação sobre músculo grande
         reasonParts.push(`mínimo por perfil: ${template.sets} → ${sets}`);
         if (isCompound && isLarge) {
@@ -4718,7 +4727,7 @@ function convertTemplateToExercise(
       } else {
         reasonParts.push(`mínimo por perfil: ${template.sets} → ${sets}`);
       }
-      
+
       if (adjustmentReason) {
         adjustmentReason = `${adjustmentReason} + ${reasonParts.join(", ")}`;
       } else {

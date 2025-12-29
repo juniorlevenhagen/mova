@@ -43,7 +43,9 @@ export async function GET(request: Request) {
 
       // Se não houver perfil ou houver erro (exceto "não encontrado"), redirecionar para completar cadastro
       if (!profile || (profileError && profileError.code !== "PGRST116")) {
-        console.log("Usuário sem perfil completo, redirecionando para registro");
+        console.log(
+          "Usuário sem perfil completo, redirecionando para registro"
+        );
         return NextResponse.redirect(new URL("/register/step2", request.url));
       }
     }

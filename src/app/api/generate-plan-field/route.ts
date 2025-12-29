@@ -206,7 +206,9 @@ export async function POST(request: NextRequest) {
           | "casa"
           | "ambos"
           | "ar_livre"
-          | undefined // 🏠 Novo: Ambiente de treino
+          | undefined, // 🏠 Novo: Ambiente de treino
+        undefined, // age não disponível aqui
+        userData.gender || undefined // 🆕 Gênero para regras de séries
       );
 
       // O generateTrainingPlanStructure já retorna o plano com séries ajustadas

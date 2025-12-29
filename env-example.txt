@@ -21,6 +21,11 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=sua_chave_publica_stripe
 STRIPE_SECRET_KEY=sua_chave_secreta_stripe
 STRIPE_WEBHOOK_SECRET=sua_chave_webhook_stripe
 
+# Stripe Price IDs (obtenha após criar produtos no catálogo do Stripe)
+STRIPE_PRICE_ID_PROMPT_SINGLE=price_1SjTwOFhw0SwsIQgMNqUI9Lc
+STRIPE_PRICE_ID_PROMPT_TRIPLE=price_1SjTwzFhw0SwsIQgRiX0GfGW
+STRIPE_PRICE_ID_PROMPT_PRO_5=price_1SjTxgFhw0SwsIQgyC8FRprC
+
 # Mercado Pago Configuration
 # Obtenha essas informações no painel do Mercado Pago
 # Acesse: https://www.mercadopago.com.br/developers/panel/app

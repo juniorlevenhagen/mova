@@ -36,6 +36,7 @@ export interface TrainingDay {
   day: string;
   type?: string;
   exercises: Exercise[];
+  description?: string; // 🆕 Descrição explicativa para dias repetidos
 }
 
 export interface TrainingPlan {

@@ -153,8 +153,10 @@ interface ExerciseTemplate {
     | "vertical_push"
     | "horizontal_pull"
     | "vertical_pull"
-    | "unilateral";
+    | "unilateral"
+    | "core_stability"; // 🆕 Para exercícios de estabilização
   muscles?: string[]; // MuscleGroup[] padronizado
+  hypertrophy?: boolean; // 🆕 false = não é exercício de hipertrofia (ex: Superman)
 }
 
 // DayConfig removido - não utilizado
@@ -410,6 +412,9 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       type: "isolation",
       equipment: "home",
       role: "isolated",
+      pattern: "core_stability", // 🆕 Reclassificação funcional: estabilização lombar/core posterior
+      // 🆕 NÃO é exercício de hipertrofia de costas
+      hypertrophy: false, // 🆕 Marcar como não-hipertrofia
     },
     {
       name: "Remada curvada com barra",
@@ -1382,7 +1387,8 @@ export function generateTrainingPlanStructure(
   jointLimitations?: boolean, // 🥇 Passo 1: Restrição de ombro
   kneeLimitations?: boolean, // 🔴 Restrição de joelho
   trainingLocation?: "academia" | "casa" | "ambos" | "ar_livre", // 🏠 Novo: Ambiente de treino
-  age?: number // 🛡️ Idade para validação de risco (idosos ≥60 anos)
+  age?: number, // 🛡️ Idade para validação de risco (idosos ≥60 anos)
+  gender?: string // 🆕 Gênero para regras de séries por perfil
 ): TrainingPlan {
   // 📊 NOVO: Criar acumulador de qualidade para rastrear warnings SOFT/FLEXIBLE
   const qualityAccumulator = new PlanQualityAccumulator();
@@ -1536,7 +1542,9 @@ export function generateTrainingPlanStructure(
         approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
         qualityAccumulator, // 📊 NOVO: Passar acumulador de qualidade
         trainingLocation, // 🏠 Novo: Ambiente de treino
-        age // 🛡️ Idade para validação de risco
+        age, // 🛡️ Idade para validação de risco
+        undefined, // highRiskExercisesUsed não usado em PPL
+        gender // 🆕 Gênero para regras de séries
       );
 
       // 🥉 Passo 3: Atualizar pplState com exercícios adicionados (apenas se não for primeira ocorrência)
@@ -1546,10 +1554,18 @@ export function generateTrainingPlanStructure(
         }
       }
 
+      // 🆕 Adicionar descrição explicativa para dias repetidos
+      let dayDescription: string | undefined;
+      if (!isFirstOccurrence) {
+        dayDescription =
+          "Este treino repete a estrutura de um dia anterior para facilitar progressão de carga, consolidação técnica e execução automática. Pequenas evoluções ocorrem ao longo das semanas.";
+      }
+
       weeklySchedule.push({
         day: dayLabel,
         type: dayType,
         exercises,
+        ...(dayDescription && { description: dayDescription }),
       });
     }
   } else if (actualDivision === "Upper/Lower") {
@@ -1582,13 +1598,24 @@ export function generateTrainingPlanStructure(
         approvalContract, // 🎯 NOVO: Passar ApprovalContract para consulta antecipada
         qualityAccumulator, // 📊 NOVO: Passar acumulador de qualidade
         trainingLocation, // 🏠 Novo: Ambiente de treino
-        age // 🛡️ Idade para validação de risco
+        age, // 🛡️ Idade para validação de risco
+        undefined, // highRiskExercisesUsed não usado em Upper/Lower
+        gender // 🆕 Gênero para regras de séries
       );
+
+      // 🆕 Adicionar descrição explicativa para dias repetidos (Upper/Lower)
+      let dayDescription: string | undefined;
+      const dayTypeCount = Math.floor(i / days.length);
+      if (dayTypeCount > 0) {
+        dayDescription =
+          "Este treino repete a estrutura de um dia anterior para facilitar progressão de carga, consolidação técnica e execução automática. Pequenas evoluções ocorrem ao longo das semanas.";
+      }
 
       weeklySchedule.push({
         day: `${dayName} – ${dayType === "Upper" ? "Superiores" : "Inferiores"}`,
         type: dayType,
         exercises,
+        ...(dayDescription && { description: dayDescription }),
       });
     }
   } else {
@@ -1630,7 +1657,8 @@ export function generateTrainingPlanStructure(
         qualityAccumulator, // 📊 NOVO: Passar acumulador de qualidade
         trainingLocation, // 🏠 Novo: Ambiente de treino
         age, // 🛡️ Idade para validação de risco
-        highRiskExercisesUsedThisWeek // 🛡️ Exercícios de alto risco usados na semana
+        highRiskExercisesUsedThisWeek, // 🛡️ Exercícios de alto risco usados na semana
+        gender // 🆕 Gênero para regras de séries
       );
 
       // 🥈 Passo 2: Atualizar exerciseWeekState com exercícios adicionados
@@ -1659,10 +1687,19 @@ export function generateTrainingPlanStructure(
         }
       }
 
+      // 🆕 Adicionar descrição explicativa para dias repetidos (Full Body)
+      // Full Body geralmente não repete, mas se houver mais de 3 dias, pode repetir
+      let dayDescription: string | undefined;
+      if (trainingDays > 3 && i >= 3) {
+        dayDescription =
+          "Este treino repete a estrutura de um dia anterior para facilitar progressão de carga, consolidação técnica e execução automática. Pequenas evoluções ocorrem ao longo das semanas.";
+      }
+
       weeklySchedule.push({
         day: `${dayName} – Corpo Inteiro`,
         type: "Full Body",
         exercises,
+        ...(dayDescription && { description: dayDescription }),
       });
     }
   }
@@ -2193,7 +2230,8 @@ function generateDayExercises(
   qualityAccumulator?: PlanQualityAccumulator, // 📊 NOVO: Acumulador de qualidade
   trainingLocation?: "academia" | "casa" | "ambos" | "ar_livre", // 🏠 Novo: Ambiente de treino
   age?: number, // 🛡️ Idade para validação de risco
-  highRiskExercisesUsed?: Set<string> // 🛡️ Exercícios de alto risco usados na semana
+  highRiskExercisesUsed?: Set<string>, // 🛡️ Exercícios de alto risco usados na semana
+  gender?: string // 🆕 Gênero para regras de séries por perfil
 ): Exercise[] {
   let exercises: Exercise[] = [];
 
@@ -2525,7 +2563,9 @@ function generateDayExercises(
         imc,
         objective,
         activityLevel,
-        hasDeficit // ✅ CORREÇÃO 3: Passar hasDeficit para forçar séries = 1
+        hasDeficit, // ✅ CORREÇÃO 3: Passar hasDeficit para forçar séries = 1
+        gender, // 🆕 Passar gender para regras de séries
+        qualityAccumulator // 🆕 Passar qualityAccumulator para penalizar 1 série
       );
 
       // 🎯 NOVO: Consultar ApprovalContract ANTES de adicionar exercício
@@ -3023,8 +3063,12 @@ function generateDayExercises(
     );
 
     // Adicionar exercícios de costas (PRIMÁRIO - GRANDES PRIMEIRO)
+    // 🆕 Filtrar exercícios não-hipertrofia (ex: Superman) dos principais
+    const costasForMain = FILTERED_DATABASE.costas.filter(
+      (ex) => ex.hypertrophy !== false
+    );
     // Limitar padrão motor vertical_pull: no máximo 1 exercício
-    const costasSorted = sortByType(FILTERED_DATABASE.costas);
+    const costasSorted = sortByType(costasForMain);
     const costasVerticalPull = costasSorted.filter(isVerticalPull);
     const costasNonVerticalPull = costasSorted.filter(
       (t) => !isVerticalPull(t)
@@ -3598,7 +3642,11 @@ function generateDayExercises(
     );
 
     // Adicionar exercícios de costas com validação de padrão motor vertical_pull
-    const costasSorted = sortByType(FILTERED_DATABASE.costas);
+    // 🆕 Filtrar exercícios não-hipertrofia (ex: Superman) dos principais
+    const costasForMain = FILTERED_DATABASE.costas.filter(
+      (ex) => ex.hypertrophy !== false
+    );
+    const costasSorted = sortByType(costasForMain);
     const costasVerticalPull = costasSorted.filter(isVerticalPull);
     const costasNonVerticalPull = costasSorted.filter(
       (t) => !isVerticalPull(t)
@@ -4439,6 +4487,118 @@ function selectDiverseExercises(
 /**
  * Ajusta reps para respeitar os limites do perfil do usuário
  */
+/**
+ * 🆕 Helper: Verifica se um músculo é considerado grande
+ * Músculos grandes: peitoral, costas, quadríceps, posterior de coxa, glúteos
+ * Usa mesma lógica do validador para consistência
+ */
+function isLargeMuscle(muscle: string): boolean {
+  const normalized = normalize(muscle);
+  const largeMuscles = [
+    "peitoral",
+    "peito",
+    "costas",
+    "dorsal",
+    "quadriceps",
+    "quadríceps",
+    "posterior de coxa",
+    "isquiotibiais",
+    "gluteos",
+    "glúteo",
+    "glúteos",
+  ];
+  return largeMuscles.some((large) => normalized.includes(large));
+}
+
+/**
+ * 🆕 REGRA DE SÉRIES POR PERFIL (OBRIGATÓRIA)
+ * Define o mínimo de séries por exercício baseado em:
+ * - Gênero
+ * - Nível de atividade
+ * - Objetivo
+ * - Protocolo (normal, circuit, deload, reabilitação)
+ * - Tamanho do músculo (apenas para exercícios compostos)
+ */
+function getMinimumSetsPerExercise({
+  gender,
+  activityLevel,
+  objective,
+  protocol = "normal",
+}: {
+  gender?: string;
+  activityLevel?: string;
+  objective?: string;
+  protocol?: string;
+}): number {
+  // ⚠️ 1 série: PROIBIDO em produção, exceto protocolos especiais
+  if (protocol !== "normal") {
+    // Circuit, deload, reabilitação podem ter 1 série
+    return 1;
+  }
+
+  const normalizedGender = gender?.toLowerCase() || "";
+  const normalizedLevel = normalize(activityLevel || "");
+  const normalizedObjective = normalize(objective || "");
+
+  // Masculino
+  if (
+    normalizedGender.includes("masculino") ||
+    normalizedGender.includes("male") ||
+    normalizedGender === "m"
+  ) {
+    // Atleta / Performance
+    if (
+      normalizedLevel.includes("atleta") ||
+      normalizedLevel.includes("performance") ||
+      normalizedLevel.includes("alto rendimento")
+    ) {
+      // Força
+      if (
+        normalizedObjective.includes("força") ||
+        normalizedObjective.includes("forca") ||
+        normalizedObjective.includes("strength")
+      ) {
+        return 5; // 5 a 6 séries, reps até 6
+      }
+      // Hipertrofia
+      if (
+        normalizedObjective.includes("hipertrofia") ||
+        normalizedObjective.includes("massa") ||
+        normalizedObjective.includes("hypertrophy")
+      ) {
+        return 3; // 3 a 4 séries, reps até 12
+      }
+      // Padrão para atleta (hipertrofia)
+      return 3;
+    }
+
+    // Sedentário / Moderado
+    if (
+      normalizedLevel.includes("sedentário") ||
+      normalizedLevel.includes("sedentario") ||
+      normalizedLevel.includes("moderado") ||
+      normalizedLevel.includes("moderate")
+    ) {
+      return 2; // 2 a 3 séries, reps 12-15
+    }
+
+    // Padrão masculino (intermediário)
+    return 3;
+  }
+
+  // Feminino - manter padrão atual (2-3 séries), sem forçar aumento
+  if (
+    normalizedGender.includes("feminino") ||
+    normalizedGender.includes("female") ||
+    normalizedGender === "f"
+  ) {
+    return 2; // 2-3 séries padrão
+  }
+
+  // Padrão geral (se gênero não especificado)
+  return 2;
+}
+
 function adjustRepsForProfile(
   baseReps: string,
   activityLevel?: string
@@ -4489,13 +4649,17 @@ function adjustRepsForProfile(
 /**
  * Converte template de exercício para Exercise
  * Agora aceita IMC, objetivo e activityLevel para ajustar reps
+ * 🆕 Aplica regras de mínimo de séries por perfil
+ * 🆕 Penaliza 1 série em produção (protocolo normal)
  */
 function convertTemplateToExercise(
   template: ExerciseTemplate,
   imc?: number,
   objective?: string,
   activityLevel?: string,
-  hasDeficit?: boolean // ✅ CORREÇÃO 3: Parâmetro para déficit calórico
+  hasDeficit?: boolean, // ✅ CORREÇÃO 3: Parâmetro para déficit calórico
+  gender?: string, // 🆕 Gênero para regras de séries
+  qualityAccumulator?: PlanQualityAccumulator // 🆕 Para penalizar 1 série em produção
 ): Exercise {
   // Primeiro ajustar por IMC/objetivo
   let { reps, adjustmentReason } = adjustRepsForIMCAndObjective(
@@ -4513,6 +4677,24 @@ function convertTemplateToExercise(
     reps = adjustedReps;
   }
 
+  // 🆕 REGRA DE SÉRIES POR PERFIL: Obter mínimo baseado em gênero, nível e objetivo
+  const protocol = hasDeficit ? "deficit" : "normal";
+  let minSets = getMinimumSetsPerExercise({
+    gender,
+    activityLevel,
+    objective,
+    protocol,
+  });
+
+  // 🆕 DIFERENCIAÇÃO: +1 série para exercícios compostos de músculos grandes
+  // Apenas para exercícios principais (compound/structural), nunca isolados
+  const isCompound = template.type === "compound" || template.role === "structural";
+  const isLarge = isLargeMuscle(template.primaryMuscle);
+  
+  if (isCompound && isLarge && protocol === "normal") {
+    minSets += 1; // +1 série para músculos grandes compostos
+  }
+
   // ✅ CORREÇÃO 3: Déficit força séries = 1 na geração (sem ajuste depois)
   let sets = template.sets;
   if (hasDeficit) {
@@ -4522,6 +4704,40 @@ function convertTemplateToExercise(
     } else {
       adjustmentReason = `Déficit calórico: séries = 1`;
     }
+  } else {
+    // 🆕 Aplicar mínimo de séries por perfil (apenas se não for déficit)
+    sets = Math.max(sets, minSets);
+    if (sets > template.sets) {
+      const reasonParts = [];
+      if (sets > getMinimumSetsPerExercise({ gender, activityLevel, objective, protocol })) {
+        // Se foi ajustado além do mínimo base, incluir informação sobre músculo grande
+        reasonParts.push(`mínimo por perfil: ${template.sets} → ${sets}`);
+        if (isCompound && isLarge) {
+          reasonParts.push(`(+1 série para músculo grande composto)`);
+        }
+      } else {
+        reasonParts.push(`mínimo por perfil: ${template.sets} → ${sets}`);
+      }
+      
+      if (adjustmentReason) {
+        adjustmentReason = `${adjustmentReason} + ${reasonParts.join(", ")}`;
+      } else {
+        adjustmentReason = reasonParts.join(", ");
+      }
+    }
+  }
+
+  // 🆕 PROIBIR 1 SÉRIE EM PRODUÇÃO (protocolo normal)
+  // Penalizar no score, mas não rejeitar o plano
+  if (sets === 1 && protocol === "normal" && qualityAccumulator) {
+    qualityAccumulator.penalize({
+      type: "single_set_not_allowed",
+      penalty: -10,
+      context: {
+        exercise: template.name,
+        reason: "1 série não permitida em protocolo normal",
+      },
+    });
   }
 
   // Log do ajuste se houver
@@ -4533,7 +4749,7 @@ function convertTemplateToExercise(
     name: template.name,
     primaryMuscle: template.primaryMuscle,
     secondaryMuscles: template.secondaryMuscles,
-    sets: sets, // ✅ CORREÇÃO 3: Usar sets ajustado (1 em déficit)
+    sets: sets,
     reps,
     rest: template.rest,
     notes: template.notes || "",

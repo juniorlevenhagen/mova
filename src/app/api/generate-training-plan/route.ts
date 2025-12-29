@@ -295,7 +295,9 @@ export async function POST(request: NextRequest) {
           | "casa"
           | "ambos"
           | "ar_livre"
-          | undefined // 🏠 Novo: Ambiente de treino
+          | undefined, // 🏠 Novo: Ambiente de treino
+        profile?.age || undefined, // 🛡️ Idade para validação de risco
+        profile?.gender || undefined // 🆕 Gênero para regras de séries
       );
 
       const isValid = isTrainingPlanUsable(

@@ -121,6 +121,27 @@ export class PlanQualityAccumulator {
   }
 
   /**
+   * 🆕 Penaliza score diretamente (para regras que não são warnings SOFT/FLEXIBLE)
+   * Usado para penalizar 1 série em produção, exercícios não-hipertrofia, etc.
+   */
+  penalize({
+    type,
+    penalty,
+    context,
+  }: {
+    type: string;
+    penalty: number;
+    context?: Record<string, unknown>;
+  }): void {
+    // Registrar como flexible warning para rastreamento
+    this.flexibleWarnings.push({
+      reason: `${type}: ${context?.reason || "Penalidade aplicada"}`,
+      type: type,
+      timestamp: Date.now(),
+    });
+  }
+
+  /**
    * Calcula score de qualidade (0-100)
    * Score = 100 - (softWarnings * 5) - (flexibleWarnings * 2) - (alternativesNotFound * 3)
    * Mínimo: 60

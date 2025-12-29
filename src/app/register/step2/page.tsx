@@ -26,12 +26,41 @@ export default function Step2Page() {
 
   // Proteção da rota
   useEffect(() => {
-    const step1Data = localStorage.getItem("registerStep1");
-    if (!step1Data) {
-      router.replace("/register/step1");
-    } else {
-      setCanRender(true);
-    }
+    const checkAccess = async () => {
+      // Verificar se usuário está autenticado (login via OAuth)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        // Usuário autenticado - verificar se já tem perfil
+        const { data: existingProfile } = await supabase
+          .from("user_profiles")
+          .select("user_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        // Se já tem perfil, redirecionar para dashboard
+        if (existingProfile) {
+          router.replace("/dashboard");
+          return;
+        }
+
+        // Se não tem perfil mas está autenticado, permitir acesso (OAuth flow)
+        setCanRender(true);
+        return;
+      }
+
+      // Se não está autenticado, verificar fluxo normal de registro
+      const step1Data = localStorage.getItem("registerStep1");
+      if (!step1Data) {
+        router.replace("/register/step1");
+      } else {
+        setCanRender(true);
+      }
+    };
+
+    checkAccess();
   }, [router]);
 
   if (!canRender) {
@@ -48,23 +77,79 @@ export default function Step2Page() {
     setLoading(true);
 
     try {
-      // 1. Pegar dados do step1 do localStorage
-      const step1Data = JSON.parse(
-        localStorage.getItem("registerStep1") || "{}"
-      );
+      // 1. Verificar se usuário está autenticado (OAuth) ou buscar do localStorage (registro normal)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      // 2. Buscar o usuário pelo email
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id")
-        .eq("email", step1Data.email)
-        .maybeSingle();
+      let userId: string | null = null;
 
-      if (userError) throw userError;
+      if (session?.user) {
+        // Usuário autenticado via OAuth - usar ID da sessão
+        userId = session.user.id;
 
-      // Adicionar verificação de null
-      if (!userData) {
-        throw new Error("Usuário não encontrado");
+        // Verificar se existe registro na tabela users, se não, criar
+        const { data: existingUser, error: userCheckError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (userCheckError && userCheckError.code !== "PGRST116") {
+          throw userCheckError;
+        }
+
+        // Se não existe registro na tabela users, criar
+        if (!existingUser) {
+          const { error: createUserError } = await supabase.rpc(
+            "insert_user_safe",
+            {
+              user_id: userId,
+              user_email: session.user.email || "",
+              user_full_name:
+                session.user.user_metadata?.full_name ||
+                session.user.user_metadata?.name ||
+                session.user.user_metadata?.display_name ||
+                "Usuário",
+            }
+          );
+
+          if (createUserError) {
+            // Se já existe (duplicate key), ignorar o erro
+            if (!createUserError.message.includes("duplicate key")) {
+              console.error("Erro ao criar registro na tabela users:", createUserError);
+              throw createUserError;
+            }
+          }
+        }
+      } else {
+        // Fluxo normal de registro - buscar do localStorage
+        const step1Data = JSON.parse(
+          localStorage.getItem("registerStep1") || "{}"
+        );
+
+        if (!step1Data.email) {
+          throw new Error("Dados de registro não encontrados");
+        }
+
+        // Buscar o usuário pelo email
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("id")
+          .eq("email", step1Data.email)
+          .maybeSingle();
+
+        if (userError) throw userError;
+
+        if (!userData) {
+          throw new Error("Usuário não encontrado");
+        }
+
+        userId = userData.id;
+      }
+
+      if (!userId) {
+        throw new Error("Não foi possível identificar o usuário");
       }
 
       // 3. Salvar perfil do usuário
@@ -88,7 +173,7 @@ export default function Step2Page() {
       const { error: profileError } = await supabase
         .from("user_profiles")
         .insert({
-          user_id: userData.id,
+          user_id: userId,
           birth_date: isoDate, // Salva no formato ISO (aaaa-mm-dd)
           age: calculatedAge,
           height: parseFloat(formData.height), // Altura com uma casa decimal
@@ -111,9 +196,29 @@ export default function Step2Page() {
       localStorage.setItem("registerStep2", JSON.stringify(formData));
 
       router.push("/register/step3");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao salvar perfil:", error);
-      alert("Erro ao salvar perfil. Tente novamente.");
+      
+      // Mensagens de erro mais específicas
+      let errorMessage = "Erro ao salvar perfil. Tente novamente.";
+      
+      if (error?.message) {
+        if (error.message.includes("Dados de registro não encontrados")) {
+          errorMessage = "Dados de registro não encontrados. Por favor, faça o registro novamente.";
+        } else if (error.message.includes("Usuário não encontrado")) {
+          errorMessage = "Usuário não encontrado. Por favor, faça login novamente.";
+        } else if (error.message.includes("Data de nascimento inválida")) {
+          errorMessage = "Data de nascimento inválida. Verifique o formato.";
+        } else if (error.message.includes("Não foi possível identificar o usuário")) {
+          errorMessage = "Não foi possível identificar o usuário. Por favor, faça login novamente.";
+        } else if (error.message?.includes("permission denied") || error.message?.includes("RLS")) {
+          errorMessage = "Erro de permissão. Entre em contato com o suporte.";
+        } else if (error.message) {
+          errorMessage = `Erro: ${error.message}`;
+        }
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -101,11 +101,11 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `Você é um nutricionista especialista de ALTO NÍVEL.
+          content: `Você é um especialista em orientação alimentar e educação nutricional.
 
-IMPORTANTE: Você DEVE retornar um plano nutricional completo e detalhado baseado nos dados do usuário.
+IMPORTANTE: Você DEVE retornar uma orientação alimentar completa e detalhada baseada nos dados do usuário. Esta é uma orientação educacional e organizacional, não uma prescrição nutricional individualizada. Lembre-se: não se trata de consulta ou tratamento nutricional.
 
-O plano nutricional DEVE incluir:
+A orientação alimentar DEVE incluir:
 1. dailyCalories - número total de calorias diárias recomendadas
 2. macros - distribuição de macronutrientes (protein, carbs, fats) em gramas
 3. mealPlan - plano alimentar completo com pelo menos 5 refeições por dia
@@ -177,7 +177,7 @@ ${
         },
         {
           role: "user",
-          content: `Gere um plano nutricional completo e personalizado para este usuário. O plano deve ser específico, detalhado e incluir quantidades exatas para cada alimento.`,
+          content: `Gere uma orientação alimentar completa e adaptada para este usuário. A orientação deve ser específica, detalhada e incluir sugestões de quantidades para cada alimento. Lembre-se: isso é uma orientação educacional, não prescrição nutricional.`,
         },
       ],
       response_format: {

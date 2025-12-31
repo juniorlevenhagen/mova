@@ -412,10 +412,10 @@ export function PromptPurchaseModal({
             <div className="mb-3 md:mb-4">
               <div className="flex items-baseline gap-2 mb-1 flex-wrap">
                 <span className="text-xs md:text-sm text-gray-400 line-through">
-                  R$ 299,70
+                  R$ 149,70
                 </span>
                 <span className="bg-black text-white px-2 py-1 rounded text-xs font-bold">
-                  60% OFF
+                  20% OFF
                 </span>
               </div>
               <div className="flex items-baseline flex-wrap">
@@ -427,7 +427,7 @@ export function PromptPurchaseModal({
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Economia de R$ 29,80 (R$ 39,97 por crédito)
+                Economia de R$ 29,80 comparado ao Plano Básico (R$ 39,97 por crédito)
               </p>
             </div>
 
@@ -551,10 +551,10 @@ export function PromptPurchaseModal({
             <div className="mb-4">
               <div className="flex items-baseline gap-2 mb-1">
                 <span className="text-sm text-gray-400 line-through">
-                  R$ 499,50
+                  R$ 249,50
                 </span>
                 <span className="bg-black text-white px-2 py-1 rounded text-xs font-bold">
-                  64% OFF
+                  28% OFF
                 </span>
               </div>
               <div className="flex items-baseline">
@@ -562,7 +562,7 @@ export function PromptPurchaseModal({
                 <span className="text-gray-600 text-sm ml-2">pacote</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Economia de R$ 69,60 (R$ 35,98 por crédito)
+                Economia de R$ 69,60 comparado ao Plano Básico (R$ 35,98 por crédito)
               </p>
             </div>
 
@@ -644,7 +644,7 @@ export function PromptPurchaseModal({
                   />
                 </svg>
                 <span className="text-gray-700 font-medium text-sm md:text-base">
-                  Use quando quiser (sem cooldown)
+                  Use quando quiser
                 </span>
               </li>
             </ul>

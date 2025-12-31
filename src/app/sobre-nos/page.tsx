@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import Image from "next/image";
 
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
@@ -99,7 +100,6 @@ function AnimatedNumber({
 }
 
 export default function SobreNosPage() {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const statsSectionRef = useRef<HTMLDivElement>(null);
   const [isStatsVisible, setIsStatsVisible] = useState(false);
   const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
@@ -130,17 +130,6 @@ export default function SobreNosPage() {
       observer.unobserve(currentSection);
     };
   }, []);
-
-  const handleVideoHover = () => {
-    if (videoRef.current) {
-      videoRef.current.play();
-    }
-  };
-  const handleVideoEnded = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = 0;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-white to-gray-100">
@@ -189,40 +178,32 @@ export default function SobreNosPage() {
               </h2>
               <div className="space-y-4 text-black/80 leading-relaxed text-lg">
                 <p>
-                  O Mova+ nasceu da paixão por democratizar o acesso a planos
-                  fitness personalizados. Nossa equipe de especialistas em
-                  medicina esportiva, nutrição e tecnologia se uniu para criar
-                  uma plataforma que combina o melhor da ciência do exercício
-                  com inteligência artificial.
+                  O Mova+ nasceu da inquietação de quem sempre acreditou que treinos e orientações fitness deveriam ser personalizados — e não genéricos.
                 </p>
                 <p>
-                  Começamos com uma simples pergunta: “Por que planos
-                  personalizados devem ser privilégio de poucos?” Hoje, ajudamos
-                  milhares de pessoas a alcançarem seus objetivos de forma
-                  segura e eficaz.
+                  Criado por um entusiasta da área do fitness com anos de estudo prático, observação e aplicação real de métodos de treinamento, o Mova+ foi desenvolvido para transformar conhecimento técnico em planos acessíveis, claros e adaptáveis à realidade de cada pessoa.
                 </p>
                 <p>
-                  Nossa tecnologia analisa seu perfil, objetivos e progresso
-                  para criar planos únicos que se adaptam automaticamente,
-                  garantindo resultados duradouros e sustentáveis.
+                  A plataforma utiliza regras inteligentes, padrões consolidados de treinamento e tecnologia para ajudar usuários a treinar com mais consciência, consistência e segurança.
+                </p>
+                <p>
+                  Nosso objetivo é simples: organizar o caminho, respeitar o processo e ajudar cada pessoa a evoluir no seu próprio ritmo.
                 </p>
               </div>
             </div>
             {/* Visual */}
-            <div
-              className="flex justify-center"
-              onMouseEnter={handleVideoHover}
-            >
-              <video
-                ref={videoRef}
-                src="/images/jump5.mp4"
-                muted
-                className="w-2/3 h-auto object-cover shadow-2xl shadow-black/100"
-                style={{ maxWidth: "calc(66.66667% - 2px)" }}
-                onEnded={handleVideoEnded}
-                playsInline
-                preload="metadata"
-              ></video>
+            <div className="flex justify-center">
+              <div className="relative w-full max-w-lg">
+                <Image
+                  src="/images/tyler-raye-Xb1d-N04Quc-unsplash.jpg"
+                  alt="Fitness e treinamento"
+                  width={800}
+                  height={1000}
+                  className="w-full h-auto object-cover rounded-lg shadow-2xl shadow-black/20"
+                  priority
+                  quality={90}
+                />
+              </div>
             </div>
           </div>
         </div>

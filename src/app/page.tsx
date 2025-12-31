@@ -69,19 +69,20 @@ function HomeContent() {
       >
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-zalando-medium text-black mb-4 md:mb-6 leading-[1.1] md:leading-tight">
-            Tudo que você precisa para desenvolver seu físico e melhorar sua
-            saúde utilizando Inteligência Artificial
+            Tudo o que você precisa para treinar melhor e evoluir com
+            consistência
           </h2>
-          <p className="text-lg md:text-xl lg:text-2xl text-black/90 font-zalando max-w-3xl mx-auto mb-12 leading-relaxed font-medium">
-            Descubra como o Mova+ pode acelerar sua jornada fitness com o poder
-            de ferramentas inteligentes e conteúdo de alta qualidade
+          <p className="text-lg md:text-xl lg:text-2xl text-black/90 font-zalando max-w-3xl mx-auto mb-6 md:mb-12 leading-relaxed font-medium">
+            O Mova+ organiza treino, alimentação e cardio de forma prática,
+            ajudando você a manter foco, disciplina e progresso na sua rotina
+            fitness.
           </p>
         </div>
-      </section>
 
-      {/* Seção da imagem com espaçamento otimizado */}
-      <section className="w-full bg-white pt-4 pb-8 md:py-16 px-4">
-        <FeaturesSection />
+        {/* Imagem abaixo do texto */}
+        <div className="mt-6 md:mt-8">
+          <FeaturesSection />
+        </div>
       </section>
 
       <HowItWorksSection />

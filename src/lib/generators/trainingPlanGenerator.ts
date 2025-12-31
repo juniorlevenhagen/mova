@@ -157,6 +157,7 @@ interface ExerciseTemplate {
     | "core_stability"; // 🆕 Para exercícios de estabilização
   muscles?: string[]; // MuscleGroup[] padronizado
   hypertrophy?: boolean; // 🆕 false = não é exercício de hipertrofia (ex: Superman)
+  minLevel?: "beginner" | "intermediate" | "advanced"; // 🆕 Nível mínimo necessário para prescrever este exercício
 }
 
 // DayConfig removido - não utilizado
@@ -581,6 +582,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       equipment: "both",
       role: "structural",
       pattern: "horizontal_push",
+      minLevel: "advanced", // 🆕 Apenas para níveis avançados
     },
     {
       name: "Tríceps coice com halteres",
@@ -2316,23 +2318,78 @@ function generateDayExercises(
     return database;
   };
 
-  // 🏠 Novo: Helper para obter banco de exercícios filtrado por ambiente
+  // 🆕 Novo: Filtrar exercícios por nível mínimo necessário
+  const filterByLevel = (
+    database: ExerciseTemplate[],
+    userLevel?: string
+  ): ExerciseTemplate[] => {
+    if (!userLevel) return database;
+
+    const normalizedLevel = userLevel
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "_")
+      .replace("atleta_alto_rendimento", "atleta_altorendimento");
+
+    // Determinar nível do usuário
+    const isAdvanced =
+      normalizedLevel.includes("atleta") ||
+      normalizedLevel.includes("avancado") ||
+      normalizedLevel === "atleta_altorendimento";
+
+    const isIntermediate =
+      normalizedLevel.includes("moderado") ||
+      normalizedLevel.includes("intermediario");
+
+    // Filtrar exercícios baseado no minLevel
+    return database.filter((ex) => {
+      if (!ex.minLevel) return true; // Sem restrição, disponível para todos
+
+      if (ex.minLevel === "advanced") {
+        return isAdvanced; // Apenas avançados
+      }
+
+      if (ex.minLevel === "intermediate") {
+        return isAdvanced || isIntermediate; // Intermediários e avançados
+      }
+
+      return true; // beginner - todos podem fazer
+    });
+  };
+
+  // 🏠 Novo: Helper para obter banco de exercícios filtrado por ambiente e nível
   const getFilteredDatabase = (
-    loc?: "academia" | "casa" | "ambos" | "ar_livre"
+    loc?: "academia" | "casa" | "ambos" | "ar_livre",
+    userLevel?: string
   ): typeof EXERCISE_DATABASE => {
     const location = loc || trainingLocation;
+    const level = userLevel || activityLevel;
+
+    // 🆕 Aplicar filtro de nível primeiro
+    let baseDatabase: typeof EXERCISE_DATABASE;
+    if (level) {
+      baseDatabase = {} as typeof EXERCISE_DATABASE;
+      for (const [muscle, exercises] of Object.entries(EXERCISE_DATABASE)) {
+        baseDatabase[muscle as keyof typeof EXERCISE_DATABASE] =
+          filterByLevel(exercises, level) as ExerciseTemplate[];
+      }
+    } else {
+      baseDatabase = EXERCISE_DATABASE;
+    }
+
     if (!location || location === "academia") {
-      return EXERCISE_DATABASE;
+      return baseDatabase;
     }
 
     const filtered: typeof EXERCISE_DATABASE = {} as typeof EXERCISE_DATABASE;
-    for (const [muscle, exercises] of Object.entries(EXERCISE_DATABASE)) {
+    for (const [muscle, exercises] of Object.entries(baseDatabase)) {
       const filteredExercises = filterByLocation(exercises, location);
 
       // 🏠 Novo: Lógica de substituição - se não há exercícios suficientes para o ambiente
       if (filteredExercises.length === 0) {
         if (location === "casa") {
-          // Casa: tentar "both" como fallback, depois todos
+          // Casa: tentar "both" como fallback, depois todos (mas respeitando nível)
           const fallback = exercises.filter(
             (ex) => ex.equipment === "both" || !ex.equipment
           );
@@ -2345,7 +2402,7 @@ function generateDayExercises(
             );
           }
         } else if (location === "ar_livre") {
-          // Ar livre: tentar "both" e "home" como fallback
+          // Ar livre: tentar "both" e "home" como fallback (mas respeitando nível)
           const fallback = exercises.filter(
             (ex) =>
               ex.equipment === "both" ||
@@ -2356,7 +2413,7 @@ function generateDayExercises(
             fallback.length > 0 ? fallback : exercises
           ) as ExerciseTemplate[];
         } else {
-          // Ambos: usar todos (já filtrado)
+          // Ambos: usar todos (já filtrado por nível)
           filtered[muscle as keyof typeof EXERCISE_DATABASE] =
             exercises as ExerciseTemplate[];
         }
@@ -2370,7 +2427,10 @@ function generateDayExercises(
 
   // 🏠 Novo: Obter banco filtrado uma vez por chamada de generateDayExercises
   // trainingLocation é um parâmetro opcional, então passamos undefined se não estiver definido
-  const FILTERED_DATABASE = getFilteredDatabase(trainingLocation || undefined);
+  const FILTERED_DATABASE = getFilteredDatabase(
+    trainingLocation || undefined,
+    activityLevel
+  );
 
   // 🥉 Passo 3: Helper para seleção com variação leve em PPL
   // ✅ NOVO: Suporta geração guiada por contrato (com fallback)
@@ -2379,8 +2439,9 @@ function generateDayExercises(
     count: number,
     muscleGroup?: string // ✅ NOVO: Para geração guiada por contrato
   ): ExerciseTemplate[] => {
-    // 🏠 Novo: Filtrar por ambiente primeiro
-    const filteredDatabase = filterByLocation(database);
+    // 🆕 Novo: Filtrar por nível primeiro, depois por ambiente
+    const filteredByLevel = filterByLevel(database, activityLevel);
+    const filteredDatabase = filterByLocation(filteredByLevel);
 
     // ✅ NOVO: Tentar geração guiada por contrato se muscleGroup fornecido
     if (muscleGroup && activityLevel) {

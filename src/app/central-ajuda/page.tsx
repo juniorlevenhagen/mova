@@ -23,12 +23,12 @@ const helpCategories = [
       {
         title: "Como criar minha conta?",
         content:
-          "Para criar sua conta, clique em 'Cadastre-se' no canto superior direito e preencha os dados solicitados. Você receberá um email de confirmação para ativar sua conta.",
+          "Para criar sua conta, clique no botão 'Comece agora' no canto superior direito da página e preencha os dados solicitados. Você receberá um email de confirmação para ativar sua conta.",
       },
       {
         title: "Como começar a usar o Mova+?",
         content:
-          "Após criar sua conta e configurar seu perfil, você pode comprar créditos para gerar planos personalizados. Oferecemos o Plano Básico (1 crédito) ou o Pacote Premium (3 créditos) para você escolher conforme sua necessidade.",
+          "Após criar sua conta e configurar seu perfil, você pode comprar créditos para gerar planos personalizados. Oferecemos três opções: Plano Básico (1 crédito), Pacote Premium (3 créditos) ou Pacote Pro (5 créditos) para você escolher conforme sua necessidade.",
       },
       {
         title: "Como configurar meu perfil?",
@@ -45,7 +45,7 @@ const helpCategories = [
       {
         title: "Quais são os planos disponíveis?",
         content:
-          "Oferecemos três tipos de compra: Plano Básico (R$ 49,90 por 1 crédito), Pacote Premium (R$ 119,90 por 3 créditos) e Pacote Pro (R$ 179,90 por 5 créditos). Cada crédito permite gerar um plano personalizado completo com treinos e nutrição.",
+          "Oferecemos três tipos de compra: Plano Básico (R$ 49,90 por 1 crédito), Pacote Premium (R$ 119,90 por 3 créditos) e Pacote Pro (R$ 179,90 por 5 créditos). Cada crédito permite gerar um plano adaptado completo com treinos e orientação alimentar.",
       },
       {
         title: "Como funciona a cobrança?",
@@ -65,7 +65,7 @@ const helpCategories = [
       {
         title: "O que está incluído em cada plano gerado?",
         content:
-          "Cada plano inclui: treinos personalizados conforme seu objetivo e nível (casa ou academia), plano alimentar gerado por IA com base em suas necessidades, alergias e preferências, e acesso completo ao dashboard para acompanhamento de evolução e registro de atividades.",
+          "Cada plano inclui: treinos adaptados conforme seu objetivo e nível (casa ou academia), orientação alimentar adaptada com base em suas necessidades, alergias e preferências, e acesso completo ao dashboard para acompanhamento de evolução e registro de atividades.",
       },
       {
         title: "Quais métodos de pagamento são aceitos?",
@@ -87,7 +87,7 @@ const helpCategories = [
       {
         title: "Estou com problemas para acessar minha conta",
         content:
-          "Verifique se você está usando o email correto e tente redefinir sua senha. Se o problema persistir, entre em contato conosco através do formulário abaixo.",
+          "Verifique se você está usando o email correto e tente redefinir sua senha. Se o problema persistir, entre em contato conosco pelo WhatsApp (disponível em todo o site) ou através do formulário de contato.",
       },
       {
         title: "Meu plano não está sendo gerado",
@@ -107,22 +107,42 @@ const faqs = [
   {
     question: "O que está incluído no Mova+ Complete?",
     answer:
-      "Você recebe um plano completo com: Treinos personalizados conforme seu objetivo e nível (casa ou academia), Plano alimentar gerado por IA com base em suas necessidades, alergias e preferências, Acesso à plataforma com atualizações, conteúdos e benefícios parceiros.",
+      "Você recebe uma experiência completa de cuidado com o corpo: treinos personalizados de acordo com seu objetivo, nível e local (casa ou academia), orientação alimentar ajustada às suas necessidades, preferências e restrições, além de acesso à plataforma com atualizações, conteúdos e benefícios exclusivos.",
   },
   {
-    question: "A dieta é feita por nutricionista?",
+    question: "A orientação alimentar é feita por nutricionista?",
     answer:
-      "Não. A dieta é gerada por um sistema de inteligência artificial treinado com base em recomendações nutricionais e adaptações conforme suas informações pessoais.",
+      "Não. O Mova+ oferece orientações alimentares personalizadas com base em dados informados por você e referências nutricionais amplamente utilizadas. Não se trata de prescrição médica ou nutricional.",
+  },
+  {
+    question: "Os treinos consideram dores ou limitações físicas?",
+    answer:
+      "Sim. Ao iniciar, você responde um questionário que nos ajuda a adaptar os treinos à sua realidade, respeitando possíveis dores, desconfortos ou limitações, sempre priorizando segurança e progressão gradual.",
   },
   {
     question: "Preciso de equipamentos para treinar?",
     answer:
-      "Não necessariamente. Se você treina em casa, sugerimos treinos que usam o peso do corpo ou objetos simples. Se tiver acesso a academia, também otimizamos seus treinos com os aparelhos disponíveis.",
+      "Não obrigatoriamente. Se você treina em casa, os treinos são adaptados para usar o peso do próprio corpo ou objetos simples. Caso tenha acesso à academia, o plano também se ajusta aos aparelhos disponíveis.",
   },
   {
-    question: "Posso fazer contato direto com treinador ou nutricionista?",
+    question: "Existe acompanhamento individual com profissionais?",
     answer:
-      "Atualmente, todo o suporte é feito através da plataforma digital, sem atendimento individualizado por profissionais humanos. As orientações são automáticas, baseadas em dados fornecidos por você.",
+      "Todo o acompanhamento acontece pela plataforma digital. As orientações são personalizadas a partir das informações que você fornece, sem atendimento individual ou acompanhamento presencial.",
+  },
+  {
+    question: "Preciso ter experiência com exercícios físicos?",
+    answer:
+      "Não é necessário ter experiência prévia. O Mova+ foi desenvolvido para acompanhar pessoas em todos os níveis, desde quem está começando até quem já treina há algum tempo. Os treinos são criados respeitando seu nível atual e evoluem de forma gradual conforme você progride, sempre priorizando segurança e adaptação ao seu ritmo. Em caso de dúvidas ou condições específicas, consulte sempre um profissional de educação física.",
+  },
+  {
+    question: "Como recebo meus treinos e orientações alimentares?",
+    answer:
+      "Após o cadastro, você acessa sua área exclusiva, onde seu plano é liberado e atualizado conforme sua evolução e ajustes no seu perfil.",
+  },
+  {
+    question: "Existem outros planos além do Mova+ Complete?",
+    answer:
+      "No momento, oferecemos uma única experiência completa, pensada para simplificar sua jornada e entregar resultados de forma clara, prática e acessível.",
   },
 ];
 
@@ -131,6 +151,12 @@ export default function CentralAjudaPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedArticle, setExpandedArticle] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategory((current) => {
+      return current === categoryId ? null : categoryId;
+    });
+  };
 
   // Função para normalizar texto para busca (remove acentos e converte para minúsculas)
   const normalizeText = (text: string) => {
@@ -342,67 +368,74 @@ export default function CentralAjudaPage() {
                 Categorias de Ajuda
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {helpCategories.map((category) => (
-                  <div
-                    key={category.id}
-                    className="bg-white rounded-[22px] border-2 border-black p-8 hover:shadow-xl transition-all duration-300 cursor-pointer"
-                    onClick={() =>
-                      setSelectedCategory(
-                        selectedCategory === category.id ? null : category.id
-                      )
-                    }
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
-                          <category.icon className="w-5 h-5 text-white" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                {helpCategories.map((category) => {
+                  const categoryId = category.id;
+                  const isSelected = selectedCategory === categoryId;
+
+                  return (
+                    <div
+                      key={categoryId}
+                      className="bg-white rounded-[22px] border-2 border-black p-8 hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleCategoryToggle(categoryId);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+                            <category.icon className="w-5 h-5 text-white" />
+                          </div>
+                          <h3 className="text-xl font-zalando-medium text-black">
+                            {category.title}
+                          </h3>
                         </div>
-                        <h3 className="text-xl font-zalando-medium text-black">
-                          {category.title}
-                        </h3>
+                        {isSelected ? (
+                          <ChevronDown className="w-5 h-5 text-black" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-black" />
+                        )}
                       </div>
-                      {selectedCategory === category.id ? (
-                        <ChevronDown className="w-5 h-5 text-black" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5 text-black" />
+
+                      {isSelected && (
+                        <div className="space-y-4 mt-6">
+                          {category.articles.map((article, index) => (
+                            <div
+                              key={index}
+                              className="border-l-4 border-black pl-4"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedArticle(
+                                    expandedArticle ===
+                                      `${category.id}-${index}`
+                                      ? null
+                                      : `${category.id}-${index}`
+                                  );
+                                }}
+                                className="text-left w-full"
+                              >
+                                <h4 className="font-zalando-medium text-black hover:text-black/80 transition-colors">
+                                  {article.title}
+                                </h4>
+                              </button>
+                              {expandedArticle ===
+                                `${category.id}-${index}` && (
+                                <p className="text-black/80 mt-2 leading-relaxed font-zalando">
+                                  {article.content}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
-
-                    {selectedCategory === category.id && (
-                      <div className="space-y-4 mt-6">
-                        {category.articles.map((article, index) => (
-                          <div
-                            key={index}
-                            className="border-l-4 border-black pl-4"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedArticle(
-                                  expandedArticle === `${category.id}-${index}`
-                                    ? null
-                                    : `${category.id}-${index}`
-                                );
-                              }}
-                              className="text-left w-full"
-                            >
-                              <h4 className="font-zalando-medium text-black hover:text-black/80 transition-colors">
-                                {article.title}
-                              </h4>
-                            </button>
-                            {expandedArticle === `${category.id}-${index}` && (
-                              <p className="text-black/80 mt-2 leading-relaxed font-zalando">
-                                {article.content}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
@@ -484,10 +517,10 @@ export default function CentralAjudaPage() {
                 <MessageCircle className="w-6 h-6 text-white" />
               </div>
               <h3 className="text-xl font-zalando-medium text-black mb-4">
-                Chat ao Vivo
+                Chat de Suporte
               </h3>
               <p className="text-black/80 mb-6 font-zalando">
-                Converse com nossa equipe em tempo real
+                Converse com nosso suporte pelo chat e tire suas dúvidas
               </p>
               <button className="inline-block bg-black text-white px-6 py-3 rounded-lg hover:bg-black/90 transition-colors font-zalando-medium border-2 border-black">
                 Iniciar Chat

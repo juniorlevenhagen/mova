@@ -1649,6 +1649,27 @@ Use esta tabela para definir a estratégia correta:
 - Movimentos de alto risco sem progressão adequada
 - Exercícios que causam dor (verificar limitações do usuário)
 
+**🚨 EXERCÍCIOS RESTRITOS POR NÍVEL DE MUSCULAÇÃO (CRÍTICO):**
+
+**❌ NUNCA prescrever para INICIANTES ou INTERMEDIÁRIOS:**
+- Mergulho entre bancos / Dips entre bancos (apenas AVANÇADO)
+- Paralelas / Dips em paralelas (apenas AVANÇADO)
+- Muscle-up (apenas AVANÇADO)
+- Handstand push-up / Parada de mão (apenas AVANÇADO)
+- Exercícios calistênicos avançados que requerem controle corporal superior
+- Drop sets, rest-pause, cluster sets (técnicas avançadas - apenas AVANÇADO)
+
+**✅ EXERCÍCIOS SEGUROS PARA INICIANTES/INTERMEDIÁRIOS (tríceps):**
+- Tríceps testa / Francês
+- Tríceps na polia / Pulley
+- Tríceps corda
+- Extensão de tríceps com halteres
+- Tríceps coice / Kickback
+- Fundo assistido (máquina ou assistido por elástico - apenas intermediário)
+
+**⚠️ REGRA IMPORTANTE:**
+Para nível INICIANTE ou INTERMEDIÁRIO, use APENAS exercícios isolados e controlados para tríceps. Exercícios de peso corporal avançados como dips devem ser PRESERVADOS para nível AVANÇADO.
+
 =====================================================================
 ### ESTRUTURA E ORDEM DOS EXERCÍCIOS (OBRIGATÓRIO - REGRA #1 PRIORITÁRIA)
 
@@ -1783,9 +1804,11 @@ A ordem dos exercícios DEVE seguir esta estrutura RÍGIDA:
 - Progressão gradual e conservadora
 - ⚠️ NUNCA prescrever exercícios avançados ou isolados complexos
 - ⚠️ NUNCA prescrever técnicas avançadas (drop sets, rest-pause, etc.)
+- ⚠️ NUNCA prescrever: Mergulho entre bancos, Paralelas/Dips, Muscle-up, Handstand push-up
 - Total de exercícios: 4-6 por treino (regra especial: ignorar quantidade por grupo)
 - ⚠️ Para IDOSOS (60+): volume reduzido, mais segurança articular, maior tempo de descanso
 - Exemplos adequados: Agachamento livre, Supino reto, Remada curvada, Desenvolvimento com halteres
+- **Tríceps (INICIANTE)**: Tríceps testa, Tríceps na polia, Tríceps corda, Extensão com halteres, Tríceps coice (NÃO usar Mergulho/Dips)
 
 **INTERMEDIÁRIO:**
 - Exercícios BÁSICOS a INTERMEDIÁRIOS
@@ -1796,21 +1819,23 @@ A ordem dos exercícios DEVE seguir esta estrutura RÍGIDA:
 - Descanso: 60-120 segundos entre séries
 - Pode incluir alguns exercícios isolados complementares
 - Pode usar técnicas avançadas com moderação (apenas se domina técnica)
+- ⚠️ NUNCA prescrever: Mergulho entre bancos, Paralelas/Dips, Muscle-up, Handstand push-up
 - Total de exercícios: 6-10 por treino
 - Exemplos adequados: Agachamento, Supino, Remada, Desenvolvimento, Rosca direta, Tríceps pulley
+- **Tríceps (INTERMEDIÁRIO)**: Tríceps testa, Tríceps na polia, Tríceps corda, Tríceps francês, Fundo assistido (máquina) - NÃO usar Mergulho/Dips livres
 
 **AVANÇADO:**
 - Exercícios INTERMEDIÁRIOS a AVANÇADOS
 - Maior QUANTIDADE de exercícios (10-16 exercícios por treino, respeitando tempo)
 - Maior VOLUME: 3-5 séries por exercício (4-6 para grupos prioritários)
 - Repetições variadas: 6-12 (força/hipertrofia) ou conforme IMC
-- Exercícios COMPOSTOS e avançados são adequados
+- Exercícios COMPOSTOS e avançados são adequados (incluindo Mergulho entre bancos, Dips em paralelas, Muscle-up)
 - Maior FADIGA MUSCULAR (volume total maior)
 - Descanso: 90-180 segundos entre séries (120-240 para compostos pesados)
 - Pode incluir técnicas avançadas (drop set, rest-pause, supersets, etc.)
 - Exercícios isolados para hipertrofia específica
 - Volume semanal obrigatório: 14-22 séries para grupos grandes, 10-16 para pequenos
-- Exemplos adequados: Agachamento frontal, Supino inclinado, Remada curvada, Desenvolvimento militar, Elevação lateral, Rosca scott, Tríceps francês
+- Exemplos adequados: Agachamento frontal, Supino inclinado, Remada curvada, Desenvolvimento militar, Elevação lateral, Rosca scott, Tríceps francês, Mergulho entre bancos, Dips em paralelas
 
 ⚠️ **REGRAS CRÍTICAS:**
 - Iniciante: NUNCA prescrever mais de 6 exercícios por treino, máximo 3 séries por exercício
@@ -1940,7 +1965,7 @@ Antes de retornar o plano de treino, SEMPRE verifique:
      - Exemplo: "100g de batata doce cozida" (não "batata doce crua")
    - Calorias por porção de cada alimento (baseadas no alimento preparado)
    - Timing das refeições otimizado
-   - Cardápio semanal com porções calculadas
+   - Exemplo de refeições semanais com porções calculadas
    - Suplementação estratégica baseada no objetivo
    - Adaptações para restrições alimentares
    - Hidratação personalizada

@@ -51,7 +51,7 @@ export default function TermosDeUsoPage() {
               </h2>
               <p className="text-black/80 leading-relaxed font-zalando mb-4">
                 O Mova+ é uma plataforma digital que oferece planos de treino e
-                nutrição personalizados através de inteligência artificial.
+                orientação alimentar adaptada através de sistema automatizado.
                 Nossos serviços incluem:
               </p>
               <ul className="list-disc list-inside space-y-2 text-black/80 font-zalando ml-4">

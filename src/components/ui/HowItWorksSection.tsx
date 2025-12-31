@@ -6,9 +6,9 @@ const steps = [
   {
     number: "01",
     title: "Cadastre-se",
-    description: "Crie sua conta em segundos e comece sua jornada fitness.",
+    description: "Crie sua conta em segundos e comece sua jornada fitness",
     instruction:
-      "Preencha seus dados básicos para começarmos a te conhecer melhor. É rápido e seguro!",
+      "Preencha seus dados básicos para começarmos a montar sua experiência no Mova+. É rápido, simples e seguro!",
     image: "/images/03.jpg",
   },
   {
@@ -16,24 +16,23 @@ const steps = [
     title: "Configure",
     description: "Defina seus objetivos e configure seu perfil.",
     instruction:
-      "Responda algumas perguntas sobre seus objetivos, características físicas e nível de condicionamento. Essa parte é muito importante para conseguirmos criar um plano específico para você.",
+      "Responda algumas perguntas sobre seus objetivos, rotina, características físicas e nível de condicionamento. Essas informações são essenciais para criar um plano adequado para você.",
     image: "/images/02.jpg",
   },
   {
     number: "03",
     title: "Treine",
-    description:
-      "Acesse treinos personalizados e dieta adaptados ao seu nível.",
+    description: "Receba treinos e planos alimentares ajustados ao seu nível.",
     instruction:
-      "Nossa IA criará um plano de treino e uma dieta exclusiva para você. Aqui contamos com todo o seu empenho e dedicação para juntos alcançarmos seus objetivos.",
+      "Com base nas suas informações, o Mova+ organiza um plano de treino e alimentação estruturado para o seu objetivo. Agora é sua vez: consistência e dedicação fazem toda a diferença.",
     image: "/images/07.jpg",
   },
   {
     number: "04",
     title: "Evolua",
-    description: "Acompanhe seu progresso e veja seus resultados.",
+    description: "Acompanhe seu progresso e visualize seus resultados.",
     instruction:
-      "Registre seus treinos, tire fotos do progresso e celebre cada conquista alcançada! Estaremos aqui para te apoiar e torcendo por você!",
+      "Monitore sua evolução ao longo do tempo, acompanhe mudanças no corpo e mantenha-se motivado(a) a cada conquista. O progresso acontece passo a passo.",
     image: "/images/01.jpg",
   },
 ];

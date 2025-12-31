@@ -671,7 +671,7 @@ export function PersonalizedPlanModal({
     ...(hasOptionalFields.aerobicTraining
       ? [{ id: "aerobic", label: "Aeróbico" }]
       : []),
-    { id: "diet", label: "Dieta" },
+    { id: "diet", label: "Alimentação" },
     ...(hasOptionalFields.goals ? [{ id: "goals", label: "Metas" }] : []),
     ...(hasOptionalFields.motivation
       ? [{ id: "motivation", label: "Motivação" }]
@@ -1197,8 +1197,8 @@ export function PersonalizedPlanModal({
                   Resumo do seu perfil
                 </h4>
                 <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                  Essas informações foram usadas para personalizar seu treino,
-                  dieta e plano aeróbico.
+                  Essas informações foram usadas para adaptar seu treino,
+                  orientação alimentar e plano aeróbico.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4">
@@ -1273,7 +1273,7 @@ export function PersonalizedPlanModal({
                 Resumo do plano
               </h4>
               <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                Visão rápida de como seu treino, dieta e cardio foram montados
+                Visão rápida de como seu treino, orientação alimentar e cardio foram montados
                 com base no seu objetivo.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -2316,7 +2316,7 @@ export function PersonalizedPlanModal({
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                     <p className={`${colors.text.secondary}`}>
-                      Gerando plano nutricional personalizado...
+                      Gerando orientação alimentar adaptada...
                     </p>
                   </div>
                 ) : openAIMessage ? (
@@ -2494,7 +2494,7 @@ export function PersonalizedPlanModal({
                 ) : (
                   <div className="text-center py-8">
                     <p className={`${colors.text.secondary}`}>
-                      Gerando plano nutricional personalizado...
+                      Gerando orientação alimentar adaptada...
                     </p>
                   </div>
                 )}

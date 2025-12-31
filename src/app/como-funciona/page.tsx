@@ -44,13 +44,13 @@ const detailedSteps = [
   },
   {
     number: "03",
-    title: "Receba seu Plano",
-    description: "Nossa IA cria um plano personalizado baseado no seu perfil.",
+    title: "Receba seu plano personalizado",
+    description: "Criamos um plano feito para você, considerando seu momento atual, seus objetivos e sua rotina.",
     details: [
-      "Treinos adaptados ao seu nível",
-      "Plano nutricional personalizado",
-      "Cronograma de evolução",
-      "Metas realistas e alcançáveis",
+      "Treinos adaptados ao seu nível e ao seu ritmo",
+      "Orientação alimentar ajustada às suas necessidades",
+      "Cronograma de evolução claro e sustentável",
+      "Metas realistas, pensadas para o longo prazo",
     ],
     icon: FileText,
   },
@@ -70,24 +70,23 @@ const detailedSteps = [
 
 const features = [
   {
-    title: "Inteligência Artificial",
-    description: "Nossa IA analisa seus dados e cria planos únicos para você",
-    icon: Bot,
-  },
-  {
-    title: "Personalização Total",
-    description: "Cada treino e refeição é pensado especificamente para você",
+    title: "Método estruturado",
+    description: "Os treinos e orientações são organizados com base no seu nível, objetivo e rotina, respeitando o seu momento atual.",
     icon: Target,
   },
   {
-    title: "Acompanhamento Contínuo",
-    description:
-      "Seu progresso é monitorado e os planos são ajustados automaticamente",
+    title: "Personalização real",
+    description: "Nada de planos prontos. Cada treino e orientação alimentar são ajustados às informações que você fornece.",
+    icon: Bot,
+  },
+  {
+    title: "Evolução acompanhada",
+    description: "Seu plano evolui conforme você avança, mantendo progressão, segurança e constância ao longo do tempo.",
     icon: BarChart3,
   },
   {
-    title: "Comunidade Apoiadora",
-    description: "Conecte-se com pessoas que compartilham seus objetivos",
+    title: "Comunidade que apoia",
+    description: "Você faz parte de um ambiente acolhedor, com pessoas que compartilham objetivos semelhantes e se apoiam na jornada.",
     icon: Users,
   },
 ];
@@ -248,6 +247,11 @@ export default function ComoFuncionaPage() {
               </div>
 
               <div className="bg-white rounded-[22px] border-2 border-black p-6 sm:p-8">
+                {activeStep === 2 && (
+                  <h4 className="text-lg sm:text-xl font-zalando-medium text-black mb-4">
+                    O que você encontra:
+                  </h4>
+                )}
                 <ul className="space-y-3 sm:space-y-4">
                   {detailedSteps[activeStep].details.map((detail, index) => (
                     <li
@@ -291,11 +295,10 @@ export default function ComoFuncionaPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-zalando-medium text-black mb-4">
-              O que nos torna únicos
+              O que torna o Mova+ diferente
             </h2>
             <p className="text-lg text-black/80 max-w-2xl mx-auto font-zalando">
-              Tecnologia avançada e personalização completa para seus melhores
-              resultados
+              Um método claro, personalizado e pensado para acompanhar você de verdade.
             </p>
           </div>
 

@@ -14,7 +14,6 @@ export default function PlanosPrecosPage() {
   const heroReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
   const socialReveal = useScrollReveal<HTMLDivElement>({ threshold: 0.1 });
   const pricingReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
-  const videoReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
   const faqReveal = useScrollReveal<HTMLElement>({ threshold: 0.1 });
 
   const handleStartNow = () => {
@@ -34,15 +33,15 @@ export default function PlanosPrecosPage() {
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
         "Suporte por e-mail",
-        "Use quando quiser (sem cooldown)",
+        "Use quando quiser",
       ],
       popular: false,
     },
     {
       name: "Pacote Premium",
       price: "119,90",
-      originalPrice: "299,70",
-      discount: "60%",
+      originalPrice: "149,70",
+      discount: "20%",
       plansIncluded: 3,
       features: [
         "3 créditos para gerar planos personalizados",
@@ -57,8 +56,8 @@ export default function PlanosPrecosPage() {
     {
       name: "Pacote Pro",
       price: "179,90",
-      originalPrice: "499,50",
-      discount: "64%",
+      originalPrice: "249,50",
+      discount: "28%",
       plansIncluded: 5,
       features: [
         "5 créditos para gerar planos personalizados",
@@ -66,7 +65,7 @@ export default function PlanosPrecosPage() {
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
         "Suporte prioritário",
-        "Use quando quiser (sem cooldown)",
+        "Use quando quiser",
         "Melhor custo-benefício",
       ],
       popular: true,
@@ -282,54 +281,6 @@ export default function PlanosPrecosPage() {
                 </div>
               )
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* Video Section */}
-      <section
-        ref={videoReveal.ref}
-        className={`w-full bg-gray-100 py-16 md:py-24 px-4 transition-all duration-1000 ease-out ${
-          videoReveal.isVisible
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-8"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto">
-          <div className="relative w-11/12 mx-auto overflow-hidden shadow-2xl bg-gray-100">
-            {/* Layout em grid - Texto e Vídeo lado a lado */}
-            <div className="grid md:grid-cols-[2fr_3fr] gap-8 p-8 relative z-10">
-              {/* Lado esquerdo - Texto */}
-              <div className="text-left flex flex-col justify-center">
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-black mb-6 md:mb-8 leading-tight drop-shadow-lg">
-                  Você no controle da sua evolução
-                </h2>
-
-                <p className="text-lg md:text-xl text-black/90 leading-relaxed max-w-lg drop-shadow-md">
-                  O método Mova+ é a revolução que o seu corpo e a sua saúde
-                  esperavam. Não importa o seu nível, rotina ou objetivo — nossa
-                  IA personalizada cria o caminho certo para você conquistar
-                  resultados reais, com segurança e eficiência. Transforme seu
-                  corpo em menos tempo, sem dietas malucas nem treinos
-                  intermináveis. O que antes parecia impossível, agora é questão
-                  de método.
-                </p>
-              </div>
-
-              {/* Lado direito - Vídeo */}
-              <div className="flex items-center justify-end">
-                <video
-                  className="w-full max-w-md h-auto object-cover rounded-2xl shadow-2xl shadow-black/50"
-                  src="/images/antesedepois.mp4"
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="auto"
-                  aria-label="Vídeo demonstrativo dos resultados do método Mova+"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </section>

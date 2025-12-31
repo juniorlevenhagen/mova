@@ -1326,7 +1326,7 @@ export function UserDataSection({
               Avaliação Física Recomendada
             </h3>
             <p className="text-gray-600 mb-6">
-              Para um plano de treino e dieta ainda mais personalizado e eficaz,
+              Para um plano de treino e orientação alimentar ainda mais adaptado e eficaz,
               recomendamos adicionar sua avaliação física. Isso permitirá que a
               IA analise seus dados específicos e gere um plano mais preciso.
             </p>

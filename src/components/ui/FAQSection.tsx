@@ -6,42 +6,42 @@ const faqs = [
   {
     question: "O que está incluído no Mova+ Complete?",
     answer:
-      "Você recebe um plano completo com: Treinos personalizados conforme seu objetivo e nível (casa ou academia), Plano alimentar gerado por IA com base em suas necessidades, alergias e preferências, Acesso à plataforma com atualizações, conteúdos e benefícios parceiros.",
+      "Você recebe uma experiência completa de cuidado com o corpo: treinos personalizados de acordo com seu objetivo, nível e local (casa ou academia), orientação alimentar ajustada às suas necessidades, preferências e restrições, além de acesso à plataforma com atualizações, conteúdos e benefícios exclusivos.",
   },
   {
-    question: "A dieta é feita por nutricionista?",
+    question: "A orientação alimentar é feita por nutricionista?",
     answer:
-      "Não. A dieta é gerada por um sistema de inteligência artificial treinado com base em recomendações nutricionais e adaptações conforme suas informações pessoais.",
+      "Não. O Mova+ oferece orientações alimentares personalizadas com base em dados informados por você e referências nutricionais amplamente utilizadas. Não se trata de prescrição médica ou nutricional.",
   },
   {
     question: "Os treinos consideram dores ou limitações físicas?",
     answer:
-      "Sim. No início, você preenche um questionário detalhado que nos ajuda a montar treinos adaptados à sua realidade, incluindo dores, lesões ou limitações.",
+      "Sim. Ao iniciar, você responde um questionário que nos ajuda a adaptar os treinos à sua realidade, respeitando possíveis dores, desconfortos ou limitações, sempre priorizando segurança e progressão gradual.",
   },
   {
     question: "Preciso de equipamentos para treinar?",
     answer:
-      "Não necessariamente. Se você treina em casa, sugerimos treinos que usam o peso do corpo ou objetos simples. Se tiver acesso a academia, também otimizamos seus treinos com os aparelhos disponíveis.",
+      "Não obrigatoriamente. Se você treina em casa, os treinos são adaptados para usar o peso do próprio corpo ou objetos simples. Caso tenha acesso à academia, o plano também se ajusta aos aparelhos disponíveis.",
   },
   {
-    question: "Posso fazer contato direto com treinador ou nutricionista?",
+    question: "Existe acompanhamento individual com profissionais?",
     answer:
-      "Atualmente, todo o suporte é feito através da plataforma digital, sem atendimento individualizado por profissionais humanos. As orientações são automáticas, baseadas em dados fornecidos por você.",
+      "Todo o acompanhamento acontece pela plataforma digital. As orientações são personalizadas a partir das informações que você fornece, sem atendimento individual ou acompanhamento presencial.",
   },
   {
-    question: "É necessário ter experiência com exercícios físicos?",
+    question: "Preciso ter experiência com exercícios físicos?",
     answer:
-      "Não. O Mova+ Complete é pensado para todos os níveis — do iniciante ao avançado. Os treinos são montados com base no seu perfil, objetivos e experiência.",
+      "Não é necessário ter experiência prévia. O Mova+ foi desenvolvido para acompanhar pessoas em todos os níveis, desde quem está começando até quem já treina há algum tempo. Os treinos são criados respeitando seu nível atual e evoluem de forma gradual conforme você progride, sempre priorizando segurança e adaptação ao seu ritmo. Em caso de dúvidas ou condições específicas, consulte sempre um profissional de educação física.",
   },
   {
-    question: "Como recebo meus treinos e dieta?",
+    question: "Como recebo meus treinos e orientações alimentares?",
     answer:
-      "Após se cadastrar, você acessa sua área exclusiva onde seu plano completo é liberado, com atualizações periódicas baseadas no seu progresso.",
+      "Após o cadastro, você acessa sua área exclusiva, onde seu plano é liberado e atualizado conforme sua evolução e ajustes no seu perfil.",
   },
   {
     question: "Existem outros planos além do Mova+ Complete?",
     answer:
-      "Atualmente não. Trabalhamos com uma única experiência completa, para entregar o melhor de forma simples, acessível e objetiva.",
+      "No momento, oferecemos uma única experiência completa, pensada para simplificar sua jornada e entregar resultados de forma clara, prática e acessível.",
   },
 ];
 
@@ -116,15 +116,25 @@ export function FAQSection() {
                 <span className="font-medium text-base md:text-lg text-black">
                   {faq.question}
                 </span>
-                <span className="text-2xl text-gray-400 transition-transform duration-200">
-                  {openIndex === idx ? "−" : "+"}
+                <span
+                  className={`text-2xl text-gray-400 transition-transform duration-300 ease-in-out ${
+                    openIndex === idx ? "rotate-180" : "rotate-0"
+                  }`}
+                >
+                  +
                 </span>
               </button>
-              {openIndex === idx && (
-                <div className="pb-5 text-base md:text-lg text-black/90 leading-relaxed animate-in slide-in-from-top-2 duration-300">
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  openIndex === idx
+                    ? "max-h-96 opacity-100"
+                    : "max-h-0 opacity-0"
+                }`}
+              >
+                <div className="pb-5 text-base md:text-lg text-black/90 leading-relaxed">
                   {faq.answer}
                 </div>
-              )}
+              </div>
             </div>
           );
         })}

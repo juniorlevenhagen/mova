@@ -54,3 +54,10 @@ GMAIL_APP_PASSWORD=sua_senha_de_app_aqui
 # Valor padrão: 0.2 (20% de bônus)
 # Exemplo: 0.2 = 20%, 0.3 = 30%, 0.0 = sem bônus
 PRIMARY_MUSCLE_SESSION_BONUS=0.2
+
+# WhatsApp para Suporte (Botão Flutuante)
+# Número no formato: código do país + DDD + número (sem espaços, parênteses ou hífens)
+# Exemplo: 5511999999999 (Brasil: 55 + DDD 11 + número 999999999)
+NEXT_PUBLIC_WHATSAPP_NUMBER=5511999999999
+# Mensagem padrão que será enviada quando o usuário clicar no botão
+NEXT_PUBLIC_WHATSAPP_MESSAGE=Olá! Gostaria de saber mais sobre o Mova+.

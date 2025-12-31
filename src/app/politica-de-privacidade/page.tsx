@@ -91,7 +91,7 @@ export default function PoliticaDePrivacidadePage() {
               </p>
               <ul className="list-disc list-inside space-y-2 text-black/80 font-zalando ml-4">
                 <li>Fornecer e melhorar nossos serviços</li>
-                <li>Criar planos de treino e nutrição personalizados</li>
+                <li>Criar planos de treino e orientação alimentar adaptados</li>
                 <li>Processar pagamentos e gerenciar assinaturas</li>
                 <li>Comunicar-nos com você sobre o serviço</li>
                 <li>

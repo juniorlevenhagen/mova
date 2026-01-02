@@ -32,7 +32,7 @@ const steps = [
     title: "Evolua",
     description: "Acompanhe seu progresso e visualize seus resultados.",
     instruction:
-      "Monitore sua evolução ao longo do tempo, acompanhe mudanças no corpo e mantenha-se motivado(a) a cada conquista. O progresso acontece passo a passo.",
+      "Monitore sua evolução ao longo do tempo, acompanhe mudanças no corpo e mantenha-se consistente a cada conquista. O progresso acontece passo a passo.",
     image: "/images/01.jpg",
   },
 ];

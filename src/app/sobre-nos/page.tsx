@@ -30,16 +30,16 @@ const values = [
   },
   {
     icon: Zap,
-    title: "Tecnologia Inteligente",
+    title: "Acompanhamento Dinâmico",
     description:
-      "Usamos IA para criar planos que se adaptam ao seu progresso em tempo real.",
+      "Planos que se adaptam ao seu progresso e evoluem conforme você avança.",
   },
 ];
 
 const stats = [
   { number: 10000, suffix: "+", label: "Usuários Ativos" },
   { number: 95, suffix: "%", label: "Taxa de Satisfação" },
-  { number: 50, suffix: "+", label: "Especialistas" },
+  { number: "100+", label: "Exercícios Disponíveis", isText: true },
   { number: "24/7", label: "Suporte Disponível", isText: true },
 ];
 

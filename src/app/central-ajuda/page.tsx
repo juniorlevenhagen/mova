@@ -55,7 +55,7 @@ const helpCategories = [
       {
         title: "Posso comprar mais créditos depois?",
         content:
-          "Sim! Você pode comprar créditos adicionais a qualquer momento pelo dashboard, conforme sua necessidade. Não há limite de compras e você pode acumular créditos para usar quando quiser.",
+          "Sim! Você pode comprar créditos adicionais a qualquer momento pelo painel de atividades, conforme sua necessidade. Não há limite de compras e você pode acumular créditos para usar quando quiser.",
       },
       {
         title: "Há alguma restrição para gerar planos?",
@@ -65,7 +65,7 @@ const helpCategories = [
       {
         title: "O que está incluído em cada plano gerado?",
         content:
-          "Cada plano inclui: treinos adaptados conforme seu objetivo e nível (casa ou academia), orientação alimentar adaptada com base em suas necessidades, alergias e preferências, e acesso completo ao dashboard para acompanhamento de evolução e registro de atividades.",
+          "Cada plano inclui: treinos adaptados conforme seu objetivo e nível (casa ou academia), orientação alimentar adaptada com base em suas necessidades, alergias e preferências, e acesso completo ao painel de atividades para acompanhamento de evolução e registro de atividades.",
       },
       {
         title: "Quais métodos de pagamento são aceitos?",
@@ -97,7 +97,7 @@ const helpCategories = [
       {
         title: "Como atualizar minhas informações?",
         content:
-          "Acesse seu dashboard e clique em 'Configurações' para atualizar suas informações pessoais, objetivos ou limitações físicas.",
+          "Acesse seu painel de atividades e clique em 'Configurações' para atualizar suas informações pessoais, objetivos ou limitações físicas.",
       },
     ],
   },

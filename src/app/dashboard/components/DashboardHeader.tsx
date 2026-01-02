@@ -23,7 +23,7 @@ export function DashboardHeader({
           Olá, {user.full_name}!
         </h1>
         <p className={`${typography.body.normal} ${colors.text.secondary}`}>
-          Seja bem-vindo ao seu painel Mova+
+          Seja bem-vindo ao seu painel de atividades
         </p>
       </div>
       <button

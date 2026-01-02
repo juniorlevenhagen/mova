@@ -29,7 +29,7 @@ export default function PlanosPrecosPage() {
       plansIncluded: 1,
       features: [
         "1 crédito para gerar plano personalizado",
-        "Acesso ao dashboard completo",
+        "Acesso ao painel de atividades completo",
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
         "Suporte por e-mail",
@@ -45,7 +45,7 @@ export default function PlanosPrecosPage() {
       plansIncluded: 3,
       features: [
         "3 créditos para gerar planos personalizados",
-        "Acesso ao dashboard completo",
+        "Acesso ao painel de atividades completo",
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
         "Suporte prioritário",
@@ -61,7 +61,7 @@ export default function PlanosPrecosPage() {
       plansIncluded: 5,
       features: [
         "5 créditos para gerar planos personalizados",
-        "Acesso ao dashboard completo",
+        "Acesso ao painel de atividades completo",
         "Acompanhamento de evolução",
         "Registro de atividades diárias",
         "Suporte prioritário",
@@ -326,7 +326,7 @@ export default function PlanosPrecosPage() {
               </h3>
               <p className="text-gray-700">
                 Sim! Você pode comprar créditos adicionais a qualquer momento
-                pelo dashboard, conforme sua necessidade.
+                pelo painel de atividades, conforme sua necessidade.
               </p>
             </div>
 

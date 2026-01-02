@@ -361,7 +361,7 @@ export function PromptPurchaseModal({
                   />
                 </svg>
                 <span className="text-gray-700 text-sm md:text-base">
-                  Acesso ao dashboard completo
+                  Acesso ao painel de atividades completo
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -463,7 +463,7 @@ export function PromptPurchaseModal({
                   />
                 </svg>
                 <span className="text-gray-700 text-sm md:text-base">
-                  Acesso ao dashboard completo
+                  Acesso ao painel de atividades completo
                 </span>
               </li>
               <li className="flex items-start gap-2">
@@ -598,7 +598,7 @@ export function PromptPurchaseModal({
                   />
                 </svg>
                 <span className="text-gray-700 text-sm md:text-base">
-                  Acesso ao dashboard completo
+                  Acesso ao painel de atividades completo
                 </span>
               </li>
               <li className="flex items-start gap-2">

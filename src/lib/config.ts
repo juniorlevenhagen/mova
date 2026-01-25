@@ -18,7 +18,9 @@ export const config = {
 
   // WhatsApp para suporte
   whatsappNumber: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5511999999999", // Formato: código do país + DDD + número
-  whatsappMessage: process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "Olá! Gostaria de saber mais sobre o Mova+.",
+  whatsappMessage:
+    process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
+    "Olá! Gostaria de saber mais sobre o Mova+.",
 } as const;
 
 /**

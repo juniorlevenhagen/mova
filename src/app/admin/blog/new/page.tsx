@@ -419,13 +419,19 @@ export default function NewBlogPostPage() {
                     Separe parágrafos com uma linha em branco
                   </p>
                   <p className="text-xs text-gray-500">
-                    <strong>Formatação:</strong> Use <code className="bg-gray-100 px-1 rounded">**texto**</code> para{" "}
-                    <strong>negrito</strong> e <code className="bg-gray-100 px-1 rounded">*texto*</code> para{" "}
-                    <em>itálico</em>
+                    <strong>Formatação:</strong> Use{" "}
+                    <code className="bg-gray-100 px-1 rounded">**texto**</code>{" "}
+                    para <strong>negrito</strong> e{" "}
+                    <code className="bg-gray-100 px-1 rounded">*texto*</code>{" "}
+                    para <em>itálico</em>
                   </p>
                   <p className="text-xs text-gray-500">
-                    <strong>Imagens:</strong> Use <code className="bg-gray-100 px-1 rounded">![descrição](url-da-imagem)</code> para adicionar imagens. 
-                    As imagens serão redimensionadas automaticamente para carregamento rápido.
+                    <strong>Imagens:</strong> Use{" "}
+                    <code className="bg-gray-100 px-1 rounded">
+                      ![descrição](url-da-imagem)
+                    </code>{" "}
+                    para adicionar imagens. As imagens serão redimensionadas
+                    automaticamente para carregamento rápido.
                   </p>
                 </div>
               </div>
@@ -582,9 +588,13 @@ export default function NewBlogPostPage() {
                       placeholder="Conteúdo da seção"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Use <code className="bg-gray-100 px-1 rounded">**texto**</code> para{" "}
-                      <strong>negrito</strong> e <code className="bg-gray-100 px-1 rounded">*texto*</code> para{" "}
-                      <em>itálico</em>
+                      Use{" "}
+                      <code className="bg-gray-100 px-1 rounded">
+                        **texto**
+                      </code>{" "}
+                      para <strong>negrito</strong> e{" "}
+                      <code className="bg-gray-100 px-1 rounded">*texto*</code>{" "}
+                      para <em>itálico</em>
                     </p>
                     {formData.sections.length > 1 && (
                       <button

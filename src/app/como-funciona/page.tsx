@@ -45,7 +45,8 @@ const detailedSteps = [
   {
     number: "03",
     title: "Receba seu plano personalizado",
-    description: "Criamos um plano feito para você, considerando seu momento atual, seus objetivos e sua rotina.",
+    description:
+      "Criamos um plano feito para você, considerando seu momento atual, seus objetivos e sua rotina.",
     details: [
       "Treinos adaptados ao seu nível e ao seu ritmo",
       "Orientação alimentar ajustada às suas necessidades",
@@ -71,22 +72,26 @@ const detailedSteps = [
 const features = [
   {
     title: "Método estruturado",
-    description: "Os treinos e orientações são organizados com base no seu nível, objetivo e rotina, respeitando o seu momento atual.",
+    description:
+      "Os treinos e orientações são organizados com base no seu nível, objetivo e rotina, respeitando o seu momento atual.",
     icon: Target,
   },
   {
     title: "Personalização real",
-    description: "Nada de planos prontos. Cada treino e orientação alimentar são ajustados às informações que você fornece.",
+    description:
+      "Nada de planos prontos. Cada treino e orientação alimentar são ajustados às informações que você fornece.",
     icon: Bot,
   },
   {
     title: "Evolução acompanhada",
-    description: "Seu plano evolui conforme você avança, mantendo progressão, segurança e constância ao longo do tempo.",
+    description:
+      "Seu plano evolui conforme você avança, mantendo progressão, segurança e constância ao longo do tempo.",
     icon: BarChart3,
   },
   {
     title: "Comunidade que apoia",
-    description: "Você faz parte de um ambiente acolhedor, com pessoas que compartilham objetivos semelhantes e se apoiam na jornada.",
+    description:
+      "Você faz parte de um ambiente acolhedor, com pessoas que compartilham objetivos semelhantes e se apoiam na jornada.",
     icon: Users,
   },
 ];
@@ -298,7 +303,8 @@ export default function ComoFuncionaPage() {
               O que torna o Mova+ diferente
             </h2>
             <p className="text-lg text-black/80 max-w-2xl mx-auto font-zalando">
-              Um método claro, personalizado e pensado para acompanhar você de verdade.
+              Um método claro, personalizado e pensado para acompanhar você de
+              verdade.
             </p>
           </div>
 

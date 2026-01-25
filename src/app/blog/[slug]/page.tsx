@@ -312,7 +312,7 @@ export default async function BlogPostPage({ params }: PageParams) {
                   {post.content.map((paragraph, index) => {
                     // Verificar se o parágrafo contém uma imagem
                     const hasImage = /!\[.*?\]\(.*?\)/.test(paragraph);
-                    
+
                     // Se contém imagem, renderizar como div (para permitir imagens)
                     // Se não, renderizar como parágrafo normal
                     if (hasImage) {
@@ -322,7 +322,7 @@ export default async function BlogPostPage({ params }: PageParams) {
                         </div>
                       );
                     }
-                    
+
                     return (
                       <p key={`paragraph-${index}`} className="text-gray-700">
                         {parseMarkdown(paragraph)}
@@ -335,8 +335,10 @@ export default async function BlogPostPage({ params }: PageParams) {
               {post.sections.length > 0 && (
                 <div className="space-y-12">
                   {post.sections.map((section, index) => {
-                    const hasImage = section.body ? /!\[.*?\]\(.*?\)/.test(section.body) : false;
-                    
+                    const hasImage = section.body
+                      ? /!\[.*?\]\(.*?\)/.test(section.body)
+                      : false;
+
                     return (
                       <div key={`section-${index}`} className="space-y-4">
                         {section.heading && (
@@ -344,8 +346,8 @@ export default async function BlogPostPage({ params }: PageParams) {
                             {section.heading}
                           </h2>
                         )}
-                        {section.body && (
-                          hasImage ? (
+                        {section.body &&
+                          (hasImage ? (
                             <div className="text-gray-700">
                               {parseMarkdown(section.body)}
                             </div>
@@ -353,8 +355,7 @@ export default async function BlogPostPage({ params }: PageParams) {
                             <p className="text-gray-700">
                               {parseMarkdown(section.body)}
                             </p>
-                          )
-                        )}
+                          ))}
                       </div>
                     );
                   })}

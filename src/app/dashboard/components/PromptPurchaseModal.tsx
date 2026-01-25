@@ -427,7 +427,8 @@ export function PromptPurchaseModal({
                 </span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Economia de R$ 29,80 comparado ao Plano Básico (R$ 39,97 por crédito)
+                Economia de R$ 29,80 comparado ao Plano Básico (R$ 39,97 por
+                crédito)
               </p>
             </div>
 
@@ -562,7 +563,8 @@ export function PromptPurchaseModal({
                 <span className="text-gray-600 text-sm ml-2">pacote</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Economia de R$ 69,60 comparado ao Plano Básico (R$ 35,98 por crédito)
+                Economia de R$ 69,60 comparado ao Plano Básico (R$ 35,98 por
+                crédito)
               </p>
             </div>
 

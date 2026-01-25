@@ -178,16 +178,25 @@ export default function SobreNosPage() {
               </h2>
               <div className="space-y-4 text-black/80 leading-relaxed text-lg">
                 <p>
-                  O Mova+ nasceu da inquietação de quem sempre acreditou que treinos e orientações fitness deveriam ser personalizados — e não genéricos.
+                  O Mova+ nasceu da inquietação de quem sempre acreditou que
+                  treinos e orientações fitness deveriam ser personalizados — e
+                  não genéricos.
                 </p>
                 <p>
-                  Criado por um entusiasta da área do fitness com anos de estudo prático, observação e aplicação real de métodos de treinamento, o Mova+ foi desenvolvido para transformar conhecimento técnico em planos acessíveis, claros e adaptáveis à realidade de cada pessoa.
+                  Criado por um entusiasta da área do fitness com anos de estudo
+                  prático, observação e aplicação real de métodos de
+                  treinamento, o Mova+ foi desenvolvido para transformar
+                  conhecimento técnico em planos acessíveis, claros e adaptáveis
+                  à realidade de cada pessoa.
                 </p>
                 <p>
-                  A plataforma utiliza regras inteligentes, padrões consolidados de treinamento e tecnologia para ajudar usuários a treinar com mais consciência, consistência e segurança.
+                  A plataforma utiliza regras inteligentes, padrões consolidados
+                  de treinamento e tecnologia para ajudar usuários a treinar com
+                  mais consciência, consistência e segurança.
                 </p>
                 <p>
-                  Nosso objetivo é simples: organizar o caminho, respeitar o processo e ajudar cada pessoa a evoluir no seu próprio ritmo.
+                  Nosso objetivo é simples: organizar o caminho, respeitar o
+                  processo e ajudar cada pessoa a evoluir no seu próprio ritmo.
                 </p>
               </div>
             </div>

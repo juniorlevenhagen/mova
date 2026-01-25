@@ -59,4 +59,3 @@ export function BlogImage({ src, alt }: BlogImageProps) {
     </div>
   );
 }
-

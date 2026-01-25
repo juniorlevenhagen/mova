@@ -2371,8 +2371,10 @@ function generateDayExercises(
     if (level) {
       baseDatabase = {} as typeof EXERCISE_DATABASE;
       for (const [muscle, exercises] of Object.entries(EXERCISE_DATABASE)) {
-        baseDatabase[muscle as keyof typeof EXERCISE_DATABASE] =
-          filterByLevel(exercises, level) as ExerciseTemplate[];
+        baseDatabase[muscle as keyof typeof EXERCISE_DATABASE] = filterByLevel(
+          exercises,
+          level
+        ) as ExerciseTemplate[];
       }
     } else {
       baseDatabase = EXERCISE_DATABASE;

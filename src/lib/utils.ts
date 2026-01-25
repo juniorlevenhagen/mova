@@ -19,7 +19,8 @@ export function parseMarkdown(text: string): React.ReactNode[] {
 
   // Regex combinado: imagens primeiro (mais específico), depois negrito e itálico
   // Formato imagem: ![alt text](url)
-  const markdownRegex = /(!\[([^\]]*)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
+  const markdownRegex =
+    /(!\[([^\]]*)\]\(([^)]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*)/g;
   let match;
 
   while ((match = markdownRegex.exec(text)) !== null) {
@@ -33,7 +34,7 @@ export function parseMarkdown(text: string): React.ReactNode[] {
       // Imagem: ![alt](url)
       const altText = match[2] || "";
       const imageUrl = match[3] || "";
-      
+
       if (imageUrl) {
         // Criar um wrapper div para a imagem com otimizações
         parts.push(

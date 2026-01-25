@@ -1273,8 +1273,8 @@ export function PersonalizedPlanModal({
                 Resumo do plano
               </h4>
               <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                Visão rápida de como seu treino, orientação alimentar e cardio foram montados
-                com base no seu objetivo.
+                Visão rápida de como seu treino, orientação alimentar e cardio
+                foram montados com base no seu objetivo.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {/* Treino de força */}

@@ -748,17 +748,25 @@ export default function BlogPage() {
                 disabled={newsletterStatus === "loading"}
                 className="inline-flex items-center justify-center rounded-full bg-white px-8 py-4 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {newsletterStatus === "loading" ? "Enviando..." : "Quero receber"}
+                {newsletterStatus === "loading"
+                  ? "Enviando..."
+                  : "Quero receber"}
               </button>
             </form>
             {newsletterStatus === "success" && (
-              <p className="mt-4 text-sm text-primary-400 text-center">Inscrito!</p>
+              <p className="mt-4 text-sm text-primary-400 text-center">
+                Inscrito!
+              </p>
             )}
             {newsletterStatus === "already" && (
-              <p className="mt-4 text-sm text-secondary text-center">Você já está inscrito na newsletter!</p>
+              <p className="mt-4 text-sm text-secondary text-center">
+                Você já está inscrito na newsletter!
+              </p>
             )}
             {newsletterStatus === "error" && (
-              <p className="mt-4 text-sm text-destructive text-center">Erro ao inscrever-se. Tente novamente.</p>
+              <p className="mt-4 text-sm text-destructive text-center">
+                Erro ao inscrever-se. Tente novamente.
+              </p>
             )}
           </motion.div>
         </section>

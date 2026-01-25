@@ -1,11 +1,13 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 
 import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { supabase } from "@/lib/supabase";
 import { Calendar, Clock, User, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { parseMarkdown } from "@/lib/utils";
 
 type SupabasePost = {
   id: string | number;
@@ -307,28 +309,55 @@ export default async function BlogPostPage({ params }: PageParams) {
             <div className="flex-1 space-y-10 text-lg leading-relaxed text-black/80">
               {post.content.length > 0 && (
                 <div className="space-y-6">
-                  {post.content.map((paragraph, index) => (
-                    <p key={`paragraph-${index}`} className="text-gray-700">
-                      {paragraph}
-                    </p>
-                  ))}
+                  {post.content.map((paragraph, index) => {
+                    // Verificar se o parágrafo contém uma imagem
+                    const hasImage = /!\[.*?\]\(.*?\)/.test(paragraph);
+                    
+                    // Se contém imagem, renderizar como div (para permitir imagens)
+                    // Se não, renderizar como parágrafo normal
+                    if (hasImage) {
+                      return (
+                        <div key={`content-${index}`} className="text-gray-700">
+                          {parseMarkdown(paragraph)}
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <p key={`paragraph-${index}`} className="text-gray-700">
+                        {parseMarkdown(paragraph)}
+                      </p>
+                    );
+                  })}
                 </div>
               )}
 
               {post.sections.length > 0 && (
                 <div className="space-y-12">
-                  {post.sections.map((section, index) => (
-                    <div key={`section-${index}`} className="space-y-4">
-                      {section.heading && (
-                        <h2 className="text-2xl font-zalando-medium text-black">
-                          {section.heading}
-                        </h2>
-                      )}
-                      {section.body && (
-                        <p className="text-gray-700">{section.body}</p>
-                      )}
-                    </div>
-                  ))}
+                  {post.sections.map((section, index) => {
+                    const hasImage = section.body ? /!\[.*?\]\(.*?\)/.test(section.body) : false;
+                    
+                    return (
+                      <div key={`section-${index}`} className="space-y-4">
+                        {section.heading && (
+                          <h2 className="text-2xl font-zalando-medium text-black">
+                            {section.heading}
+                          </h2>
+                        )}
+                        {section.body && (
+                          hasImage ? (
+                            <div className="text-gray-700">
+                              {parseMarkdown(section.body)}
+                            </div>
+                          ) : (
+                            <p className="text-gray-700">
+                              {parseMarkdown(section.body)}
+                            </p>
+                          )
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -379,11 +408,6 @@ export default async function BlogPostPage({ params }: PageParams) {
                       Voltar para o blog
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                     </Link>
-                    <p className="text-xs text-gray-500">
-                      Este layout busca dados da tabela `blog_posts` no
-                      Supabase. Configure campos como cover image, conteúdo e
-                      tópicos para enriquecer o artigo.
-                    </p>
                   </div>
                 </div>
               </div>

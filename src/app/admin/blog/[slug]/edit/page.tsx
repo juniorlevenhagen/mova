@@ -259,9 +259,20 @@ export default function EditBlogPostPage() {
                   rows={10}
                   className="w-full px-4 py-3 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-mono text-sm"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  Separe parágrafos com uma linha em branco
-                </p>
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-gray-500">
+                    Separe parágrafos com uma linha em branco
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    <strong>Formatação:</strong> Use <code className="bg-gray-100 px-1 rounded">**texto**</code> para{" "}
+                    <strong>negrito</strong> e <code className="bg-gray-100 px-1 rounded">*texto*</code> para{" "}
+                    <em>itálico</em>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    <strong>Imagens:</strong> Use <code className="bg-gray-100 px-1 rounded">![descrição](url-da-imagem)</code> para adicionar imagens. 
+                    As imagens serão redimensionadas automaticamente para carregamento rápido.
+                  </p>
+                </div>
               </div>
 
               {/* Metadados */}
@@ -418,6 +429,11 @@ export default function EditBlogPostPage() {
                       className="w-full px-4 py-2 border-2 border-black rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
                       placeholder="Conteúdo da seção"
                     />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Use <code className="bg-gray-100 px-1 rounded">**texto**</code> para{" "}
+                      <strong>negrito</strong> e <code className="bg-gray-100 px-1 rounded">*texto*</code> para{" "}
+                      <em>itálico</em>
+                    </p>
                     {formData.sections.length > 1 && (
                       <button
                         type="button"

@@ -128,12 +128,14 @@ export async function POST(request: NextRequest) {
     let isNewSubscription = false;
     let wasReactivated = false;
 
+    let alreadySubscribed = false;
     if (existingSubscriber) {
       // Email já existe
       if (existingSubscriber.is_active) {
         // Já está ativo, não precisa fazer nada além de atualizar metadata
         console.log("ℹ️ Email já está inscrito e ativo:", email);
         subscriberData = existingSubscriber;
+        alreadySubscribed = true;
       } else {
         // Reativar inscrição cancelada
         wasReactivated = true;
@@ -280,7 +282,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Inscrição realizada com sucesso",
+        message: alreadySubscribed
+          ? "Você já está inscrito na newsletter"
+          : "Inscrição realizada com sucesso",
+        alreadySubscribed,
         emailSent: atLeastOneEmailSent,
       },
       { status: 200, headers: corsHeaders }

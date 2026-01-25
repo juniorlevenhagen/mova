@@ -78,9 +78,16 @@ export function Footer() {
         throw new Error(data.error || data.details || "Erro ao inscrever-se");
       }
 
-      setNewsletterStatus("success");
+      if (data.alreadySubscribed) {
+        setNewsletterStatus("already");
+      } else {
+        setNewsletterStatus("success");
+      }
       setNewsletterEmail("");
-      setTimeout(() => setNewsletterStatus("idle"), 3000);
+      setTimeout(() => {
+        setNewsletterStatus("idle");
+        setErrorMessage("");
+      }, 3000);
     } catch (error) {
       console.error("Erro ao inscrever-se:", error);
 
@@ -281,20 +288,25 @@ export function Footer() {
               />
               <button
                 type="submit"
-                disabled={
-                  newsletterStatus === "loading" ||
-                  newsletterStatus === "success"
-                }
+                disabled={newsletterStatus === "loading"}
                 className="w-full bg-white text-gray-800 px-4 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {newsletterStatus === "loading"
                   ? "Enviando..."
-                  : newsletterStatus === "success"
-                    ? "Inscrito!"
-                    : "Inscrever-se"}
+                  : "Inscrever-se"}
               </button>
+              {newsletterStatus === "success" && (
+                <p className="text-sm text-primary-400 text-center mt-2">
+                  Inscrito!
+                </p>
+              )}
+              {newsletterStatus === "already" && (
+                <p className="text-sm text-secondary text-center mt-2">
+                  Você já está inscrito na newsletter!
+                </p>
+              )}
               {newsletterStatus === "error" && (
-                <p className="text-sm text-red-400 text-center">
+                <p className="text-sm text-destructive text-center mt-2">
                   {errorMessage || "Erro ao inscrever-se. Tente novamente."}
                 </p>
               )}

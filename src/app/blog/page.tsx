@@ -706,25 +706,12 @@ export default function BlogPage() {
 
                   const data = await response.json();
 
-                  if (
-                    (typeof data.error === "string" &&
-                      data.error.toLowerCase().includes("already")) ||
-                    (typeof data.details === "string" &&
-                      data.details.toLowerCase().includes("already"))
-                  ) {
+                  if (data.alreadySubscribed) {
                     setNewsletterStatus("already");
-                    setTimeout(() => setNewsletterStatus("idle"), 3000);
-                    return;
+                  } else {
+                    setNewsletterStatus("success");
+                    setNewsletterEmail("");
                   }
-
-                  if (!response.ok) {
-                    throw new Error(
-                      data.error || data.details || "Erro ao inscrever-se"
-                    );
-                  }
-
-                  setNewsletterStatus("success");
-                  setNewsletterEmail("");
                   setTimeout(() => setNewsletterStatus("idle"), 3000);
                 } catch (error) {
                   console.error("Erro ao inscrever-se:", error);
@@ -758,31 +745,20 @@ export default function BlogPage() {
               />
               <button
                 type="submit"
-                disabled={
-                  newsletterStatus === "loading" ||
-                  newsletterStatus === "success" ||
-                  newsletterStatus === "already"
-                }
+                disabled={newsletterStatus === "loading"}
                 className="inline-flex items-center justify-center rounded-full bg-white px-8 py-4 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {newsletterStatus === "loading"
-                  ? "Enviando..."
-                  : newsletterStatus === "success"
-                    ? "Inscrito!"
-                    : newsletterStatus === "already"
-                      ? "Já inscrito!"
-                      : "Quero receber"}
+                {newsletterStatus === "loading" ? "Enviando..." : "Quero receber"}
               </button>
             </form>
-            {newsletterStatus === "error" && (
-              <p className="mt-4 text-sm text-red-300">
-                Erro ao inscrever-se. Tente novamente.
-              </p>
+            {newsletterStatus === "success" && (
+              <p className="mt-4 text-sm text-primary-400 text-center">Inscrito!</p>
             )}
             {newsletterStatus === "already" && (
-              <p className="mt-4 text-sm text-yellow-300">
-                Você já está inscrito na newsletter!
-              </p>
+              <p className="mt-4 text-sm text-secondary text-center">Você já está inscrito na newsletter!</p>
+            )}
+            {newsletterStatus === "error" && (
+              <p className="mt-4 text-sm text-destructive text-center">Erro ao inscrever-se. Tente novamente.</p>
             )}
           </motion.div>
         </section>

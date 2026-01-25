@@ -7,7 +7,7 @@ import Link from "next/link";
 export function Footer() {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterStatus, setNewsletterStatus] = useState<
-    "idle" | "loading" | "success" | "error"
+    "idle" | "loading" | "success" | "error" | "already"
   >("idle");
   const [errorMessage, setErrorMessage] = useState("");
 

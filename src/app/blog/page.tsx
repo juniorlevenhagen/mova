@@ -779,6 +779,11 @@ export default function BlogPage() {
                 Erro ao inscrever-se. Tente novamente.
               </p>
             )}
+            {newsletterStatus === "already" && (
+              <p className="mt-4 text-sm text-yellow-300">
+                Você já está inscrito na newsletter!
+              </p>
+            )}
           </motion.div>
         </section>
       </main>

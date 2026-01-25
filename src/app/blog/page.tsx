@@ -147,7 +147,7 @@ export default function BlogPage() {
   const isLoadingRef = useRef(false);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterStatus, setNewsletterStatus] = useState<
-    "idle" | "loading" | "success" | "error"
+    "idle" | "loading" | "success" | "error" | "already"
   >("idle");
 
   useEffect(() => {
@@ -706,6 +706,17 @@ export default function BlogPage() {
 
                   const data = await response.json();
 
+                  if (
+                    (typeof data.error === "string" &&
+                      data.error.toLowerCase().includes("already")) ||
+                    (typeof data.details === "string" &&
+                      data.details.toLowerCase().includes("already"))
+                  ) {
+                    setNewsletterStatus("already");
+                    setTimeout(() => setNewsletterStatus("idle"), 3000);
+                    return;
+                  }
+
                   if (!response.ok) {
                     throw new Error(
                       data.error || data.details || "Erro ao inscrever-se"
@@ -749,7 +760,8 @@ export default function BlogPage() {
                 type="submit"
                 disabled={
                   newsletterStatus === "loading" ||
-                  newsletterStatus === "success"
+                  newsletterStatus === "success" ||
+                  newsletterStatus === "already"
                 }
                 className="inline-flex items-center justify-center rounded-full bg-white px-8 py-4 text-xs font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -757,7 +769,9 @@ export default function BlogPage() {
                   ? "Enviando..."
                   : newsletterStatus === "success"
                     ? "Inscrito!"
-                    : "Quero receber"}
+                    : newsletterStatus === "already"
+                      ? "Já inscrito!"
+                      : "Quero receber"}
               </button>
             </form>
             {newsletterStatus === "error" && (

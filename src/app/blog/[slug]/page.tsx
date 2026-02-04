@@ -219,12 +219,12 @@ export async function generateMetadata({
 
   if (!post) {
     return {
-      title: "Artigo não encontrado | Blog Mova+",
+      title: "Artigo não encontrado",
     };
   }
 
   return {
-    title: `${post.title} | Blog Mova+`,
+    title: post.title,
     description: post.excerpt,
     openGraph: {
       title: post.title,

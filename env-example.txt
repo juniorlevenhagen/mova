@@ -1,5 +1,9 @@
 # Copie este arquivo para .env.local e configure suas variáveis
 
+# URL pública do site (usado em SEO: sitemap, Open Graph, canonical)
+# Exemplo: https://movamais.fit ou https://www.seudominio.com.br
+NEXT_PUBLIC_SITE_URL=https://movamais.fit
+
 # OpenAI API Key para processamento de PDF
 # Obtenha sua chave em: https://platform.openai.com/api-keys
 OPENAI_API_KEY=your_openai_api_key_here

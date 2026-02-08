@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       // Validar e processar signed_request se necessário
       // Por enquanto, retornamos confirmação de recebimento
       return NextResponse.json({
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://movamais.fit"}/central-ajuda`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.movamais.fit"}/central-ajuda`,
         confirmation_code: confirmation_code || "mova_data_deletion",
       });
     }
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
 
     // Se não tiver signed_request nem user_id, retornar instruções
     return NextResponse.json({
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://movamais.fit"}/central-ajuda`,
+      url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.movamais.fit"}/central-ajuda`,
       confirmation_code: "mova_data_deletion",
     });
   } catch (error) {
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
 // GET para validação inicial do Facebook
 export async function GET() {
   return NextResponse.json({
-    url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://movamais.fit"}/central-ajuda`,
+    url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://www.movamais.fit"}/central-ajuda`,
     confirmation_code: "mova_data_deletion",
   });
 }

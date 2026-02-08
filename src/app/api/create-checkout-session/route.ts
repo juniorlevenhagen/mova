@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       ) {
         console.log("🔍 Origin de produção detectada e preservada:", origin);
       } else {
-        origin = "https://movamais.fit";
+        origin = "https://www.movamais.fit";
         console.log(
           "⚠️ Origin de produção não detectada ou inválida, forçando padrão:",
           origin

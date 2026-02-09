@@ -7,20 +7,23 @@ function getStripeClient() {
   if (!key) {
     throw new Error("STRIPE_SECRET_KEY não configurada");
   }
+
   return new Stripe(key, {
-    apiVersion: "2025-12-15.clover" as unknown as "2025-08-27.basil",
+    apiVersion: "2025-08-27.basil",
   });
 }
 
 function getSupabaseClient(token?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    throw new Error("Supabase URL e/ou chave não encontradas");
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error("Supabase URL ou ANON KEY não configuradas");
   }
+
   return createClient(
     url,
-    key,
+    anonKey,
     token
       ? {
           global: {
@@ -35,7 +38,7 @@ function getSupabaseClient(token?: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar autenticação
+    // 🔐 Auth
     const authHeader = request.headers.get("Authorization");
     if (!authHeader) {
       return NextResponse.json(
@@ -45,199 +48,68 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.replace("Bearer ", "");
+    const supabaseUser = getSupabaseClient(token);
+
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } = await supabaseUser.auth.getUser();
 
     if (userError || !user) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    // sessionId é opcional; se ausente, retornamos apenas o estado atual do usuário
-    const body = await request
-      .json()
-      .catch(() => ({}) as Record<string, unknown>);
-    const sessionId = (body as { sessionId?: string }).sessionId;
+    const stripe = getStripeClient();
 
-    // ✅ Criar cliente Supabase autenticado com token do usuário
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabaseUser = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      }
-    );
+    const body = await request.json().catch(() => ({}));
+    const sessionId = body.sessionId as string | undefined;
 
+    // 🔍 Verificação de pagamento
     if (sessionId) {
       console.log(`🔍 Verificando sessão do Stripe: ${sessionId}`);
-      // Verificar sessão no Stripe
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-      console.log(`📋 Status do pagamento: ${session.payment_status}`);
-      console.log(
-        `📋 Metadata da sessão:`,
-        JSON.stringify(session.metadata, null, 2)
-      );
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
 
       if (
         session.payment_status === "paid" &&
         session.metadata?.user_id === user.id
       ) {
-        const purchaseType = session.metadata?.purchase_type || null;
-        const promptsAmount = session.metadata?.prompts_amount
+        const promptsPurchased = session.metadata?.prompts_amount
           ? parseInt(session.metadata.prompts_amount, 10)
-          : 0;
-        const promptsPurchased = promptsAmount > 0 ? promptsAmount : 1;
+          : 1;
 
-        console.log(
-          `✅ Pagamento confirmado: ${promptsPurchased} prompt(s) comprado(s) para usuário ${user.id}`
-        );
-
-        const { data: initialTrialData, error: trialError } = await supabaseUser
+        // Buscar trial atual
+        const { data: trialData } = await supabaseUser
           .from("user_trials")
           .select("available_prompts, plans_generated, max_plans_allowed")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        let trialData = initialTrialData;
-
-        if (trialError) {
-          console.error("❌ Erro ao buscar trial:", trialError);
-        } else {
-          console.log(
-            `📊 Trial encontrado: available_prompts=${initialTrialData?.available_prompts ?? 0}, plans_generated=${initialTrialData?.plans_generated ?? 0}`
-          );
-        }
-
-        // ✅ FALLBACK: Verificar se o webhook processou. Se não, adicionar prompts diretamente.
-        // Estratégia: Aguardar um pouco e verificar se os prompts aumentaram. Se não aumentaram, usar fallback.
         const currentPrompts = trialData?.available_prompts ?? 0;
-        const promptsBeforeCheck = currentPrompts;
+        const newPrompts = currentPrompts + promptsPurchased;
 
-        // Aguardar um pouco para dar tempo ao webhook processar
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        // Verificar novamente após aguardar
-        const { data: trialDataAfterWait } = await supabaseUser
+        const { data: updatedTrial } = await supabaseUser
           .from("user_trials")
-          .select("available_prompts, updated_at")
-          .eq("user_id", user.id)
+          .upsert(
+            {
+              user_id: user.id,
+              available_prompts: newPrompts,
+              is_active: true,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" }
+          )
+          .select("available_prompts, plans_generated, max_plans_allowed")
           .maybeSingle();
-
-        const promptsAfterWait = trialDataAfterWait?.available_prompts ?? 0;
-        const wasUpdated = promptsAfterWait > promptsBeforeCheck;
-
-        // Se os prompts não aumentaram, adicionar via fallback
-        if (!wasUpdated) {
-          console.log(
-            `⚠️ Webhook pode não ter processado ainda (prompts: ${promptsBeforeCheck} → ${promptsAfterWait}). Adicionando prompts diretamente como fallback...`
-          );
-
-          const now = new Date().toISOString();
-
-          if (trialDataAfterWait || trialData) {
-            // Atualizar trial existente - adicionar prompts comprados
-            const promptsToAdd =
-              promptsAfterWait > 0 ? promptsAfterWait : promptsBeforeCheck;
-            const newPrompts = promptsToAdd + promptsPurchased;
-
-            const { data: updatedTrial, error: updateError } =
-              await supabaseUser
-                .from("user_trials")
-                .update({
-                  available_prompts: newPrompts,
-                  updated_at: now,
-                })
-                .eq("user_id", user.id)
-                .select("available_prompts, plans_generated, max_plans_allowed")
-                .maybeSingle();
-
-            if (updateError) {
-              console.error(
-                "❌ Erro ao adicionar prompts (fallback):",
-                updateError
-              );
-              // Se erro for de coluna não existente, informar
-              if (
-                updateError.message?.includes("column") ||
-                updateError.message?.includes("does not exist")
-              ) {
-                console.error(
-                  "⚠️ ATENÇÃO: A coluna 'available_prompts' pode não existir na tabela 'user_trials'."
-                );
-              }
-            } else {
-              console.log(
-                `✅ ${promptsPurchased} prompt(s) adicionado(s) diretamente (fallback). Total: ${newPrompts}`
-              );
-              trialData = updatedTrial;
-            }
-          } else {
-            // Criar novo trial se não existir
-            const { data: newTrial, error: insertError } = await supabaseUser
-              .from("user_trials")
-              .insert({
-                user_id: user.id,
-                trial_start_date: now,
-                trial_end_date: new Date(
-                  Date.now() + 365 * 24 * 60 * 60 * 1000
-                ).toISOString(),
-                plans_generated: 0,
-                max_plans_allowed: 1,
-                is_active: true,
-                upgraded_to_premium: false,
-                available_prompts: promptsPurchased,
-              })
-              .select("available_prompts, plans_generated, max_plans_allowed")
-              .maybeSingle();
-
-            if (insertError) {
-              console.error(
-                "❌ Erro ao criar trial com prompts (fallback):",
-                insertError
-              );
-            } else {
-              console.log(
-                `✅ Trial criado com ${promptsPurchased} prompt(s) (fallback)`
-              );
-              trialData = newTrial;
-            }
-          }
-        } else {
-          console.log(
-            `✅ Webhook processou com sucesso. Prompts aumentaram: ${promptsBeforeCheck} → ${promptsAfterWait}. Total disponível: ${promptsAfterWait}`
-          );
-          trialData = trialDataAfterWait
-            ? {
-                ...trialDataAfterWait,
-                plans_generated: trialData?.plans_generated ?? 0,
-                max_plans_allowed: trialData?.max_plans_allowed ?? 1,
-              }
-            : trialData;
-        }
 
         return NextResponse.json({
           success: true,
-          purchaseType,
           promptsPurchased,
-          availablePrompts: trialData?.available_prompts ?? 0,
-          plansGenerated: trialData?.plans_generated ?? 0,
-          maxPlansAllowed: trialData?.max_plans_allowed ?? 1,
-          message:
-            promptsPurchased > 1
-              ? `Pagamento confirmado: ${promptsPurchased} prompts liberados.`
-              : "Pagamento confirmado: 1 prompt liberado.",
+          availablePrompts: updatedTrial?.available_prompts ?? newPrompts,
+          plansGenerated: updatedTrial?.plans_generated ?? 0,
+          maxPlansAllowed: updatedTrial?.max_plans_allowed ?? 1,
+          message: "Pagamento confirmado e prompts liberados.",
         });
-      } else {
-        console.log(
-          `⚠️ Pagamento não confirmado ou user_id não corresponde: payment_status=${session.payment_status}, user_id=${session.metadata?.user_id}, expected=${user.id}`
-        );
       }
 
       return NextResponse.json({
@@ -246,7 +118,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Sem sessionId: apenas retornar estado atual de prompts
+    // 🔎 Apenas status
     const { data: trialData } = await supabaseUser
       .from("user_trials")
       .select("available_prompts, plans_generated, max_plans_allowed")
@@ -258,7 +130,6 @@ export async function POST(request: NextRequest) {
       availablePrompts: trialData?.available_prompts ?? 0,
       plansGenerated: trialData?.plans_generated ?? 0,
       maxPlansAllowed: trialData?.max_plans_allowed ?? 1,
-      message: "Status de prompts recuperado com sucesso.",
     });
   } catch (error) {
     console.error("❌ Erro ao verificar pagamento:", error);

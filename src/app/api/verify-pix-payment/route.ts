@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 function getMercadoPagoClient() {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar autenticação
+    // 🔐 Autenticação
     const authHeader = request.headers.get("Authorization");
     if (!authHeader) {
       return NextResponse.json(
@@ -56,24 +56,12 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.replace("Bearer ", "");
 
-    // ✅ Criar cliente Supabase autenticado com token do usuário
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabaseUser = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      }
-    );
+    const supabaseUser = getSupabaseClient(token);
 
     const {
       data: { user },
       error: userError,
-    } = await supabaseUser.auth.getUser(token);
+    } = await supabaseUser.auth.getUser();
 
     if (userError || !user) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
@@ -89,7 +77,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar pagamento no banco de dados - usar supabaseUser
+    // 🔎 Buscar pagamento local
     const { data: pixPayment, error: dbError } = await supabaseUser
       .from("pix_payments")
       .select("*")
@@ -104,13 +92,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Criar cliente do Mercado Pago
-    const client = getClient();
-    const payment = new Payment(client);
+    // 💳 Mercado Pago
+    const mpClient = getMercadoPagoClient();
+    const payment = new Payment(mpClient);
 
-    // Verificar status no Mercado Pago
     const mercadoPagoPayment = await payment.get({
-      id: parseInt(pixPayment.mercado_pago_payment_id),
+      id: Number(pixPayment.mercado_pago_payment_id),
     });
 
     const newStatus =
@@ -122,7 +109,7 @@ export async function POST(request: NextRequest) {
             ? "cancelled"
             : "pending";
 
-    // Atualizar status no banco se mudou
+    // 🔄 Atualizar status se mudou
     if (newStatus !== pixPayment.status) {
       const updateData: {
         status: string;
@@ -144,7 +131,7 @@ export async function POST(request: NextRequest) {
         .update(updateData)
         .eq("id", paymentId);
 
-      // Se foi aprovado, adicionar prompts ao usuário
+      // ➕ Adicionar prompts se aprovado
       if (newStatus === "approved" && pixPayment.status !== "approved") {
         await addPromptsToUser(
           supabaseUser,
@@ -155,13 +142,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verificar se expirou
+    // ⏱️ Expiração
     const now = new Date();
     const expiresAt = new Date(pixPayment.expires_at);
+
     if (now > expiresAt && newStatus === "pending") {
       await supabaseUser
         .from("pix_payments")
-        .update({ status: "expired", updated_at: new Date().toISOString() })
+        .update({
+          status: "expired",
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", paymentId);
     }
 
@@ -188,78 +179,50 @@ async function addPromptsToUser(
   promptsAmount: number,
   purchaseType: string
 ) {
-  try {
-    const now = new Date().toISOString();
+  const now = new Date().toISOString();
 
-    // Buscar trial existente
-    const { data: existingTrial } = await supabaseClient
-      .from("user_trials")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
+  const { data: existingTrial } = await supabaseClient
+    .from("user_trials")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
 
-    if (existingTrial) {
-      const currentPrompts = existingTrial.available_prompts || 0;
-      const currentPackagePrompts = existingTrial.package_prompts || 0;
-      const newPrompts = currentPrompts + promptsAmount;
+  if (existingTrial) {
+    const currentPrompts = existingTrial.available_prompts || 0;
+    const currentPackagePrompts = existingTrial.package_prompts || 0;
+    const newPrompts = currentPrompts + promptsAmount;
 
-      const updateData: Record<string, number | string> = {
-        available_prompts: newPrompts,
-        updated_at: now,
-      };
+    const updateData: Record<string, number | string> = {
+      available_prompts: newPrompts,
+      updated_at: now,
+    };
 
-      if (purchaseType === "prompt_triple") {
-        // Apenas pacote de 3 tem cooldown
-        const newPackagePrompts = currentPackagePrompts + promptsAmount;
-        updateData.package_prompts = newPackagePrompts;
-        console.log(
-          `📦 Adicionando ${promptsAmount} prompt(s) do pacote (com cooldown). Total do pacote: ${newPackagePrompts}`
-        );
-      } else if (purchaseType === "prompt_pro_5") {
-        // Pacote Pro = sem cooldown (não adicionar package_prompts)
-        console.log(
-          `✅ Adicionando ${promptsAmount} prompt(s) do Pacote Pro (sem cooldown). Total disponível: ${newPrompts}`
-        );
-      }
-
-      await supabaseClient
-        .from("user_trials")
-        .update(updateData)
-        .eq("user_id", userId);
-
-      console.log(
-        `✅ ${promptsAmount} prompt(s) adicionado(s) via PIX. Total disponível: ${newPrompts}`
-      );
-    } else {
-      // Criar novo trial
-      const insertData: Record<string, number | string | boolean> = {
-        user_id: userId,
-        trial_start_date: now,
-        trial_end_date: new Date(
-          Date.now() + 365 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        plans_generated: 0,
-        max_plans_allowed: 1,
-        is_active: true,
-        upgraded_to_premium: false,
-        available_prompts: promptsAmount,
-      };
-
-      if (purchaseType === "prompt_triple") {
-        // Apenas pacote de 3 tem cooldown
-        insertData.package_prompts = promptsAmount;
-      }
-      // Pacote Pro (5) não adiciona package_prompts (sem cooldown)
-
-      await supabaseClient.from("user_trials").insert(insertData);
-
-      console.log(
-        `✅ Trial criado com ${promptsAmount} prompt(s) via PIX para usuário:`,
-        userId
-      );
+    if (purchaseType === "prompt_triple") {
+      updateData.package_prompts = currentPackagePrompts + promptsAmount;
     }
-  } catch (error) {
-    console.error("❌ Erro ao adicionar prompts ao usuário:", error);
-    throw error;
+
+    await supabaseClient
+      .from("user_trials")
+      .update(updateData)
+      .eq("user_id", userId);
+  } else {
+    const insertData: Record<string, number | string | boolean> = {
+      user_id: userId,
+      trial_start_date: now,
+      trial_end_date: new Date(
+        Date.now() + 365 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      plans_generated: 0,
+      max_plans_allowed: 1,
+      is_active: true,
+      upgraded_to_premium: false,
+      available_prompts: promptsAmount,
+    };
+
+    if (purchaseType === "prompt_triple") {
+      insertData.package_prompts = promptsAmount;
+    }
+
+    await supabaseClient.from("user_trials").insert(insertData);
   }
 }

@@ -60,6 +60,8 @@ export async function POST(request: NextRequest) {
 
     console.log("🔍 Gerando análise personalizada...");
 
+    const openai = getOpenAIClient();
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.2,

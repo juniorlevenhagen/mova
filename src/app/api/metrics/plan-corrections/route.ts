@@ -3,13 +3,15 @@ import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseClient(token?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    throw new Error("Supabase URL e/ou chave não encontradas");
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error("Supabase URL ou ANON KEY não configuradas");
   }
+
   return createClient(
     url,
-    key,
+    anonKey,
     token
       ? {
           global: {
@@ -22,18 +24,20 @@ function getSupabaseClient(token?: string) {
   );
 }
 
-/**
- * Endpoint para consultar métricas de correção de planos
- *
- * REQUER AUTENTICAÇÃO: Apenas usuários autenticados podem acessar
- *
- * GET /api/metrics/plan-corrections
- * Headers:
- *   - Authorization: Bearer <token>
- */
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceKey) {
+    throw new Error("Supabase SERVICE_ROLE_KEY não configurada");
+  }
+
+  return createClient(url, serviceKey);
+}
+
 export async function GET(request: NextRequest) {
   try {
-    // Verificar autenticação
+    // 🔐 Autenticação
     const authHeader = request.headers.get("Authorization");
     if (!authHeader) {
       return NextResponse.json(
@@ -43,10 +47,13 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.replace("Bearer ", "");
+
+    const supabase = getSupabaseClient(token);
+
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
       return NextResponse.json(
@@ -55,17 +62,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json(
-        { error: "Configuração do Supabase ausente" },
-        { status: 500 }
-      );
-    }
+    // 🔑 Client admin (após auth OK)
+    const supabaseAdmin = getSupabaseAdmin();
 
-    // Usar service role key para acessar dados (já validamos autenticação acima)
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Buscar as últimas 100 correções
     const { data: corrections, error } = await supabaseAdmin
       .from("plan_correction_metrics")
       .select("*")
@@ -74,10 +73,9 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error;
 
-    // Agrupar estatísticas básicas
     const stats = {
       total: corrections.length,
-      byReason: corrections.reduce((acc: Record<string, number>, curr) => {
+      byReason: corrections.reduce<Record<string, number>>((acc, curr) => {
         acc[curr.reason] = (acc[curr.reason] || 0) + 1;
         return acc;
       }, {}),

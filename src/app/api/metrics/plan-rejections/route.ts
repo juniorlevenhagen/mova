@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { planRejectionMetrics } from "@/lib/metrics/planRejectionMetrics";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+
+function getSupabaseClient(token?: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error("Supabase URL e/ou chave não encontradas");
+  }
+  return createClient(
+    url,
+    key,
+    token
+      ? {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        }
+      : undefined
+  );
+}
 
 /**
  * Endpoint para consultar métricas de rejeição de planos
@@ -26,10 +47,11 @@ export async function GET(request: NextRequest) {
     }
 
     const token = authHeader.replace("Bearer ", "");
+    const supabase = getSupabaseClient(token);
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
       return NextResponse.json(

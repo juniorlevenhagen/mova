@@ -1,19 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
-// Helper para criar cliente do Mercado Pago
-const getClient = () => {
-  if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+function getMercadoPagoClient() {
+  const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!accessToken) {
     throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
   }
   return new MercadoPagoConfig({
-    accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN,
+    accessToken,
     options: {
       timeout: 5000,
     },
   });
-};
+}
+
+function getSupabaseClient(token?: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error("Supabase URL e/ou chave não encontradas");
+  }
+  return createClient(
+    url,
+    key,
+    token
+      ? {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        }
+      : undefined
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {

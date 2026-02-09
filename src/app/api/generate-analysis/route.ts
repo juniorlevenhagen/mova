@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openaiApiKey = process.env.OPENAI_API_KEY!;
-
-const openai = new OpenAI({
-  apiKey: openaiApiKey,
-});
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY não configurada");
+  }
+  return new OpenAI({ apiKey });
+}
 
 const ANALYSIS_SCHEMA = {
   name: "analysis_plan",

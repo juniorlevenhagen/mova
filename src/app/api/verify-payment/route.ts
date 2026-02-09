@@ -1,10 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover" as unknown as "2025-08-27.basil",
-});
+function getStripeClient() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY não configurada");
+  }
+  return new Stripe(key, {
+    apiVersion: "2025-12-15.clover" as unknown as "2025-08-27.basil",
+  });
+}
+
+function getSupabaseClient(token?: string) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    throw new Error("Supabase URL e/ou chave não encontradas");
+  }
+  return createClient(
+    url,
+    key,
+    token
+      ? {
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        }
+      : undefined
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {

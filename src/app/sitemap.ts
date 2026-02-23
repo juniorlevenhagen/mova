@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 export const runtime = "nodejs";
 export const revalidate = 3600; // 1 hora
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://movamais.fit";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.movamais.fit";
 
 const staticRoutes = [
   { url: siteUrl, changeFrequency: "daily", priority: 1 },

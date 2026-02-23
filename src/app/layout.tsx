@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://movamais.fit";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.movamais.fit";
 const defaultOgImage = `${siteUrl}/images/og-image.jpg`;
 
 export const metadata: Metadata = {

@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://movamais.fit";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.movamais.fit";
 
 export default function robots(): MetadataRoute.Robots {
   return {

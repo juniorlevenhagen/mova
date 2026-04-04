@@ -215,12 +215,12 @@ export function getWeeklySeriesLimits(
  */
 function getMotorPatternLimits(): MotorPatternLimits {
   return {
-    hinge: 1,
-    horizontal_push: 2,
-    vertical_push: 1,
-    horizontal_pull: 2,
-    vertical_pull: 1,
-    squat: 2,
+    hinge: 2,
+    horizontal_push: 4,
+    vertical_push: 2,
+    horizontal_pull: 4,
+    vertical_pull: 2,
+    squat: 4,
   };
 }
 

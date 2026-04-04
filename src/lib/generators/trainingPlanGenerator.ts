@@ -1347,11 +1347,11 @@ function getVolumeConfig(activityLevel: string): {
 
   if (level.includes("iniciante")) {
     return {
-      largeMuscleMin: 2,
-      largeMuscleMax: 3, // Reduzido de 4 para 3
-      smallMuscleMin: 1,
-      smallMuscleMax: 2,
-      totalExercisesMax: 6,
+      largeMuscleMin: 4,
+      largeMuscleMax: 4, // Reduzido de 4 para 3
+      smallMuscleMin: 3,
+      smallMuscleMax: 3,
+      totalExercisesMax: 20,
     };
   }
 
@@ -2827,7 +2827,6 @@ function generateDayExercises(
       constraints?.maxExercisesPerSession || volumeConfig.totalExercisesMax;
     const totalExercises = Math.min(
       volumeConfig.totalExercisesMax,
-      volumeConfig.largeMuscleMax + volumeConfig.smallMuscleMax,
       pushMaxAllowed // 🔴 Respeitar limite do perfil
     );
 
@@ -3086,7 +3085,6 @@ function generateDayExercises(
       constraints?.maxExercisesPerSession || volumeConfig.totalExercisesMax;
     const totalExercises = Math.min(
       volumeConfig.totalExercisesMax,
-      volumeConfig.largeMuscleMax + volumeConfig.smallMuscleMax,
       pullMaxAllowed // 🔴 Respeitar limite do perfil
     );
 

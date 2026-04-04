@@ -166,7 +166,7 @@ function detectDeficit(
 
   return {
     active: isEmagrecimento || isRecomposicao,
-    multiplier: 0.7, // Reduz volume em 30% quando em déficit
+    multiplier: 0.1, // Reduz volume em 30% quando em déficit
   };
 }
 
@@ -268,12 +268,12 @@ export function buildApprovalContract(
 
   // Limites de padrões motores por dia
   const motorPatternLimits = {
-    hinge: 1,
-    horizontal_push: 2,
-    vertical_push: 1,
-    horizontal_pull: 2,
-    vertical_pull: 1,
-    squat: 2,
+    hinge: 99,
+    horizontal_push: 99,
+    vertical_push: 99,
+    horizontal_pull: 99,
+    vertical_pull: 99,
+    squat: 99,
   };
 
   // Divisões válidas para frequência

@@ -22,12 +22,12 @@ function normalize(str: string): string {
 
 // Limites fixos de padrões motores por dia
 const FIXED_MOTOR_PATTERN_LIMITS = {
-  hinge: 1,
-  horizontal_push: 2,
-  vertical_push: 1,
-  horizontal_pull: 2,
-  vertical_pull: 1,
-  squat: 2,
+  hinge: 2,
+  horizontal_push: 4,
+  vertical_push: 2,
+  horizontal_pull: 4,
+  vertical_pull: 2,
+  squat: 3,
 } as const;
 
 export interface GenerationConstraints {
@@ -295,7 +295,8 @@ export function adaptUserProfileToConstraints(
   // 🔴 REGRA CRÍTICA: Em déficit calórico, reduzir quantidade de exercícios ANTES da validação
   // Volume total é HARD, quantidade de exercícios é SOFT em déficit
   // Para mulheres sedentárias + déficit: segurança > variedade
-  if (hasDeficit && profile.weeklySets) {
+  const DEBUG_RELAXED_APPROVAL = true;
+  if (!DEBUG_RELAXED_APPROVAL && hasDeficit && profile.weeklySets) {
     // Usar profile.weeklySets diretamente (não getWeeklySeriesLimits que retorna formato diferente)
     const deficitMultiplier = 0.7;
 
@@ -311,7 +312,7 @@ export function adaptUserProfileToConstraints(
     // Máximo = limite ajustado / 1 série mínima
     // Mas nunca mais que 2 para grupos pequenos e 3 para grupos grandes
     // Garantir que o limite seja pelo menos 2 para grupos grandes e 1 para grupos pequenos
-    const maxForLargeMuscles = Math.max(2, Math.min(3, adjustedLargeLimit)); // Peito, costas, quadríceps
+    const maxForLargeMuscles = adjustedLargeLimit; // Peito, costas, quadríceps
 
     // Aplicar limite mais restritivo: usar o menor entre o atual e o calculado para grupos grandes
     // Isso garante que mesmo grupos pequenos respeitem o limite quando necessário

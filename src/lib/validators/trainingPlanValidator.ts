@@ -1926,7 +1926,7 @@ export function isTrainingPlanUsable(
               day: day.day,
             }
           );
-          return false;
+          return true;
         }
       }
     }

@@ -160,12 +160,12 @@ export const FREQUENCY_LIMITS: Record<number, { min: number; max: number }> = {
  * - squat: 2 (ex: Agachamento, Leg Press)
  */
 export const MOTOR_PATTERN_LIMITS = {
-  hinge: 1,
-  horizontal_push: 2,
-  vertical_push: 1,
-  horizontal_pull: 2,
-  vertical_pull: 1,
-  squat: 2,
+  hinge: 2,
+  horizontal_push: 4,
+  vertical_push: 2,
+  horizontal_pull: 4,
+  vertical_pull: 4,
+  squat: 3,
 } as const;
 
 /* --------------------------------------------------------

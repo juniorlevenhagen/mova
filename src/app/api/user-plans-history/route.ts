@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ plans: data }, { status: 200 });
+    return NextResponse.json({ success: true, plans: data }, { status: 200 });
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },

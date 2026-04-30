@@ -1,0 +1,91 @@
+contract_violation
+18
+excesso_volume_em_deficit
+2
+WeeklySchedule inválido
+2
+Lower sem grupos obrigatórios
+2
+Grupo obrigatório ausente
+2
+
+
+Últimos Logs de Rejeição
+contract_violation
+28/04, 13:09
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"quadriceps","activityLevel":"Atleta"}
+contract_violation
+28/04, 13:09
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"posterior de coxa","activityLevel":"Atleta"}
+contract_violation
+28/04, 14:03
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"posterior de coxa","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:03
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"quadriceps","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:03
+{"details":{"minRequired":1,"requiredPatterns":["horizontal_pull","vertical_pull"]},"contract":"costas","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:03
+{"details":{"minRequired":1,"requiredPatterns":["vertical_push"]},"contract":"ombros","activityLevel":"Moderado"}
+Grupo obrigatório ausente
+28/04, 14:03
+{"day":"Segunda-feira – Superiores","dayType":"upper","trainingDays":4,"activityLevel":"Moderado","requiredGroup":"ombros"}
+Grupo obrigatório ausente
+28/04, 14:03
+{"day":"Segunda-feira – Superiores","dayType":"upper","trainingDays":4,"activityLevel":"Moderado","requiredGroup":"ombros"}
+contract_violation
+28/04, 14:14
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"quadriceps","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:14
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"posterior de coxa","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:14
+{"details":{"minRequired":1,"requiredPatterns":["horizontal_pull","vertical_pull"]},"contract":"costas","activityLevel":"Moderado"}
+Lower sem grupos obrigatórios
+28/04, 14:14
+{"day":"Terça-feira – Inferiores","dayType":"lower","hasGluteos":false,"hasPosterior":true,"trainingDays":4,"activityLevel":"Moderado","hasQuadriceps":true,"hasPanturrilhas":false}
+WeeklySchedule inválido
+28/04, 14:14
+{"trainingDays":4,"activityLevel":"Moderado"}
+contract_violation
+28/04, 14:14
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"posterior de coxa","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:14
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"quadriceps","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:14
+{"details":{"minRequired":1,"requiredPatterns":["horizontal_pull","vertical_pull"]},"contract":"costas","activityLevel":"Moderado"}
+excesso_volume_em_deficit
+28/04, 14:14
+{"limit":8,"muscle":"peito","objective":"Emagrecimento","totalSeries":12,"activityLevel":"Moderado","exerciseCount":4,"multiplicador":0.7}
+contract_violation
+28/04, 14:23
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"posterior de coxa","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:23
+{"details":{"minRequired":1,"requiredPatterns":["horizontal_pull","vertical_pull"]},"contract":"costas","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:23
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"quadriceps","activityLevel":"Moderado"}
+Lower sem grupos obrigatórios
+28/04, 14:23
+{"day":"Terça-feira – Inferiores","dayType":"lower","hasGluteos":false,"hasPosterior":true,"trainingDays":4,"activityLevel":"Moderado","hasQuadriceps":true,"hasPanturrilhas":false}
+WeeklySchedule inválido
+28/04, 14:23
+{"trainingDays":4,"activityLevel":"Moderado"}
+contract_violation
+28/04, 14:23
+{"details":{"minRequired":1,"requiredPatterns":["horizontal_pull","vertical_pull"]},"contract":"costas","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:23
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"quadriceps","activityLevel":"Moderado"}
+contract_violation
+28/04, 14:23
+{"details":{"minRequired":2,"requiredPatterns":["knee_dominant","hip_dominant"]},"contract":"posterior de coxa","activityLevel":"Moderado"}
+excesso_volume_em_deficit
+28/04, 14:23
+{"limit":8,"muscle":"peito","objective":"Emagrecimento","totalSeries":12,"activityLevel":"Moderado","exerc

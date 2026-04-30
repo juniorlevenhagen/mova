@@ -1,0 +1,13 @@
+WeeklySchedule inválido
+28/04, 15:17
+{"trainingDays":4,"activityLevel":"Moderado"}
+contract_violation
+28/04, 15:17
+{"details":{"minRequired":1,"requiredPatterns":["horizontal_pull"]},"contract":"costas","activityLevel":"Moderado"}
+excesso_volume_em_deficit
+28/04, 15:17
+{"limit":9,"muscle":"peito","objective":"Emagrecimento","totalSeries":12,"activityLevel":"Moderado","exercise
+
+
+
+INSERT INTO "public"."plan_correction_metrics" ("id", "reason", "payload", "context", "created_at") VALUES ('338d7de4-1dc6-42d7-932b-13c17e736e9f', 'ajuste_volume_minimo_obrigatorio', '{"day": "Treino C – Pernas", "count": 3, "muscle": "quadriceps", "category": "grande", "minRequired": 4}', '{"age": 40, "imc": 24, "gender": "masculino", "activityLevel": "Atleta"}', '2026-04-28 16:09:08.833+00'), ('4c231414-fbbf-42a9-9f52-45f83dcfbeee', 'ajuste_volume_minimo_obrigatorio', '{"day": "Treino C – Pernas", "count": 3, "muscle": "posterior de coxa", "category": "grande", "minRequired": 4}', '{"age": 40, "imc": 24, "gender": "masculino", "activityLevel": "Atleta"}', '2026-04-28 16:09:08.833+00'), ('1d5f6cde-f18d-4141-b4f7-00f2a5d86659', 'ajuste_volume_minimo_obrigatorio', '{"day": "Treino D – Peito/Tríceps", "count": 2, "muscle": "peitoral", "category": "grande", "minRequired": 4}', '{"age": 40, "imc": 24, "gender": "masculino", "activityLevel": "Atleta"}', '2026-04-28 16:09:08.834+00'), ('46357593-4105-49b6-bc26-b5eb578c72e0', 'ajuste_volume_minimo_obrigatorio', '{"day": "Treino E – Costas/Bíceps", "count": 2, "muscle": "costas", "category": "grande", "minRequired": 4}', '{"age": 40, "imc": 24, "gender": "masculino", "activityLevel": "Atleta"}', '2026-04-28 16:09:08.835+00'), ('b1b62c4a-60bc-47d1-be6c-65a657fb97d7', 'ajuste_volume_minimo_obrigatorio', '{"day": "Treino E – Costas/Bíceps", "count": 1, "muscle": "ombros", "category": "médio", "minRequired": 2}', '{"age": 40, "imc": 24, "gender": "masculino", "activityLevel": "Atleta"}', '2026-04-28 16:09:08.836+00');

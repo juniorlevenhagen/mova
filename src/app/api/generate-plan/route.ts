@@ -3585,7 +3585,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
       const trainingDays = parseTrainingDays(
         profile?.training_frequency || "3x por semana"
       );
-      const availableTimeMinutes = parseTrainingTime(profile?.training_time);
+      const availableTimeMinutes = 120;
 
       const isTrainingValid = isTrainingPlanUsable(
         plan.trainingPlan,

@@ -93,24 +93,7 @@ export function PlanHistoryModal({
       }
 
       if (result.success) {
-        // Mapear dados da API para o formato esperado pelo componente
-        const mappedPlans: PlanHistoryItem[] = (result.plans || []).map(
-          (p: any) => ({
-            id: p.id,
-            planData: p.plan_data,
-            planType: p.plan_type,
-            generatedAt: p.created_at,
-            expiresAt: p.expires_at,
-            isActive: p.is_active,
-            summary: {
-              hasTrainingPlan: !!p.plan_data?.trainingPlan,
-              hasNutritionPlan: !!p.plan_data?.nutritionPlan,
-              hasAnalysis: !!p.plan_data?.analysis,
-              objective: p.plan_data?.userProfile?.objetivo || "Não informado",
-            },
-          })
-        );
-        setPlans(mappedPlans);
+        setPlans(result.plans || []);
       } else {
         throw new Error("Erro ao buscar histórico de planos");
       }

@@ -36,4 +36,3 @@ describe("generateTrainingPlanStructure - Push days (when present) always have t
     }
   });
 });
-

@@ -166,7 +166,7 @@ function detectDeficit(
 
   return {
     active: isEmagrecimento || isRecomposicao,
-    multiplier: 0.1, // Reduz volume em 30% quando em déficit
+    multiplier: 0.7, // Reduz volume em 30% quando em déficit
   };
 }
 
@@ -264,16 +264,16 @@ export function buildApprovalContract(
   };
 
   // Séries mínimas por exercício (1 em déficit, 2 normalmente)
-  const minSetsPerExercise = deficit.active ? 1 : 2;
+  const minSetsPerExercise = deficit.active ? 2 : 3;
 
   // Limites de padrões motores por dia
   const motorPatternLimits = {
-    hinge: 99,
-    horizontal_push: 99,
-    vertical_push: 99,
-    horizontal_pull: 99,
-    vertical_pull: 99,
-    squat: 99,
+    hinge: 2,
+    horizontal_push: 4,
+    vertical_push: 2,
+    horizontal_pull: 4,
+    vertical_pull: 2,
+    squat: 3,
   };
 
   // Divisões válidas para frequência

@@ -295,7 +295,7 @@ export function adaptUserProfileToConstraints(
   // 🔴 REGRA CRÍTICA: Em déficit calórico, reduzir quantidade de exercícios ANTES da validação
   // Volume total é HARD, quantidade de exercícios é SOFT em déficit
   // Para mulheres sedentárias + déficit: segurança > variedade
-  const DEBUG_RELAXED_APPROVAL = true;
+  const DEBUG_RELAXED_APPROVAL = false;
   if (!DEBUG_RELAXED_APPROVAL && hasDeficit && profile.weeklySets) {
     // Usar profile.weeklySets diretamente (não getWeeklySeriesLimits que retorna formato diferente)
     const deficitMultiplier = 0.7;

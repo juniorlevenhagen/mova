@@ -67,7 +67,7 @@ export function validateContractIntegrity(
   }
 
   // 2. Validar que minSetsPerExercise é consistente com déficit
-  if (contract.deficit.active && contract.minSetsPerExercise !== 1) {
+  if (contract.deficit.active && contract.minSetsPerExercise !== 2) {
     errors.push(
       `Inconsistência: déficit ativo mas minSetsPerExercise=${contract.minSetsPerExercise} (deveria ser 1)`
     );

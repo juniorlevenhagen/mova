@@ -5,6 +5,7 @@
  * - Séries semanais por grupamento muscular
  * - Frequência de estímulo
  * - Padrões motores repetidos
+ * - Compatibilidade com déficit calórico
  */
 
 import type { TrainingPlan, Exercise } from "./trainingPlanValidator";
@@ -38,6 +39,11 @@ interface MotorPatternLimits {
   squat?: number;
 }
 
+interface DeficitConfig {
+  ativo: boolean;
+  multiplicador_volume: number;
+}
+
 /* --------------------------------------------------------
    FUNÇÕES AUXILIARES
 -------------------------------------------------------- */
@@ -52,6 +58,7 @@ function normalize(str: string): string {
 
 function normalizeMuscle(muscle: string): string {
   const normalized = normalize(muscle);
+  // Mapear variações para nomes padrão
   if (normalized.includes("peito") || normalized.includes("peitoral"))
     return "peito";
   if (normalized.includes("costas") || normalized.includes("dorsal"))
@@ -121,7 +128,9 @@ export function detectMotorPattern(exercise: Exercise): string | null {
     return "horizontal_push";
   }
 
-  // OVERHEAD MOVEMENT
+  // OVERHEAD MOVEMENT (movimento acima da cabeça - pode ser SOFT ou HARD dependendo do contexto)
+  // Detectar antes de vertical_push para ter prioridade
+  // Verificar tanto no nome normalizado quanto nas notas
   const normalizedNotes = exercise.notes ? normalize(exercise.notes) : "";
   if (
     primary === "ombro" &&
@@ -158,6 +167,7 @@ export function detectMotorPattern(exercise: Exercise): string | null {
   }
 
   // VERTICAL PULL (puxar vertical)
+  // Excluir "Face pull" que é horizontal, não vertical
   if (
     (name.includes("puxada") ||
       name.includes("pull") ||
@@ -172,7 +182,32 @@ export function detectMotorPattern(exercise: Exercise): string | null {
     return "vertical_pull";
   }
 
+  // Fallback explícito: padrão desconhecido
+  // "unknown" não conta para limites e não é permitido em compostos grandes
   return "unknown";
+}
+
+/**
+ * Obtém limites de séries semanais baseado no nível de atividade
+ * Agora usa os perfis técnicos
+ */
+export function getWeeklySeriesLimits(
+  activityLevel?: string | null
+): WeeklySeriesLimits {
+  const profile = getTrainingProfile(activityLevel);
+
+  // Converter weeklySets do perfil para o formato WeeklySeriesLimits
+  return {
+    peito: profile.weeklySets.large,
+    costas: profile.weeklySets.large,
+    quadriceps: profile.weeklySets.large,
+    posterior: Math.floor(profile.weeklySets.large * 0.8), // 80% do large
+    ombro: profile.weeklySets.small,
+    triceps: profile.weeklySets.small,
+    biceps: profile.weeklySets.small,
+    gluteos: Math.floor(profile.weeklySets.large * 0.6), // 60% do large
+    panturrilhas: Math.floor(profile.weeklySets.small * 0.5), // 50% do small
+  };
 }
 
 /**
@@ -180,35 +215,33 @@ export function detectMotorPattern(exercise: Exercise): string | null {
  */
 function getMotorPatternLimits(): MotorPatternLimits {
   return {
-    hinge: 2,
+    hinge: 3,
     horizontal_push: 4,
-    vertical_push: 2,
+    vertical_push: 3,
     horizontal_pull: 4,
-    vertical_pull: 2,
+    vertical_pull: 3,
     squat: 4,
   };
 }
 
 /**
- * Obtém limites de séries semanais baseado no nível de atividade.
- * Simples e sem lógica de déficit — o gerador é responsável por
- * calibrar o volume antes de gerar o plano.
+ * Detecta se há déficit calórico ativo baseado no objetivo
  */
-export function getWeeklySeriesLimits(
-  activityLevel?: string | null
-): WeeklySeriesLimits {
-  const profile = getTrainingProfile(activityLevel);
+function detectDeficit(objective?: string | null, imc?: number): DeficitConfig {
+  const obj = normalize(objective || "");
+  const isEmagrecimento =
+    obj.includes("emagrec") || obj.includes("perder") || obj.includes("queima");
+
+  // Se IMC >= 25 e objetivo é "ganhar massa", também deve usar déficit (recomposição)
+  const isRecomposicao = !!(
+    imc &&
+    imc >= 25 &&
+    (obj.includes("ganhar") || obj.includes("massa"))
+  );
 
   return {
-    peito: profile.weeklySets.large,
-    costas: profile.weeklySets.large,
-    quadriceps: profile.weeklySets.large,
-    posterior: Math.floor(profile.weeklySets.large * 0.8),
-    ombro: profile.weeklySets.small,
-    triceps: profile.weeklySets.small,
-    biceps: profile.weeklySets.small,
-    gluteos: Math.floor(profile.weeklySets.large * 0.6),
-    panturrilhas: Math.floor(profile.weeklySets.small * 0.5),
+    ativo: isEmagrecimento || isRecomposicao,
+    multiplicador_volume: 0.7, // Reduz volume em 30% quando em dÃ©ficit
   };
 }
 
@@ -219,10 +252,11 @@ export function getWeeklySeriesLimits(
 /**
  * 1️⃣ Validação por SÉRIES SEMANAIS (obrigatória)
  *
- * Margem de tolerância aumentada para 20% (era 10%) para acomodar
- * arredondamentos e séries mínimas obrigatórias por exercício.
+ * Conta séries por exercício, soma por músculo,
+ * multiplica pela frequência semanal e valida contra limites
  *
- * 🏠 Volume Density Modifier: Em casa/ao ar livre, limites são 15% maiores.
+ * 🏠 Volume Density Modifier: Em casa/ao ar livre, volume vem de frequência
+ * e variedade (menos carga externa), então limites são 15% maiores
  */
 export function validateWeeklySeries(
   plan: TrainingPlan,
@@ -233,6 +267,8 @@ export function validateWeeklySeries(
   const limits = getWeeklySeriesLimits(activityLevel);
   const weeklySeries = new Map<string, number>();
 
+  // 🏋️ Volume Density Modifier por Ambiente
+  // Casa/ar livre = menos carga externa = compensar com volume/variedade
   const environmentVolumeModifier: Record<string, number> = {
     gym: 1.0,
     academia: 1.0,
@@ -256,21 +292,22 @@ export function validateWeeklySeries(
           ? exercise.sets
           : parseInt(exercise.sets) || 0;
 
+      // Contar séries do músculo primário
       const current = weeklySeries.get(muscle) || 0;
       weeklySeries.set(muscle, current + sets);
     }
   }
 
-  // Validar contra limites com margem de 20% + modificador de ambiente
+  // Validar contra limites (com margem de tolerância + modificador de ambiente)
   for (const [muscle, totalSeries] of weeklySeries) {
     const limit = limits[muscle as keyof WeeklySeriesLimits];
 
     if (limit) {
-      // ✅ ALTERAÇÃO: margem aumentada de 10% → 20%
-      // Necessário para acomodar séries mínimas obrigatórias (ex: minSetsInDeficit: 2)
-      // sem rejeitar planos que estão dentro do espírito do limite
-      const toleranceMargin = Math.ceil(limit * 0.2);
+      // Aplicar margem de tolerância de 10% para compensar arredondamentos
+      // Exemplo: limite de 16 → tolerância até 17.6 → aceita até 17
+      const toleranceMargin = Math.ceil(limit * 0.1);
 
+      // Aplicar modificador de ambiente (15% extra para casa/ar livre)
       const baseEffectiveLimit = limit + toleranceMargin;
       const effectiveLimit = Math.ceil(baseEffectiveLimit * volumeModifier);
 
@@ -307,7 +344,7 @@ export function validateWeeklySeries(
 /**
  * 2️⃣ Validação por PADRÃO MOTOR (não por músculo)
  *
- * Valida que não há excesso de padrões motores repetidos no mesmo treino.
+ * Valida que não há excesso de padrões motores repetidos no mesmo treino
  */
 export function validateMotorPatterns(plan: TrainingPlan): boolean {
   const limits = getMotorPatternLimits();
@@ -315,6 +352,7 @@ export function validateMotorPatterns(plan: TrainingPlan): boolean {
   for (const day of plan.weeklySchedule) {
     const patternCounts = new Map<string, number>();
 
+    // Contar padrões motores no dia
     for (const exercise of day.exercises) {
       const pattern = detectMotorPattern(exercise);
       if (pattern) {
@@ -323,6 +361,7 @@ export function validateMotorPatterns(plan: TrainingPlan): boolean {
       }
     }
 
+    // Validar contra limites
     for (const [pattern, count] of patternCounts) {
       const limit = limits[pattern as keyof MotorPatternLimits];
 
@@ -350,7 +389,133 @@ export function validateMotorPatterns(plan: TrainingPlan): boolean {
 }
 
 /**
+ * 3️⃣ Validação de DÉFICIT CALÓRICO (flag global)
+ *
+ * Se déficit ativo, reduz volume máximo em 30%
+ */
+export function validateDeficitCompatibility(
+  plan: TrainingPlan,
+  objective?: string | null,
+  imc?: number,
+  activityLevel?: string | null
+): boolean {
+  const deficit = detectDeficit(objective, imc);
+
+  if (!deficit.ativo) {
+    return true; // Sem déficit, validação passa
+  }
+
+  // Com déficit, aplicar multiplicador de volume
+  const limits = getWeeklySeriesLimits(activityLevel);
+  const adjustedLimits: WeeklySeriesLimits = {
+    peito: Math.floor(limits.peito * deficit.multiplicador_volume),
+    costas: Math.floor(limits.costas * deficit.multiplicador_volume),
+    quadriceps: Math.floor(limits.quadriceps * deficit.multiplicador_volume),
+    posterior: Math.floor(limits.posterior * deficit.multiplicador_volume),
+    ombro: Math.floor(limits.ombro * deficit.multiplicador_volume),
+    triceps: Math.floor(limits.triceps * deficit.multiplicador_volume),
+    biceps: Math.floor(limits.biceps * deficit.multiplicador_volume),
+    gluteos: limits.gluteos
+      ? Math.floor(limits.gluteos * deficit.multiplicador_volume)
+      : undefined,
+    panturrilhas: limits.panturrilhas
+      ? Math.floor(limits.panturrilhas * deficit.multiplicador_volume)
+      : undefined,
+  };
+
+  const weeklySeries = new Map<string, number>();
+
+  // Contar séries semanais
+  for (const day of plan.weeklySchedule) {
+    for (const exercise of day.exercises) {
+      const muscle = normalizeMuscle(exercise.primaryMuscle);
+      const sets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(exercise.sets) || 0;
+
+      const current = weeklySeries.get(muscle) || 0;
+      weeklySeries.set(muscle, current + sets);
+    }
+  }
+
+  // 🔍 INSTRUMENTAÇÃO: Coletar informações detalhadas sobre exercícios por músculo
+  const muscleExercises = new Map<
+    string,
+    Array<{ name: string; sets: number; day: string }>
+  >();
+  for (const day of plan.weeklySchedule) {
+    for (const exercise of day.exercises) {
+      const muscle = normalizeMuscle(exercise.primaryMuscle);
+      const sets =
+        typeof exercise.sets === "number"
+          ? exercise.sets
+          : parseInt(exercise.sets) || 0;
+
+      if (!muscleExercises.has(muscle)) {
+        muscleExercises.set(muscle, []);
+      }
+      muscleExercises.get(muscle)!.push({
+        name: exercise.name,
+        sets,
+        day: day.day,
+      });
+    }
+  }
+
+  // Validar contra limites ajustados
+  for (const [muscle, totalSeries] of weeklySeries) {
+    const limit = adjustedLimits[muscle as keyof WeeklySeriesLimits];
+
+    if (limit && totalSeries > limit) {
+      const exercises = muscleExercises.get(muscle) || [];
+      const exerciseCount = exercises.length;
+
+      // 🔍 LOG DETALHADO para diagnóstico
+      console.error(
+        "🔴 [DIAGNÓSTICO DÉFICIT] Plano rejeitado: excesso de volume em déficit calórico",
+        {
+          muscle,
+          totalSeries,
+          limit,
+          multiplicador: deficit.multiplicador_volume,
+          objective,
+          exerciseCount, // Quantidade de exercícios
+          minSeriesPerExercise: 3, // Em déficit, mínimo é 1
+          maxPossibleWithMinSets: exerciseCount * 3, // Máximo possível com 1 série cada
+          exercises: exercises.map((ex) => ({
+            name: ex.name,
+            sets: ex.sets,
+            day: ex.day,
+          })),
+          // Análise: se mesmo com 1 série por exercício excede, problema é quantidade de exercícios
+          analysis:
+            exerciseCount * 1 > limit
+              ? `PROBLEMA: ${exerciseCount} exercícios × 1 série = ${exerciseCount} séries > limite ${limit}. Precisa reduzir quantidade de exercícios.`
+              : `OK: ${exerciseCount} exercícios × 1 série = ${exerciseCount} séries ≤ limite ${limit}. Problema pode ser séries individuais > 1.`,
+        }
+      );
+
+      recordPlanRejection("excesso_volume_em_deficit", {
+        activityLevel: activityLevel || undefined,
+        muscle,
+        totalSeries,
+        limit,
+        multiplicador: deficit.multiplicador_volume,
+        objective: objective || undefined,
+        exerciseCount,
+      }).catch(() => {});
+
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Identifica se um músculo é primário em um tipo de dia
+ * Músculos primários podem ter limites maiores por sessão
  */
 function isPrimaryMuscleInDayType(muscle: string, dayType: string): boolean {
   const normalizedMuscle = normalizeMuscle(muscle);
@@ -390,6 +555,7 @@ function isPrimaryMuscleInDayType(muscle: string, dayType: string): boolean {
 
 /**
  * Identifica se um músculo é secundário em um tipo de dia
+ * Músculos secundários devem ter prioridade menor ao ajustar séries
  */
 function isSecondaryMuscleInDayType(muscle: string, dayType: string): boolean {
   const normalizedMuscle = normalizeMuscle(muscle);
@@ -417,10 +583,13 @@ function isSecondaryMuscleInDayType(muscle: string, dayType: string): boolean {
 }
 
 /**
- * 3️⃣ Validação de FREQUÊNCIA × VOLUME (CONTEXTUAL)
+ * 4️⃣ Validação de FREQUÊNCIA × VOLUME (CONTEXTUAL)
  *
- * Threshold de rejeição aumentado de 25% → 40% para músculos primários,
- * evitando rejeições desnecessárias em dias onde o músculo é o foco principal.
+ * Valida que a distribuição de séries por sessão é compatível com a frequência semanal
+ * REGRA CONTEXTUAL: Limites variam conforme o tipo de dia e papel do músculo
+ * - Músculos primários em seu tipo de dia podem ter limites maiores (até 20% mais)
+ * - Músculos secundários têm limites mais restritivos
+ * - Nunca rejeitar se for possível reduzir séries de exercícios secundários
  */
 export function validateFrequencyVolume(
   plan: TrainingPlan,
@@ -428,9 +597,10 @@ export function validateFrequencyVolume(
 ): boolean {
   const limits = getWeeklySeriesLimits(activityLevel);
 
+  // Contar frequência semanal por músculo (quantos dias o músculo é treinado)
   const muscleFrequency = new Map<string, number>();
-  const muscleSeriesPerDay = new Map<string, Map<number, number>>();
-  const dayTypeMap = new Map<number, string>();
+  const muscleSeriesPerDay = new Map<string, Map<number, number>>(); // músculo -> dia -> séries
+  const dayTypeMap = new Map<number, string>(); // dia -> tipo
 
   for (let dayIndex = 0; dayIndex < plan.weeklySchedule.length; dayIndex++) {
     const day = plan.weeklySchedule[dayIndex];
@@ -444,6 +614,7 @@ export function validateFrequencyVolume(
           ? exercise.sets
           : parseInt(exercise.sets) || 0;
 
+      // Contar frequência
       if (!muscleFrequency.has(muscle)) {
         muscleFrequency.set(muscle, 0);
         muscleSeriesPerDay.set(muscle, new Map());
@@ -455,11 +626,13 @@ export function validateFrequencyVolume(
         muscleSeriesPerDay.get(muscle)!.set(dayIndex, 0);
       }
 
+      // Contar séries por dia
       const daySeries = muscleSeriesPerDay.get(muscle)!.get(dayIndex) || 0;
       muscleSeriesPerDay.get(muscle)!.set(dayIndex, daySeries + sets);
     }
   }
 
+  // Validar com limites contextuais baseados no tipo de dia
   for (const [muscle, frequency] of muscleFrequency) {
     const weeklyLimit = limits[muscle as keyof WeeklySeriesLimits];
     if (!weeklyLimit) continue;
@@ -471,14 +644,20 @@ export function validateFrequencyVolume(
       const isPrimary = isPrimaryMuscleInDayType(muscle, dayType);
       const isSecondary = isSecondaryMuscleInDayType(muscle, dayType);
 
+      // Calcular limite base por sessão
       const baseMaxSeriesPerSession =
         frequency === 2
-          ? Math.floor(weeklyLimit * 0.5)
-          : Math.floor(weeklyLimit / frequency);
+          ? Math.floor(weeklyLimit * 0.6) // 50% do teto semanal
+          : Math.floor(weeklyLimit / frequency); // Distribuição igual
 
+      // 🔒 REGRA CONTEXTUAL: Ajustar limite baseado no papel do músculo no tipo de dia
       let maxSeriesPerSession = baseMaxSeriesPerSession;
 
       if (isPrimary) {
+        // Músculos primários podem ter bônus configurável de séries por sessão
+        // Ex: ombro em Push pode ter mais séries que o padrão
+        // 🔒 PROTEÇÃO: Garantir que o bônus só seja aplicado se o limite base for >= 2
+        // Para limites muito baixos (ex: 1 série), o bônus pode não ser apropriado
         if (baseMaxSeriesPerSession >= 2) {
           const bonusMultiplier =
             1 + TRAINING_PLAN_CONFIG.PRIMARY_MUSCLE_SESSION_BONUS;
@@ -486,15 +665,21 @@ export function validateFrequencyVolume(
             baseMaxSeriesPerSession * bonusMultiplier
           );
         } else {
+          // Para limites muito baixos, manter o limite base (sem bônus)
           maxSeriesPerSession = baseMaxSeriesPerSession;
         }
       } else if (isSecondary) {
+        // Músculos secundários mantêm o limite padrão (sem aumento)
         maxSeriesPerSession = baseMaxSeriesPerSession;
       }
 
+      // Verificar se excede o limite contextual
       if (seriesInDay > maxSeriesPerSession) {
-        // Músculos secundários: nunca rejeitar, será ajustado automaticamente
+        // 🔒 REGRA: Nunca rejeitar se for músculo secundário
+        // A correção automática deve reduzir séries de secundários primeiro
         if (isSecondary) {
+          // Logar como warning, mas não rejeitar
+          // A função correctSameTypeDaysExercises vai ajustar
           console.warn(
             `⚠️ Músculo secundário ${muscle} excede limite por sessão no ${dayType} day, mas será ajustado automaticamente`,
             {
@@ -506,12 +691,11 @@ export function validateFrequencyVolume(
               day: plan.weeklySchedule[dayIndex].day,
             }
           );
+          // Continuar validação (não rejeitar)
           continue;
         }
 
-        // ✅ ALTERAÇÃO: threshold aumentado de 25% → 40% para primários
-        // Músculos primários em seu próprio dia têm maior capacidade de recuperação
-        // e um excesso moderado é fisiologicamente aceitável
+        // Para músculos primários, rejeitar apenas se exceder muito (mais de 25% do limite)
         const excessPercent =
           ((seriesInDay - maxSeriesPerSession) / maxSeriesPerSession) * 100;
         if (excessPercent > 40) {
@@ -540,6 +724,7 @@ export function validateFrequencyVolume(
 
           return false;
         }
+        // Se exceder pouco (≤25%), permitir (será ajustado pela correção automática)
       }
     }
   }
@@ -548,9 +733,10 @@ export function validateFrequencyVolume(
 }
 
 /**
- * 4️⃣ Validação de RESTRIÇÕES ARTICULARES (defesa em profundidade)
+ * 5️⃣ Validação de RESTRIÇÕES ARTICULARES (defesa em profundidade)
  *
- * 🔒 HARD RULE: Restrições articulares nunca podem ser violadas.
+ * Valida que nenhum exercício viola restrições articulares baseadas em padrão motor
+ * 🔒 HARD RULE: Restrições articulares nunca podem ser violadas
  */
 export function validateJointRestrictions(
   plan: TrainingPlan,
@@ -558,7 +744,7 @@ export function validateJointRestrictions(
   hasKneeRestriction?: boolean
 ): boolean {
   if (!hasShoulderRestriction && !hasKneeRestriction) {
-    return true;
+    return true; // Sem restrições, não há o que validar
   }
 
   for (const day of plan.weeklySchedule) {
@@ -566,6 +752,7 @@ export function validateJointRestrictions(
       const pattern = detectMotorPattern(exercise);
       if (!pattern || pattern === "unknown") continue;
 
+      // Verificar restrição de ombro
       if (hasShoulderRestriction) {
         const restrictedPatterns =
           JOINT_RESTRICTION_RULES.shoulder.restrictedPatterns;
@@ -576,7 +763,11 @@ export function validateJointRestrictions(
         ) {
           console.warn(
             "Plano rejeitado: violação de restrição articular (ombro)",
-            { exercise: exercise.name, pattern, day: day.day }
+            {
+              exercise: exercise.name,
+              pattern,
+              day: day.day,
+            }
           );
           recordPlanRejection("restricao_articular_ombro", {
             exercise: exercise.name,
@@ -587,6 +778,7 @@ export function validateJointRestrictions(
         }
       }
 
+      // Verificar restrição de joelho
       if (hasKneeRestriction) {
         const restrictedPatterns =
           JOINT_RESTRICTION_RULES.knee.restrictedPatterns;
@@ -597,7 +789,11 @@ export function validateJointRestrictions(
         ) {
           console.warn(
             "Plano rejeitado: violação de restrição articular (joelho)",
-            { exercise: exercise.name, pattern, day: day.day }
+            {
+              exercise: exercise.name,
+              pattern,
+              day: day.day,
+            }
           );
           recordPlanRejection("restricao_articular_joelho", {
             exercise: exercise.name,
@@ -616,12 +812,7 @@ export function validateJointRestrictions(
 /**
  * Validação completa avançada
  *
- * Executa todas as validações avançadas em sequência.
- *
- * ✅ ALTERAÇÕES vs versão anterior:
- * - validateDeficitCompatibility REMOVIDA (causava dupla penalização do déficit)
- * - validateWeeklySeries: margem de tolerância 10% → 20%
- * - validateFrequencyVolume: threshold de rejeição 25% → 40%
+ * Executa todas as validações avançadas em sequência
  */
 export function validateAdvancedRules(
   plan: TrainingPlan,
@@ -643,12 +834,17 @@ export function validateAdvancedRules(
     return false;
   }
 
-  // 3. Frequência × Volume
+  // 3. Déficit calórico
+  if (!validateDeficitCompatibility(plan, objective, imc, activityLevel)) {
+    return false;
+  }
+
+  // 4. Frequência × Volume
   if (!validateFrequencyVolume(plan, activityLevel)) {
     return false;
   }
 
-  // 4. Restrições articulares (hard rule — nunca pode ser violada)
+  // 5. Restrições articulares (defesa em profundidade)
   if (
     !validateJointRestrictions(plan, hasShoulderRestriction, hasKneeRestriction)
   ) {

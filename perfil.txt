@@ -1,0 +1,31 @@
+Dados Básicos
+Altura
+170 cm
+Peso
+90 kg
+
+IMC
+
+31.10
+Obesidade
+Sexo
+Feminino
+Dados de Treino
+Idade
+40 anos
+Frequência de Treinos
+4x por semana
+
+Objetivo
+Emagrecimento
+
+Tempo disponível por treino
+90 minutos
+
+Metabolismo
+Caloria Basal Estimada
+
+2532 kcal
+Nível de Atividade
+Moderado
+

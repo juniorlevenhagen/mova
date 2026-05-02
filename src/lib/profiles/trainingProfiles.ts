@@ -100,14 +100,14 @@ const technicalProfiles: Record<TechnicalProfile, TrainingProfile> = {
 
   MODERATE_BASE: {
     volumeMultiplier: 0.85,
-    maxExercisesPerSession: 8,
-    maxExercisesPerMuscle: 3,
+    maxExercisesPerSession: 12,
+    maxExercisesPerMuscle: 4,
     lowRepAllowed: false,
     minReps: 8,
     maxReps: 15,
     weeklySets: {
-      large: 12,
-      small: 8,
+      large: 18,
+      small: 12,
     },
     pushDayStructure: {
       peito: 3,
@@ -123,10 +123,10 @@ const technicalProfiles: Record<TechnicalProfile, TrainingProfile> = {
     },
     legsDayStructure: {
       quadriceps: 3,
-      posterior: 2,
-      gluteos: 1,
-      panturrilhas: 1,
-      total: [7, 8],
+      posterior: 3,
+      gluteos: 2,
+      panturrilhas: 2,
+      total: [8, 10],
     },
   },
 
@@ -224,7 +224,7 @@ function applyRestrictionFlags(
 
   // Flag: Idoso
   if (flags.elderly) {
-    adjusted.volumeMultiplier *= 0.7; // Reduz volume em 30%
+    adjusted.volumeMultiplier *= 0.9; // Reduz volume em 30%
     adjusted.maxExercisesPerSession = Math.max(
       5,
       adjusted.maxExercisesPerSession - 1

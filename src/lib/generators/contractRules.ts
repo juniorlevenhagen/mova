@@ -205,6 +205,6 @@ export const CONSISTENCY_RULES = {
   weeklyLimitsSource: "getWeeklySeriesLimits(activityLevel)",
   deficitMultiplier: 0.7,
   minSetsInDeficit: 1,
-  minSetsNormal: 2,
+  minSetsNormal: 3,
   motorPatternLimits: "same_as_validator",
 } as const;

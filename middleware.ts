@@ -4,7 +4,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  
+
   // Criar response inicial
   let response = NextResponse.next({
     request: {
@@ -84,10 +84,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Se está autenticado e está tentando acessar páginas de auth (exceto registro)
-  if (
-    isAuthenticated &&
-    (pathname.startsWith("/auth") || pathname === "/")
-  ) {
+  if (isAuthenticated && (pathname.startsWith("/auth") || pathname === "/")) {
     const redirectUrl = req.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);

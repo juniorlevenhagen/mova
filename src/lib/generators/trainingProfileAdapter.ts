@@ -88,6 +88,7 @@ export interface UserProfile {
   objective?: string;
   jointLimitations?: boolean; // 🥇 Passo 1: Restrição de ombro
   kneeLimitations?: boolean; // 🔴 Restrição de joelho
+  equipment?: string;
 }
 
 /**

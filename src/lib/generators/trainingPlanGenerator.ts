@@ -55,7 +55,12 @@ export function generateTrainingPlanStructure(
   division?: "PPL" | "Upper/Lower" | "Full Body",
   availableTimeMinutes?: number,
   imc?: number,
-  objective?: string
+  objective?: string,
+  hasShoulderRestriction?: boolean,
+  hasKneeRestriction?: boolean,
+  equipment?: string,
+  age?: number,
+  gender?: string
 ): TrainingPlan {
   const qualityAccumulator = new PlanQualityAccumulator();
 
@@ -66,6 +71,11 @@ export function generateTrainingPlanStructure(
     availableTimeMinutes,
     imc,
     objective,
+    jointLimitations: hasShoulderRestriction,
+    kneeLimitations: hasKneeRestriction,
+    equipment,
+    age,
+    gender,
   });
 
   const approvalContract = buildApprovalContract(
@@ -73,7 +83,9 @@ export function generateTrainingPlanStructure(
     trainingDays,
     activityLevel,
     objective,
-    imc
+    imc,
+    hasShoulderRestriction,
+    hasKneeRestriction
   );
 
   const actualDivision = constraints.division;

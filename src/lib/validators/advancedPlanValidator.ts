@@ -40,8 +40,8 @@ interface MotorPatternLimits {
 }
 
 interface DeficitConfig {
-  ativo: boolean;
-  multiplicador_volume: number;
+  active: boolean;
+  multiplier: number;
 }
 
 /* --------------------------------------------------------
@@ -240,8 +240,8 @@ function detectDeficit(objective?: string | null, imc?: number): DeficitConfig {
   );
 
   return {
-    ativo: isEmagrecimento || isRecomposicao,
-    multiplicador_volume: 0.7, // Reduz volume em 30% quando em dÃ©ficit
+    active: isEmagrecimento || isRecomposicao,
+    multiplier: 0.7, // Reduz volume em 30% quando em déficit
   };
 }
 
@@ -303,9 +303,10 @@ export function validateWeeklySeries(
     const limit = limits[muscle as keyof WeeklySeriesLimits];
 
     if (limit) {
-      // Aplicar margem de tolerância de 10% para compensar arredondamentos
-      // Exemplo: limite de 16 → tolerância até 17.6 → aceita até 17
-      const toleranceMargin = Math.ceil(limit * 0.1);
+      // ✅ ALTERAÇÃO: margem aumentada de 10% → 20%
+      // Necessário para acomodar séries mínimas obrigatórias (ex: minSetsInDeficit: 2)
+      // sem rejeitar planos que estão dentro do espírito do limite
+      const toleranceMargin = Math.ceil(limit * 0.2);
 
       // Aplicar modificador de ambiente (15% extra para casa/ar livre)
       const baseEffectiveLimit = limit + toleranceMargin;
@@ -401,25 +402,25 @@ export function validateDeficitCompatibility(
 ): boolean {
   const deficit = detectDeficit(objective, imc);
 
-  if (!deficit.ativo) {
+  if (!deficit.active) {
     return true; // Sem déficit, validação passa
   }
 
   // Com déficit, aplicar multiplicador de volume
   const limits = getWeeklySeriesLimits(activityLevel);
   const adjustedLimits: WeeklySeriesLimits = {
-    peito: Math.floor(limits.peito * deficit.multiplicador_volume),
-    costas: Math.floor(limits.costas * deficit.multiplicador_volume),
-    quadriceps: Math.floor(limits.quadriceps * deficit.multiplicador_volume),
-    posterior: Math.floor(limits.posterior * deficit.multiplicador_volume),
-    ombro: Math.floor(limits.ombro * deficit.multiplicador_volume),
-    triceps: Math.floor(limits.triceps * deficit.multiplicador_volume),
-    biceps: Math.floor(limits.biceps * deficit.multiplicador_volume),
+    peito: Math.floor(limits.peito * deficit.multiplier),
+    costas: Math.floor(limits.costas * deficit.multiplier),
+    quadriceps: Math.floor(limits.quadriceps * deficit.multiplier),
+    posterior: Math.floor(limits.posterior * deficit.multiplier),
+    ombro: Math.floor(limits.ombro * deficit.multiplier),
+    triceps: Math.floor(limits.triceps * deficit.multiplier),
+    biceps: Math.floor(limits.biceps * deficit.multiplier),
     gluteos: limits.gluteos
-      ? Math.floor(limits.gluteos * deficit.multiplicador_volume)
+      ? Math.floor(limits.gluteos * deficit.multiplier)
       : undefined,
     panturrilhas: limits.panturrilhas
-      ? Math.floor(limits.panturrilhas * deficit.multiplicador_volume)
+      ? Math.floor(limits.panturrilhas * deficit.multiplier)
       : undefined,
   };
 
@@ -478,7 +479,7 @@ export function validateDeficitCompatibility(
           muscle,
           totalSeries,
           limit,
-          multiplicador: deficit.multiplicador_volume,
+          multiplier: deficit.multiplier,
           objective,
           exerciseCount, // Quantidade de exercícios
           minSeriesPerExercise: 3, // Em déficit, mínimo é 1
@@ -501,7 +502,7 @@ export function validateDeficitCompatibility(
         muscle,
         totalSeries,
         limit,
-        multiplicador: deficit.multiplicador_volume,
+        multiplier: deficit.multiplier,
         objective: objective || undefined,
         exerciseCount,
       }).catch(() => {});
@@ -647,7 +648,7 @@ export function validateFrequencyVolume(
       // Calcular limite base por sessão
       const baseMaxSeriesPerSession =
         frequency === 2
-          ? Math.floor(weeklyLimit * 0.6) // 50% do teto semanal
+          ? Math.floor(weeklyLimit * 0.6) // 60% do teto semanal para 2x/semana
           : Math.floor(weeklyLimit / frequency); // Distribuição igual
 
       // 🔒 REGRA CONTEXTUAL: Ajustar limite baseado no papel do músculo no tipo de dia
@@ -695,7 +696,7 @@ export function validateFrequencyVolume(
           continue;
         }
 
-        // Para músculos primários, rejeitar apenas se exceder muito (mais de 25% do limite)
+        // Para músculos primários, rejeitar apenas se exceder o threshold (40%)
         const excessPercent =
           ((seriesInDay - maxSeriesPerSession) / maxSeriesPerSession) * 100;
         if (excessPercent > 40) {

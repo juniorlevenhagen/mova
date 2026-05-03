@@ -166,7 +166,7 @@ function detectDeficit(
 
   return {
     active: isEmagrecimento || isRecomposicao,
-    multiplier: 0.7, // Reduz volume em 30% quando em déficit
+    multiplier: 1.0, // Reduz volume em 30% quando em déficit
   };
 }
 
@@ -264,7 +264,7 @@ export function buildApprovalContract(
   };
 
   // Séries mínimas por exercício (1 em déficit, 2 normalmente)
-  const minSetsPerExercise = deficit.active ? 2 : 3;
+  const minSetsPerExercise = deficit.active ? 3 : 3;
 
   // Limites de padrões motores por dia
   const motorPatternLimits = {

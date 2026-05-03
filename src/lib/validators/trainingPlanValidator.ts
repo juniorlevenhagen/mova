@@ -734,7 +734,7 @@ function adjustWeeklySeriesForValidation(
   );
   const hasDeficit = isEmagrecimento || isRecomposicao;
   // 🔴 REGRA CRÍTICA: Em déficit calórico, séries mínimas são flexíveis (1 série permitida)
-  const minSetsPerExercise = hasDeficit ? 1 : 2;
+  const minSetsPerExercise = hasDeficit ? 3 : 3;
   const normalizeMuscleLocal = (muscle: string): string => {
     const normalized = normalize(muscle);
     if (normalized.includes("peito") || normalized.includes("peitoral"))
@@ -861,8 +861,8 @@ function adjustWeeklySeriesForValidation(
           typeof exercise.sets === "number"
             ? exercise.sets
             : parseInt(String(exercise.sets), 10) || 0;
-        // Usar minSetsPerExercise em vez de valor fixo 1 (panturrilhas podem ter 1, outros músculos usam minSetsPerExercise)
-        const minSets = muscle === "panturrilhas" ? 1 : minSetsPerExercise;
+        // Usar minSetsPerExercise em vez de valor fixo 1 (panturrilhas podem ter 3, outros músculos usam minSetsPerExercise)
+        const minSets = muscle === "panturrilhas" ? 3 : minSetsPerExercise;
         exercise.sets = Math.max(minSets, Math.round(currentSets * factor));
       }
     }
@@ -1195,7 +1195,7 @@ export function correctSameTypeDaysExercises(
                   ? ex.sets
                   : parseInt(String(ex.sets), 10) || 0;
               const adjustedSets = Math.max(
-                1,
+                3,
                 Math.round(originalSets * adjustmentFactor)
               );
 

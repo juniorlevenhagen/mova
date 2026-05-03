@@ -8,8 +8,7 @@ import {
   type Exercise,
 } from "@/lib/validators/trainingPlanValidator";
 import { adaptUserProfileToConstraints } from "./trainingProfileAdapter";
-import { buildApprovalContract } from "./approvalContract";
-import { PlanQualityAccumulator } from "@/lib/metrics/planQualityMetrics";
+import { EXERCISE_DATABASE, DAY_STRUCTURES } from "./exerciseDatabase";
 
 /* --------------------------------------------------------
    LÓGICA DE CÁLCULO DE SÉRIES (CORRIGIDA)
@@ -26,9 +25,9 @@ function calculateSets(
 ): number {
   const level = activityLevel.toLowerCase();
 
-  // Se for Iniciante, mantém 2
+  // Se for Iniciante, mantém 3
   if (level.includes("iniciante")) {
-    return 2;
+    return 3;
   }
 
   // Para Atleta/Avançado, pode chegar a 4 em compostos
@@ -62,8 +61,6 @@ export function generateTrainingPlanStructure(
   age?: number,
   gender?: string
 ): TrainingPlan {
-  const qualityAccumulator = new PlanQualityAccumulator();
-
   const constraints = adaptUserProfileToConstraints({
     activityLevel,
     frequency: trainingDays,
@@ -77,16 +74,6 @@ export function generateTrainingPlanStructure(
     age,
     gender,
   });
-
-  const approvalContract = buildApprovalContract(
-    constraints,
-    trainingDays,
-    activityLevel,
-    objective,
-    imc,
-    hasShoulderRestriction,
-    hasKneeRestriction
-  );
 
   const actualDivision = constraints.division;
   const weeklySchedule: TrainingDay[] = [];
@@ -106,8 +93,44 @@ export function generateTrainingPlanStructure(
 
     // Se já geramos esse tipo de dia antes, clonamos a lista de exercícios
     if (!templateCache[dayType]) {
-      // Aqui entraria a sua função interna de busca no banco de dados
-      // templateCache[dayType] = fetchExercisesFor(dayType...);
+      const structure = DAY_STRUCTURES[dayType] || [];
+      const exercises: Exercise[] = [];
+      const usedNames = new Set<string>();
+
+      for (const muscle of structure) {
+        if (exercises.length >= constraints.maxExercisesPerSession) break;
+
+        const templates = EXERCISE_DATABASE[muscle] || [];
+        // Filtrar templates que já foram usados no dia para evitar duplicatas
+        const available = templates.filter((t) => !usedNames.has(t.name));
+
+        if (available.length > 0) {
+          // Selecionar o primeiro disponível (pode ser melhorado com randomização se desejado)
+          const template = available[0];
+          usedNames.add(template.name);
+
+          const isCompound = template.isCompound;
+          const isLarge = template.isLarge;
+
+          const sets = calculateSets(
+            constraints.operationalLevel,
+            isCompound,
+            isLarge
+          );
+
+          exercises.push({
+            name: template.name,
+            primaryMuscle: template.primaryMuscle,
+            secondaryMuscles: template.secondaryMuscles,
+            sets,
+            reps: `${constraints.profile.minReps}-${constraints.profile.maxReps}`,
+            rest: isCompound ? "90s" : "60s",
+            notes: template.notes,
+          });
+        }
+      }
+
+      templateCache[dayType] = exercises;
     }
 
     weeklySchedule.push({
@@ -121,8 +144,9 @@ export function generateTrainingPlanStructure(
   }
 
   return {
-    overview: `Plano ${actualDivision} - Nível ${activityLevel}`,
+    overview: `Plano ${actualDivision} - Nível ${activityLevel}. Focado em ${objective || "condicionamento"}.`,
     weeklySchedule,
-    progression: "Progressão linear de carga.",
+    progression:
+      "Progressão linear de carga: aumente o peso sempre que completar as repetições estipuladas com técnica perfeita.",
   };
 }

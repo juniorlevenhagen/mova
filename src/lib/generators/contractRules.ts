@@ -64,8 +64,8 @@ export const RULE_HIERARCHY = {
  * - O ApprovalContract pode permitir séries > 1 se necessário para respeitar volume HARD
  */
 export const DEFICIT_RULES = {
-  volumeMultiplier: 0.7, // Reduz volume em 30% (HARD)
-  minSetsPerExercise: 1, // Permite 1 série por exercício (FLEXIBLE - recomendação)
+  volumeMultiplier: 1.0, // Reduz volume em 30% (HARD)
+  minSetsPerExercise: 3, // Permite 1 série por exercício (FLEXIBLE - recomendação)
   priority: "series_over_quantity" as const, // Séries têm prioridade sobre quantidade
   maxExercisesPerMuscleReduction: true, // Pode reduzir exercícios por músculo (SOFT)
 } as const;
@@ -203,7 +203,7 @@ export const INVARIANT_PROPERTIES = {
  */
 export const CONSISTENCY_RULES = {
   weeklyLimitsSource: "getWeeklySeriesLimits(activityLevel)",
-  deficitMultiplier: 0.7,
+  deficitMultiplier: 1.0,
   minSetsInDeficit: 1,
   minSetsNormal: 3,
   motorPatternLimits: "same_as_validator",

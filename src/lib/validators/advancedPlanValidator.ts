@@ -241,7 +241,7 @@ function detectDeficit(objective?: string | null, imc?: number): DeficitConfig {
 
   return {
     active: isEmagrecimento || isRecomposicao,
-    multiplier: 0.7, // Reduz volume em 30% quando em déficit
+    multiplier: 1.0, // Reduz volume em 30% quando em déficit
   };
 }
 

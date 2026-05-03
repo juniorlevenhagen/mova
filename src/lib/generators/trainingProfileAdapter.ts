@@ -299,7 +299,7 @@ export function adaptUserProfileToConstraints(
   const DEBUG_RELAXED_APPROVAL = false;
   if (!DEBUG_RELAXED_APPROVAL && hasDeficit && profile.weeklySets) {
     // Usar profile.weeklySets diretamente (não getWeeklySeriesLimits que retorna formato diferente)
-    const deficitMultiplier = 0.7;
+    const deficitMultiplier = 1.0;
 
     // Calcular limite ajustado para grupos grandes e pequenos
     const adjustedLargeLimit = Math.floor(

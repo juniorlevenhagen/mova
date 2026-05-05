@@ -1651,7 +1651,10 @@ Use esta tabela para definir a estratégia correta:
 
 **🚨 EXERCÍCIOS RESTRITOS POR NÍVEL DE MUSCULAÇÃO (CRÍTICO):**
 
-**❌ NUNCA prescrever para INICIANTES ou INTERMEDIÁRIOS:**
+**❌ NUNCA prescrever para INICIANTES, IDOSOS (60+) ou INTERMEDIÁRIOS:**
+- Pike Push-up / Flexão Pike (Risco excessivo para ombros e tontura)
+- Burpee (Alto impacto e complexidade cardíaca/articular)
+- Salto / Pulo / Jump Squat (Risco de impacto articular)
 - Mergulho entre bancos / Dips entre bancos (apenas AVANÇADO)
 - Paralelas / Dips em paralelas (apenas AVANÇADO)
 - Muscle-up (apenas AVANÇADO)

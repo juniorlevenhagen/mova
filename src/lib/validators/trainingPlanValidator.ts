@@ -99,6 +99,107 @@ function isMedium(muscle: string): boolean {
 }
 
 /**
+ * Lista de substituições seguras para exercícios proibidos
+ */
+const SAFE_SUBSTITUTIONS: Record<string, string> = {
+  pike: "Desenvolvimento de Ombros (Halteres ou Máquina)",
+  burpee: "Polichinelo (Baixo Impacto) ou Agachamento Simples",
+  salto: "Agachamento Sumô (sem salto)",
+  pulo: "Agachamento Sumô (sem salto)",
+  jump: "Agachamento (Fase excêntrica controlada)",
+  pistol: "Leg Press 45º ou Agachamento Unilateral com Apoio",
+  handstand: "Desenvolvimento com Halteres Sentado",
+  "parada de mao": "Desenvolvimento com Halteres Sentado",
+  "parada de mão": "Desenvolvimento com Halteres Sentado",
+};
+
+/**
+ * Sanitiza o plano de treino substituindo exercícios proibidos por alternativas seguras
+ */
+export function sanitizeTrainingPlan(
+  plan: TrainingPlan,
+  age?: number,
+  activityLevel?: string
+): { plan: TrainingPlan; corrections: string[] } {
+  const corrections: string[] = [];
+  const level = normalize(activityLevel || "");
+  const isElderly = age && age >= 60;
+  const isBeginner =
+    level.includes("iniciante") ||
+    level.includes("sedentario") ||
+    level.includes("limitado");
+
+  if (!isElderly && !isBeginner) return { plan, corrections };
+
+  const sanitizedPlan = { ...plan };
+  sanitizedPlan.weeklySchedule = plan.weeklySchedule.map((day) => ({
+    ...day,
+    exercises: day.exercises.map((ex) => {
+      const normalizedName = normalize(ex.name);
+
+      // Procurar por termos proibidos
+      const forbiddenTerm = Object.keys(SAFE_SUBSTITUTIONS).find((term) =>
+        normalizedName.includes(term)
+      );
+
+      if (forbiddenTerm) {
+        const replacement = SAFE_SUBSTITUTIONS[forbiddenTerm];
+        corrections.push(`Substituído "${ex.name}" por "${replacement}"`);
+        return {
+          ...ex,
+          name: replacement,
+          notes: `[SUBSTITUIÇÃO DE SEGURANÇA] ${ex.notes}`,
+        };
+      }
+      return ex;
+    }),
+  }));
+
+  return { plan: sanitizedPlan, corrections };
+}
+
+/**
+ * Verifica se um exercício é proibido para perfis de risco (Idosos/Iniciantes)
+ */
+function isExerciseForbiddenForProfile(
+  name: string,
+  age?: number,
+  activityLevel?: string
+): { forbidden: boolean; reason?: string } {
+  const normalized = normalize(name);
+  const level = normalize(activityLevel || "");
+  const isElderly = age && age >= 60;
+  const isBeginner =
+    level.includes("iniciante") ||
+    level.includes("sedentario") ||
+    level.includes("limitado");
+
+  if (isElderly || isBeginner) {
+    const forbiddenList = [
+      { term: "pike", reason: "Risco excessivo para ombros e tontura" },
+      {
+        term: "burpee",
+        reason: "Alto impacto e complexidade cardíaca/articular",
+      },
+      { term: "salto", reason: "Risco de impacto articular" },
+      { term: "pulo", reason: "Risco de impacto articular" },
+      { term: "jump", reason: "Risco de impacto articular" },
+      { term: "pistol", reason: "Extrema sobrecarga no joelho" },
+      { term: "handstand", reason: "Risco de queda e sobrecarga cervical" },
+      { term: "parada de mao", reason: "Risco de queda e sobrecarga cervical" },
+      { term: "parada de mão", reason: "Risco de queda e sobrecarga cervical" },
+    ];
+
+    const match = forbiddenList.find((item) => normalized.includes(item.term));
+    if (match) {
+      return { forbidden: true, reason: match.reason };
+    }
+  }
+
+  return { forbidden: false };
+}
+
+/**
  * Detecta nível de risco de um exercício baseado no nome
  * - high: Exercícios estruturais pesados (deadlift, clean, snatch)
  * - moderate: Agachamentos, desenvolvimentos
@@ -1532,6 +1633,36 @@ export function isTrainingPlanUsable(
     // Validação de reps por exercício (usando perfil)
     let lowRepCount = 0; // Contador de exercícios com reps baixas (3-5)
     for (const exercise of day.exercises) {
+      // 🛡️ VALIDAÇÃO DE EXERCÍCIOS PROIBIDOS POR PERFIL
+      const forbiddenCheck = isExerciseForbiddenForProfile(
+        exercise.name,
+        context?.age,
+        activityLevel || undefined
+      );
+
+      if (forbiddenCheck.forbidden) {
+        rejectPlan(
+          "exercicio_proibido_por_perfil",
+          {
+            activityLevel: level,
+            trainingDays,
+            dayType: day.type,
+            day: day.day,
+            exerciseName: exercise.name,
+            reason: forbiddenCheck.reason,
+            age: context?.age,
+          },
+          `exercício "${exercise.name}" é proibido para este perfil: ${forbiddenCheck.reason}`,
+          {
+            exercise: exercise.name,
+            reason: forbiddenCheck.reason,
+            age: context?.age,
+            level,
+          }
+        );
+        return false;
+      }
+
       // Validar se as reps estão dentro dos limites do perfil
       if (!isValidRepsForProfile(exercise.reps, profile)) {
         console.warn("Plano rejeitado: reps fora dos limites do perfil", {

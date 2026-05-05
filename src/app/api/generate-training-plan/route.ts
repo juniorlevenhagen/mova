@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   isTrainingPlanUsable,
   correctSameTypeDaysExercises,
+  sanitizeTrainingPlan,
   type TrainingPlan,
   type TrainingDay,
 } from "@/lib/validators/trainingPlanValidator";
@@ -300,8 +301,22 @@ export async function POST(request: NextRequest) {
         profile?.gender || undefined // 🆕 Gênero para regras de séries
       );
 
+      // 🥈 Passo 2: Sanitizar plano (Substituição de segurança para idosos/iniciantes)
+      const { plan: sanitizedGeneratedPlan, corrections } =
+        sanitizeTrainingPlan(
+          generatedPlan,
+          profile?.age || undefined,
+          profile?.nivel_atividade || undefined
+        );
+
+      if (corrections.length > 0) {
+        console.log(
+          `🛡️ [SEGURANÇA] Plano sanitizado: ${corrections.join(", ")}`
+        );
+      }
+
       const isValid = isTrainingPlanUsable(
-        generatedPlan,
+        sanitizedGeneratedPlan,
         trainingDays,
         profile?.nivel_atividade,
         availableTimeMinutes,
@@ -323,7 +338,7 @@ export async function POST(request: NextRequest) {
         // Salvar no Supabase
         const updated = {
           ...(activePlan.plan_data || {}),
-          trainingPlan: generatedPlan,
+          trainingPlan: sanitizedGeneratedPlan,
           updated_at: new Date().toISOString(),
         };
 
@@ -433,6 +448,7 @@ REGRAS GERAIS
 - Não gere texto motivacional
 - Não gere observações fora do treino
 - Respeite limitações físicas informadas (ajuste notas técnicas se necessário)
+- 🛡️ **SEGURANÇA (CRÍTICO)**: NUNCA sugira Pike Push-up, Burpees ou Saltos para Iniciantes ou Idosos (60+).
 
 ====================================================================
 FORMATO EXATO DO RETORNO (OBRIGATÓRIO)

@@ -71,6 +71,9 @@ export interface GenerationConstraints {
   // Perfil completo (para referência)
   profile: TrainingProfile;
 
+  // Restrição de tempo (ex: < 45 min)
+  isTimeRestricted: boolean;
+
   // Flags
   allowAIFallback: boolean;
   jointLimitations?: boolean; // 🥇 Passo 1: Restrição de ombro
@@ -242,8 +245,48 @@ export function adaptUserProfileToConstraints(
   // 2. Obter perfil técnico
   const profile = getTrainingProfile(operationalLevel);
 
-  // 🔴 Ajustar limite de exercícios para perfis sedentários com tempo limitado
+  // 🕒 [OTIMIZAÇÃO] Detectar restrição de tempo e aplicar Heurística de Volume
+  const isTimeRestricted = !!(
+    userProfile.availableTimeMinutes && userProfile.availableTimeMinutes < 45
+  );
   const adjustedProfile = { ...profile };
+
+  if (isTimeRestricted && userProfile.availableTimeMinutes) {
+    const time = userProfile.availableTimeMinutes;
+    const normalizedOpLevel = operationalLevel
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    const isHighLevel =
+      normalizedOpLevel.includes("atleta") ||
+      normalizedOpLevel.includes("avancado");
+
+    // Janelas Fixas de Segurança
+    if (time <= 30) {
+      // Atletas fazem 4 sets + 90s rest = 8min/ex. 3 ex = 24min. 4 ex = 32min (rejeita).
+      adjustedProfile.maxExercisesPerSession = Math.min(
+        adjustedProfile.maxExercisesPerSession,
+        isHighLevel ? 3 : 4
+      );
+    } else if (time <= 40) {
+      adjustedProfile.maxExercisesPerSession = Math.min(
+        adjustedProfile.maxExercisesPerSession,
+        isHighLevel ? 4 : 5
+      );
+    } else {
+      // 40-44 min
+      adjustedProfile.maxExercisesPerSession = Math.min(
+        adjustedProfile.maxExercisesPerSession,
+        isHighLevel ? 5 : 6
+      );
+    }
+
+    console.log(
+      `🕒 [TEMPO] Restrição ativa (${time} min). Limite de exercícios ajustado para ${adjustedProfile.maxExercisesPerSession}`
+    );
+  }
+
+  // 🔴 Ajustar limite de exercícios para perfis sedentários com tempo limitado
   const isSedentary =
     operationalLevel.toLowerCase().includes("sedentario") ||
     operationalLevel.toLowerCase().includes("sedentary");
@@ -370,6 +413,7 @@ export function adaptUserProfileToConstraints(
     motorPatternLimitsPerDay: FIXED_MOTOR_PATTERN_LIMITS,
     minExercisesPerLargeMuscle,
     profile,
+    isTimeRestricted,
     allowAIFallback: false,
     jointLimitations: userProfile.jointLimitations, // 🥇 Passo 1: Restrição de ombro
     kneeLimitations: userProfile.kneeLimitations, // 🔴 Restrição de joelho

@@ -100,7 +100,31 @@ export function generateTrainingPlanStructure(
       for (const muscle of structure) {
         if (exercises.length >= constraints.maxExercisesPerSession) break;
 
-        const templates = EXERCISE_DATABASE[muscle] || [];
+        let templates = EXERCISE_DATABASE[muscle] || [];
+
+        // 🕒 [OTIMIZAÇÃO] Priorizar compostos e gerenciar volume se o tempo for restrito
+        if (constraints.isTimeRestricted) {
+          const isolationMuscles = ["biceps", "triceps", "panturrilhas"];
+
+          // Se for um músculo de isolamento e já tivermos boa parte do treino preenchida, pular
+          // Isso garante que o tempo foque nos grandes grupamentos
+          if (
+            isolationMuscles.includes(muscle) &&
+            exercises.length >= constraints.maxExercisesPerSession - 1
+          ) {
+            console.log(
+              `🕒 [TEMPO] Pulando isolador (${muscle}) para priorizar tempo.`
+            );
+            continue;
+          }
+
+          // Priorizar templates que são compostos
+          const compounds = templates.filter((t) => t.isCompound);
+          if (compounds.length > 0) {
+            templates = compounds;
+          }
+        }
+
         // Filtrar templates que já foram usados no dia para evitar duplicatas
         const available = templates.filter((t) => !usedNames.has(t.name));
 

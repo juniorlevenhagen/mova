@@ -4,7 +4,8 @@
 
 import type { Exercise } from "@/lib/validators/trainingPlanValidator";
 
-export interface ExerciseTemplate extends Omit<Exercise, "sets" | "reps" | "rest"> {
+export interface ExerciseTemplate
+  extends Omit<Exercise, "sets" | "reps" | "rest"> {
   isCompound: boolean;
   isLarge: boolean; // Grupo grande (peito, costas, quadríceps, posterior)
   motorPattern: string;
@@ -37,7 +38,8 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: true,
       motorPattern: "horizontal_push",
-      notes: "Sinta o alongamento das fibras do peitoral. Cotovelos levemente flexionados.",
+      notes:
+        "Sinta o alongamento das fibras do peitoral. Cotovelos levemente flexionados.",
     },
     {
       name: "Crossover na Polia Média",
@@ -57,7 +59,8 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "vertical_pull",
-      notes: "Traga a barra em direção ao peito, não ao pescoço. Estenda bem os braços.",
+      notes:
+        "Traga a barra em direção ao peito, não ao pescoço. Estenda bem os braços.",
     },
     {
       name: "Remada Curvada com Barra",
@@ -95,7 +98,8 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: false,
       motorPattern: "vertical_push",
-      notes: "Suba os halteres acima da cabeça sem esticar totalmente os cotovelos.",
+      notes:
+        "Suba os halteres acima da cabeça sem esticar totalmente os cotovelos.",
     },
     {
       name: "Elevação Lateral com Halteres",
@@ -104,7 +108,8 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "overhead_movement",
-      notes: "Suba os braços até a altura dos ombros. Mantenha os ombros relaxados.",
+      notes:
+        "Suba os braços até a altura dos ombros. Mantenha os ombros relaxados.",
     },
     {
       name: "Crucifixo Inverso com Halteres",
@@ -124,7 +129,8 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "squat",
-      notes: "Mantenha o calcanhar firme e a coluna alinhada durante todo o movimento.",
+      notes:
+        "Mantenha o calcanhar firme e a coluna alinhada durante todo o movimento.",
     },
     {
       name: "Leg Press 45 Graus",
@@ -235,5 +241,13 @@ export const DAY_STRUCTURES: Record<string, string[]> = {
   Legs: ["quadriceps", "quadriceps", "posterior", "gluteos", "panturrilhas"],
   Upper: ["peito", "costas", "ombro", "triceps", "biceps"],
   Lower: ["quadriceps", "posterior", "gluteos", "panturrilhas"],
-  "Full Body": ["peito", "costas", "quadriceps", "posterior", "ombro", "triceps", "biceps"],
+  "Full Body": [
+    "peito",
+    "costas",
+    "quadriceps",
+    "posterior",
+    "ombro",
+    "triceps",
+    "biceps",
+  ],
 };

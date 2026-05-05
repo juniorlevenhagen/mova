@@ -40,6 +40,7 @@ export type RejectionReason =
   | "restricao_articular_ombro"
   | "restricao_articular_joelho"
   | "excesso_exercicios_alto_risco_idoso" // 🛡️ Novo: Idosos com exercícios de alto risco
+  | "exercicio_proibido_por_perfil" // 🛡️ Novo: Exercícios como Pike/Burpees para iniciantes/idosos
   | "contract_violation"; // 📋 Violação de contrato muscular
 
 export interface RejectionMetric {

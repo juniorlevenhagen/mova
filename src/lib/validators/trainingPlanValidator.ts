@@ -77,11 +77,30 @@ function primaryGroup(ex: Exercise | unknown): string {
  * Ex: "Legs" -> "lower", "PPL" -> "ppl"
  */
 function normalizeDivisionName(name: string): string {
-  const normalized = normalize(name);
+  let normalized = normalize(name);
+
+  // Remover sufixos de versão como (A), (B), A, B no final
+  normalized = normalized
+    .replace(/\s*\([a-z]\)$/, "")
+    .replace(/\s+[a-z]$/, "")
+    .trim();
+
   // Aceitar "legs" como sinônimo de "lower"
   if (normalized === "legs") return "lower";
   // Aceitar "full body" (com espaço) como "fullbody"
-  if (normalized === "full body") return "fullbody";
+  if (normalized === "full body" || normalized === "fullbody")
+    return "fullbody";
+  return normalized;
+}
+
+/**
+ * Normaliza o nome da divisão mantendo a versão se houver (A, B)
+ * Usado para agrupar treinos que DEVEM ser iguais
+ */
+function normalizeDivisionNameWithVersion(name: string): string {
+  const normalized = normalize(name);
+  // Aceitar "legs" como sinônimo de "lower"
+  if (normalized.includes("legs")) return normalized.replace("legs", "lower");
   return normalized;
 }
 
@@ -701,10 +720,10 @@ function validateSameTypeDaysHaveSameExercises(
 ): boolean {
   if (!plan?.weeklySchedule) return true;
 
-  // Agrupar dias por tipo
+  // Agrupar dias por tipo (incluindo versão A/B)
   const daysByType = new Map<string, TrainingDay[]>();
   for (const day of plan.weeklySchedule) {
-    const dayType = normalizeDivisionName(day.type || "");
+    const dayType = normalizeDivisionNameWithVersion(day.type || "");
     if (!daysByType.has(dayType)) {
       daysByType.set(dayType, []);
     }
@@ -1031,7 +1050,7 @@ export function correctSameTypeDaysExercises(
     dayType: string
   ): boolean => {
     const normalizedMuscle = normalizeMuscleLocal(muscle);
-    const normalizedDayType = normalize(dayType);
+    const normalizedDayType = normalizeDivisionName(dayType); // Usar base para comparação
 
     if (normalizedDayType === "push") {
       return (
@@ -1062,6 +1081,22 @@ export function correctSameTypeDaysExercises(
       );
     }
 
+    if (normalizedDayType === "upper") {
+      return (
+        normalizedMuscle.includes("peito") ||
+        normalizedMuscle.includes("costas") ||
+        normalizedMuscle.includes("ombro")
+      );
+    }
+
+    if (normalizedDayType === "fullbody") {
+      return (
+        normalizedMuscle.includes("peito") ||
+        normalizedMuscle.includes("costas") ||
+        normalizedMuscle.includes("quadriceps")
+      );
+    }
+
     return false;
   };
 
@@ -1070,7 +1105,7 @@ export function correctSameTypeDaysExercises(
     dayType: string
   ): boolean => {
     const normalizedMuscle = normalizeMuscleLocal(muscle);
-    const normalizedDayType = normalize(dayType);
+    const normalizedDayType = normalizeDivisionName(dayType); // Usar base para comparação
 
     if (normalizedDayType === "push") {
       return (
@@ -1088,6 +1123,13 @@ export function correctSameTypeDaysExercises(
 
     if (normalizedDayType === "lower" || normalizedDayType === "legs") {
       return normalizedMuscle.includes("panturrilha");
+    }
+
+    if (normalizedDayType === "upper") {
+      return (
+        normalizedMuscle.includes("triceps") ||
+        normalizedMuscle.includes("biceps")
+      );
     }
 
     return false;
@@ -1123,11 +1165,11 @@ export function correctSameTypeDaysExercises(
     return normalized;
   };
 
-  // Agrupar dias por tipo
+  // Agrupar dias por tipo (incluindo versão A/B)
   const daysByType = new Map<string, TrainingDay[]>();
   for (let i = 0; i < correctedSchedule.length; i++) {
     const day = correctedSchedule[i];
-    const dayType = normalizeDivisionName(day.type || "");
+    const dayType = normalizeDivisionNameWithVersion(day.type || "");
     if (!daysByType.has(dayType)) {
       daysByType.set(dayType, []);
     }

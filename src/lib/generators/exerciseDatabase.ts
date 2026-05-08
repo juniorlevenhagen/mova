@@ -270,21 +270,21 @@ export const DAY_STRUCTURES: Record<string, string[]> = {
   "Upper A": [
     "peito", // Supino Reto (Horizontal)
     "costas", // Remada (Horizontal)
-    "peito", // Crucifixo/Crossover
-    "costas", // Serrote
     "ombro", // Elevação Lateral
     "triceps",
     "biceps",
+    "peito", // Crucifixo/Crossover
+    "costas", // Serrote
     "ombro",
   ],
   "Upper B": [
     "costas", // Puxada (Vertical)
     "ombro", // Desenvolvimento (Vertical)
     "peito", // Inclinado
-    "costas", // Pulldown
-    "ombro", // Elevação Lateral
     "triceps",
     "biceps",
+    "costas", // Pulldown
+    "ombro", // Elevação Lateral
     "ombro",
   ],
   "Lower A": [

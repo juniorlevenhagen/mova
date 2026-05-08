@@ -1,285 +1,240 @@
-Resumo do seu perfil
-Essas informações foram usadas para adaptar seu treino, orientação alimentar e plano aeróbico.
+ C:\dev\mova> bun run dev
+$ next dev --turbopack
+   ▲ Next.js 15.5.7 (Turbopack)
+   - Local:        http://localhost:3000   
+   - Network:      http://192.168.1.10:3000
+   - Environments: .env.local
 
-Objetivo
-
-Emagrecimento
-
-Nível de atividade
-
-Moderado
-
-Frequência de musculação
-
-4x por semana
-
-Tempo disponível por treino
-
-90 minutos
-
-Orçamento alimentar
-
-Econômico
-
-Resumo do plano
-Visão rápida de como seu treino, orientação alimentar e cardio foram montados com base no seu objetivo.
-
-Treino de força
-
-4 dias de musculação/sem
-
-Plano Upper/Lower - Nível Moderado. Focado em Emagrecimento.
-
-Cardio / aeróbico
-
-3 sessãos de cardio/sem
-
-O treino aeróbico é essencial para auxiliar no emagrecimento, melhorar a saúde cardiovascular e aumentar a queima de calorias. O plano inclui atividades leves a moderadas, adequadas ao nível de atividade de Júnior.
-
-Ver mais
-Nutrição
-
-1500 kcal/dia
-
-Prot: 120g · Carb: 180g · Gord: 50g
-
-Beber pelo menos 2 litros de água por dia.
-
-Visão Geral
-Plano Upper/Lower - Nível Moderado. Focado em Emagrecimento.
-
-Dia 1 - Upper
-Upper
-5 exercícios
-Peito
-1.
-Supino Reto com Barra
-+Tríceps
-+Ombro
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Mantenha as escápulas em depressão e os pés firmes no chão.
-
-Costas
-1.
-Puxada Frente na Polia Alta
-+Bíceps
-+Ombro
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Traga a barra em direção ao peito, não ao pescoço. Estenda bem os braços.
-
-Ombros
-1.
-Desenvolvimento com Halteres
-+Tríceps
-Séries
-3
-Reps
-10-15
-Descanso
-90s
-Nota: Suba os halteres acima da cabeça sem esticar totalmente os cotovelos.
-
-Tríceps
-1.
-Tríceps Pulley com Barra Reta
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Cotovelos fixos ao lado do corpo. Estenda totalmente os braços.
-
-Bíceps
-1.
-Rosca Direta com Barra W
-+Antebraço
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Evite balançar o corpo. Controle a descida do peso.
-
-Dia 2 - Lower
-Lower
-4 exercícios
-Quadríceps
-1.
-Agachamento Livre com Barra
-+Glúteos
-+Posterior
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Mantenha o calcanhar firme e a coluna alinhada durante todo o movimento.
-
-Posterior de coxa
-1.
-Mesa Flexora
-+Glúteos
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Mantenha o quadril colado no banco. Movimento controlado.
-
-Glúteos
-1.
-Elevação Pélvica com Barra
-+Posterior
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Contraia bem os glúteos no topo. Pés na largura do quadril.
-
-Panturrilhas
-1.
-Gêmeos em Pé (Panturrilha)
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Alongue bem na descida e contraia no topo.
-
-Dia 3 - Upper
-Upper
-5 exercícios
-Peito
-1.
-Supino Reto com Barra
-+Tríceps
-+Ombro
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Mantenha as escápulas em depressão e os pés firmes no chão.
-
-Costas
-1.
-Puxada Frente na Polia Alta
-+Bíceps
-+Ombro
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Traga a barra em direção ao peito, não ao pescoço. Estenda bem os braços.
-
-Ombros
-1.
-Desenvolvimento com Halteres
-+Tríceps
-Séries
-3
-Reps
-10-15
-Descanso
-90s
-Nota: Suba os halteres acima da cabeça sem esticar totalmente os cotovelos.
-
-Tríceps
-1.
-Tríceps Pulley com Barra Reta
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Cotovelos fixos ao lado do corpo. Estenda totalmente os braços.
-
-Bíceps
-1.
-Rosca Direta com Barra W
-+Antebraço
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Evite balançar o corpo. Controle a descida do peso.
-
-Dia 4 - Lower
-Lower
-4 exercícios
-Quadríceps
-1.
-Agachamento Livre com Barra
-+Glúteos
-+Posterior
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Mantenha o calcanhar firme e a coluna alinhada durante todo o movimento.
-
-Posterior de coxa
-1.
-Mesa Flexora
-+Glúteos
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Mantenha o quadril colado no banco. Movimento controlado.
-
-Glúteos
-1.
-Elevação Pélvica com Barra
-+Posterior
-Séries
-4
-Reps
-10-15
-Descanso
-90s
-Nota: Contraia bem os glúteos no topo. Pés na largura do quadril.
-
-Panturrilhas
-1.
-Gêmeos em Pé (Panturrilha)
-Séries
-3
-Reps
-10-15
-Descanso
-60s
-Nota: Alongue bem na descida e contraia no topo.
-
-Estratégia de Progressão
-• Progressão linear de carga: aumente o peso sempre que completar as repetições estipuladas com técnica perfeita.
-
-
-O que está excelente (Pontos Fortes)Divisão Consistente: A escolha de um protocolo Upper/Lower para 4 dias é padrão-ouro na educação física. Evita treinar o mesmo músculo em dias seguidos e otimiza a recuperação.Seleção de Exercícios Base: Os exercícios escolhidos são os chamados "construtores de base" (Supino, Puxada, Agachamento, Elevação Pélvica). Eles recrutam muita massa muscular, o que aumenta o gasto calórico ativo e pós-treino (EPOC).Notas de Execução Claras: As dicas técnicas de segurança (ex: "Mantenha as escápulas em depressão", "Mantenha o quadril colado no banco") são excelentes para a usabilidade do app e segurança do usuário.Distribuição de Macronutrientes: A divisão calórica para emagrecimento ($1500 \text{ kcal}$) está muito bem distribuída:Proteína alta ($120\text{g} \approx 480 \text{ kcal}$) para preservar massa magra.Carboidratos moderados ($180\text{g} \approx 720 \text{ kcal}$) para dar energia no treino.Gorduras controladas ($50\text{g} \approx 450 \text{ kcal}$) para a saúde hormonal.🛠️ Pontos de Melhoria para o seu Sistema (Dicas de Dev para Dev)Para o seu sistema de geração de treinos decolar e entregar uma experiência ainda melhor, vale a pena ajustar os seguintes pontos na lógica do seu gerador de treinos:1. Duplicação Exata dos Dias (Falta de Variação)O problema: O "Dia 3 (Upper)" é uma cópia exata do "Dia 1", e o "Dia 4 (Lower)" é idêntico ao "Dia 2". Fazer exatamente o mesmo treino duas vezes na semana pode se tornar monótono rapidamente e limita o estímulo muscular.A solução no código: Configure seu sistema para gerar variações "A" e "B" para cada bloco.Exemplo para o sistema:Upper A (Dia 1): Foco em empurrar horizontal (Supino Reto) e puxar vertical (Puxada).Upper B (Dia 3): Foco em empurrar vertical (Desenvolvimento) e puxar horizontal (Remada Baixa ou Curvada), usando exercícios diferentes para peito (como Supino Inclinado com Halteres).Lower A (Dia 2): Foco em Quadríceps dominante (Agachamento Livre).Lower B (Dia 4): Foco em Posterior dominante (Stiff ou Levantamento Terra) e Leg Press.2. Tempo de Treino vs. Volume de ExercíciosO problema: O perfil do usuário indica 90 minutos disponíveis. No entanto, o treino "Upper" tem apenas 5 exercícios e o "Lower" tem apenas 4. Com descansos de 60s a 90s, o usuário vai terminar esse treino em cerca de 30 a 40 minutos.A solução no código: Crie uma regra no seu algoritmo de geração de treino que relacione o "Tempo Disponível" com o número de exercícios e séries. Se o usuário tem 90 minutos, o sistema pode prescrever entre 6 e 7 exercícios para o Upper e de 5 a 6 para o Lower, garantindo um volume semanal ligeiramente maior e mais completo (adicionando, por exemplo, elevação lateral para ombros ou abdominal no dia de pernas).3. Ajuste de Exercício no Bloco de OmbrosO problema: No treino de Upper, o sistema colocou o Desenvolvimento com Halteres (que recruta muito o tríceps) logo antes do Tríceps Pulley. Como o Supino Reto já fadigou o tríceps e o ombro, essa sequência pode limitar a carga que o usuário aguenta no Desenvolvimento.A solução no código: Adicione uma regra de ordenação por "tamanho do grupo muscular" ou "sinergia". O ideal em treinos de membros superiores é realizar todos os multiarticulares grandes primeiro (Peito e Costas) e depois os isoladores/sinergistas (Ombro $\rightarrow$ Tríceps $\rightarrow$ Bíceps). A ordem atual está correta, mas variar o estímulo de ombro (usando Elevação Lateral no dia "B") pouparia as articulações e o tríceps do usuário.💡 Resumo do Feedback para a sua IAO esqueleto do treino está muito correto e seguro. Para elevar o nível do seu produto digital, ajuste o algoritmo para:Gerar rotinas híbridas (Upper A / Lower A / Upper B / Lower B).Preencher melhor o tempo disponível do usuário adicionando 1 ou 2 exercícios auxiliares/isoladores quando o tempo limite for alto (como 90 min).
+ ✓ Starting...
+ ✓ Compiled middleware in 156ms
+ ✓ Ready in 1594ms
+ ○ Compiling / ...
+Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled / in 3.6s
+Image with src "/images/cellphone_image1.webp" is using quality "90" which is not configured in images.qualities. This config will be required starting in Next.js 16.
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+Image with src "/images/09.webp" is using quality "100" which is not configured in images.qualities. This config will be required starting in Next.js 16.
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+Image with src "/images/10.webp" is using quality "100" which is not configured in images.qualities. This config will be required starting in Next.js 16.
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+ GET / 200 in 4161ms
+ ✓ Compiled /icon.svg in 202ms
+ GET /icon.svg?icon.2ddfcdb2.svg 200 in 546ms
+ ○ Compiling /auth/login ...
+ ✓ Compiled /auth/login in 564ms
+ GET /auth/login 200 in 659ms
+ GET /icon.svg?icon.2ddfcdb2.svg 200 in 315ms
+ ✓ Compiled /auth/callback in 210ms
+(node:8264) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ GET /auth/callback?code=fb16dd00-3779-486f-830e-c8b2bffde3d3 307 in 741ms
+ ○ Compiling /dashboard ...
+ ✓ Compiled /dashboard in 1586ms
+ GET /dashboard 200 in 1964ms
+ GET /icon.svg?icon.2ddfcdb2.svg 200 in 298ms
+ ✓ Compiled /api/user-plans-history in 118ms
+ GET /api/user-plans-history 200 in 727ms
+ ✓ Compiled /api/create-checkout-session in 239ms
+🔍 Iniciando criação de sessão de checkout...
+🔍 Verificando token...
+✅ Usuário autenticado: bd42511b-d127-488c-a66a-e0cc3bc8574e
+🔍 Tipo de compra: prompt_single
+🔍 Origin final para redirect: http://localhost:3000
+ POST /api/create-checkout-session 200 in 1770ms
+ GET /dashboard?purchase=success&session_id=cs_test_a14xxyPUhYCkOICiZME7y4j2Hq8sKF8I0GefyhrqWLtURc7veSawhSEvYA 200 in 147ms
+ ✓ Compiled /api/verify-payment in 136ms
+🔍 Verificando sessão do Stripe: cs_test_a14xxyPUhYCkOICiZME7y4j2Hq8sKF8I0GefyhrqWLtURc7veSawhSEvYA
+ POST /api/verify-payment 200 in 914ms
+ ✓ Compiled /api/generate-plan in 244ms
+📊 Dados do perfil atualizados: {
+  weight: 90,
+  height: 170,
+  objective: 'Emagrecimento',
+  trainingFrequency: '4x por semana',
+  timestamp: '2026-05-08T18:49:44.381Z'
+}
+✅ 1 crédito(s) unitário(s) - pode gerar sem cooldown
+✅ 1 prompt(s) disponível(is) - gerando novo plano (ignorando plano existente)
+📚 Buscando planos anteriores do usuário para análise...
+✅ Encontrados 5 plano(s) anterior(es)
+📊 Insights dos planos anteriores: {
+  hasPreviousPlan: true,
+  lastPlanGeneratedAt: '2026-05-03T20:45:31.115+00:00',
+  totalPlans: 5
+}
+📊 Buscando dados normalizados para reutilização...
+✅ Encontrados 5 registro(s) de treino aeróbico
+✅ Encontrados 5 registro(s) nutricionais
+✅ Encontrados 5 registro(s) de treino de força
+✅ Encontrados 5 registro(s) de análise
+📊 Insights normalizados extraídos: {
+  hasAerobic: true,
+  hasNutrition: true,
+  hasTraining: true,
+  hasAnalysis: true
+}
+apiKey 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
+🔄 Tentativa 1/3 de gerar plano completo...
+🧩 Campos obrigatórios faltando, gerando separadamente: [  'trainingPlan' ]
+🔧 Gerando trainingPlan via endpoint dedicado...
+ ✓ Compiled /api/generate-plan-field in 155ms
+🔧 Gerando trainingPlan...
+🔧 Gerando trainingPlan via padrões: 4x/semana, nível Moderado, divisão Upper/Lower
+🔍 [DEBUG DÉFICIT] hasDeficit=true, profile.weeklySets= { large: 20, small: 16 }
+🔴 [DÉFICIT] Ajustando maxExercisesPerMuscle para 3 (déficit ativo, limite ajustado: grandes=20, pequenos=16)
+⚠️ [VOLUME] Pulando exercício para gluteos para não exceder limite semanal (16 > 15).
+🔍 Validação de divisão: {
+  trainingDays: 4,
+  level: 'moderado',
+  isAdvanced: false,
+  expectedDivisions: [ 'upper', 'lower' ],
+  usedDivisions: [ 'upper', 'lower' ],
+  dayTypes: [
+    {
+      day: 'Dia 1 - Upper (A)',
+      originalType: 'Upper',
+      normalizedType: 'upper'
+    },
+    {
+      day: 'Dia 2 - Lower (A)',
+      originalType: 'Lower',
+      normalizedType: 'lower'
+    },
+    {
+      day: 'Dia 3 - Upper (B)',
+      originalType: 'Upper',
+      normalizedType: 'upper'
+    },
+    {
+      day: 'Dia 4 - Lower (B)',
+      originalType: 'Lower',
+      normalizedType: 'lower'
+    }
+  ]
+}
+Plano rejeitado: dias do mesmo tipo (upper) têm exercícios diferentes {
+  firstDay: 'Dia 1 - Upper (A)',
+  currentDay: 'Dia 3 - Upper (B)',
+  exerciseIndex: 0,
+  firstExercise: {
+    name: 'supino reto com barra',
+    sets: 4,
+    reps: '10-15',
+    rest: '90s'
+  },
+  currentExercise: {
+    name: 'puxada frente na polia alta',
+    sets: 4,
+    reps: '10-15',
+    rest: '90s'
+  }
+}
+⚠️ TrainingPlan gerado via padrões falhou na validação. Retornando erro (fallback IA desativado).
+ POST /api/generate-plan-field 500 in 475ms
+📡 Resposta do endpoint trainingPlan: 500 Internal Server Error
+⚠️ Erro ao gerar trainingPlan via endpoint dedicado: 500 {"error":"TRAINING_PLAN_INVALID","message":"O plano de treino gerado não atende às regras de validação. Tente novamente em alguns minutos."
+}
+✅ analysis já existe no plano inicial
+✅ nutritionPlan já existe no plano inicial
+🎯 CHECKPOINT 1: Plano gerado com sucesso, preparando para salvar...
+🎯 Plan object: ✅ Existe
+🎯 User ID: bd42511b-d127-488c-a66a-e0cc3bc8574e
+📊 Campos presentes no plano: {
+  hasAnalysis: true,
+  hasTrainingPlan: false,
+  hasNutritionPlan: true,
+  hasGoals: true,
+  hasMotivation: true
+}
+✅ Plano validado com sucesso!
+🔄 Desativando 1 plano(s) anterior(es)...
+✅ 1 plano(s) anterior(es) desativado(s) com sucesso
+💾 Salvando plano na tabela user_plans...
+✅ Plano salvo com sucesso na user_plans: 06c88322-0523-45c7-81ef-87fdd22bd9fb
+✅ Treino aeróbico inserido em plan_aerobic
+✅ Marcador de controle criado com sucesso
+🔄 Atualizando trial para usuário: bd42511b-d127-488c-a66a-e0cc3bc8574e
+📊 Trial atual: {
+  id: 'a036fe48-1d70-41fb-aec8-1a21cd139afa',
+  user_id: 'bd42511b-d127-488c-a66a-e0cc3bc8574e',
+  trial_start_date: '2026-04-28T17:03:36.042139+00:00',
+  trial_end_date: '2026-05-05T17:03:36.042139+00:00',
+  plans_generated: 18,
+  max_plans_allowed: 3,
+  is_active: true,
+  upgraded_to_premium: false,
+  upgraded_at: null,
+  created_at: '2026-04-28T17:03:36.042139+00:00',
+  updated_at: '2026-05-08T18:49:37.556+00:00',
+  last_plan_generated_at: '2026-05-03T20:45:31.647+00:00',
+  days_between_plans: 7,
+  premium_plan_count: 0,
+  premium_plan_cycle_start: null,
+  premium_max_plans_per_cycle: 2,
+  premium_cycle_days: 30,
+  available_prompts: 1,
+  package_prompts: 0
+}
+🎫 Usando prompt? true
+🎫 Usando prompt UNITÁRIO (sem cooldown). Restantes: 0
+✅ Trial atualizado com sucesso
+🎯 CHECKPOINT FINAL: Retornando resposta...
+🎯 savedPlan?.id: 06c88322-0523-45c7-81ef-87fdd22bd9fb
+🎯 planMarker: 8ce77bc8-5d6e-49b2-ad6e-ab808a5ba70a
+ POST /api/generate-plan 200 in 13247ms
+ ✓ Compiled /api/generate-training-plan in 139ms
+Plano rejeitado: weeklySchedule inválido ou ausente
+🔧 Gerando plano baseado em padrões pré-definidos...
+🔍 [DEBUG DÉFICIT] hasDeficit=true, profile.weeklySets= { large: 20, small: 16 }
+🔴 [DÉFICIT] Ajustando maxExercisesPerMuscle para 3 (déficit ativo, limite ajustado: grandes=20, pequenos=16)
+⚠️ [VOLUME] Pulando exercício para gluteos para não exceder limite semanal (16 > 15).
+🔍 Validação de divisão: {
+  trainingDays: 4,
+  level: 'moderado',
+  isAdvanced: false,
+  expectedDivisions: [ 'upper', 'lower' ],
+  usedDivisions: [ 'upper', 'lower' ],
+  dayTypes: [
+    {
+      day: 'Dia 1 - Upper (A)',
+      originalType: 'Upper',
+      normalizedType: 'upper'
+    },
+    {
+      day: 'Dia 2 - Lower (A)',
+      originalType: 'Lower',
+      normalizedType: 'lower'
+    },
+    {
+      day: 'Dia 3 - Upper (B)',
+      originalType: 'Upper',
+      normalizedType: 'upper'
+    },
+    {
+      day: 'Dia 4 - Lower (B)',
+      originalType: 'Lower',
+      normalizedType: 'lower'
+    }
+  ]
+}
+Plano rejeitado: dias do mesmo tipo (upper) têm exercícios diferentes {
+  firstDay: 'Dia 1 - Upper (A)',
+  currentDay: 'Dia 3 - Upper (B)',
+  exerciseIndex: 0,
+  firstExercise: {
+    name: 'supino reto com barra',
+    sets: 4,
+    reps: '10-15',
+    rest: '90s'
+  },
+  currentExercise: {
+    name: 'puxada frente na polia alta',
+    sets: 4,
+    reps: '10-15',
+    rest: '90s'
+  }
+}
+⚠️ Plano gerado via padrões falhou na validação. Retornando erro.
+ POST /api/generate-training-plan 500 in 964ms

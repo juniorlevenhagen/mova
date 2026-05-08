@@ -266,7 +266,7 @@ export function generateTrainingPlanStructure(
 
     weeklySchedule.push({
       day: `Dia ${i + 1} - ${dayType} (${versionLabel})`,
-      type: dayType,
+      type: `${dayType} (${versionLabel})`,
       exercises: currentExercises,
       description: `Foco em ${dayVersion === 0 ? "base e força" : "variação e volume"}.`,
     });

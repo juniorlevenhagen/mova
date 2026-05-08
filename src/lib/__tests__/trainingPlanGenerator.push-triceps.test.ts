@@ -17,7 +17,14 @@ describe("generateTrainingPlanStructure - Push days (when present) always have t
       "male" // gender
     );
 
-    const pushDays = plan.weeklySchedule.filter((day) => day.type === "Push");
+    const pushDays = plan.weeklySchedule.filter((day) =>
+      (day.type || "").includes("Push")
+    );
+
+    expect(
+      pushDays.length,
+      "Plan should have at least one Push day"
+    ).toBeGreaterThan(0);
 
     for (const day of pushDays) {
       const primaryMuscles = day.exercises.map((ex) =>

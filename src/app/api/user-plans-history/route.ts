@@ -49,13 +49,36 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabaseUser
       .from("user_plans")
       .select("*")
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .order("generated_at", { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ plans: data }, { status: 200 });
+    // Normalizar e enriquecer os dados para o frontend
+    const formattedPlans = data.map((p) => {
+      const planData = p.plan_data || {};
+      return {
+        id: p.id,
+        planData: planData,
+        planType: p.plan_type,
+        generatedAt: p.generated_at,
+        expiresAt: p.expires_at,
+        isActive: p.is_active,
+        summary: {
+          hasTrainingPlan: !!planData.trainingPlan,
+          hasNutritionPlan: !!planData.nutritionPlan,
+          hasAnalysis: !!planData.analysis,
+          objective: planData.analysis?.currentStatus || null,
+        },
+      };
+    });
+
+    return NextResponse.json(
+      { success: true, plans: formattedPlans },
+      { status: 200 }
+    );
   } catch (err: unknown) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },

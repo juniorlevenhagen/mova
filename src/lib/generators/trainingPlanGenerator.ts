@@ -100,8 +100,9 @@ export function generateTrainingPlanStructure(
       ? constraints.safetyFeedback.suggestedChange.value
       : trainingDays;
 
-  // Objeto para garantir que o Treino A seja sempre igual ao outro Treino A
-  const templateCache: Record<string, Exercise[]> = {};
+  // Objeto para garantir que o Treino A seja sempre igual ao outro Treino A, e o B igual ao B
+  const templateCache: Record<string, Exercise[][]> = {};
+  const dayTypeCounters: Record<string, number> = {};
 
   // Tracking de séries semanais para evitar ultrapassar limites
   const weeklySeriesCounter = new Map<string, number>();
@@ -116,9 +117,23 @@ export function generateTrainingPlanStructure(
   for (let i = 0; i < finalFrequency; i++) {
     const dayType = days[i % days.length];
 
-    // Se já geramos esse tipo de dia antes, clonamos a lista de exercícios
+    // Incrementar contador para este tipo de dia (Ex: Upper 1, Upper 2...)
+    dayTypeCounters[dayType] = (dayTypeCounters[dayType] ?? 0) + 1;
+    const dayOccurrence = dayTypeCounters[dayType] - 1;
+
+    // Alternar entre versão A (0) e B (1) se houver mais de uma ocorrência na semana
+    const dayVersion = dayOccurrence % 2;
+    const versionLabel = dayVersion === 0 ? "A" : "B";
+    const specializedKey = `${dayType} ${versionLabel}`;
+
     if (!templateCache[dayType]) {
-      const structure = DAY_STRUCTURES[dayType] || [];
+      templateCache[dayType] = [];
+    }
+
+    // Se ainda não geramos esta versão (A ou B) deste tipo de dia, geramos agora
+    if (!templateCache[dayType][dayVersion]) {
+      const structure =
+        DAY_STRUCTURES[specializedKey] || DAY_STRUCTURES[dayType] || [];
       const exercises: Exercise[] = [];
       const usedNames = new Set<string>();
 
@@ -126,6 +141,17 @@ export function generateTrainingPlanStructure(
         if (exercises.length >= constraints.maxExercisesPerSession) break;
 
         let templates = EXERCISE_DATABASE[muscle] || [];
+
+        // 🔒 [VARIEDADE] Se for versão B e NÃO houver estrutura especializada,
+        // rotacionar templates para pegar exercícios diferentes.
+        // Se houver estrutura especializada (como Lower A/B), a seleção natural já deve bastar.
+        if (
+          dayVersion === 1 &&
+          !DAY_STRUCTURES[specializedKey] &&
+          templates.length > 1
+        ) {
+          templates = [...templates.slice(1), templates[0]];
+        }
 
         // 🔒 [RESTRIÇÃO ARTICULAR] Filtrar exercícios proibidos
         if (hasShoulderRestriction || hasKneeRestriction) {
@@ -202,7 +228,8 @@ export function generateTrainingPlanStructure(
 
           if (limit) {
             // Estimar quantas vezes esse tipo de dia ocorre na semana
-            const occurrences = Math.ceil(finalFrequency / days.length);
+            // Para A/B, cada versão ocorre metade das vezes (aprox)
+            const occurrences = Math.ceil(finalFrequency / (days.length * 2));
             const currentTotal = weeklySeriesCounter.get(normalizedMuscle) || 0;
             const projectedTotal = currentTotal + sets * occurrences;
 
@@ -232,16 +259,16 @@ export function generateTrainingPlanStructure(
         }
       }
 
-      templateCache[dayType] = exercises;
+      templateCache[dayType][dayVersion] = exercises;
     }
 
+    const currentExercises = templateCache[dayType][dayVersion] || [];
+
     weeklySchedule.push({
-      day: `Dia ${i + 1} - ${dayType}`,
+      day: `Dia ${i + 1} - ${dayType} (${versionLabel})`,
       type: dayType,
-      exercises: templateCache[dayType] || [], // Garante repetição idêntica
-      description: templateCache[dayType]
-        ? "Foco em progressão de carga (repetição do treino anterior)."
-        : undefined,
+      exercises: currentExercises,
+      description: `Foco em ${dayVersion === 0 ? "base e força" : "variação e volume"}.`,
     });
   }
 

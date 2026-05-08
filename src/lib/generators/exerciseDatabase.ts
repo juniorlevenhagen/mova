@@ -170,6 +170,15 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       motorPattern: "hinge",
       notes: "Desça os halteres rente às pernas até sentir o alongamento.",
     },
+    {
+      name: "Cadeira Flexora",
+      primaryMuscle: "Posterior de coxa",
+      secondaryMuscles: ["Glúteos"],
+      isCompound: false,
+      isLarge: true,
+      motorPattern: "hinge",
+      notes: "Ajuste o encosto para que o joelho alinhe com o eixo da máquina.",
+    },
   ],
   gluteos: [
     {
@@ -180,6 +189,15 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "hinge",
       notes: "Contraia bem os glúteos no topo. Pés na largura do quadril.",
+    },
+    {
+      name: "Agachamento Sumô com Halter",
+      primaryMuscle: "Glúteos",
+      secondaryMuscles: ["Quadríceps", "Adutores"],
+      isCompound: true,
+      isLarge: true,
+      motorPattern: "squat",
+      notes: "Pés afastados e pontas para fora. Coluna reta.",
     },
   ],
   triceps: [
@@ -232,6 +250,15 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       motorPattern: "squat",
       notes: "Alongue bem na descida e contraia no topo.",
     },
+    {
+      name: "Gêmeos Sentado",
+      primaryMuscle: "Panturrilhas",
+      secondaryMuscles: [],
+      isCompound: false,
+      isLarge: false,
+      motorPattern: "squat",
+      notes: "Movimento lento e controlado. Máxima amplitude.",
+    },
   ],
 };
 
@@ -239,8 +266,45 @@ export const DAY_STRUCTURES: Record<string, string[]> = {
   Push: ["peito", "peito", "ombro", "ombro", "triceps", "triceps"],
   Pull: ["costas", "costas", "ombro", "biceps", "biceps"],
   Legs: ["quadriceps", "quadriceps", "posterior", "gluteos", "panturrilhas"],
-  Upper: ["peito", "costas", "ombro", "triceps", "biceps"],
-  Lower: ["quadriceps", "posterior", "gluteos", "panturrilhas"],
+  // Divisão Upper/Lower Especializada (A/B)
+  "Upper A": [
+    "peito", // Supino Reto (Horizontal)
+    "costas", // Remada (Horizontal)
+    "peito", // Crucifixo/Crossover
+    "costas", // Serrote
+    "ombro", // Elevação Lateral
+    "triceps",
+    "biceps",
+    "ombro",
+  ],
+  "Upper B": [
+    "costas", // Puxada (Vertical)
+    "ombro", // Desenvolvimento (Vertical)
+    "peito", // Inclinado
+    "costas", // Pulldown
+    "ombro", // Elevação Lateral
+    "triceps",
+    "biceps",
+    "ombro",
+  ],
+  "Lower A": [
+    "quadriceps", // Agachamento (Foco Quad)
+    "quadriceps", // Leg Press (Foco Quad)
+    "posterior", // Mesa Flexora (Manutenção)
+    "gluteos", // Elevação Pélvica
+    "quadriceps", // Cadeira Extensora
+    "panturrilhas",
+    "gluteos", // Sumô
+  ],
+  "Lower B": [
+    "posterior", // Stiff (Foco Posterior)
+    "gluteos", // Elevação Pélvica (Foco Glúteo)
+    "posterior", // Cadeira Flexora
+    "quadriceps", // Leg Press (Manutenção)
+    "gluteos", // Sumô
+    "panturrilhas",
+    "posterior", // Flexora isolada
+  ],
   "Full Body": [
     "peito",
     "costas",

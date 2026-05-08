@@ -37,6 +37,19 @@ export interface GenerationConstraints {
   // Nível operacional (pode ser diferente do declarado por causa do tempo)
   operationalLevel: string;
 
+  // Frequência final (ajustada por segurança se necessário)
+  frequency: number;
+
+  // Feedback de Segurança (Mensagens para o usuário)
+  safetyFeedback?: {
+    type: "warning" | "requirement";
+    message: string;
+    suggestedChange?: {
+      field: "availableTimeMinutes" | "frequency";
+      value: number;
+    };
+  };
+
   // Limites de exercícios
   maxExercisesPerSession: number;
   maxExercisesPerMuscle: number;
@@ -121,14 +134,13 @@ function resolveDivision(
 
 /**
  * Determina o nível operacional baseado no tempo disponível
- * (já existe no gerador, mas centralizamos aqui)
  */
 function getOperationalLevel(
   declaredLevel: string,
   availableTimeMinutes?: number
-): string {
+): { level: string; feedback?: GenerationConstraints["safetyFeedback"] } {
   if (!availableTimeMinutes) {
-    return declaredLevel;
+    return { level: declaredLevel };
   }
 
   const level = declaredLevel
@@ -138,27 +150,66 @@ function getOperationalLevel(
 
   // Mapeamento obrigatório de tempo mínimo por nível
   if (level.includes("atleta")) {
-    if (availableTimeMinutes < 75) {
-      return "Avançado";
+    if (availableTimeMinutes <= 30) {
+      return {
+        level: "Intermediário",
+        feedback: {
+          type: "requirement",
+          message:
+            "Um perfil de Atleta exige alta intensidade e volume. 30 minutos são insuficientes para um treino eficiente nesta categoria. O sistema adaptou seu plano para o nível Intermediário focado em manutenção. Recomendamos pelo menos 75-90 min.",
+          suggestedChange: { field: "availableTimeMinutes", value: 75 },
+        },
+      };
     }
-    return "Atleta";
+    if (availableTimeMinutes < 75) {
+      return {
+        level: "Avançado",
+        feedback: {
+          type: "requirement",
+          message:
+            "Perfil de Atleta exige pelo menos 75 minutos para ser efetivo. O sistema gerará um treino Avançado (60 min) para sua segurança.",
+          suggestedChange: { field: "availableTimeMinutes", value: 75 },
+        },
+      };
+    }
+    return { level: "Atleta" };
   }
 
   if (level.includes("avancado") || level.includes("avançado")) {
     if (availableTimeMinutes < 60) {
-      return "Intermediário";
+      return {
+        level: "Intermediário",
+        feedback: {
+          type: "requirement",
+          message:
+            "Treinos avançados requerem volume que não cabe em 30-45 minutos. O sistema adaptou para Intermediário.",
+          suggestedChange: { field: "availableTimeMinutes", value: 60 },
+        },
+      };
     }
-    return "Avançado";
+    return { level: "Avançado" };
   }
 
-  if (level.includes("intermediario") || level.includes("intermediário")) {
+  if (
+    level.includes("intermediario") ||
+    level.includes("intermediário") ||
+    level.includes("moderado")
+  ) {
     if (availableTimeMinutes < 45) {
-      return "Iniciante";
+      return {
+        level: "Iniciante",
+        feedback: {
+          type: "requirement",
+          message:
+            "Tempo reduzido é ideal para adaptação (Iniciante). Para treinos moderados, sugerimos 45+ minutos.",
+          suggestedChange: { field: "availableTimeMinutes", value: 45 },
+        },
+      };
     }
-    return "Intermediário";
+    return { level: "Intermediário" };
   }
 
-  return declaredLevel;
+  return { level: declaredLevel };
 }
 
 /**
@@ -237,10 +288,29 @@ export function adaptUserProfileToConstraints(
   userProfile: UserProfile
 ): GenerationConstraints {
   // 1. Determinar nível operacional (considerando tempo disponível)
-  const operationalLevel = getOperationalLevel(
-    userProfile.activityLevel,
-    userProfile.availableTimeMinutes
+  const { level: operationalLevel, feedback: timeFeedback } =
+    getOperationalLevel(
+      userProfile.activityLevel,
+      userProfile.availableTimeMinutes
+    );
+
+  let finalFeedback = timeFeedback;
+
+  // 🛑 [SEGURANÇA] Validar frequência para sedentários
+  const isSedentary = normalize(userProfile.activityLevel).includes(
+    "sedentario"
   );
+
+  let finalFrequency = userProfile.frequency;
+  if (isSedentary && userProfile.frequency > 4) {
+    finalFrequency = 4;
+    finalFeedback = {
+      type: "warning",
+      message:
+        "Para quem está começando (Sedentário), treinar 5-6x por semana aumenta o risco de lesão e fadiga excessiva. O sistema limitou seu plano a 4 dias para uma adaptação segura.",
+      suggestedChange: { field: "frequency", value: 4 },
+    };
+  }
 
   // 2. Obter perfil técnico
   const profile = getTrainingProfile(operationalLevel);
@@ -287,9 +357,6 @@ export function adaptUserProfileToConstraints(
   }
 
   // 🔴 Ajustar limite de exercícios para perfis sedentários com tempo limitado
-  const isSedentary =
-    operationalLevel.toLowerCase().includes("sedentario") ||
-    operationalLevel.toLowerCase().includes("sedentary");
   if (
     isSedentary &&
     userProfile.availableTimeMinutes &&
@@ -308,12 +375,12 @@ export function adaptUserProfileToConstraints(
   const division =
     userProfile.division && userProfile.division.trim() !== ""
       ? userProfile.division
-      : resolveDivision(userProfile.frequency);
+      : resolveDivision(finalFrequency);
 
   // 🔍 Debug: Log da resolução de divisão
   if (!userProfile.division || userProfile.division.trim() === "") {
     console.log(
-      `🔍 [Divisão] Resolvida automaticamente: frequency=${userProfile.frequency}, activityLevel=${userProfile.activityLevel} → ${division}`
+      `🔍 [Divisão] Resolvida automaticamente: frequency=${finalFrequency}, activityLevel=${userProfile.activityLevel} → ${division}`
     );
   }
 
@@ -396,6 +463,8 @@ export function adaptUserProfileToConstraints(
   return {
     division,
     operationalLevel,
+    frequency: finalFrequency,
+    safetyFeedback: finalFeedback,
     maxExercisesPerSession: adjustedProfile.maxExercisesPerSession,
     maxExercisesPerMuscle: adjustedProfile.maxExercisesPerMuscle,
     weeklySeriesLimits: {

@@ -15,9 +15,6 @@ export function BlogImage({ src, alt }: BlogImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  // Verificar se é imagem local (começa com /) ou externa
-  const isLocal = src.startsWith("/");
-
   if (hasError) {
     return (
       <div className="my-8 flex justify-center items-center h-48 bg-gray-100 rounded-lg">

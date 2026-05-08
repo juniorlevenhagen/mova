@@ -240,7 +240,7 @@ export default function AdminMetricsPage() {
     } else if (!authLoading) {
       setLoading(false);
     }
-  }, [user, authLoading, period, activeTab]);
+  }, [user, authLoading, period, activeTab, summaryPeriod]);
 
   async function fetchRejectionMetrics(selectedPeriod: "all" | "24h") {
     try {

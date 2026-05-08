@@ -43,6 +43,14 @@ export interface TrainingPlan {
   overview: string;
   weeklySchedule: TrainingDay[];
   progression: string;
+  safetyFeedback?: {
+    type: "warning" | "requirement";
+    message: string;
+    suggestedChange?: {
+      field: "availableTimeMinutes" | "frequency";
+      value: number;
+    };
+  };
 }
 
 /* --------------------------------------------------------
@@ -834,8 +842,16 @@ function adjustWeeklySeriesForValidation(
     (obj.includes("ganhar") || obj.includes("massa"))
   );
   const hasDeficit = isEmagrecimento || isRecomposicao;
-  // 🔴 REGRA CRÍTICA: Em déficit calórico, séries mínimas são flexíveis (1 série permitida)
-  const minSetsPerExercise = hasDeficit ? 3 : 3;
+
+  // 🔴 REGRA CRÍTICA: Em déficit calórico ou perfis sedentários/limitados,
+  // séries mínimas podem ser reduzidas para respeitar o volume semanal (HARD RULE)
+  const isLowVolumeProfile =
+    activityLevel?.toLowerCase().includes("sedentario") ||
+    activityLevel?.toLowerCase().includes("limitado") ||
+    activityLevel?.toLowerCase().includes("iniciante");
+
+  const minSetsPerExercise = hasDeficit || isLowVolumeProfile ? 1 : 2;
+
   const normalizeMuscleLocal = (muscle: string): string => {
     const normalized = normalize(muscle);
     if (normalized.includes("peito") || normalized.includes("peitoral"))
@@ -2035,6 +2051,14 @@ export function isTrainingPlanUsable(
           found = primaryMuscleCounts.has("quadríceps");
         if (!found && normalizedRequired === "quadríceps")
           found = primaryMuscleCounts.has("quadriceps");
+        if (!found && normalizedRequired === "ombros")
+          found = primaryMuscleCounts.has("ombro");
+        if (!found && normalizedRequired === "ombro")
+          found = primaryMuscleCounts.has("ombros");
+        if (!found && normalizedRequired === "gluteos")
+          found = primaryMuscleCounts.has("gluteo");
+        if (!found && normalizedRequired === "gluteo")
+          found = primaryMuscleCounts.has("gluteos");
         if (!found && normalizedRequired === "posterior de coxa")
           found = primaryMuscleCounts.has("isquiotibiais");
         if (!found && normalizedRequired === "isquiotibiais")
@@ -2057,7 +2081,7 @@ export function isTrainingPlanUsable(
               day: day.day,
             }
           );
-          return true;
+          return false;
         }
       }
     }

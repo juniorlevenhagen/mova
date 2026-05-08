@@ -189,7 +189,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       secondaryMuscles: [],
       isCompound: false,
       isLarge: false,
-      motorPattern: "vertical_push",
+      motorPattern: "isolation_push",
       notes: "Cotovelos fixos ao lado do corpo. Estenda totalmente os braços.",
     },
     {
@@ -198,7 +198,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       secondaryMuscles: [],
       isCompound: false,
       isLarge: false,
-      motorPattern: "vertical_push",
+      motorPattern: "isolation_push",
       notes: "Abra a corda no final do movimento para maior contração.",
     },
   ],
@@ -209,7 +209,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       secondaryMuscles: ["Antebraço"],
       isCompound: false,
       isLarge: false,
-      motorPattern: "vertical_pull",
+      motorPattern: "isolation_pull",
       notes: "Evite balançar o corpo. Controle a descida do peso.",
     },
     {
@@ -218,7 +218,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       secondaryMuscles: ["Antebraço"],
       isCompound: false,
       isLarge: false,
-      motorPattern: "vertical_pull",
+      motorPattern: "isolation_pull",
       notes: "Pegada neutra (palmas voltadas para o corpo).",
     },
   ],
@@ -249,5 +249,6 @@ export const DAY_STRUCTURES: Record<string, string[]> = {
     "ombro",
     "triceps",
     "biceps",
+    "panturrilhas",
   ],
 };

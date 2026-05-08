@@ -36,6 +36,11 @@ export interface TrainingProfile {
   allowRepsBelowFive?: boolean; // Permite reps abaixo de 5
   minReps: number;
   maxReps: number;
+
+  // Requisitos de Segurança e Tempo
+  minRecommendedTime: number; // Tempo mínimo em minutos para este perfil
+  maxRecommendedFrequency: number; // Frequência máxima sugerida (dias/semana)
+
   weeklySets: {
     large: number; // Grupos grandes (peito, costas, quadríceps)
     small: number; // Grupos pequenos (bíceps, tríceps, ombros)
@@ -73,6 +78,8 @@ const technicalProfiles: Record<TechnicalProfile, TrainingProfile> = {
     lowRepAllowed: false,
     minReps: 10,
     maxReps: 15,
+    minRecommendedTime: 30,
+    maxRecommendedFrequency: 4, // 🛑 Não iniciar com 5-6x sem base
     weeklySets: {
       large: 8,
       small: 6,
@@ -105,6 +112,8 @@ const technicalProfiles: Record<TechnicalProfile, TrainingProfile> = {
     lowRepAllowed: false,
     minReps: 10,
     maxReps: 15,
+    minRecommendedTime: 45,
+    maxRecommendedFrequency: 6,
     weeklySets: {
       large: 20,
       small: 16,
@@ -138,6 +147,8 @@ const technicalProfiles: Record<TechnicalProfile, TrainingProfile> = {
     maxLowRepExercises: 2, // Máximo 2 exercícios com 3-5 reps, nunca isoladores
     minReps: 6,
     maxReps: 15,
+    minRecommendedTime: 60, // 🕒 Avançados precisam de pelo menos 60min
+    maxRecommendedFrequency: 6,
     weeklySets: {
       large: 16,
       small: 12,
@@ -172,6 +183,8 @@ const technicalProfiles: Record<TechnicalProfile, TrainingProfile> = {
     allowRepsBelowFive: true, // Permite reps abaixo de 5
     minReps: 3,
     maxReps: 20,
+    minRecommendedTime: 75, // 🕒 Alto Rendimento exige 75min+
+    maxRecommendedFrequency: 6,
     weeklySets: {
       large: 20,
       small: 16,

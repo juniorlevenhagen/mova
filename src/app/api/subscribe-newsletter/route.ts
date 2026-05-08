@@ -7,27 +7,6 @@ import { config } from "@/lib/config";
 
 import { createClient } from "@supabase/supabase-js";
 
-function getSupabaseClient(token?: string) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    throw new Error("Supabase URL e/ou chave não encontradas");
-  }
-  return createClient(
-    url,
-    key,
-    token
-      ? {
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        }
-      : undefined
-  );
-}
-
 // Headers CORS para produção
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

@@ -126,7 +126,6 @@ export class PlanQualityAccumulator {
    */
   penalize({
     type,
-    penalty,
     context,
   }: {
     type: string;

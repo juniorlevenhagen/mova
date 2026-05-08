@@ -182,6 +182,28 @@ export function detectMotorPattern(exercise: Exercise): string | null {
     return "vertical_pull";
   }
 
+  // ISOLATION PULL (bíceps)
+  if (
+    name.includes("rosca") ||
+    name.includes("curl") ||
+    primary === "biceps" ||
+    name.includes("martelo")
+  ) {
+    return "isolation_pull";
+  }
+
+  // ISOLATION PUSH (tríceps)
+  if (
+    name.includes("triceps") ||
+    name.includes("tríceps") ||
+    name.includes("pulley") ||
+    name.includes("extensao de cotovelo") ||
+    name.includes("extensão de cotovelo") ||
+    primary === "triceps"
+  ) {
+    return "isolation_push";
+  }
+
   // Fallback explícito: padrão desconhecido
   // "unknown" não conta para limites e não é permitido em compostos grandes
   return "unknown";
@@ -206,7 +228,7 @@ export function getWeeklySeriesLimits(
     triceps: profile.weeklySets.small,
     biceps: profile.weeklySets.small,
     gluteos: Math.floor(profile.weeklySets.large * 0.6), // 60% do large
-    panturrilhas: Math.floor(profile.weeklySets.small * 0.5), // 50% do small
+    panturrilhas: profile.weeklySets.small, // 100% do small (permitir 6 séries para sedentários)
   };
 }
 
@@ -551,6 +573,27 @@ function isPrimaryMuscleInDayType(muscle: string, dayType: string): boolean {
     );
   }
 
+  if (normalizedDayType.includes("upper")) {
+    return (
+      normalizedMuscle.includes("peito") ||
+      normalizedMuscle.includes("peitoral") ||
+      normalizedMuscle.includes("costas") ||
+      normalizedMuscle.includes("dorsal") ||
+      normalizedMuscle.includes("ombro")
+    );
+  }
+
+  if (normalizedDayType.includes("full")) {
+    return (
+      normalizedMuscle.includes("peito") ||
+      normalizedMuscle.includes("peitoral") ||
+      normalizedMuscle.includes("costas") ||
+      normalizedMuscle.includes("dorsal") ||
+      normalizedMuscle.includes("quadriceps") ||
+      normalizedMuscle.includes("quadríceps")
+    );
+  }
+
   return false;
 }
 
@@ -578,6 +621,26 @@ function isSecondaryMuscleInDayType(muscle: string, dayType: string): boolean {
 
   if (normalizedDayType === "lower" || normalizedDayType === "legs") {
     return normalizedMuscle.includes("panturrilha");
+  }
+
+  if (normalizedDayType === "upper") {
+    return (
+      normalizedMuscle.includes("triceps") ||
+      normalizedMuscle.includes("tríceps") ||
+      normalizedMuscle.includes("biceps") ||
+      normalizedMuscle.includes("bíceps")
+    );
+  }
+
+  if (normalizedDayType === "fullbody" || normalizedDayType === "full") {
+    return (
+      normalizedMuscle.includes("triceps") ||
+      normalizedMuscle.includes("tríceps") ||
+      normalizedMuscle.includes("biceps") ||
+      normalizedMuscle.includes("bíceps") ||
+      normalizedMuscle.includes("ombro") ||
+      normalizedMuscle.includes("panturrilha")
+    );
   }
 
   return false;

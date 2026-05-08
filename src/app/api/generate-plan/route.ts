@@ -3572,19 +3572,6 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
         return n;
       };
 
-      const parseTrainingTime = (
-        timeStr: string | null | undefined
-      ): number | undefined => {
-        if (!timeStr) return undefined;
-        const match = timeStr.match(/(\d+)/);
-        if (!match) return undefined;
-        const num = parseInt(match[1]);
-        if (timeStr.toLowerCase().includes("hora")) {
-          return num * 60;
-        }
-        return num;
-      };
-
       const trainingDays = parseTrainingDays(
         profile?.training_frequency || "3x por semana"
       );

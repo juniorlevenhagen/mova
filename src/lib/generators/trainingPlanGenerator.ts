@@ -10,6 +10,37 @@ import {
 import { adaptUserProfileToConstraints } from "./trainingProfileAdapter";
 import { EXERCISE_DATABASE, DAY_STRUCTURES } from "./exerciseDatabase";
 import { JOINT_RESTRICTION_RULES } from "./contractRules";
+import { detectMotorPattern } from "@/lib/validators/advancedPlanValidator";
+
+/* --------------------------------------------------------
+   CONSTANTES DE TEMPO (FISIOLOGIA APLICADA)
+-------------------------------------------------------- */
+
+const EXECUTION_TIME_PER_SET = 45; // segundos
+const TRANSITION_TIME_PER_EXERCISE = 120; // segundos (montagem/deslocamento)
+
+/**
+ * Calcula o tempo estimado de treino em minutos baseado na lista de exercícios
+ */
+function calculateEstimatedTimeMinutes(exercises: Exercise[]): number {
+  if (exercises.length === 0) return 0;
+
+  let totalSeconds = 0;
+  exercises.forEach((ex, index) => {
+    const restSeconds = parseInt(ex.rest) || 60;
+    // Tempo total do exercício = (séries * execução) + ((séries - 1) * descanso)
+    const exerciseTime =
+      ex.sets * EXECUTION_TIME_PER_SET + (ex.sets - 1) * restSeconds;
+    totalSeconds += exerciseTime;
+
+    // Adiciona tempo de transição se não for o último exercício
+    if (index < exercises.length - 1) {
+      totalSeconds += TRANSITION_TIME_PER_EXERCISE;
+    }
+  });
+
+  return Math.ceil(totalSeconds / 60);
+}
 
 /* --------------------------------------------------------
    LÓGICA DE CÁLCULO DE SÉRIES (CORRIGIDA)
@@ -73,7 +104,8 @@ export function generateTrainingPlanStructure(
   hasKneeRestriction?: boolean,
   equipment?: string,
   age?: number,
-  gender?: string
+  gender?: string,
+  previousPlan?: TrainingPlan
 ): TrainingPlan {
   const constraints = adaptUserProfileToConstraints({
     activityLevel,
@@ -89,8 +121,24 @@ export function generateTrainingPlanStructure(
     gender,
   });
 
+  // 🕒 [ESTRATÉGIA DE TEMPO] Se usarmos cálculo matemático, podemos ser mais flexíveis
+  // com o maxExercisesPerSession, pois o loop interno já valida o tempo real.
+  // Aumentar em 1 o limite para permitir que o algoritmo matemático decida o corte.
+  const maxExercises = constraints.maxExercisesPerSession + 1;
+
   const actualDivision = constraints.division;
   const weeklySchedule: TrainingDay[] = [];
+
+  // 🔄 [VARIEDADE] Mapear exercícios do plano anterior para evitar repetição
+  const previousExerciseNames = new Set<string>();
+  if (previousPlan) {
+    previousPlan.weeklySchedule.forEach((day) => {
+      day.exercises.forEach((ex) => previousExerciseNames.add(ex.name));
+    });
+    console.log(
+      `🔄 [Variedade] Detectado plano anterior com ${previousExerciseNames.size} exercícios. Tentando rotacionar.`
+    );
+  }
 
   // Usar a frequência final das constraints (pode ter sido ajustada por segurança)
   // Mas mantemos trainingDays para o loop se não houver ajuste, ou se quisermos forçar o loop original.
@@ -136,15 +184,34 @@ export function generateTrainingPlanStructure(
         DAY_STRUCTURES[specializedKey] || DAY_STRUCTURES[dayType] || [];
       const exercises: Exercise[] = [];
       const usedNames = new Set<string>();
+      const patternCounts: Record<string, number> = {}; // 🆕 Rastreador de padrões motores para o dia
+      const muscleCounts: Record<string, number> = {}; // 🆕 Rastreador de exercícios por músculo no dia
 
       for (const muscle of structure) {
-        if (exercises.length >= constraints.maxExercisesPerSession) break;
+        if (exercises.length >= maxExercises) break;
+
+        // 🔒 [RESTRIÇÃO DE PERFIL] Validar limite de exercícios por músculo no dia
+        if (
+          muscleCounts[muscle] !== undefined &&
+          muscleCounts[muscle] >= constraints.maxExercisesPerMuscle
+        ) {
+          continue;
+        }
 
         let templates = EXERCISE_DATABASE[muscle] || [];
 
-        // 🔒 [VARIEDADE] Se for versão B e NÃO houver estrutura especializada,
+        // 🔄 [VARIEDADE HISTÓRICA] Priorizar o que não foi usado no plano anterior
+        if (previousExerciseNames.size > 0) {
+          const freshTemplates = templates.filter(
+            (t) => !previousExerciseNames.has(t.name)
+          );
+          if (freshTemplates.length > 0) {
+            templates = freshTemplates;
+          }
+        }
+
+        // 🔒 [VARIEDADE INTERNA] Se for versão B e NÃO houver estrutura especializada,
         // rotacionar templates para pegar exercícios diferentes.
-        // Se houver estrutura especializada (como Lower A/B), a seleção natural já deve bastar.
         if (
           dayVersion === 1 &&
           !DAY_STRUCTURES[specializedKey] &&
@@ -210,15 +277,69 @@ export function generateTrainingPlanStructure(
           // Selecionar o primeiro disponível
           const template = available[0];
 
+          // 🔒 [PADRÕES MOTORES] Validar limites por dia (especialmente importante para IMC alto)
+          const pattern = template.motorPattern;
+          if (pattern) {
+            const patternLimit =
+              constraints.motorPatternLimitsPerDay[
+                pattern as keyof typeof constraints.motorPatternLimitsPerDay
+              ];
+            if (
+              patternLimit !== undefined &&
+              (patternCounts[pattern] || 0) >= patternLimit
+            ) {
+              console.log(
+                `🔒 [PADRÃO] Pulando ${template.name} - limite de ${patternLimit} para ${pattern} atingido.`
+              );
+              continue;
+            }
+          }
+
           const isCompound = template.isCompound;
           const isLarge = template.isLarge;
 
-          const sets = calculateSets(
+          let sets = calculateSets(
             constraints.operationalLevel,
             isCompound,
             isLarge,
             availableTimeMinutes
           );
+
+          // 🕒 [VALIDAÇÃO MATEMÁTICA DE TEMPO]
+          if (availableTimeMinutes) {
+            const restValue = isCompound ? 90 : 60;
+            const currentEstimatedTime = (testSets: number) =>
+              calculateEstimatedTimeMinutes([
+                ...exercises,
+                {
+                  name: template.name,
+                  primaryMuscle: template.primaryMuscle,
+                  sets: testSets,
+                  rest: `${restValue}s`,
+                  reps: "",
+                },
+              ]);
+
+            let estimated = currentEstimatedTime(sets);
+
+            // Se exceder o tempo, tentar reduzir séries (mínimo 2)
+            if (estimated > availableTimeMinutes && sets > 2) {
+              sets--;
+              estimated = currentEstimatedTime(sets);
+              if (estimated > availableTimeMinutes && sets > 2) {
+                sets--;
+                estimated = currentEstimatedTime(sets);
+              }
+            }
+
+            // Se ainda exceder o tempo e já tivermos um volume mínimo (3 exercícios), pulamos
+            if (estimated > availableTimeMinutes && exercises.length >= 3) {
+              console.log(
+                `🕒 [TEMPO] Pulando ${template.name} para respeitar limite de ${availableTimeMinutes}min (Estimado: ${estimated}min).`
+              );
+              continue;
+            }
+          }
 
           // 🔒 [VOLUME SEMANAL] Verificar se adicionar este exercício ultrapassa o limite semanal
           const normalizedMuscle = muscle.toLowerCase();
@@ -245,6 +366,12 @@ export function generateTrainingPlanStructure(
 
             weeklySeriesCounter.set(normalizedMuscle, projectedTotal);
           }
+
+          if (pattern) {
+            patternCounts[pattern] = (patternCounts[pattern] || 0) + 1;
+          }
+
+          muscleCounts[muscle] = (muscleCounts[muscle] || 0) + 1;
 
           usedNames.add(template.name);
           exercises.push({

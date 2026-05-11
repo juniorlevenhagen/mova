@@ -542,7 +542,13 @@ export function validateDeficitCompatibility(
  */
 function isPrimaryMuscleInDayType(muscle: string, dayType: string): boolean {
   const normalizedMuscle = normalizeMuscle(muscle);
-  const normalizedDayType = normalize(dayType);
+  let normalizedDayType = normalize(dayType);
+
+  // Remover sufixos de versão como (A), (B), A, B no final
+  normalizedDayType = normalizedDayType
+    .replace(/\s*\([a-z]\)$/, "")
+    .replace(/\s+[a-z]$/, "")
+    .trim();
 
   if (normalizedDayType === "push") {
     return (
@@ -603,7 +609,13 @@ function isPrimaryMuscleInDayType(muscle: string, dayType: string): boolean {
  */
 function isSecondaryMuscleInDayType(muscle: string, dayType: string): boolean {
   const normalizedMuscle = normalizeMuscle(muscle);
-  const normalizedDayType = normalize(dayType);
+  let normalizedDayType = normalize(dayType);
+
+  // Remover sufixos de versão como (A), (B), A, B no final
+  normalizedDayType = normalizedDayType
+    .replace(/\s*\([a-z]\)$/, "")
+    .replace(/\s+[a-z]$/, "")
+    .trim();
 
   if (normalizedDayType === "push") {
     return (

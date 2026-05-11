@@ -298,7 +298,8 @@ export async function POST(request: NextRequest) {
           | "ar_livre"
           | undefined, // 🏠 Novo: Ambiente de treino
         profile?.age || undefined, // 🛡️ Idade para validação de risco
-        profile?.gender || undefined // 🆕 Gênero para regras de séries
+        profile?.gender || undefined, // 🧬 Gênero para limites nutricionais
+        existing || undefined // 🔄 [VARIEDADE] Passar plano anterior para rotação
       );
 
       // 🥈 Passo 2: Sanitizar plano (Substituição de segurança para idosos/iniciantes)

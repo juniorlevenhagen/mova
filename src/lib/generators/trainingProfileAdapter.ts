@@ -10,6 +10,7 @@ import {
   type TrainingProfile,
 } from "@/lib/profiles/trainingProfiles";
 import { getWeeklySeriesLimits } from "@/lib/validators/advancedPlanValidator";
+import { IMC_RESTRICTION_RULES } from "./contractRules";
 
 // Função auxiliar para normalizar strings
 function normalize(str: string): string {
@@ -28,7 +29,7 @@ const FIXED_MOTOR_PATTERN_LIMITS = {
   horizontal_pull: 4,
   vertical_pull: 2,
   squat: 3,
-} as const;
+};
 
 export interface GenerationConstraints {
   // Divisão do treino
@@ -152,11 +153,11 @@ function getOperationalLevel(
   if (level.includes("atleta")) {
     if (availableTimeMinutes <= 30) {
       return {
-        level: "Intermediário",
+        level: "Avançado",
         feedback: {
           type: "requirement",
           message:
-            "Um perfil de Atleta exige alta intensidade e volume. 30 minutos são insuficientes para um treino eficiente nesta categoria. O sistema adaptou seu plano para o nível Intermediário focado em manutenção. Recomendamos pelo menos 75-90 min.",
+            "Perfil de Atleta exige pelo menos 75 minutos para ser efetivo. O sistema gerará um treino Avançado (30 min) para sua segurança.",
           suggestedChange: { field: "availableTimeMinutes", value: 75 },
         },
       };
@@ -454,6 +455,37 @@ export function adaptUserProfileToConstraints(
   // 4. Obter limites de séries semanais
   const weeklySeriesLimits = getWeeklySeriesLimits(operationalLevel);
 
+  // 🟠 [SEGURANÇA IMC] Aplicar restrições para IMC elevado
+  let motorPatternLimitsPerDay = { ...FIXED_MOTOR_PATTERN_LIMITS };
+  if (
+    userProfile.imc &&
+    userProfile.imc >= IMC_RESTRICTION_RULES.highIMCThreshold
+  ) {
+    motorPatternLimitsPerDay = {
+      ...motorPatternLimitsPerDay,
+      squat: Math.min(
+        motorPatternLimitsPerDay.squat,
+        IMC_RESTRICTION_RULES.restrictions.squat
+      ),
+      hinge: Math.min(
+        motorPatternLimitsPerDay.hinge,
+        IMC_RESTRICTION_RULES.restrictions.hinge
+      ),
+    };
+
+    // Adicionar feedback de segurança se não houver um mais crítico
+    if (!finalFeedback) {
+      finalFeedback = {
+        type: "warning",
+        message: IMC_RESTRICTION_RULES.safetyWarnings.highIMC,
+      };
+    }
+
+    console.log(
+      `🟠 [IMC] Restrições de padrão motor aplicadas para IMC ${userProfile.imc}`
+    );
+  }
+
   // 5. Obter volume mínimo por grupo grande
   const minExercisesPerLargeMuscle = getMinExercisesPerLargeMuscle(
     operationalLevel,
@@ -479,7 +511,7 @@ export function adaptUserProfileToConstraints(
       gluteos: weeklySeriesLimits.gluteos ?? 0,
       panturrilhas: weeklySeriesLimits.panturrilhas ?? 0,
     },
-    motorPatternLimitsPerDay: FIXED_MOTOR_PATTERN_LIMITS,
+    motorPatternLimitsPerDay,
     minExercisesPerLargeMuscle,
     profile,
     isTimeRestricted,

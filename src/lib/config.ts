@@ -29,9 +29,9 @@ export const config = {
 export const TRAINING_PLAN_CONFIG = {
   /**
    * Bônus de séries por sessão para músculos primários em seu tipo de dia
-   * Ex: ombro em Push pode ter até 20% mais séries que o limite padrão
-   * Valor: 0.2 = 20% de bônus
+   * Ex: ombro em Push pode ter até 30% mais séries que o limite padrão
+   * Valor: 0.3 = 30% de bônus
    */
   PRIMARY_MUSCLE_SESSION_BONUS:
-    parseFloat(process.env.PRIMARY_MUSCLE_SESSION_BONUS || "0.1") || 0.1,
+    parseFloat(process.env.PRIMARY_MUSCLE_SESSION_BONUS || "0.3") || 0.3,
 } as const;

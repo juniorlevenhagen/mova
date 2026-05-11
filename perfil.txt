@@ -1,31 +1,31 @@
-Dados Básicos
-Altura
-170 cm
-Peso
-90 kg
+Sugestao de Melhorias.
 
-IMC
 
-31.10
-Obesidade
-Sexo
-Feminino
-Dados de Treino
-Idade
-40 anos
-Frequência de Treinos
-4x por semana
 
-Objetivo
-Emagrecimento
 
-Tempo disponível por treino
-90 minutos
+1- Algoritmos Baseados em Regras Fisiológicas (Não apenas em Texto)
+Modelos de linguagem (LLMs) são excelentes para escrever de forma bonita, mas não sabem calcular esforço físico inerente. A IA precisa ser guiada por regras de educação física reais:
 
-Metabolismo
-Caloria Basal Estimada
+2 - Limitadores de Volume Dinâmicos: O sistema deve cruzar o tempo disponível com o tempo estimado de execução. Se o usuário tem 90 minutos e a IA coloca 28 séries com 90 segundos de descanso, um algoritmo de validação matemática deve "barrar" o treino por exceder o tempo lógico.
 
-2532 kcal
-Nível de Atividade
-Moderado
+3- Análise de Sobrecarga Articular e IMC: Se o sistema detecta um IMC de Obesidade Grau I (31.1), ele deve aplicar filtros de segurança para evitar sobrecarga excessiva nos joelhos e coluna (como evitar agachamento livre pesado combinado com leg press e stiff no mesmo microciclo de forma redundante).
 
+4 - Melhorar a forma de calcular o tempo disponivel para executar todos os exercicios.
+Análise do Volume de Treino (Muito excessivo para 90 min)
+Embora o plano indique um tempo disponível de 90 minutos por treino, a quantidade de exercícios por sessão está extremamente alta para um nível intermediário, o que pode tornar o treino exaustivo, improdutivo e muito longo.
+
+Dia 1 - Upper (A): 8 Exercícios
+Você tem grandes multiarticulares (Supino, Puxada, Desenvolvimento, Remada, Supino Inclinado) combinados com isoladores.
+
+Total de séries: 28 séries de trabalho.
+
+Com intervalos de descanso de 90 segundos (e 60 segundos nos braços), somando o tempo de execução de cada série e a montagem/transição de aparelhos, este treino vai passar facilmente de 1h30 a 2h. É um volume excessivo que pode gerar fadiga central precoce, fazendo com que o rendimento caia drasticamente na metade final do treino.
+
+Dia 2 - Lower (A): 7 Exercícios
+Total de séries: 25 séries.
+
+Colocar Agachamento Livre (4 séries), Leg Press 45 (4 séries), Elevação Pélvica (4 séries) e Agachamento Sumô (4 séries) no mesmo dia de pernas é brutal para a região lombar e para as articulações (joelhos), especialmente para quem tem um IMC de 31.1 (onde o impacto e a sobrecarga articular já são naturalmente maiores).
+
+
+
+Quando o usuario imprime um treino, ao realizar a compra de um novo treino ele procura evoluir e alternar exercicios, de modo que nao fique uma coisa monotona e de forma que consiga gerar novos estimulos. Devemos verificar a o ultimo treino dele e criar um treino com exercicios que trabalhem os mesmos musculos, porem com estimulos diferentes. Possivel?

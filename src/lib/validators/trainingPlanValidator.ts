@@ -1628,14 +1628,24 @@ export function isTrainingPlanUsable(
     // 🔴 Ajustar maxExercisesPerSession considerando objetivo e tempo disponível (mesma lógica do gerador)
     let adjustedMaxExercises = profile.maxExercisesPerSession;
 
-    // 🎯 FULL BODY COMPACTO: Exceção estrutural necessária
-    // Full Body precisa de 5 exercícios mínimos para cobertura muscular completa
-    // mesmo com tempo limitado (1 lower, 1 push, 1 pull, 1 posterior/core, 1 complementar)
     const dayTypeForLimit = normalizeDivisionName(day.type || "");
     const isFullBody = dayTypeForLimit === "fullbody";
     const isSedentary =
       normalizedLevel.includes("sedentario") ||
       normalizedLevel.includes("sedentary");
+
+    // 🕒 [TEMPO] Para janelas de tempo maiores, podemos ser um pouco mais flexíveis
+    // seguindo as diretrizes do GEMINI.md (60 min: 5-6, 75-90 min: 6-8 exercícios)
+    if (availableTimeMinutes && availableTimeMinutes >= 60) {
+      adjustedMaxExercises = Math.max(
+        adjustedMaxExercises,
+        isSedentary ? 7 : 8
+      );
+    }
+
+    // 🎯 FULL BODY COMPACTO: Exceção estrutural necessária
+    // Full Body precisa de 5 exercícios mínimos para cobertura muscular completa
+    // mesmo com tempo limitado (1 lower, 1 push, 1 pull, 1 posterior/core, 1 complementar)
     const hasVeryLimitedTime =
       availableTimeMinutes && availableTimeMinutes <= 40;
 
@@ -1647,8 +1657,8 @@ export function isTrainingPlanUsable(
       availableTimeMinutes &&
       availableTimeMinutes <= 40
     ) {
-      // Outras divisões (Upper/Lower, etc): limitar a 4 exercícios
-      adjustedMaxExercises = Math.min(adjustedMaxExercises, 4);
+      // Outras divisões (Upper/Lower, etc): permitir até 5 exercícios (biomecânica básica)
+      adjustedMaxExercises = Math.min(adjustedMaxExercises, 5);
     }
 
     // Ajuste para emagrecimento com pouco tempo e Upper/Lower

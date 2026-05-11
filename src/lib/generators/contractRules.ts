@@ -208,3 +208,26 @@ export const CONSISTENCY_RULES = {
   minSetsNormal: 3,
   motorPatternLimits: "same_as_validator",
 } as const;
+
+/* --------------------------------------------------------
+   REGRAS DE IMC (SEGURANÇA ARTICULAR)
+-------------------------------------------------------- */
+
+/**
+ * Regras para IMC elevado (Sobrepeso/Obesidade):
+ *
+ * 1. IMC >= 30: Aplicar restrições de "Joint Overload"
+ * 2. Limitar padrões motores de alta compressão (squat, hinge) por sessão
+ * 3. Evitar combinações redundantes de alta carga no mesmo dia
+ */
+export const IMC_RESTRICTION_RULES = {
+  highIMCThreshold: 30,
+  restrictions: {
+    squat: 1, // Máximo 1 agachamento/leg press pesado por dia
+    hinge: 1, // Máximo 1 stiff/rdl pesado por dia
+  },
+  safetyWarnings: {
+    highIMC:
+      "Devido ao IMC, o plano foi ajustado para proteger suas articulações (joelhos e coluna), evitando volume excessivo de carga axial.",
+  },
+} as const;

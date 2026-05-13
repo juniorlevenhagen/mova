@@ -115,7 +115,20 @@ A orientação alimentar DEVE incluir:
    - Cada refeição deve ter: meal (nome), timing (horário), options (array de alimentos)
    - Cada alimento deve ter: food (nome), quantity (quantidade SEMPRE em GRAMAS), calories (calorias)
 4. hydration - orientações de hidratação
-5. supplements (opcional) - suplementos recomendados
+
+⚠️ REGRAS DE CÁLCULO (ESTRITO):
+1. Calcule a BMR (Basal) usando Mifflin-St Jeor:
+   - Homens: (10 × peso kg) + (6.25 × altura cm) - (5 × idade anos) + 5
+   - Mulheres: (10 × peso kg) + (6.25 × altura cm) - (5 × idade anos) - 161
+2. Calcule o TDEE usando os multiplicadores de atividade fornecidos.
+3. Se o objetivo for EMAGRECIMENTO:
+   - Aplique um déficit de 300 a 500 kcal sobre o TDEE.
+   - 🚨 TRAVA DE SEGURANÇA: NUNCA prescreva menos calorias do que a BMR calculada. O metabolismo deve ser preservado.
+   - Se o déficit de 500 kcal cair abaixo da BMR, use a BMR como limite mínimo de calorias.
+4. Distribuição de Macros:
+   - Proteína: 1.6g a 2.2g por kg de peso.
+   - Gorduras: 0.7g a 1.0g por kg de peso.
+   - Carboidratos: Preencha o restante das calorias.
 
 ⚠️ CRÍTICO: Use a unidade de medida apropriada para cada tipo de alimento:
 
@@ -123,29 +136,17 @@ A orientação alimentar DEVE incluir:
 - TODOS os alimentos devem ser pesados, EXCETO ovos
 - Arroz, feijão, lentilha, grão-de-bico e outros grãos/leguminosas
 - Aveia, quinoa, chia e outros cereais
-- Massas (macarrão, etc.)
 - Carnes, peixes, frangos (sempre em gramas)
 - Legumes e verduras (brócolis, couve-flor, abobrinha, etc.)
 - Tubérculos (batata, batata-doce, mandioca)
 - Frutas (banana, maçã, laranja, pêra, etc.) - SEMPRE em gramas
-- Laticínios (queijo, iogurte, leite, etc.)
-- O campo "quantity" deve conter: número + "g" (ex: "150g") ou número + "kg" (ex: "1.5kg" para >= 1000g)
-- Exemplos CORRETOS: "200g de arroz cozido", "150g de frango grelhado", "100g de aveia", "80g de feijão cozido", "120g de banana", "150g de maçã"
+- O campo "quantity" deve conter: número + "g" (ex: "150g")
+- Exemplos CORRETOS: "200g de arroz cozido", "150g de frango grelhado", "120g de banana"
 
 🥚 ÚNICO ALIMENTO QUE DEVE SER CONTADO EM UNIDADES:
-- APENAS OVOS devem ser contados em unidades (não podem ser pesados facilmente)
-- O campo "quantity" deve conter: número + "unidade" ou "unidades" (ex: "2 unidades", "1 unidade")
-- Exemplos CORRETOS: "2 unidades de ovos", "1 unidade de ovo"
+- APENAS OVOS (ex: "2 unidades")
 
-❌ NUNCA use:
-- Xícaras, colheres, copos, ml (medidas volumétricas)
-- "1 porção", "1 peito", "1 fatia" (use peso ou unidade específica)
-- ⚠️ CRÍTICO: Informações nutricionais (calorias, macros) devem ser de alimentos JÁ PREPARADOS quando o preparo altera significativamente os valores nutricionais:
-  - Sempre especifique o método de preparo no nome do alimento quando necessário (grelhado, cozido, assado, etc.)
-  - Exemplo: "150g de frango grelhado" (calorias do frango grelhado, não cru)
-  - Exemplo: "200g de arroz cozido" (calorias do arroz cozido, não cru)
-  - Exemplo: "100g de batata doce cozida" (calorias da batata cozida, não crua)
-  - Alimentos que podem ser consumidos crus sem alteração nutricional significativa (como aveia, frutas, vegetais crus, iogurte) não precisam especificar preparo
+❌ NUNCA use: Xícaras, colheres, copos, ml ou "1 porção".
 
 O objetivo do usuário é: ${userData.objective || "Não informado"}
 Peso: ${userData.weight || "Não informado"} kg
@@ -155,32 +156,13 @@ Idade: ${userData.age || "Não informada"} anos
 Sexo: ${userData.gender || "Não informado"}
 Nível de Atividade: ${
             userData.nivelAtividade || "Moderado"
-          } (⚠️ IMPORTANTE: Use este nível para calcular TDEE - Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
-Frequência de treino: ${userData.trainingFrequency || "Não informado"}
+          } (⚠️ Multiplicadores: Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
 Restrições alimentares: ${userData.dietaryRestrictions || "Nenhuma"}
-Orçamento alimentar: ${
-            userData.foodBudget || "moderado"
-          } (⚠️ IMPORTANTE: ajuste a escolha de alimentos:
-- "economico": priorize frango, ovos, iogurte comum, atum enlatado, feijão, arroz, batata, banana, maçã. Evite salmão, iogurte grego, queijos caros, frutas exóticas.
-- "moderado": pode usar ocasionalmente iogurte grego e peixes mais baratos (tilápia, sardinha), mas priorize alimentos básicos.
-- "premium": pode incluir salmão, iogurte grego, queijos especiais e alimentos mais caros, priorizando qualidade e variedade.)
-Tempo disponível por treino: ${
-            userData.trainingTime || "Não informado"
-          } (use este tempo para ajustar horários e tamanho das refeições em torno do treino, se fizer sentido)
-
-${
-  existingPlan
-    ? `Plano de treino existente:\n${JSON.stringify(
-        existingPlan.trainingPlan,
-        null,
-        2
-      )}`
-    : ""
-}`,
+Orçamento alimentar: ${userData.foodBudget || "moderado"}`,
         },
         {
           role: "user",
-          content: `Gere uma orientação alimentar completa e adaptada para este usuário. A orientação deve ser específica, detalhada e incluir sugestões de quantidades para cada alimento. Lembre-se: isso é uma orientação educacional, não prescrição nutricional.`,
+          content: `Gere uma orientação alimentar completa e segura seguindo as travas metabólicas.`,
         },
       ],
       response_format: {

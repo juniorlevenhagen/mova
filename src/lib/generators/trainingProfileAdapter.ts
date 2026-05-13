@@ -92,6 +92,7 @@ export interface GenerationConstraints {
   allowAIFallback: boolean;
   jointLimitations?: boolean; // 🥇 Passo 1: Restrição de ombro
   kneeLimitations?: boolean; // 🔴 Restrição de joelho
+  maxHighAxialLoadPerDay?: number; // 🚨 Nova restrição IMC
 }
 
 export interface UserProfile {
@@ -406,11 +407,15 @@ export function adaptUserProfileToConstraints(
 
   // 🔴 REGRA CRÍTICA: Em déficit calórico, reduzir quantidade de exercícios ANTES da validação
   // Volume total é HARD, quantidade de exercícios é SOFT em déficit
-  // Para mulheres sedentárias + déficit: segurança > variedade
+  // Para evitar "comer" todo o volume no primeiro dia, limitamos exercícios por músculo
   const DEBUG_RELAXED_APPROVAL = false;
   if (!DEBUG_RELAXED_APPROVAL && hasDeficit && profile.weeklySets) {
-    // Usar profile.weeklySets diretamente (não getWeeklySeriesLimits que retorna formato diferente)
-    const deficitMultiplier = 1.0;
+    // 🕒 [MELHORIA] Multiplicador dinâmico baseado no tempo disponível
+    let deficitMultiplier = 0.7; // Padrão agressivo
+    if (userProfile.availableTimeMinutes) {
+      if (userProfile.availableTimeMinutes >= 75) deficitMultiplier = 0.9;
+      else if (userProfile.availableTimeMinutes >= 60) deficitMultiplier = 0.8;
+    }
 
     // Calcular limite ajustado para grupos grandes e pequenos
     const adjustedLargeLimit = Math.floor(
@@ -420,22 +425,29 @@ export function adaptUserProfileToConstraints(
       profile.weeklySets.small * deficitMultiplier
     );
 
-    // Em déficit, calcular maxExercisesPerMuscle baseado no limite semanal ajustado
-    // Máximo = limite ajustado / 1 série mínima
-    // Mas nunca mais que 2 para grupos pequenos e 3 para grupos grandes
-    // Garantir que o limite seja pelo menos 2 para grupos grandes e 1 para grupos pequenos
-    const maxForLargeMuscles = adjustedLargeLimit; // Peito, costas, quadríceps
+    // Para evitar "comer" todo o volume no primeiro dia, limitamos exercícios por músculo
+    const estimatedFrequencyPerMuscle = finalFrequency > 3 ? 2 : 1;
+    const minSets = isSedentary ? 2 : 3;
 
-    // Aplicar limite mais restritivo: usar o menor entre o atual e o calculado para grupos grandes
-    // Isso garante que mesmo grupos pequenos respeitem o limite quando necessário
-    // Mas não ser muito restritivo - usar 2 como mínimo para grupos grandes
+    // Calcular limite baseado no budget semanal de pequenos e grandes
+    const maxForLargeMuscles = Math.max(
+      isSedentary ? 1 : 2, // Garantir pelo menos 2 para moderados+ se houver tempo
+      Math.floor(adjustedLargeLimit / (estimatedFrequencyPerMuscle * minSets))
+    );
+    const maxForSmallMuscles = Math.max(
+      1,
+      Math.floor(adjustedSmallLimit / (estimatedFrequencyPerMuscle * minSets))
+    );
+
+    // Usar o menor entre o atual e o calculado (priorizando segurança)
     adjustedProfile.maxExercisesPerMuscle = Math.min(
       adjustedProfile.maxExercisesPerMuscle,
-      maxForLargeMuscles // Usar limite de grupos grandes como padrão (mais restritivo)
+      maxForLargeMuscles,
+      maxForSmallMuscles
     );
 
     console.log(
-      `🔴 [DÉFICIT] Ajustando maxExercisesPerMuscle para ${adjustedProfile.maxExercisesPerMuscle} (déficit ativo, limite ajustado: grandes=${adjustedLargeLimit}, pequenos=${adjustedSmallLimit})`
+      `🔴 [DÉFICIT] Ajustando maxExercisesPerMuscle para ${adjustedProfile.maxExercisesPerMuscle} (déficit ativo, tempo=${userProfile.availableTimeMinutes}min, multiplier=${deficitMultiplier})`
     );
   }
 
@@ -454,6 +466,22 @@ export function adaptUserProfileToConstraints(
 
   // 4. Obter limites de séries semanais
   const weeklySeriesLimits = getWeeklySeriesLimits(operationalLevel);
+
+  // 🔴 Aplicar multiplicador de déficit aos limites semanais se ativo
+  const finalWeeklySeriesLimits = { ...weeklySeriesLimits };
+  if (!DEBUG_RELAXED_APPROVAL && hasDeficit) {
+    let deficitMultiplier = 0.7;
+    if (userProfile.availableTimeMinutes) {
+      if (userProfile.availableTimeMinutes >= 75) deficitMultiplier = 0.9;
+      else if (userProfile.availableTimeMinutes >= 60) deficitMultiplier = 0.8;
+    }
+
+    (Object.keys(finalWeeklySeriesLimits) as Array<keyof typeof finalWeeklySeriesLimits>).forEach(muscle => {
+        if (finalWeeklySeriesLimits[muscle]) {
+            finalWeeklySeriesLimits[muscle] = Math.floor(finalWeeklySeriesLimits[muscle]! * deficitMultiplier);
+        }
+    });
+  }
 
   // 🟠 [SEGURANÇA IMC] Aplicar restrições para IMC elevado
   let motorPatternLimitsPerDay = { ...FIXED_MOTOR_PATTERN_LIMITS };
@@ -500,16 +528,16 @@ export function adaptUserProfileToConstraints(
     maxExercisesPerSession: adjustedProfile.maxExercisesPerSession,
     maxExercisesPerMuscle: adjustedProfile.maxExercisesPerMuscle,
     weeklySeriesLimits: {
-      peito: weeklySeriesLimits.peito,
-      costas: weeklySeriesLimits.costas,
-      quadriceps: weeklySeriesLimits.quadriceps,
-      "posterior de coxa": weeklySeriesLimits.posterior,
-      posterior: weeklySeriesLimits.posterior,
-      ombro: weeklySeriesLimits.ombro,
-      triceps: weeklySeriesLimits.triceps,
-      biceps: weeklySeriesLimits.biceps,
-      gluteos: weeklySeriesLimits.gluteos ?? 0,
-      panturrilhas: weeklySeriesLimits.panturrilhas ?? 0,
+      peito: finalWeeklySeriesLimits.peito,
+      costas: finalWeeklySeriesLimits.costas,
+      quadriceps: finalWeeklySeriesLimits.quadriceps,
+      "posterior de coxa": finalWeeklySeriesLimits.posterior,
+      posterior: finalWeeklySeriesLimits.posterior,
+      ombro: finalWeeklySeriesLimits.ombro,
+      triceps: finalWeeklySeriesLimits.triceps,
+      biceps: finalWeeklySeriesLimits.biceps,
+      gluteos: finalWeeklySeriesLimits.gluteos ?? 0,
+      panturrilhas: finalWeeklySeriesLimits.panturrilhas ?? 0,
     },
     motorPatternLimitsPerDay,
     minExercisesPerLargeMuscle,
@@ -518,5 +546,10 @@ export function adaptUserProfileToConstraints(
     allowAIFallback: false,
     jointLimitations: userProfile.jointLimitations, // 🥇 Passo 1: Restrição de ombro
     kneeLimitations: userProfile.kneeLimitations, // 🔴 Restrição de joelho
+    maxHighAxialLoadPerDay:
+      userProfile.imc &&
+      userProfile.imc >= IMC_RESTRICTION_RULES.highIMCThreshold
+        ? IMC_RESTRICTION_RULES.restrictions.maxHighAxialLoadPerDay
+        : undefined,
   };
 }

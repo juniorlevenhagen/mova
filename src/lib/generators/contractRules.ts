@@ -223,11 +223,54 @@ export const CONSISTENCY_RULES = {
 export const IMC_RESTRICTION_RULES = {
   highIMCThreshold: 30,
   restrictions: {
-    squat: 1, // Máximo 1 agachamento/leg press pesado por dia
-    hinge: 1, // Máximo 1 stiff/rdl pesado por dia
+    squat: 2, // Aumentado para 2 para permitir Leg Press + Outro se seguro
+    hinge: 2, // Aumentado para 2 para permitir Elevação Pélvica + Outro se seguro
+    maxHighAxialLoadPerDay: 1, // 🚨 NOVA REGRA: Apenas 1 exercício de alta carga axial por dia
   },
   safetyWarnings: {
     highIMC:
       "Devido ao IMC, o plano foi ajustado para proteger suas articulações (joelhos e coluna), evitando volume excessivo de carga axial.",
+  },
+} as const;
+
+/* --------------------------------------------------------
+   REGRAS DE PRESCRIÇÃO NUTRICIONAL
+-------------------------------------------------------- */
+
+/**
+ * Diretrizes para cálculo de calorias e macros:
+ *
+ * 1. Fórmulas Metabólicas:
+ *    - Use Mifflin-St Jeor para BMR (Taxa Metabólica Basal).
+ *    - Multiplicadores de Atividade (TDEE): Sedentário (1.2), Moderado (1.55), Atleta (1.725).
+ *
+ * 2. Limites de Déficit (Emagrecimento):
+ *    - Déficit Sugerido: 300 a 500 kcal abaixo do TDEE.
+ *    - Limite de Segurança: NUNCA prescrever calorias abaixo da BMR (Basal).
+ *    - Déficit Máximo: 20% a 25% do TDEE.
+ *
+ * 3. Distribuição de Macros (Sugestão):
+ *    - Proteína: 1.6g a 2.2g por kg de peso corporal.
+ *    - Gorduras: 0.8g a 1.0g por kg de peso corporal.
+ *    - Carboidratos: Restante das calorias.
+ */
+export const NUTRITION_RULES = {
+  formulas: {
+    bmr: "Mifflin-St Jeor",
+    tdeeMultipliers: {
+      sedentary: 1.2,
+      moderate: 1.55,
+      athlete: 1.725,
+      high_performance: 1.9,
+    },
+  },
+  limits: {
+    maxDeficitPercentage: 0.25, // 25% do TDEE
+    minCaloriesFloor: "BMR", // Nunca abaixo do basal
+    targetDeficitKcal: { min: 300, max: 500 },
+  },
+  macros: {
+    proteinPerKg: { min: 1.6, max: 2.2 },
+    fatPerKg: { min: 0.7, max: 1.0 },
   },
 } as const;

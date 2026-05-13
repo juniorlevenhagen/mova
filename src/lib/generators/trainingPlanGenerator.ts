@@ -21,23 +21,22 @@ const TRANSITION_TIME_PER_EXERCISE = 120; // segundos (montagem/deslocamento)
 
 /**
  * Calcula o tempo estimado de treino em minutos baseado na lista de exercícios
+ * Seguindo estritamente a fórmula do GEMINI.md:
+ * sum(Séries * (45s + Descanso)) + (Nº de Exercícios * 120s)
  */
 function calculateEstimatedTimeMinutes(exercises: Exercise[]): number {
   if (exercises.length === 0) return 0;
 
   let totalSeconds = 0;
-  exercises.forEach((ex, index) => {
+  exercises.forEach((ex) => {
     const restSeconds = parseInt(ex.rest) || 60;
-    // Tempo total do exercício = (séries * execução) + ((séries - 1) * descanso)
-    const exerciseTime =
-      ex.sets * EXECUTION_TIME_PER_SET + (ex.sets - 1) * restSeconds;
+    // Tempo por exercício = (séries * (execução + descanso))
+    const exerciseTime = ex.sets * (EXECUTION_TIME_PER_SET + restSeconds);
     totalSeconds += exerciseTime;
-
-    // Adiciona tempo de transição se não for o último exercício
-    if (index < exercises.length - 1) {
-      totalSeconds += TRANSITION_TIME_PER_EXERCISE;
-    }
   });
+
+  // Adiciona tempo de transição (120s por exercício)
+  totalSeconds += exercises.length * TRANSITION_TIME_PER_EXERCISE;
 
   return Math.ceil(totalSeconds / 60);
 }
@@ -57,36 +56,39 @@ function calculateSets(
   isLarge: boolean,
   availableTimeMinutes?: number
 ): number {
-  // 🕒 [TEMPO CRÍTICO] Se o tempo for <= 30 min, forçar 2 séries para caber volume
-  if (availableTimeMinutes && availableTimeMinutes <= 30) {
-    return 2;
-  }
-
   const level = activityLevel
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  // Se for Iniciante ou Sedentario, permitimos 2 para dar mais flexibilidade
+  // 1. Determinar base por nível
+  let sets = 3;
+
   if (
     level.includes("iniciante") ||
     level.includes("sedentario") ||
     level.includes("idoso")
   ) {
-    return 2;
+    sets = 2;
+  } else if (level.includes("atleta") || level.includes("avancado")) {
+    sets = isCompound ? 4 : 3;
+  } else if (isCompound && isLarge) {
+    sets = 4;
   }
 
-  // Para Atleta/Avançado, pode chegar a 4 em compostos
-  if (level.includes("atleta") || level.includes("avancado")) {
-    return isCompound ? 4 : 3;
+  // 2. Aplicar travas de tempo (caps)
+  if (availableTimeMinutes) {
+    // 🕒 [TEMPO CRÍTICO] Se o tempo for <= 30 min, forçar 2 séries
+    if (availableTimeMinutes <= 30) {
+      sets = 2;
+    }
+    // 🕒 [TEMPO RESTRITO] Se o tempo for <= 45 min, teto de 3 séries
+    else if (availableTimeMinutes <= 45) {
+      sets = Math.min(sets, 3);
+    }
   }
 
-  // Para Moderado/Intermediário
-  if (isCompound && isLarge) {
-    return 4;
-  }
-
-  return 3;
+  return sets;
 }
 
 /* --------------------------------------------------------
@@ -123,8 +125,9 @@ export function generateTrainingPlanStructure(
 
   // 🕒 [ESTRATÉGIA DE TEMPO] Se usarmos cálculo matemático, podemos ser mais flexíveis
   // com o maxExercisesPerSession, pois o loop interno já valida o tempo real.
-  // Aumentar em 1 o limite para permitir que o algoritmo matemático decida o corte.
-  const maxExercises = constraints.maxExercisesPerSession + 1;
+  // Aumentar para permitir que o algoritmo matemático decida o corte final.
+  const isHighVolume = constraints.operationalLevel.includes("Atleta") || constraints.operationalLevel.includes("Alto");
+  const maxExercises = isHighVolume ? Math.max(constraints.maxExercisesPerSession, 10) : constraints.maxExercisesPerSession + 1;
 
   const actualDivision = constraints.division;
   const weeklySchedule: TrainingDay[] = [];
@@ -151,6 +154,7 @@ export function generateTrainingPlanStructure(
   // Objeto para garantir que o Treino A seja sempre igual ao outro Treino A, e o B igual ao B
   const templateCache: Record<string, Exercise[][]> = {};
   const dayTypeCounters: Record<string, number> = {};
+  const allUsedExerciseNamesInCurrentPlan = new Set<string>(); // 🆕 Rastreador global da semana
 
   // Tracking de séries semanais para evitar ultrapassar limites
   const weeklySeriesCounter = new Map<string, number>();
@@ -183,12 +187,21 @@ export function generateTrainingPlanStructure(
       const structure =
         DAY_STRUCTURES[specializedKey] || DAY_STRUCTURES[dayType] || [];
       const exercises: Exercise[] = [];
-      const usedNames = new Set<string>();
+      const usedNamesInDay = new Set<string>();
       const patternCounts: Record<string, number> = {}; // 🆕 Rastreador de padrões motores para o dia
       const muscleCounts: Record<string, number> = {}; // 🆕 Rastreador de exercícios por músculo no dia
+      let highAxialLoadCount = 0; // 🆕 Rastreador de carga axial no dia
 
       for (const muscle of structure) {
         if (exercises.length >= maxExercises) break;
+
+        // 🕒 [OTIMIZAÇÃO] Identificar se o músculo é obrigatório para o dia
+        const dayTypeNormalized = dayType.toLowerCase();
+        const requiredForDay =
+          (dayTypeNormalized === "push" && muscle === "triceps") ||
+          (dayTypeNormalized === "pull" && muscle === "biceps") ||
+          ((dayTypeNormalized === "legs" || dayTypeNormalized === "lower") &&
+            muscle === "panturrilhas");
 
         // 🔒 [RESTRIÇÃO DE PERFIL] Validar limite de exercícios por músculo no dia
         if (
@@ -200,10 +213,15 @@ export function generateTrainingPlanStructure(
 
         let templates = EXERCISE_DATABASE[muscle] || [];
 
-        // 🔄 [VARIEDADE HISTÓRICA] Priorizar o que não foi usado no plano anterior
-        if (previousExerciseNames.size > 0) {
+        // 🔄 [VARIEDADE HISTÓRICA E SEMANAL] Priorizar o que não foi usado
+        const forbiddenNames = new Set([
+          ...Array.from(previousExerciseNames),
+          ...Array.from(allUsedExerciseNamesInCurrentPlan),
+        ]);
+
+        if (forbiddenNames.size > 0) {
           const freshTemplates = templates.filter(
-            (t) => !previousExerciseNames.has(t.name)
+            (t) => !forbiddenNames.has(t.name)
           );
           if (freshTemplates.length > 0) {
             templates = freshTemplates;
@@ -243,14 +261,6 @@ export function generateTrainingPlanStructure(
         if (constraints.isTimeRestricted) {
           const isolationMuscles = ["biceps", "triceps", "panturrilhas"];
 
-          // Verificar se este músculo de isolamento é OBRIGATÓRIO para este tipo de dia
-          const dayTypeNormalized = dayType.toLowerCase();
-          const requiredForDay =
-            (dayTypeNormalized === "push" && muscle === "triceps") ||
-            (dayTypeNormalized === "pull" && muscle === "biceps") ||
-            ((dayTypeNormalized === "legs" || dayTypeNormalized === "lower") &&
-              muscle === "panturrilhas");
-
           // Só pular se NÃO for obrigatório para a divisão
           if (
             isolationMuscles.includes(muscle) &&
@@ -271,11 +281,23 @@ export function generateTrainingPlanStructure(
         }
 
         // Filtrar templates que já foram usados no dia para evitar duplicatas
-        const available = templates.filter((t) => !usedNames.has(t.name));
+        const available = templates.filter((t) => !usedNamesInDay.has(t.name));
 
         if (available.length > 0) {
           // Selecionar o primeiro disponível
           const template = available[0];
+
+          // 🔒 [CARGA AXIAL] Validar limite de carga axial para IMC alto
+          if (
+            template.isHighAxialLoad &&
+            constraints.maxHighAxialLoadPerDay !== undefined &&
+            highAxialLoadCount >= constraints.maxHighAxialLoadPerDay
+          ) {
+            console.log(
+              `🔒 [AXIAL] Pulando ${template.name} - limite de ${constraints.maxHighAxialLoadPerDay} exercício(s) axial(is) atingido.`
+            );
+            continue;
+          }
 
           // 🔒 [PADRÕES MOTORES] Validar limites por dia (especialmente importante para IMC alto)
           const pattern = template.motorPattern;
@@ -333,7 +355,12 @@ export function generateTrainingPlanStructure(
             }
 
             // Se ainda exceder o tempo e já tivermos um volume mínimo (3 exercícios), pulamos
-            if (estimated > availableTimeMinutes && exercises.length >= 3) {
+            // MAS: Só pulamos se NÃO for obrigatório para o dia (para não invalidar o plano)
+            if (
+              estimated > availableTimeMinutes &&
+              exercises.length >= 3 &&
+              !requiredForDay
+            ) {
               console.log(
                 `🕒 [TEMPO] Pulando ${template.name} para respeitar limite de ${availableTimeMinutes}min (Estimado: ${estimated}min).`
               );
@@ -373,7 +400,12 @@ export function generateTrainingPlanStructure(
 
           muscleCounts[muscle] = (muscleCounts[muscle] || 0) + 1;
 
-          usedNames.add(template.name);
+          if (template.isHighAxialLoad) {
+            highAxialLoadCount++;
+          }
+
+          usedNamesInDay.add(template.name);
+          allUsedExerciseNamesInCurrentPlan.add(template.name);
           exercises.push({
             name: template.name,
             primaryMuscle: template.primaryMuscle,
@@ -390,6 +422,10 @@ export function generateTrainingPlanStructure(
     }
 
     const currentExercises = templateCache[dayType][dayVersion] || [];
+
+    // Se já existia no cache (ex: segunda ocorrência de Upper A), 
+    // garantir que marcamos como usado globalmente (embora já devesse estar)
+    currentExercises.forEach(ex => allUsedExerciseNamesInCurrentPlan.add(ex.name));
 
     weeklySchedule.push({
       day: `Dia ${i + 1} - ${dayType} (${versionLabel})`,

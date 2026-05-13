@@ -444,12 +444,16 @@ function validateMuscleDistribution(
 
 /**
  * Valida se o tempo de treino cabe no tempo disponível
+ * Seguindo estritamente a fórmula do GEMINI.md:
+ * sum(Séries * (45s + Descanso)) + (Nº de Exercícios * 120s)
  */
 function validateTrainingTime(
   day: TrainingDay,
   availableTimeMinutes: number
 ): boolean {
   let totalTimeSeconds = 0;
+  const executionTimePerSet = 45; // GEMINI.md mandate
+  const transitionTimePerExercise = 120; // GEMINI.md mandate
 
   for (const ex of day.exercises) {
     // Parsear sets (agora é number)
@@ -469,22 +473,30 @@ function validateTrainingTime(
       restSeconds = match ? parseInt(match[1], 10) : 60;
     }
 
-    // Tempo por exercício: (sets * tempo_execucao) + (sets * rest)
-    // Assumir ~30s por série de execução
-    const executionTimePerSet = 30;
+    // Tempo por exercício: sets * (execution + rest)
     const timePerExercise = sets * (executionTimePerSet + restSeconds);
     totalTimeSeconds += timePerExercise;
   }
 
+  // Adicionar tempo de transição (120s por exercício)
+  totalTimeSeconds += day.exercises.length * transitionTimePerExercise;
+
   const totalTimeMinutes = totalTimeSeconds / 60;
   const requiredMinutes = Math.ceil(totalTimeMinutes);
 
-  if (requiredMinutes > availableTimeMinutes) {
+  // 🕒 [TOLERÂNCIA] Permitir uma margem técnica (20% ou max 10 min)
+  // Essencial para planos avançados que forçam exercícios obrigatórios
+  const toleranceMinutes = Math.min(10, availableTimeMinutes * 0.2);
+  const effectiveAvailableTime = availableTimeMinutes + toleranceMinutes;
+
+  if (requiredMinutes > effectiveAvailableTime) {
     console.warn("Plano rejeitado: tempo de treino excede disponível", {
       required: requiredMinutes.toFixed(1),
       available: availableTimeMinutes,
+      tolerance: toleranceMinutes.toFixed(1),
       day: day.day,
       type: day.type,
+      formula: "GEMINI.md",
     });
     recordPlanRejection("tempo_treino_excede_disponivel", {
       required: requiredMinutes.toFixed(1),

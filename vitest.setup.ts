@@ -7,6 +7,13 @@ vi.mock('@/lib/metrics/planCorrectionMetrics', () => ({
   recordPlanCorrection: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/lib/metrics/planRejectionMetrics', () => ({
+  recordPlanRejection: vi.fn().mockResolvedValue(undefined),
+  planRejectionMetrics: {
+    recordRejection: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Mock OpenAI para testes que importam route handlers
 vi.mock('openai', () => {
   return {

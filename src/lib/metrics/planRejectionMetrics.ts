@@ -41,6 +41,7 @@ export type RejectionReason =
   | "restricao_articular_joelho"
   | "excesso_exercicios_alto_risco_idoso" // 🛡️ Novo: Idosos com exercícios de alto risco
   | "exercicio_proibido_por_perfil" // 🛡️ Novo: Exercícios como Pike/Burpees para iniciantes/idosos
+  | "falta_volume_choque_deltoide_lateral" // ⚡ Novo: Falta Elevação Lateral (Shock Volume)
   | "contract_violation"; // 📋 Violação de contrato muscular
 
 export interface RejectionMetric {

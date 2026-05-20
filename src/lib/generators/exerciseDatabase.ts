@@ -10,6 +10,13 @@ export interface ExerciseTemplate
   isLarge: boolean; // Grupo grande (peito, costas, quadríceps, posterior)
   motorPattern: string;
   isHighAxialLoad?: boolean; // 🚨 Alta compressão axial (Agachamento Livre, Stiff, Sumô)
+  equipment:
+    | "barra"
+    | "halter"
+    | "polia"
+    | "maquina"
+    | "peso_corporal"
+    | "smith";
 }
 
 export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
@@ -21,6 +28,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "horizontal_push",
+      equipment: "barra",
       notes: "Mantenha as escápulas em depressão e os pés firmes no chão.",
     },
     {
@@ -30,6 +38,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "horizontal_push",
+      equipment: "halter",
       notes: "Foco na parte superior do peito. Não bata os halteres no topo.",
     },
     {
@@ -39,6 +48,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "horizontal_push",
+      equipment: "halter",
       notes: "Maior amplitude que a barra. Controle o movimento.",
     },
     {
@@ -48,6 +58,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: true,
       motorPattern: "horizontal_push",
+      equipment: "halter",
       notes:
         "Sinta o alongamento das fibras do peitoral. Cotovelos levemente flexionados.",
     },
@@ -58,6 +69,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: true,
       motorPattern: "horizontal_push",
+      equipment: "polia",
       notes: "Pico de contração no final do movimento. Controle a volta.",
     },
   ],
@@ -69,6 +81,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "vertical_pull",
+      equipment: "polia",
       notes:
         "Traga a barra em direção ao peito, não ao pescoço. Estenda bem os braços.",
     },
@@ -80,6 +93,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "horizontal_pull",
       isHighAxialLoad: true,
+      equipment: "barra",
       notes: "Mantenha a coluna neutra e puxe a barra em direção ao umbigo.",
     },
     {
@@ -89,6 +103,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "vertical_pull",
+      equipment: "polia",
       notes: "Pegada neutra. Foque em puxar com os cotovelos.",
     },
     {
@@ -98,6 +113,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "horizontal_pull",
+      equipment: "halter",
       notes: "Foque em levar o cotovelo para trás. Evite girar o tronco.",
     },
     {
@@ -107,6 +123,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: true,
       motorPattern: "horizontal_pull",
+      equipment: "polia",
       notes: "Mantenha o tronco estável. Puxe em direção ao abdome inferior.",
     },
     {
@@ -116,6 +133,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: true,
       motorPattern: "vertical_pull",
+      equipment: "polia",
       notes: "Mantenha os braços quase esticados. Foco no latíssimo do dorso.",
     },
   ],
@@ -127,6 +145,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: true,
       isLarge: false,
       motorPattern: "vertical_push",
+      equipment: "halter",
       notes:
         "Suba os halteres acima da cabeça sem esticar totalmente os cotovelos.",
     },
@@ -136,7 +155,8 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       secondaryMuscles: [],
       isCompound: false,
       isLarge: false,
-      motorPattern: "overhead_movement",
+      motorPattern: "lateral_abduction",
+      equipment: "halter",
       notes:
         "Suba os braços até a altura dos ombros. Mantenha os ombros relaxados.",
     },
@@ -147,6 +167,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "horizontal_pull",
+      equipment: "halter",
       notes: "Foco no deltoide posterior. Tronco inclinado à frente.",
     },
     {
@@ -156,6 +177,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "vertical_push",
+      equipment: "halter",
       notes: "Foco no deltoide anterior. Evite usar o impulso do corpo.",
     },
   ],
@@ -168,6 +190,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "squat",
       isHighAxialLoad: true,
+      equipment: "barra",
       notes:
         "Mantenha o calcanhar firme e a coluna alinhada durante todo o movimento.",
     },
@@ -179,6 +202,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "squat",
       isHighAxialLoad: false,
+      equipment: "maquina",
       notes: "Não estenda totalmente os joelhos no topo para manter a tensão.",
     },
     {
@@ -189,7 +213,9 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "squat",
       isHighAxialLoad: false,
-      notes: "Mantenha o tronco vertical e o joelho de trás em direção ao chão.",
+      equipment: "halter",
+      notes:
+        "Mantenha o tronco vertical e o joelho de trás em direção ao chão.",
     },
     {
       name: "Cadeira Extensora",
@@ -198,6 +224,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: true,
       motorPattern: "isolation_quad",
+      equipment: "maquina",
       notes: "Controle bem a descida. Tente segurar 1 segundo no topo.",
     },
   ],
@@ -209,6 +236,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: true,
       motorPattern: "isolation_posterior",
+      equipment: "maquina",
       notes: "Mantenha o quadril colado no banco. Movimento controlado.",
     },
     {
@@ -219,6 +247,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "hinge",
       isHighAxialLoad: true,
+      equipment: "halter",
       notes: "Desça os halteres rente às pernas até sentir o alongamento.",
     },
     {
@@ -229,7 +258,9 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "hinge",
       isHighAxialLoad: true,
-      notes: "Foque em levar o quadril para trás. Joelhos levemente destravados.",
+      equipment: "barra",
+      notes:
+        "Foque em levar o quadril para trás. Joelhos levemente destravados.",
     },
     {
       name: "Cadeira Flexora",
@@ -238,6 +269,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: true,
       motorPattern: "isolation_posterior",
+      equipment: "maquina",
       notes: "Ajuste o encosto para que o joelho alinhe com o eixo da máquina.",
     },
   ],
@@ -250,6 +282,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "hinge",
       isHighAxialLoad: false,
+      equipment: "barra",
       notes: "Contraia bem os glúteos no topo. Pés na largura do quadril.",
     },
     {
@@ -260,6 +293,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isLarge: true,
       motorPattern: "squat",
       isHighAxialLoad: true,
+      equipment: "halter",
       notes: "Pés afastados e pontas para fora. Coluna reta.",
     },
     {
@@ -269,6 +303,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "isolation_glute",
+      equipment: "maquina",
       notes: "Foco no glúteo médio. Movimento controlado.",
     },
   ],
@@ -280,6 +315,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "isolation_push",
+      equipment: "polia",
       notes: "Cotovelos fixos ao lado do corpo. Estenda totalmente os braços.",
     },
     {
@@ -289,6 +325,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "isolation_push",
+      equipment: "polia",
       notes: "Abra a corda no final do movimento para maior contração.",
     },
   ],
@@ -300,6 +337,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "isolation_pull",
+      equipment: "barra",
       notes: "Evite balançar o corpo. Controle a descida do peso.",
     },
     {
@@ -309,6 +347,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "isolation_pull",
+      equipment: "halter",
       notes: "Pegada neutra (palmas voltadas para o corpo).",
     },
   ],
@@ -320,6 +359,7 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "calf_raise",
+      equipment: "maquina",
       notes: "Alongue bem na descida e contraia no topo.",
     },
     {
@@ -329,7 +369,18 @@ export const EXERCISE_DATABASE: Record<string, ExerciseTemplate[]> = {
       isCompound: false,
       isLarge: false,
       motorPattern: "calf_raise",
+      equipment: "maquina",
       notes: "Movimento lento e controlado. Máxima amplitude.",
+    },
+    {
+      name: "Gêmeos em Pé no Degrau",
+      primaryMuscle: "Panturrilhas",
+      secondaryMuscles: [],
+      isCompound: false,
+      isLarge: false,
+      motorPattern: "calf_raise",
+      equipment: "peso_corporal",
+      notes: "Use o peso do corpo. Pode ser feito em qualquer degrau.",
     },
   ],
 };
@@ -341,41 +392,41 @@ export const DAY_STRUCTURES: Record<string, string[]> = {
   // Divisão Upper/Lower Especializada (A/B)
   "Upper A": [
     "peito", // Supino Reto (Horizontal)
-    "costas", // Remada (Horizontal)
-    "ombro", // Elevação Lateral
-    "triceps",
-    "biceps",
     "peito", // Crucifixo/Crossover
+    "costas", // Remada (Horizontal)
     "costas", // Serrote
+    "ombro", // Elevação Lateral
     "ombro", // Elevação Frontal
+    "triceps",
     "triceps", // Corda
+    "biceps",
   ],
   "Upper B": [
     "costas", // Puxada (Vertical)
-    "ombro", // Desenvolvimento (Vertical)
+    "costas", // Pulldown
     "peito", // Inclinado
+    "peito", // Halteres
+    "ombro", // Desenvolvimento (Vertical)
+    "ombro", // Crucifixo Inverso
     "triceps",
     "biceps",
-    "costas", // Pulldown
-    "ombro", // Crucifixo Inverso
-    "peito", // Halteres
     "biceps", // Martelo
   ],
   "Lower A": [
     "quadriceps", // Agachamento (Foco Quad)
-    "posterior", // Mesa Flexora (Manutenção)
-    "panturrilhas",
     "quadriceps", // Leg Press (Foco Quad)
-    "gluteos", // Elevação Pélvica
     "quadriceps", // Cadeira Extensora
+    "posterior", // Mesa Flexora (Manutenção)
+    "gluteos", // Elevação Pélvica
+    "panturrilhas",
   ],
   "Lower B": [
     "posterior", // RDL/Stiff (Foco Posterior)
+    "posterior", // Cadeira Flexora
     "quadriceps", // Afundo (Unilateral)
     "gluteos", // Sumô
-    "posterior", // Cadeira Flexora
-    "panturrilhas",
     "gluteos", // Abdutora
+    "panturrilhas",
   ],
   "Full Body": [
     "peito",

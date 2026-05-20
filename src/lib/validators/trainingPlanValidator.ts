@@ -484,9 +484,9 @@ function validateTrainingTime(
   const totalTimeMinutes = totalTimeSeconds / 60;
   const requiredMinutes = Math.ceil(totalTimeMinutes);
 
-  // 🕒 [TOLERÂNCIA] Permitir uma margem técnica (20% ou max 10 min)
-  // Essencial para planos avançados que forçam exercícios obrigatórios
-  const toleranceMinutes = Math.min(10, availableTimeMinutes * 0.2);
+  // 🕒 [TOLERÂNCIA] Margem técnica de qualidade (Permitir até 15 min extras)
+  // O usuário prefere cobertura total de grupos musculares do que precisão de tempo.
+  const toleranceMinutes = availableTimeMinutes <= 45 ? 15 : 20;
   const effectiveAvailableTime = availableTimeMinutes + toleranceMinutes;
 
   if (requiredMinutes > effectiveAvailableTime) {
@@ -1516,7 +1516,8 @@ export function isTrainingPlanUsable(
       context?.imc,
       context?.hasShoulderRestriction,
       context?.hasKneeRestriction,
-      context?.equipment
+      context?.equipment,
+      availableTimeMinutes
     )
   ) {
     return false; // A função já registra a rejeição

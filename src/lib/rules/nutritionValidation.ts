@@ -5,6 +5,18 @@
  * Corrige planos nutricionais metabolicamente inviáveis.
  */
 
+export interface MealOption {
+  food: string;
+  quantity: string;
+  calories: number;
+}
+
+export interface Meal {
+  meal: string;
+  timing: string;
+  options: MealOption[];
+}
+
 export interface NutritionPlan {
   dailyCalories: number;
   macros: {
@@ -12,6 +24,8 @@ export interface NutritionPlan {
     carbs: string | number;
     fats: string | number;
   };
+  mealPlan: Meal[];
+  hydration: string;
 }
 
 export interface UserProfile {
@@ -29,6 +43,7 @@ export interface ValidatedNutritionPlan {
   adjustments: string[];
   warnings: string[];
   leanMass: number; // Adicionado para métricas
+  isConsistent: boolean; // 🆕 Nova flag para consistência matemática
 }
 
 /**
@@ -69,6 +84,44 @@ function estimateLeanMass(weight: number, imc: number, gender: string): number {
 
   const leanMass = weight * (1 - bodyFatPercent / 100);
   return Math.max(leanMass, weight * 0.4); // Mínimo 40% do peso (proteção)
+}
+
+/**
+ * Calcula a soma total de calorias no plano de refeições
+ */
+export function calculateMealPlanTotalCalories(mealPlan: Meal[]): number {
+  if (!mealPlan || !Array.isArray(mealPlan)) return 0;
+
+  return mealPlan.reduce((total, meal) => {
+    const mealSum = meal.options.reduce(
+      (sum, opt) => sum + (opt.calories || 0),
+      0
+    );
+    return total + mealSum;
+  }, 0);
+}
+
+/**
+ * Valida se existem quantidades irreais no plano
+ * Ex: "1g de banana", "2g de arroz"
+ */
+export function hasUnrealisticQuantities(mealPlan: Meal[]): boolean {
+  if (!mealPlan || !Array.isArray(mealPlan)) return false;
+
+  for (const meal of mealPlan) {
+    for (const opt of meal.options) {
+      const quantity = extractNumericValue(opt.quantity);
+      // Se for em gramas e for muito baixo (menos de 10g), é provavelmente erro da IA
+      if (
+        opt.quantity.toLowerCase().includes("g") &&
+        quantity > 0 &&
+        quantity < 10
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 import { recordPlanCorrection } from "../metrics/planCorrectionMetrics";
@@ -112,13 +165,46 @@ export function logNutritionCorrection(
 }
 
 /**
+ * Calcula a BMR usando Mifflin-St Jeor
+ */
+function calculateBMR(
+  weight: number,
+  height: number,
+  age: number,
+  gender: string
+): number {
+  if (gender.toLowerCase().includes("feminino")) {
+    return 10 * weight + 6.25 * height - 5 * age - 161;
+  }
+  return 10 * weight + 6.25 * height - 5 * age + 5;
+}
+
+/**
+ * Calcula o TDEE baseado no nível de atividade
+ */
+function calculateTDEE(bmr: number, activityLevel?: string): number {
+  const level = (activityLevel || "moderado").toLowerCase();
+  let multiplier = 1.55; // Padrão
+
+  if (level.includes("sedentario") || level.includes("sedentário"))
+    multiplier = 1.2;
+  else if (level.includes("moderado")) multiplier = 1.55;
+  else if (level.includes("atleta") && !level.includes("alto"))
+    multiplier = 1.725;
+  else if (level.includes("alto") || level.includes("rendimento"))
+    multiplier = 1.9;
+
+  return bmr * multiplier;
+}
+
+/**
  * Valida e corrige plano nutricional com limites fisiológicos
  *
  * REGRAS:
  * 1. Proteína baseada em massa magra estimada (1.6-2.2g/kg massa magra)
- * 2. Cap absoluto de proteína: Mulheres 160-180g/dia, Homens 180-220g/dia
- * 3. Se proteína exceder limite, redistribuir para carbs e gorduras
- * 4. Proteína não pode ser > 75% das calorias totais
+ * 2. Cap absoluto de proteína: Mulheres 180g/dia, Homens 220g/dia
+ * 3. Calorias: Nunca abaixo da BMR (Basal)
+ * 4. Déficit: Máximo de 500-700 kcal do TDEE (dependendo do peso)
  */
 export function validateAndCorrectNutrition(
   plan: NutritionPlan,
@@ -128,97 +214,116 @@ export function validateAndCorrectNutrition(
   const warnings: string[] = [];
   let wasAdjusted = false;
 
-  const calories = plan.dailyCalories;
+  let calories = plan.dailyCalories;
   const proteinGrams = extractNumericValue(plan.macros.protein);
   const carbsGrams = extractNumericValue(plan.macros.carbs);
   const fatsGrams = extractNumericValue(plan.macros.fats);
 
-  // Calcular calorias dos macros
-  const proteinCalories = proteinGrams * 4;
+  // --- 1. VALIDAÇÃO DE CONSISTÊNCIA INTERNA ---
+  const mealSum = calculateMealPlanTotalCalories(plan.mealPlan);
+  const unrealistic = hasUnrealisticQuantities(plan.mealPlan);
 
-  // VALIDAÇÃO 1: Proteína como % das calorias totais
-  const proteinPercent = (proteinCalories / calories) * 100;
-  if (proteinPercent > 75) {
+  // Margem de erro de 2% ou 50kcal
+  const diff = Math.abs(mealSum - calories);
+  const isConsistent = diff <= Math.max(50, calories * 0.02) && !unrealistic;
+
+  if (!isConsistent) {
     warnings.push(
-      `Proteína representa ${proteinPercent.toFixed(1)}% das calorias (meta: <75%). Metabolicamente inviável.`
+      `Inconsistência detectada: Soma das refeições (${mealSum} kcal) vs Meta (${calories} kcal).`
     );
+    if (unrealistic) warnings.push("Quantidades irreais detectadas no plano.");
   }
 
-  // VALIDAÇÃO 2: Proteína baseada em massa magra
+  // --- 2. VALIDAÇÃO DE CALORIAS (METABOLISMO) ---
+  const bmr = calculateBMR(
+    profile.weight,
+    profile.height,
+    profile.age,
+    profile.gender
+  );
+  const tdee = calculateTDEE(bmr, profile.nivelAtividade);
+
+  // Regra de Ouro: Nunca abaixo da BMR
+  if (calories < bmr) {
+    const oldCalories = calories;
+    calories = Math.round(bmr + 100); // BMR + pequena margem de segurança
+    adjustments.push(
+      `Calorias aumentadas de ${oldCalories} para ${calories} (Abaixo do basal: ${Math.round(
+        bmr
+      )} kcal)`
+    );
+    wasAdjusted = true;
+  }
+
+  // Verificar se o déficit é agressivo demais (> 30% do TDEE)
+  const deficit = tdee - calories;
+  if (deficit > tdee * 0.3) {
+    const oldCalories = calories;
+    calories = Math.round(tdee * 0.75); // Limitar déficit a 25%
+    adjustments.push(
+      `Calorias ajustadas de ${oldCalories} para ${calories} (Déficit agressivo demais: ${Math.round(
+        deficit
+      )} kcal)`
+    );
+    wasAdjusted = true;
+  }
+
+  // --- 3. VALIDAÇÃO DE PROTEÍNA ---
   const leanMass = estimateLeanMass(
     profile.weight,
     profile.imc,
     profile.gender
   );
-  const proteinPerLeanMass = proteinGrams / leanMass;
 
   // Faixa recomendada: 1.6-2.2g/kg massa magra
   const minProteinLeanMass = leanMass * 1.6;
-  const maxProteinLeanMass = leanMass * 2.2;
 
-  // VALIDAÇÃO 3: Cap absoluto de proteína por gênero
+  // Cap absoluto de proteína por gênero
   const isFemale = profile.gender?.toLowerCase().includes("feminino");
-  const maxProteinAbsolute = isFemale ? 180 : 220; // Mulheres: 180g, Homens: 220g
-  const minProteinAbsolute = isFemale ? 100 : 120; // Mínimo seguro
+  const maxProteinAbsolute = isFemale ? 180 : 220;
+  const minProteinAbsolute = isFemale ? 100 : 120;
 
-  // CORREÇÃO: Se proteína exceder limites
   let correctedProtein = proteinGrams;
 
   if (proteinGrams > maxProteinAbsolute) {
     adjustments.push(
-      `Proteína reduzida de ${proteinGrams.toFixed(0)}g para ${maxProteinAbsolute}g (cap absoluto ${isFemale ? "feminino" : "masculino"})`
+      `Proteína reduzida de ${proteinGrams.toFixed(
+        0
+      )}g para ${maxProteinAbsolute}g (cap absoluto)`
     );
     correctedProtein = maxProteinAbsolute;
     wasAdjusted = true;
   } else if (proteinGrams < minProteinLeanMass) {
-    // Se estiver abaixo do mínimo recomendado, ajustar para mínimo
     const targetProtein = Math.max(minProteinLeanMass, minProteinAbsolute);
     if (proteinGrams < targetProtein) {
       adjustments.push(
-        `Proteína aumentada de ${proteinGrams.toFixed(0)}g para ${targetProtein.toFixed(0)}g (mínimo baseado em massa magra)`
+        `Proteína aumentada de ${proteinGrams.toFixed(
+          0
+        )}g para ${targetProtein.toFixed(0)}g`
       );
       correctedProtein = targetProtein;
       wasAdjusted = true;
     }
-  } else if (proteinGrams > maxProteinLeanMass) {
-    // Se exceder máximo recomendado por massa magra (mas não cap absoluto)
-    const targetProtein = Math.min(maxProteinLeanMass, maxProteinAbsolute);
-    adjustments.push(
-      `Proteína reduzida de ${proteinGrams.toFixed(0)}g para ${targetProtein.toFixed(0)}g (máximo baseado em massa magra: ${maxProteinLeanMass.toFixed(0)}g)`
-    );
-    correctedProtein = targetProtein;
-    wasAdjusted = true;
   }
 
-  // Se proteína foi ajustada, redistribuir calorias
+  // --- 4. REDISTRIBUIÇÃO DE MACROS ---
+  // Se houve ajuste de calorias ou proteína, precisamos recalcular os carbs e gorduras
   let correctedCarbs = carbsGrams;
   let correctedFats = fatsGrams;
 
-  if (wasAdjusted && correctedProtein !== proteinGrams) {
-    const proteinDiff = proteinGrams - correctedProtein;
-    const caloriesToRedistribute = proteinDiff * 4; // 4 kcal por grama de proteína
+  if (wasAdjusted) {
+    const remainingCalories = calories - correctedProtein * 4;
+    // Padrão: 60% Carbs, 40% Gorduras do que restou
+    correctedCarbs = (remainingCalories * 0.6) / 4;
+    correctedFats = (remainingCalories * 0.4) / 9;
 
-    // Redistribuir 60% para carbs, 40% para gorduras
-    const carbsToAdd = (caloriesToRedistribute * 0.6) / 4;
-    const fatsToAdd = (caloriesToRedistribute * 0.4) / 9;
-
-    correctedCarbs = carbsGrams + carbsToAdd;
-    correctedFats = fatsGrams + fatsToAdd;
-
-    adjustments.push(
-      `Calorias redistribuídas: +${carbsToAdd.toFixed(0)}g carboidratos, +${fatsToAdd.toFixed(0)}g gorduras`
-    );
+    if (!adjustments.some((a) => a.includes("redistribuídas"))) {
+      adjustments.push(
+        `Macronutrientes recalculados para a nova meta calórica`
+      );
+    }
   }
 
-  // VALIDAÇÃO 4: Verificar se proteína corrigida ainda está dentro dos limites
-  const correctedProteinPercent = ((correctedProtein * 4) / calories) * 100;
-  if (correctedProteinPercent > 75) {
-    warnings.push(
-      `Após correção, proteína ainda representa ${correctedProteinPercent.toFixed(1)}% das calorias. Considere aumentar calorias totais.`
-    );
-  }
-
-  // Construir plano corrigido preservando campos originais (mealPlan, hydration, etc)
   const correctedPlan = {
     ...plan,
     dailyCalories: calories,
@@ -229,18 +334,25 @@ export function validateAndCorrectNutrition(
     },
   };
 
+  const proteinPercent = ((proteinGrams * 4) / calories) * 100;
+  const correctedProteinPercent = ((correctedProtein * 4) / calories) * 100;
+
   // Log de validação
   if (wasAdjusted || warnings.length > 0) {
     console.log("🔧 Validação nutricional aplicada:", {
       original: {
         protein: `${proteinGrams.toFixed(0)}g`,
         proteinPercent: `${proteinPercent.toFixed(1)}%`,
-        proteinPerLeanMass: `${proteinPerLeanMass.toFixed(2)}g/kg massa magra`,
+        proteinPerLeanMass: `${(proteinGrams / leanMass).toFixed(
+          2
+        )}g/kg massa magra`,
       },
       corrected: {
         protein: `${correctedProtein.toFixed(0)}g`,
         proteinPercent: `${correctedProteinPercent.toFixed(1)}%`,
-        proteinPerLeanMass: `${(correctedProtein / leanMass).toFixed(2)}g/kg massa magra`,
+        proteinPerLeanMass: `${(correctedProtein / leanMass).toFixed(
+          2
+        )}g/kg massa magra`,
       },
       leanMass: `${leanMass.toFixed(1)}kg`,
       adjustments,
@@ -255,5 +367,6 @@ export function validateAndCorrectNutrition(
     adjustments,
     warnings,
     leanMass,
+    isConsistent,
   };
 }

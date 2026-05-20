@@ -50,7 +50,8 @@ type RejectionReason =
   | "excesso_exercicios_musculo_primario"
   | "distribuicao_inteligente_invalida"
   | "secondaryMuscles_excede_limite"
-  | "tempo_treino_excede_disponivel";
+  | "tempo_treino_excede_disponivel"
+  | "falta_volume_choque_deltoide_lateral";
 
 interface RejectionMetric {
   reason: RejectionReason;
@@ -98,6 +99,7 @@ const REASON_LABELS: Record<RejectionReason, string> = {
   distribuicao_inteligente_invalida: "Distribuição inteligente inválida",
   secondaryMuscles_excede_limite: "secondaryMuscles excede limite",
   tempo_treino_excede_disponivel: "Tempo de treino excede disponível",
+  falta_volume_choque_deltoide_lateral: "Falta volume de choque (lateral)",
 };
 
 function formatDateTime(ts: number) {

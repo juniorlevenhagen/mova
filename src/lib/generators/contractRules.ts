@@ -223,9 +223,9 @@ export const CONSISTENCY_RULES = {
 export const IMC_RESTRICTION_RULES = {
   highIMCThreshold: 30,
   restrictions: {
-    squat: 2, // Aumentado para 2 para permitir Leg Press + Outro se seguro
-    hinge: 2, // Aumentado para 2 para permitir Elevação Pélvica + Outro se seguro
-    maxHighAxialLoadPerDay: 1, // 🚨 NOVA REGRA: Apenas 1 exercício de alta carga axial por dia
+    squat: 1, // 🚨 RESTRITO: Apenas 1 padrão de agachamento (evita redundância axial)
+    hinge: 1, // 🚨 RESTRITO: Apenas 1 padrão de dobradiça (evita redundância axial)
+    maxHighAxialLoadPerDay: 1, // 🚨 RIGOROSO: Apenas 1 exercício de alta carga axial por dia para IMC >= 30
   },
   safetyWarnings: {
     highIMC:

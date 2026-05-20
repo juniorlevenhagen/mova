@@ -10,7 +10,6 @@ import {
 import { adaptUserProfileToConstraints } from "./trainingProfileAdapter";
 import { EXERCISE_DATABASE, DAY_STRUCTURES } from "./exerciseDatabase";
 import { JOINT_RESTRICTION_RULES } from "./contractRules";
-import { detectMotorPattern } from "@/lib/validators/advancedPlanValidator";
 
 /* --------------------------------------------------------
    CONSTANTES DE TEMPO (FISIOLOGIA APLICADA)
@@ -126,11 +125,33 @@ export function generateTrainingPlanStructure(
   // 🕒 [ESTRATÉGIA DE TEMPO] Se usarmos cálculo matemático, podemos ser mais flexíveis
   // com o maxExercisesPerSession, pois o loop interno já valida o tempo real.
   // Aumentar para permitir que o algoritmo matemático decida o corte final.
-  const isHighVolume = constraints.operationalLevel.includes("Atleta") || constraints.operationalLevel.includes("Alto");
-  const maxExercises = isHighVolume ? Math.max(constraints.maxExercisesPerSession, 10) : constraints.maxExercisesPerSession + 1;
+  const isHighVolume =
+    constraints.operationalLevel.includes("Atleta") ||
+    constraints.operationalLevel.includes("Alto");
+  const maxExercises = isHighVolume
+    ? Math.max(constraints.maxExercisesPerSession, 10)
+    : constraints.maxExercisesPerSession + 1;
 
   const actualDivision = constraints.division;
   const weeklySchedule: TrainingDay[] = [];
+
+  // 🕒 [FEEDBACK ADAPTAÇÃO] Se o tempo for crítico (<= 30 min), adicionar mensagem de orientação
+  let finalSafetyFeedback = constraints.safetyFeedback;
+  if (availableTimeMinutes && availableTimeMinutes <= 30) {
+    const adaptationMsg =
+      "Treino adaptado para 30 minutos. Para melhor resultado, se tiver tempo extra, aumente 1 série nos exercícios principais.";
+    if (finalSafetyFeedback) {
+      finalSafetyFeedback = {
+        ...finalSafetyFeedback,
+        message: `${finalSafetyFeedback.message} ${adaptationMsg}`,
+      };
+    } else {
+      finalSafetyFeedback = {
+        type: "warning",
+        message: adaptationMsg,
+      };
+    }
+  }
 
   // 🔄 [VARIEDADE] Mapear exercícios do plano anterior para evitar repetição
   const previousExerciseNames = new Set<string>();
@@ -184,13 +205,30 @@ export function generateTrainingPlanStructure(
 
     // Se ainda não geramos esta versão (A ou B) deste tipo de dia, geramos agora
     if (!templateCache[dayType][dayVersion]) {
-      const structure =
-        DAY_STRUCTURES[specializedKey] || DAY_STRUCTURES[dayType] || [];
+      const structure = [
+        ...(DAY_STRUCTURES[specializedKey] || DAY_STRUCTURES[dayType] || []),
+      ];
+
+      // ⚡ [SHOCK VOLUME] Garantir dois slots de ombro para Full Body se for Iniciante+
+      // Isso permite ter o Desenvolvimento (composto) e a Elevação Lateral (Shock Volume)
+      const declaredLevel = activityLevel.toLowerCase();
+      const needsShockVolume = !declaredLevel.includes("sedentario");
+
+      if (needsShockVolume && dayType.toLowerCase().includes("full")) {
+        const ombroIndices = structure
+          .map((m, idx) => (m === "ombro" ? idx : -1))
+          .filter((idx) => idx !== -1);
+        if (ombroIndices.length === 1) {
+          structure.splice(ombroIndices[0] + 1, 0, "ombro");
+        }
+      }
+
       const exercises: Exercise[] = [];
       const usedNamesInDay = new Set<string>();
       const patternCounts: Record<string, number> = {}; // 🆕 Rastreador de padrões motores para o dia
       const muscleCounts: Record<string, number> = {}; // 🆕 Rastreador de exercícios por músculo no dia
       let highAxialLoadCount = 0; // 🆕 Rastreador de carga axial no dia
+      let lastEquipmentUsed: string | null = null; // 🆕 Rastreador de logística de equipamento
 
       for (const muscle of structure) {
         if (exercises.length >= maxExercises) break;
@@ -198,34 +236,50 @@ export function generateTrainingPlanStructure(
         // 🕒 [OTIMIZAÇÃO] Identificar se o músculo é obrigatório para o dia
         const dayTypeNormalized = dayType.toLowerCase();
         const requiredForDay =
-          (dayTypeNormalized === "push" && muscle === "triceps") ||
-          (dayTypeNormalized === "pull" && muscle === "biceps") ||
+          (dayTypeNormalized === "push" &&
+            (muscle === "peito" ||
+              muscle === "ombro" ||
+              muscle === "triceps")) ||
+          (dayTypeNormalized === "pull" &&
+            (muscle === "costas" || muscle === "biceps")) ||
           ((dayTypeNormalized === "legs" || dayTypeNormalized === "lower") &&
-            muscle === "panturrilhas");
+            (muscle === "quadriceps" ||
+              muscle === "posterior" ||
+              muscle === "gluteos" ||
+              muscle === "panturrilhas")) ||
+          (dayTypeNormalized.includes("full") &&
+            (muscle === "peito" ||
+              muscle === "costas" ||
+              muscle === "quadriceps" ||
+              muscle === "ombro")) ||
+          (dayTypeNormalized.includes("upper") &&
+            (muscle === "peito" || muscle === "costas" || muscle === "ombro"));
 
         // 🔒 [RESTRIÇÃO DE PERFIL] Validar limite de exercícios por músculo no dia
         if (
           muscleCounts[muscle] !== undefined &&
           muscleCounts[muscle] >= constraints.maxExercisesPerMuscle
         ) {
+          console.log(
+            `🔒 [MÚSCULO] Pulando slot para ${muscle} - limite de ${constraints.maxExercisesPerMuscle} exercício(s) no dia atingido.`
+          );
           continue;
         }
 
         let templates = EXERCISE_DATABASE[muscle] || [];
 
-        // 🔄 [VARIEDADE HISTÓRICA E SEMANAL] Priorizar o que não foi usado
+        // 🔄 [VARIEDADE HISTÓRICA E SEMANAL] Priorizar o que não foi usado (sem descartar originais)
         const forbiddenNames = new Set([
           ...Array.from(previousExerciseNames),
           ...Array.from(allUsedExerciseNamesInCurrentPlan),
         ]);
 
         if (forbiddenNames.size > 0) {
-          const freshTemplates = templates.filter(
-            (t) => !forbiddenNames.has(t.name)
-          );
-          if (freshTemplates.length > 0) {
-            templates = freshTemplates;
-          }
+          // Reordenar templates: primeiro os que não foram usados, depois os outros
+          templates = [
+            ...templates.filter((t) => !forbiddenNames.has(t.name)),
+            ...templates.filter((t) => forbiddenNames.has(t.name)),
+          ];
         }
 
         // 🔒 [VARIEDADE INTERNA] Se for versão B e NÃO houver estrutura especializada,
@@ -257,6 +311,24 @@ export function generateTrainingPlanStructure(
           });
         }
 
+        // 👴 [HEURÍSTICA IDOSO] Priorizar máquinas/halteres e evitar barras livres pesadas
+        if (constraints.elderly) {
+          const saferTemplates = templates.filter(
+            (t) => t.equipment === "maquina" || t.equipment === "halter"
+          );
+
+          // Se houver opções mais seguras, usá-las.
+          if (saferTemplates.length > 0) {
+            // Reordenar para que as máquinas/halteres venham primeiro
+            templates = [
+              ...saferTemplates,
+              ...templates.filter(
+                (t) => t.equipment !== "maquina" && t.equipment !== "halter"
+              ),
+            ];
+          }
+        }
+
         // 🕒 [OTIMIZAÇÃO] Priorizar compostos e gerenciar volume se o tempo for restrito
         if (constraints.isTimeRestricted) {
           const isolationMuscles = ["biceps", "triceps", "panturrilhas"];
@@ -273,21 +345,70 @@ export function generateTrainingPlanStructure(
             continue;
           }
 
-          // Priorizar templates que são compostos
+          // Priorizar templates que são compostos (Reordenar em vez de filtrar)
           const compounds = templates.filter((t) => t.isCompound);
           if (compounds.length > 0) {
-            templates = compounds;
+            templates = [
+              ...compounds,
+              ...templates.filter((t) => !t.isCompound),
+            ];
           }
         }
+
+        // 🔒 [LOGÍSTICA] Evitar dois exercícios seguidos no mesmo equipamento raro (Máquina, Smith, Polia)
+        // Halteres e Barras são mais abundantes, então a restrição é menor.
+        const rareEquipment = ["maquina", "smith", "polia"];
 
         // Filtrar templates que já foram usados no dia para evitar duplicatas
         const available = templates.filter((t) => !usedNamesInDay.has(t.name));
 
-        if (available.length > 0) {
-          // Selecionar o primeiro disponível
-          const template = available[0];
+        // Tentar encontrar o primeiro template disponível que passe em todas as restrições
+        let selectedTemplate = null;
+        let selectedSets = 0;
 
-          // 🔒 [CARGA AXIAL] Validar limite de carga axial para IMC alto
+        // 🔄 [VARIEDADE] Reordenar templates: primeiro os que não repetem equipamento
+        let prioritizedAvailable = [...available];
+        if (lastEquipmentUsed && rareEquipment.includes(lastEquipmentUsed)) {
+          prioritizedAvailable = [
+            ...available.filter((t) => t.equipment !== lastEquipmentUsed),
+            ...available.filter((t) => t.equipment === lastEquipmentUsed),
+          ];
+        }
+
+        for (const template of prioritizedAvailable) {
+          // 🔒 [LOGÍSTICA] Tentar evitar o mesmo equipamento consecutivo se for "raro"
+          if (
+            lastEquipmentUsed &&
+            rareEquipment.includes(lastEquipmentUsed) &&
+            template.equipment === lastEquipmentUsed
+          ) {
+            // Se NÃO for obrigatório, mantemos a restrição logística rígida
+            if (!requiredForDay) {
+              if (available.some((t) => t.equipment !== lastEquipmentUsed)) {
+                continue;
+              }
+            } else {
+              // Se FOR obrigatório, só usamos se as outras opções (que não repetem equipamento)
+              // forem inválidas por outros motivos (como carga axial)
+              const otherOptionsPassAxial = available.some(
+                (t) =>
+                  t.equipment !== lastEquipmentUsed &&
+                  (!t.isHighAxialLoad ||
+                    highAxialLoadCount <
+                      (constraints.maxHighAxialLoadPerDay || 99))
+              );
+
+              if (otherOptionsPassAxial) {
+                continue;
+              }
+
+              console.log(
+                `🔄 [LOGÍSTICA] Permitindo repetição de equipamento (${template.equipment}) para preencher grupo obrigatório (${muscle}).`
+              );
+            }
+          }
+
+          // 🔒 [CARGA AXIAL] Validar limite de carga axial
           if (
             template.isHighAxialLoad &&
             constraints.maxHighAxialLoadPerDay !== undefined &&
@@ -299,19 +420,24 @@ export function generateTrainingPlanStructure(
             continue;
           }
 
-          // 🔒 [PADRÕES MOTORES] Validar limites por dia (especialmente importante para IMC alto)
+          // 🔒 [PADRÕES MOTORES] Validar limites por dia
           const pattern = template.motorPattern;
           if (pattern) {
             const patternLimit =
               constraints.motorPatternLimitsPerDay[
                 pattern as keyof typeof constraints.motorPatternLimitsPerDay
               ];
+            // RELAXAMENTO: Se for obrigatório para o dia, permitir até 1 exercício extra além do limite se necessário
+            const effectivePatternLimit = requiredForDay
+              ? (patternLimit || 1) + 1
+              : patternLimit;
+
             if (
-              patternLimit !== undefined &&
-              (patternCounts[pattern] || 0) >= patternLimit
+              effectivePatternLimit !== undefined &&
+              (patternCounts[pattern] || 0) >= effectivePatternLimit
             ) {
               console.log(
-                `🔒 [PADRÃO] Pulando ${template.name} - limite de ${patternLimit} para ${pattern} atingido.`
+                `🔒 [PADRÃO] Pulando ${template.name} - limite de ${effectivePatternLimit} para ${pattern} atingido.`
               );
               continue;
             }
@@ -319,7 +445,6 @@ export function generateTrainingPlanStructure(
 
           const isCompound = template.isCompound;
           const isLarge = template.isLarge;
-
           let sets = calculateSets(
             constraints.operationalLevel,
             isCompound,
@@ -354,19 +479,38 @@ export function generateTrainingPlanStructure(
               }
             }
 
-            // Se ainda exceder o tempo e já tivermos um volume mínimo (3 exercícios), pulamos
-            // MAS: Só pulamos se NÃO for obrigatório para o dia (para não invalidar o plano)
+            // 🕒 [TOLERÂNCIA] Margem técnica de 20% (alinhada com o validador)
+            const toleranceMinutes = Math.min(10, availableTimeMinutes * 0.2);
+            const maxAllowedTime = availableTimeMinutes + toleranceMinutes;
+
+            // Se ainda exceder o tempo E a tolerância, pulamos
+            // MAS: Nunca pulamos se for obrigatório (o validador lidará com isso se exceder a tolerância dele)
             if (
-              estimated > availableTimeMinutes &&
+              estimated > maxAllowedTime &&
               exercises.length >= 3 &&
               !requiredForDay
             ) {
               console.log(
-                `🕒 [TEMPO] Pulando ${template.name} para respeitar limite de ${availableTimeMinutes}min (Estimado: ${estimated}min).`
+                `🕒 [TEMPO] Pulando ${template.name} (Estimado: ${estimated}min > Limite: ${maxAllowedTime}min).`
               );
               continue;
             }
           }
+
+          // Se chegou aqui, o template é válido!
+          selectedTemplate = template;
+          selectedSets = sets;
+          console.log(
+            `✅ [SELEÇÃO] Selecionado: ${template.name} para ${muscle}`
+          );
+          break;
+        }
+
+        if (selectedTemplate) {
+          const template = selectedTemplate;
+          const sets = selectedSets;
+          const isCompound = template.isCompound;
+          const pattern = template.motorPattern;
 
           // 🔒 [VOLUME SEMANAL] Verificar se adicionar este exercício ultrapassa o limite semanal
           const normalizedMuscle = muscle.toLowerCase();
@@ -376,18 +520,20 @@ export function generateTrainingPlanStructure(
 
           if (limit) {
             // Estimar quantas vezes esse tipo de dia ocorre na semana
-            // Para A/B, cada versão ocorre metade das vezes (aprox)
             const occurrences = Math.ceil(finalFrequency / (days.length * 2));
             const currentTotal = weeklySeriesCounter.get(normalizedMuscle) || 0;
             const projectedTotal = currentTotal + sets * occurrences;
 
-            // Margem de tolerância de 20% (mesma do validador)
-            const toleranceLimit = Math.ceil(limit * 1.2);
+            // 🛑 [SEGURANÇA] Sem margem de tolerância para o limite semanal
+            // para garantir que o validador não rejeite o plano (especialmente em déficit)
+            const toleranceLimit = limit;
 
             if (projectedTotal > toleranceLimit) {
               console.log(
                 `⚠️ [VOLUME] Pulando exercício para ${muscle} para não exceder limite semanal (${projectedTotal} > ${toleranceLimit}).`
               );
+              // Como este é o volume semanal, se exceder, não tentamos outro template para este músculo no dia
+              // Pois qualquer outro template também adicionaria séries.
               continue;
             }
 
@@ -404,6 +550,7 @@ export function generateTrainingPlanStructure(
             highAxialLoadCount++;
           }
 
+          lastEquipmentUsed = template.equipment; // Atualizar para o próximo exercício
           usedNamesInDay.add(template.name);
           allUsedExerciseNamesInCurrentPlan.add(template.name);
           exercises.push({
@@ -423,9 +570,11 @@ export function generateTrainingPlanStructure(
 
     const currentExercises = templateCache[dayType][dayVersion] || [];
 
-    // Se já existia no cache (ex: segunda ocorrência de Upper A), 
+    // Se já existia no cache (ex: segunda ocorrência de Upper A),
     // garantir que marcamos como usado globalmente (embora já devesse estar)
-    currentExercises.forEach(ex => allUsedExerciseNamesInCurrentPlan.add(ex.name));
+    currentExercises.forEach((ex) =>
+      allUsedExerciseNamesInCurrentPlan.add(ex.name)
+    );
 
     weeklySchedule.push({
       day: `Dia ${i + 1} - ${dayType} (${versionLabel})`,
@@ -440,6 +589,6 @@ export function generateTrainingPlanStructure(
     weeklySchedule,
     progression:
       "Progressão linear de carga: aumente o peso sempre que completar as repetições estipuladas com técnica perfeita.",
-    safetyFeedback: constraints.safetyFeedback,
+    safetyFeedback: finalSafetyFeedback,
   };
 }

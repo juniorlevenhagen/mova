@@ -3254,6 +3254,9 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           weight: weight,
           height: userData.height || 0,
           imc: imc.toFixed(2),
+          age: userData.age || 0,
+          gender: userData.gender || "Não informado",
+          nivelAtividade: userData.nivelAtividade || "Moderado",
           trainingFrequency: userData.trainingFrequency || "Não informado",
           dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
         };

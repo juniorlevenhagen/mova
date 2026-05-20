@@ -142,6 +142,18 @@ export function detectMotorPattern(exercise: Exercise): string | null {
     return "overhead_movement";
   }
 
+  // LATERAL ABDUCTION (abdução lateral de ombros - Shock Volume)
+  if (
+    primary === "ombro" &&
+    (name.includes("elevacao lateral") ||
+      name.includes("elevação lateral") ||
+      name.includes("lateral raise") ||
+      name.includes("abducao") ||
+      name.includes("abdução"))
+  ) {
+    return "lateral_abduction";
+  }
+
   // VERTICAL PUSH (empurrar vertical)
   if (
     name.includes("desenvolvimento") ||
@@ -414,13 +426,14 @@ export function validateMotorPatterns(plan: TrainingPlan): boolean {
 /**
  * 3️⃣ Validação de DÉFICIT CALÓRICO (flag global)
  *
- * Se déficit ativo, reduz volume máximo em 30%
+ * Se déficit ativo, reduz volume máximo em 30% (ou menos se houver muito tempo disponível)
  */
 export function validateDeficitCompatibility(
   plan: TrainingPlan,
   objective?: string | null,
   imc?: number,
-  activityLevel?: string | null
+  activityLevel?: string | null,
+  availableTimeMinutes?: number
 ): boolean {
   const deficit = detectDeficit(objective, imc);
 
@@ -429,20 +442,27 @@ export function validateDeficitCompatibility(
   }
 
   // Com déficit, aplicar multiplicador de volume
+  // 🕒 [MELHORIA] Alinhamento com ProfileAdapter: multiplicador dinâmico baseado no tempo
+  let deficitMultiplier = deficit.multiplier; // 0.7 padrão
+  if (availableTimeMinutes) {
+    if (availableTimeMinutes >= 75) deficitMultiplier = 0.9;
+    else if (availableTimeMinutes >= 60) deficitMultiplier = 0.8;
+  }
+
   const limits = getWeeklySeriesLimits(activityLevel);
   const adjustedLimits: WeeklySeriesLimits = {
-    peito: Math.floor(limits.peito * deficit.multiplier),
-    costas: Math.floor(limits.costas * deficit.multiplier),
-    quadriceps: Math.floor(limits.quadriceps * deficit.multiplier),
-    posterior: Math.floor(limits.posterior * deficit.multiplier),
-    ombro: Math.floor(limits.ombro * deficit.multiplier),
-    triceps: Math.floor(limits.triceps * deficit.multiplier),
-    biceps: Math.floor(limits.biceps * deficit.multiplier),
+    peito: Math.floor(limits.peito * deficitMultiplier),
+    costas: Math.floor(limits.costas * deficitMultiplier),
+    quadriceps: Math.floor(limits.quadriceps * deficitMultiplier),
+    posterior: Math.floor(limits.posterior * deficitMultiplier),
+    ombro: Math.floor(limits.ombro * deficitMultiplier),
+    triceps: Math.floor(limits.triceps * deficitMultiplier),
+    biceps: Math.floor(limits.biceps * deficitMultiplier),
     gluteos: limits.gluteos
-      ? Math.floor(limits.gluteos * deficit.multiplier)
+      ? Math.floor(limits.gluteos * deficitMultiplier)
       : undefined,
     panturrilhas: limits.panturrilhas
-      ? Math.floor(limits.panturrilhas * deficit.multiplier)
+      ? Math.floor(limits.panturrilhas * deficitMultiplier)
       : undefined,
   };
 
@@ -501,7 +521,7 @@ export function validateDeficitCompatibility(
           muscle,
           totalSeries,
           limit,
-          multiplier: deficit.multiplier,
+          multiplier: deficitMultiplier,
           objective,
           exerciseCount, // Quantidade de exercícios
           minSeriesPerExercise: 3, // Em déficit, mínimo é 1
@@ -524,7 +544,7 @@ export function validateDeficitCompatibility(
         muscle,
         totalSeries,
         limit,
-        multiplier: deficit.multiplier,
+        multiplier: deficitMultiplier,
         objective: objective || undefined,
         exerciseCount,
       }).catch(() => {});
@@ -886,6 +906,48 @@ export function validateJointRestrictions(
 }
 
 /**
+ * 6️⃣ Validação de VOLUME DE CHOQUE (Deltoide Lateral)
+ *
+ * Garante que haja pelo menos 1 exercício de abdução lateral de ombros por semana
+ * para garantir largura e harmonia estética.
+ */
+export function validateLateralDeltoidVolume(
+  plan: TrainingPlan,
+  trainingDays: number,
+  activityLevel?: string | null
+): boolean {
+  // Ignorar para sedentários ou treinos com frequência muito baixa (opcional)
+  const normalizedLevel = (activityLevel || "").toLowerCase();
+  if (normalizedLevel.includes("sedentario") || trainingDays < 2) {
+    return true;
+  }
+
+  let hasLateralEx = false;
+  for (const day of plan.weeklySchedule) {
+    for (const exercise of day.exercises) {
+      if (detectMotorPattern(exercise) === "lateral_abduction") {
+        hasLateralEx = true;
+        break;
+      }
+    }
+    if (hasLateralEx) break;
+  }
+
+  if (!hasLateralEx) {
+    console.warn(
+      "Plano rejeitado: falta exercício de Deltoide Lateral (Shock Volume)"
+    );
+    recordPlanRejection("falta_volume_choque_deltoide_lateral", {
+      activityLevel: activityLevel || undefined,
+      trainingDays,
+    }).catch(() => {});
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Validação completa avançada
  *
  * Executa todas as validações avançadas em sequência
@@ -898,7 +960,8 @@ export function validateAdvancedRules(
   imc?: number,
   hasShoulderRestriction?: boolean,
   hasKneeRestriction?: boolean,
-  equipment?: string | null
+  equipment?: string | null,
+  availableTimeMinutes?: number
 ): boolean {
   // 1. Séries semanais (com modificador de ambiente)
   if (!validateWeeklySeries(plan, trainingDays, activityLevel, equipment)) {
@@ -911,7 +974,15 @@ export function validateAdvancedRules(
   }
 
   // 3. Déficit calórico
-  if (!validateDeficitCompatibility(plan, objective, imc, activityLevel)) {
+  if (
+    !validateDeficitCompatibility(
+      plan,
+      objective,
+      imc,
+      activityLevel,
+      availableTimeMinutes
+    )
+  ) {
     return false;
   }
 
@@ -924,6 +995,11 @@ export function validateAdvancedRules(
   if (
     !validateJointRestrictions(plan, hasShoulderRestriction, hasKneeRestriction)
   ) {
+    return false;
+  }
+
+  // 6. Volume de Choque (Deltoide Lateral)
+  if (!validateLateralDeltoidVolume(plan, trainingDays, activityLevel)) {
     return false;
   }
 

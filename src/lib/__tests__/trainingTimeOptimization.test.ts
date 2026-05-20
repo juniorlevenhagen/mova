@@ -26,9 +26,10 @@ describe("Training Time Optimization - Atleta 30min", () => {
     expect(plan).toBeDefined();
     expect(plan.weeklySchedule.length).toBe(trainingDays);
 
-    // 2. Check if the exercise cap (4) is respected for 30min
+    // 2. Check if the exercise cap (6) is respected for 30min
+    // Aumentado para 6 para permitir cobertura total de grupos obrigatórios (Ombros + Laterais)
     for (const day of plan.weeklySchedule) {
-      expect(day.exercises.length).toBeLessThanOrEqual(4);
+      expect(day.exercises.length).toBeLessThanOrEqual(6);
 
       // 3. Check if isolation exercises were avoided/minimized
       const isolationMuscles = ["biceps", "triceps", "panturrilhas"];

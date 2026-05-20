@@ -7,10 +7,11 @@
 
 import {
   getTrainingProfile,
+  detectRestrictionFlags,
   type TrainingProfile,
 } from "@/lib/profiles/trainingProfiles";
 import { getWeeklySeriesLimits } from "@/lib/validators/advancedPlanValidator";
-import { IMC_RESTRICTION_RULES } from "./contractRules";
+import { IMC_RESTRICTION_RULES, MOTOR_PATTERN_LIMITS } from "./contractRules";
 
 // Função auxiliar para normalizar strings
 function normalize(str: string): string {
@@ -20,16 +21,6 @@ function normalize(str: string): string {
     .replace(/[\u0300-\u036f]/g, "")
     .trim();
 }
-
-// Limites fixos de padrões motores por dia
-const FIXED_MOTOR_PATTERN_LIMITS = {
-  hinge: 2,
-  horizontal_push: 4,
-  vertical_push: 2,
-  horizontal_pull: 4,
-  vertical_pull: 2,
-  squat: 3,
-};
 
 export interface GenerationConstraints {
   // Divisão do treino
@@ -70,7 +61,7 @@ export interface GenerationConstraints {
   };
 
   // Limites de padrões motores por dia
-  motorPatternLimitsPerDay: typeof FIXED_MOTOR_PATTERN_LIMITS;
+  motorPatternLimitsPerDay: Record<string, number>;
 
   // Volume mínimo por grupo muscular (por tipo de dia)
   minExercisesPerLargeMuscle: {
@@ -93,6 +84,7 @@ export interface GenerationConstraints {
   jointLimitations?: boolean; // 🥇 Passo 1: Restrição de ombro
   kneeLimitations?: boolean; // 🔴 Restrição de joelho
   maxHighAxialLoadPerDay?: number; // 🚨 Nova restrição IMC
+  elderly?: boolean; // 👴 Flag para idosos (60+)
 }
 
 export interface UserProfile {
@@ -290,11 +282,24 @@ export function adaptUserProfileToConstraints(
   userProfile: UserProfile
 ): GenerationConstraints {
   // 1. Determinar nível operacional (considerando tempo disponível)
-  const { level: operationalLevel, feedback: timeFeedback } =
-    getOperationalLevel(
-      userProfile.activityLevel,
-      userProfile.availableTimeMinutes
-    );
+  const { level: initialLevel, feedback: timeFeedback } = getOperationalLevel(
+    userProfile.activityLevel,
+    userProfile.availableTimeMinutes
+  );
+  let operationalLevel = initialLevel;
+
+  // 🛡️ [SEGURANÇA] Injetar flags no operationalLevel para propagação string-based
+  // Isso garante que calculateSets e getWeeklySeriesLimits detectem as restrições
+  if (userProfile.age && userProfile.age >= 60) {
+    if (!operationalLevel.toLowerCase().includes("idoso")) {
+      operationalLevel += " idoso";
+    }
+  }
+  if (userProfile.jointLimitations || userProfile.kneeLimitations) {
+    if (!operationalLevel.toLowerCase().includes("limitado")) {
+      operationalLevel += " limitado";
+    }
+  }
 
   let finalFeedback = timeFeedback;
 
@@ -315,7 +320,15 @@ export function adaptUserProfileToConstraints(
   }
 
   // 2. Obter perfil técnico
-  const profile = getTrainingProfile(operationalLevel);
+  // 🛡️ [SEGURANÇA] Detectar flags de restrição (idoso, limitado, iniciante)
+  const profileFlags = detectRestrictionFlags(userProfile.activityLevel);
+
+  // Forçar flag de idoso se a idade for >= 60
+  if (userProfile.age && userProfile.age >= 60) {
+    profileFlags.elderly = true;
+  }
+
+  const profile = getTrainingProfile(operationalLevel, profileFlags);
 
   // 🕒 [OTIMIZAÇÃO] Detectar restrição de tempo e aplicar Heurística de Volume
   const isTimeRestricted = !!(
@@ -325,31 +338,25 @@ export function adaptUserProfileToConstraints(
 
   if (isTimeRestricted && userProfile.availableTimeMinutes) {
     const time = userProfile.availableTimeMinutes;
-    const normalizedOpLevel = operationalLevel
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-    const isHighLevel =
-      normalizedOpLevel.includes("atleta") ||
-      normalizedOpLevel.includes("avancado");
 
     // Janelas Fixas de Segurança
+    // 🕒 [RELAXAMENTO] Aumentado para 6 exercícios para permitir cobertura obrigatória (Full Body/Upper)
+    // Mantendo 2 séries, o tempo total com 6 exercícios fica em ~33min, dentro da tolerância de 20%.
     if (time <= 30) {
-      // Atletas fazem 4 sets + 90s rest = 8min/ex. 3 ex = 24min. 4 ex = 32min (rejeita).
       adjustedProfile.maxExercisesPerSession = Math.min(
         adjustedProfile.maxExercisesPerSession,
-        isHighLevel ? 3 : 4
+        6
       );
     } else if (time <= 40) {
       adjustedProfile.maxExercisesPerSession = Math.min(
         adjustedProfile.maxExercisesPerSession,
-        isHighLevel ? 4 : 5
+        7
       );
     } else {
       // 40-44 min
       adjustedProfile.maxExercisesPerSession = Math.min(
         adjustedProfile.maxExercisesPerSession,
-        isHighLevel ? 5 : 6
+        8
       );
     }
 
@@ -476,15 +483,23 @@ export function adaptUserProfileToConstraints(
       else if (userProfile.availableTimeMinutes >= 60) deficitMultiplier = 0.8;
     }
 
-    (Object.keys(finalWeeklySeriesLimits) as Array<keyof typeof finalWeeklySeriesLimits>).forEach(muscle => {
-        if (finalWeeklySeriesLimits[muscle]) {
-            finalWeeklySeriesLimits[muscle] = Math.floor(finalWeeklySeriesLimits[muscle]! * deficitMultiplier);
-        }
+    (
+      Object.keys(finalWeeklySeriesLimits) as Array<
+        keyof typeof finalWeeklySeriesLimits
+      >
+    ).forEach((muscle) => {
+      if (finalWeeklySeriesLimits[muscle]) {
+        finalWeeklySeriesLimits[muscle] = Math.floor(
+          finalWeeklySeriesLimits[muscle]! * deficitMultiplier
+        );
+      }
     });
   }
 
   // 🟠 [SEGURANÇA IMC] Aplicar restrições para IMC elevado
-  let motorPatternLimitsPerDay = { ...FIXED_MOTOR_PATTERN_LIMITS };
+  let motorPatternLimitsPerDay: Record<string, number> = {
+    ...MOTOR_PATTERN_LIMITS,
+  };
   if (
     userProfile.imc &&
     userProfile.imc >= IMC_RESTRICTION_RULES.highIMCThreshold
@@ -546,9 +561,11 @@ export function adaptUserProfileToConstraints(
     allowAIFallback: false,
     jointLimitations: userProfile.jointLimitations, // 🥇 Passo 1: Restrição de ombro
     kneeLimitations: userProfile.kneeLimitations, // 🔴 Restrição de joelho
+    elderly: profileFlags.elderly, // 👴 Flag para idosos
     maxHighAxialLoadPerDay:
-      userProfile.imc &&
-      userProfile.imc >= IMC_RESTRICTION_RULES.highIMCThreshold
+      (userProfile.imc &&
+        userProfile.imc >= IMC_RESTRICTION_RULES.highIMCThreshold) ||
+      profileFlags.elderly
         ? IMC_RESTRICTION_RULES.restrictions.maxHighAxialLoadPerDay
         : undefined,
   };

@@ -150,8 +150,8 @@ const technicalProfiles: Record<TechnicalProfile, TrainingProfile> = {
     minRecommendedTime: 60, // 🕒 Avançados precisam de pelo menos 60min
     maxRecommendedFrequency: 6,
     weeklySets: {
-      large: 16,
-      small: 12,
+      large: 22,
+      small: 18,
     },
     pushDayStructure: {
       peito: [3, 4],

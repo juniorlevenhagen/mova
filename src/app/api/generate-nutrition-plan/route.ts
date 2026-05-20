@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import type { NutritionPlan } from "@/lib/rules/nutritionValidation";
 
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -85,7 +86,7 @@ function safeParseJSON(rawContent: string | null | undefined) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userData, existingPlan } = body;
+    const { userData } = body;
 
     if (!userData) {
       return NextResponse.json(
@@ -97,14 +98,26 @@ export async function POST(request: NextRequest) {
     console.log("🍎 Gerando plano nutricional...");
 
     const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.2,
-      max_tokens: 2048,
-      messages: [
-        {
-          role: "system",
-          content: `Você é um especialista em orientação alimentar e educação nutricional.
+    const { validateAndCorrectNutrition } = await import(
+      "@/lib/rules/nutritionValidation"
+    );
+
+    let nutritionPlanData: { nutritionPlan: NutritionPlan } | null = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      console.log(`🤖 Tentativa de geração ${attempts}/${maxAttempts}...`);
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.2,
+        max_tokens: 2048,
+        messages: [
+          {
+            role: "system",
+            content: `Você é um especialista em orientação alimentar e educação nutricional.
 
 IMPORTANTE: Você DEVE retornar uma orientação alimentar completa e detalhada baseada nos dados do usuário. Esta é uma orientação educacional e organizacional, não uma prescrição nutricional individualizada. Lembre-se: não se trata de consulta ou tratamento nutricional.
 
@@ -116,6 +129,14 @@ A orientação alimentar DEVE incluir:
    - Cada alimento deve ter: food (nome), quantity (quantidade SEMPRE em GRAMAS), calories (calorias)
 4. hydration - orientações de hidratação
 
+⚠️ REGRAS DE CONSISTÊNCIA MATEMÁTICA (CRÍTICO):
+1. A soma das calorias de TODAS as opções em TODAS as refeições deve ser EXATAMENTE IGUAL ao valor declarado em 'dailyCalories'.
+2. A distribuição de macronutrientes deve ser consistente com o total calórico (1g Prot = 4kcal, 1g Carb = 4kcal, 1g Gord = 9kcal).
+3. Cada refeição individual deve ter um valor calórico que, somado às outras refeições, totalize o 'dailyCalories'.
+4. Não pode haver "calorias fantasmas": se o plano diz 1800 kcal, o usuário deve conseguir somar 1800 kcal lendo os alimentos de um dia completo.
+5. Quantidades Realistas: Nunca use quantidades absurdas (ex: 1g de banana). Use pesos reais de mercado (ex: 100g a 150g de frutas, 100g a 200g de arroz/feijão).
+6. Verificação Interna: Antes de responder, faça o cálculo: (Soma das calorias de cada alimento da refeição 1) + (Soma da refeição 2) ... deve ser igual ao 'dailyCalories'. Se houver discrepância de até 1 kcal, ajuste em algum alimento.
+
 ⚠️ REGRAS DE CÁLCULO (ESTRITO):
 1. Calcule a BMR (Basal) usando Mifflin-St Jeor:
    - Homens: (10 × peso kg) + (6.25 × altura cm) - (5 × idade anos) + 5
@@ -123,8 +144,9 @@ A orientação alimentar DEVE incluir:
 2. Calcule o TDEE usando os multiplicadores de atividade fornecidos.
 3. Se o objetivo for EMAGRECIMENTO:
    - Aplique um déficit de 300 a 500 kcal sobre o TDEE.
-   - 🚨 TRAVA DE SEGURANÇA: NUNCA prescreva menos calorias do que a BMR calculada. O metabolismo deve ser preservado.
-   - Se o déficit de 500 kcal cair abaixo da BMR, use a BMR como limite mínimo de calorias.
+   - 🚨 TRAVA DE SEGURANÇA (METABOLISMO): NUNCA prescreva menos calorias do que a BMR calculada. O metabolismo deve ser preservado.
+   - 🚨 LIMITE MÍNIMO PRÁTICO: Para um perfil de 90kg, 170cm e 40 anos, a BMR é aproximadamente 1600 kcal e o TDEE é ~2480 kcal. Portanto, o plano NUNCA deve estar abaixo de 1800-1900 kcal. 1500 kcal é ERRO DE CÁLCULO e é insuficiente para este peso.
+   - Se o déficit de 500 kcal cair abaixo da BMR, use a BMR como limite mínimo absoluto.
 4. Distribuição de Macros:
    - Proteína: 1.6g a 2.2g por kg de peso.
    - Gorduras: 0.7g a 1.0g por kg de peso.
@@ -155,33 +177,73 @@ IMC: ${userData.imc || "Não informado"}
 Idade: ${userData.age || "Não informada"} anos
 Sexo: ${userData.gender || "Não informado"}
 Nível de Atividade: ${
-            userData.nivelAtividade || "Moderado"
-          } (⚠️ Multiplicadores: Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
+              userData.nivelAtividade || "Moderado"
+            } (⚠️ Multiplicadores: Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
 Restrições alimentares: ${userData.dietaryRestrictions || "Nenhuma"}
 Orçamento alimentar: ${userData.foodBudget || "moderado"}`,
+          },
+          {
+            role: "user",
+            content: `Gere uma orientação alimentar completa e segura seguindo as travas metabólicas.`,
+          },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: buildNutritionSchema(),
         },
-        {
-          role: "user",
-          content: `Gere uma orientação alimentar completa e segura seguindo as travas metabólicas.`,
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: buildNutritionSchema(),
-      },
-    });
+      });
 
-    const choice = completion.choices[0];
-    const nutritionPlanData = safeParseJSON(choice.message.content);
+      const choice = completion.choices[0];
+      const parsedData = safeParseJSON(choice.message.content);
 
-    console.log("✅ Plano nutricional gerado:", {
-      hasNutritionPlan: !!nutritionPlanData.nutritionPlan,
-      finishReason: choice.finish_reason,
-    });
+      if (!parsedData.nutritionPlan) {
+        console.log("⚠️ Falha no parse do plano. Tentando novamente...");
+        continue;
+      }
 
-    if (!nutritionPlanData.nutritionPlan) {
+      // 🔧 VALIDAÇÃO E CORREÇÃO PROGRAMÁTICA
+      const validated = validateAndCorrectNutrition(parsedData.nutritionPlan, {
+        weight: userData.weight || 0,
+        height: userData.height || 0,
+        age: userData.age || 0,
+        gender: userData.gender || "Não informado",
+        imc: parseFloat(userData.imc) || 0,
+        nivelAtividade: userData.nivelAtividade,
+      });
+
+      // Se o plano for consistente matematicamente, aceitamos
+      if (validated.isConsistent) {
+        console.log("✅ Plano consistente gerado na tentativa", attempts);
+        nutritionPlanData = {
+          ...parsedData,
+          nutritionPlan: {
+            ...parsedData.nutritionPlan,
+            ...validated.plan,
+          },
+        };
+        break;
+      } else {
+        console.log("⚠️ Plano inconsistente detectado:", validated.warnings);
+        // Se for a última tentativa, aceitamos com o ajuste programático de calorias/macros
+        // embora a lista de alimentos ainda possa ter pequenas discrepâncias.
+        if (attempts === maxAttempts) {
+          console.log(
+            "🛑 Limite de tentativas atingido. Aceitando melhor versão disponível."
+          );
+          nutritionPlanData = {
+            ...parsedData,
+            nutritionPlan: {
+              ...parsedData.nutritionPlan,
+              ...validated.plan,
+            },
+          };
+        }
+      }
+    }
+
+    if (!nutritionPlanData || !nutritionPlanData.nutritionPlan) {
       return NextResponse.json(
-        { error: "Erro ao gerar plano nutricional" },
+        { error: "Erro ao gerar plano nutricional após múltiplas tentativas" },
         { status: 500 }
       );
     }

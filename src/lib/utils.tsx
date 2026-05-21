@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import React from "react";
+import { BlogImage } from "@/components/ui/BlogImage";
 
 /**
  * Detecta se o texto deve ser tratado como bloco
@@ -72,18 +72,7 @@ export function parseMarkdown(text: string): React.ReactNode[] {
       const imageUrl = match[5] || "";
 
       if (imageUrl) {
-        parts.push(
-          <div key={key++} className="my-8 flex justify-center">
-            <div className="relative w-full max-w-4xl">
-              <img
-                src={imageUrl}
-                alt={altText}
-                className="max-w-full h-auto rounded-lg shadow-lg"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        );
+        parts.push(<BlogImage key={key++} src={imageUrl} alt={altText} />);
       }
     }
 

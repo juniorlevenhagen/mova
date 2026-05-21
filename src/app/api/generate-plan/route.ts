@@ -3330,7 +3330,7 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
         const proteinMatch = String(proteinStr).match(/(\d+)/);
         const originalProtein = proteinMatch ? parseInt(proteinMatch[1]) : 0;
 
-        const validated = validateAndCorrectNutrition(
+        let validated = validateAndCorrectNutrition(
           plan.nutritionPlan as unknown as Parameters<
             typeof validateAndCorrectNutrition
           >[0],
@@ -3344,6 +3344,102 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           }
         );
 
+        if (!validated.isConsistent) {
+          console.log(
+            "⚠️ nutritionPlan inicial é inconsistente. Gerando via endpoint dedicado com loop de feedback..."
+          );
+          try {
+            // Calcular IMC para o endpoint de nutrição
+            const heightInMeters = (userData.height || 0) / 100;
+            const weight = userData.weight || 0;
+            const imcCalculated =
+              heightInMeters > 0
+                ? weight / (heightInMeters * heightInMeters)
+                : 0;
+
+            const nutritionUserData = {
+              objective: userData.objective || "Não informado",
+              weight: weight,
+              height: userData.height || 0,
+              imc: imcCalculated.toFixed(2),
+              age: userData.age || 0,
+              gender: userData.gender || "Não informado",
+              nivelAtividade: userData.nivelAtividade || "Moderado",
+              trainingFrequency: userData.trainingFrequency || "Não informado",
+              dietaryRestrictions: userData.dietaryRestrictions || "Nenhuma",
+              foodBudget: userData.foodBudget || "moderado",
+            };
+
+            const host = request.headers.get("host") || "localhost:3000";
+            const protocol = host.includes("localhost") ? "http" : "https";
+            const baseUrl = `${protocol}://${host}`;
+
+            const nutritionResponse = await fetch(
+              `${baseUrl}/api/generate-nutrition-plan`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: authHeader || "",
+                },
+                body: JSON.stringify({
+                  userData: nutritionUserData,
+                  existingPlan: plan,
+                }),
+              }
+            );
+
+            console.log(
+              "📡 Resposta do endpoint de nutrição para correção:",
+              nutritionResponse.status,
+              nutritionResponse.statusText
+            );
+
+            if (nutritionResponse.ok) {
+              const nutritionResult = await nutritionResponse.json();
+              if (nutritionResult.success && nutritionResult.nutritionPlan) {
+                plan.nutritionPlan = nutritionResult.nutritionPlan;
+                console.log(
+                  "✅ nutritionPlan corrigido com sucesso via endpoint dedicado:",
+                  !!plan.nutritionPlan
+                );
+
+                // Revalidar com o plano nutricional que acabou de ser gerado
+                validated = validateAndCorrectNutrition(
+                  plan.nutritionPlan as unknown as Parameters<
+                    typeof validateAndCorrectNutrition
+                  >[0],
+                  {
+                    weight: profile.weight || 0,
+                    height: profile.height || 0,
+                    age: profile.age || 0,
+                    gender: profile.gender || "Não informado",
+                    imc,
+                    nivelAtividade: profile.nivel_atividade,
+                  }
+                );
+              } else {
+                console.warn(
+                  "⚠️ nutritionPlan não foi corrigido corretamente via endpoint dedicado:",
+                  nutritionResult
+                );
+              }
+            } else {
+              const errorText = await nutritionResponse.text();
+              console.warn(
+                "⚠️ Erro ao corrigir nutritionPlan via endpoint dedicado:",
+                nutritionResponse.status,
+                errorText
+              );
+            }
+          } catch (optionalError) {
+            console.warn(
+              "⚠️ Erro ao tentar corrigir nutritionPlan:",
+              optionalError
+            );
+          }
+        }
+
         if (validated.wasAdjusted) {
           console.log("🔧 Plano nutricional ajustado:", validated.adjustments);
 
@@ -3354,12 +3450,6 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           const correctedProtein = correctedProteinMatch
             ? parseInt(correctedProteinMatch[1])
             : 0;
-
-          // Estimar massa magra para a métrica (re-usando a lógica interna ou apenas passando o valor)
-          // Como a função logNutritionCorrection pede a leanMass, e ela é interna a validateAndCorrectNutrition,
-          // idealmente validateAndCorrectNutrition deveria retornar a leanMass usada.
-          // Por simplicidade aqui, vamos extrair se possível ou deixar logNutritionCorrection calcular.
-          // Ajustei logNutritionCorrection para calcular internamente se necessário, mas vou passar o que temos.
 
           logNutritionCorrection(
             validated,
@@ -3387,7 +3477,9 @@ O plano será aceito mesmo sem os campos recomendados, mas você DEVE tentar inc
           console.warn("⚠️ Avisos nutricionais:", validated.warnings);
         }
       }
-      console.log("✅ nutritionPlan já existe no plano inicial");
+      console.log(
+        "✅ nutritionPlan já existe no plano inicial (e foi validado/corrigido)"
+      );
     }
 
     // Tentar gerar goals e motivation se não existirem

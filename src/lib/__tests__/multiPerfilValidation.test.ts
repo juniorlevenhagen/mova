@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { generateTrainingPlanStructure } from "../generators/trainingPlanGenerator";
-import { adaptUserProfileToConstraints } from "../generators/trainingProfileAdapter";
 
 // Mock para simular o cálculo de BMR que a IA faria (apenas para validação lógica)
 function calculateExpectedBMR(

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import type { NutritionPlan } from "@/lib/rules/nutritionValidation";
+import type {
+  NutritionPlan,
+  Meal,
+  MealOption,
+} from "@/lib/rules/nutritionValidation";
 
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -101,23 +105,14 @@ export async function POST(request: NextRequest) {
     const { validateAndCorrectNutrition } = await import(
       "@/lib/rules/nutritionValidation"
     );
-
     let nutritionPlanData: { nutritionPlan: NutritionPlan } | null = null;
     let attempts = 0;
     const maxAttempts = 3;
 
-    while (attempts < maxAttempts) {
-      attempts++;
-      console.log(`🤖 Tentativa de geração ${attempts}/${maxAttempts}...`);
-
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        temperature: 0.2,
-        max_tokens: 2048,
-        messages: [
-          {
-            role: "system",
-            content: `Você é um especialista em orientação alimentar e educação nutricional.
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content: `Você é um especialista em orientação alimentar e educação nutricional.
 
 IMPORTANTE: Você DEVE retornar uma orientação alimentar completa e detalhada baseada nos dados do usuário. Esta é uma orientação educacional e organizacional, não uma prescrição nutricional individualizada. Lembre-se: não se trata de consulta ou tratamento nutricional.
 
@@ -177,16 +172,26 @@ IMC: ${userData.imc || "Não informado"}
 Idade: ${userData.age || "Não informada"} anos
 Sexo: ${userData.gender || "Não informado"}
 Nível de Atividade: ${
-              userData.nivelAtividade || "Moderado"
-            } (⚠️ Multiplicadores: Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
+          userData.nivelAtividade || "Moderado"
+        } (⚠️ Multiplicadores: Sedentário: 1.2, Moderado: 1.55, Atleta: 1.725, Atleta Alto Rendimento: 1.9)
 Restrições alimentares: ${userData.dietaryRestrictions || "Nenhuma"}
 Orçamento alimentar: ${userData.foodBudget || "moderado"}`,
-          },
-          {
-            role: "user",
-            content: `Gere uma orientação alimentar completa e segura seguindo as travas metabólicas.`,
-          },
-        ],
+      },
+      {
+        role: "user",
+        content: `Gere uma orientação alimentar completa e segura seguindo as travas metabólicas.`,
+      },
+    ];
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      console.log(`🤖 Tentativa de geração ${attempts}/${maxAttempts}...`);
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.2,
+        max_tokens: 2048,
+        messages,
         response_format: {
           type: "json_schema",
           json_schema: buildNutritionSchema(),
@@ -224,6 +229,36 @@ Orçamento alimentar: ${userData.foodBudget || "moderado"}`,
         break;
       } else {
         console.log("⚠️ Plano inconsistente detectado:", validated.warnings);
+
+        // Alimentamos a resposta incorreta e o feedback de erro de volta à IA para a próxima tentativa
+        messages.push({
+          role: "assistant",
+          content: choice.message.content || "",
+        });
+
+        const totalCalories = parsedData.nutritionPlan.mealPlan.reduce(
+          (sum: number, m: Meal) =>
+            sum +
+            (m.options?.reduce(
+              (s: number, o: MealOption) => s + (o.calories || 0),
+              0
+            ) || 0),
+          0
+        );
+
+        messages.push({
+          role: "user",
+          content: `O plano alimentar gerado possui as seguintes inconsistências e avisos de validação:
+${validated.warnings.map((w: string) => `- ${w}`).join("\n")}
+
+Por favor, corrija o plano seguindo estritamente estas diretrizes:
+1. Certifique-se de que a soma das calorias de todas as opções em todas as refeições seja EXATAMENTE IGUAL a ${validated.plan.dailyCalories} kcal (sua meta atual). A soma atual de calorias deu ${totalCalories} kcal.
+2. Adicione uma 5ª refeição (como um lanche da manhã, lanche pós-treino ou ceia) ou aumente as quantidades dos alimentos existentes para fechar a conta calórica exata de ${validated.plan.dailyCalories} kcal. Nunca deixe faltar calorias.
+3. Certifique-se de que a soma dos macronutrientes dos alimentos reflita de forma coerente a meta estipulada de Proteínas: ${validated.plan.macros.protein}, Carboidratos: ${validated.plan.macros.carbs} e Gorduras: ${validated.plan.macros.fats}.
+
+Por favor, gere uma nova versão corrigida.`,
+        });
+
         // Se for a última tentativa, aceitamos com o ajuste programático de calorias/macros
         // embora a lista de alimentos ainda possa ter pequenas discrepâncias.
         if (attempts === maxAttempts) {

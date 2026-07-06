@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode,
+      allow_promotion_codes: true,
       success_url: `${origin}/dashboard?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/dashboard?purchase=canceled`,
       customer_email: userProfile?.email || user.email,

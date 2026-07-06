@@ -25,6 +25,7 @@ export function PixPaymentModal({
     pix_code: string;
     amount: number;
     expires_at: string;
+    coupon_applied?: { code: string; discount_percent: number } | null;
   } | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<
     "pending" | "approved" | "expired"
@@ -33,18 +34,22 @@ export function PixPaymentModal({
   const [copied, setCopied] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
 
-  // Criar pagamento ao abrir o modal
+  // 👇 Novo: controla se estamos na etapa de cupom ou já no QR Code
+  const [step, setStep] = useState<"coupon" | "pix">("coupon");
+  const [couponInput, setCouponInput] = useState("");
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+
+  // Resetar tudo ao fechar o modal
   useEffect(() => {
-    if (isOpen && !paymentData && !loading) {
-      createPayment();
-    }
-    // Resetar ao fechar
     if (!isOpen) {
       setPaymentData(null);
       setPaymentStatus("pending");
       setError(null);
+      setStep("coupon");
+      setCouponInput("");
+      setCouponError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Verificar status do pagamento periodicamente
@@ -79,10 +84,12 @@ export function PixPaymentModal({
     return () => clearInterval(interval);
   }, [paymentData, paymentStatus]);
 
-  const createPayment = async () => {
+  const createPayment = async (couponCode?: string) => {
     try {
       setLoading(true);
+      setCouponLoading(true);
       setError(null);
+      setCouponError(null);
 
       const {
         data: { session },
@@ -105,25 +112,47 @@ export function PixPaymentModal({
               : purchaseType === "triple"
                 ? "prompt_triple"
                 : "prompt_pro_5",
+          couponCode: couponCode || undefined, // 👈 novo
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erro ao criar pagamento");
+        const message = errorData.error || "Erro ao criar pagamento";
+
+        // Se veio um cupom e deu erro, provavelmente o erro é do cupom —
+        // mostramos na etapa de cupom em vez de fechar ela
+        if (couponCode) {
+          setCouponError(message);
+          setStep("coupon");
+          return;
+        }
+
+        throw new Error(message);
       }
 
       const data = await response.json();
       setPaymentData(data);
       setPaymentStatus("pending");
+      setStep("pix");
     } catch (err) {
       console.error("Erro ao criar pagamento PIX:", err);
       setError(
         err instanceof Error ? err.message : "Erro ao processar pagamento"
       );
+      setStep("pix"); // mantém o comportamento antigo para erros gerais (não relacionados a cupom)
     } finally {
       setLoading(false);
+      setCouponLoading(false);
     }
+  };
+
+  const handleApplyCoupon = () => {
+    createPayment(couponInput.trim() || undefined);
+  };
+
+  const handleSkipCoupon = () => {
+    createPayment();
   };
 
   const checkPaymentStatus = async () => {
@@ -215,19 +244,70 @@ export function PixPaymentModal({
           Pagamento via PIX
         </h3>
 
-        {loading && !paymentData && (
+        {/* 👇 Nova etapa: cupom de desconto (opcional) */}
+        {step === "coupon" && (
+          <div className="space-y-4">
+            <p className="text-gray-600 text-center text-sm">
+              Tem um cupom de desconto? Digite abaixo, ou continue sem cupom.
+            </p>
+
+            <div>
+              <label htmlFor="coupon-code" className="sr-only">
+                Cupom de desconto
+              </label>
+              <input
+                id="coupon-code"
+                type="text"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                placeholder="Ex: LUCAS50"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-black"
+                disabled={couponLoading}
+                autoCapitalize="characters"
+              />
+            </div>
+
+            {couponError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-800 text-sm text-center">
+                  {couponError}
+                </p>
+              </div>
+            )}
+
+            <button
+              onClick={handleApplyCoupon}
+              disabled={couponLoading || !couponInput.trim()}
+              className="w-full px-4 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {couponLoading ? "Aplicando..." : "Aplicar cupom"}
+            </button>
+
+            <button
+              onClick={handleSkipCoupon}
+              disabled={couponLoading}
+              className="w-full px-4 py-3 text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {couponLoading && !couponInput.trim()
+                ? "Gerando QR Code..."
+                : "Continuar sem cupom"}
+            </button>
+          </div>
+        )}
+
+        {loading && step === "pix" && !paymentData && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
             <p className="text-gray-600">Gerando QR Code...</p>
           </div>
         )}
 
-        {error && (
+        {error && step === "pix" && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
             <p className="text-red-800 text-sm">{error}</p>
             {paymentStatus === "expired" && (
               <button
-                onClick={createPayment}
+                onClick={() => createPayment()}
                 className="mt-2 text-red-800 text-sm font-medium hover:underline"
               >
                 Gerar novo QR Code
@@ -236,7 +316,7 @@ export function PixPaymentModal({
           </div>
         )}
 
-        {paymentData && paymentStatus === "pending" && (
+        {step === "pix" && paymentData && paymentStatus === "pending" && (
           <div className="space-y-6">
             <div className="text-center">
               <p className="text-gray-600 mb-4">
@@ -278,6 +358,19 @@ export function PixPaymentModal({
                   </button>
                 </div>
               </div>
+
+              {/* Cupom aplicado, se houver */}
+              {paymentData.coupon_applied && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                  <p className="text-green-800 text-sm">
+                    Cupom{" "}
+                    <span className="font-semibold">
+                      {paymentData.coupon_applied.code}
+                    </span>{" "}
+                    aplicado: -{paymentData.coupon_applied.discount_percent}%
+                  </p>
+                </div>
+              )}
 
               {/* Valor */}
               <div className="text-center mb-4">

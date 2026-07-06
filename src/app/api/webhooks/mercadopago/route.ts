@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { supabase } from "@/lib/supabase";
 
-// Helper para criar cliente do Mercado Pago
+// Inicializar cliente do Mercado Pago
 const getClient = () => {
   if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
     throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
@@ -15,176 +15,302 @@ const getClient = () => {
   });
 };
 
+// Valores dos produtos (em reais)
+const PRODUCT_PRICES = {
+  prompt_single: 49.9,
+  prompt_triple: 119.9,
+  prompt_pro_5: 179.9,
+};
+
+// Tipo auxiliar para o cupom
+type Coupon = {
+  id: string;
+  code: string;
+  discount_percent: number;
+  max_uses: number | null;
+  used_count: number;
+  expires_at: string | null;
+  active: boolean;
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+      return NextResponse.json(
+        { error: "Mercado Pago não configurado" },
+        { status: 500 }
+      );
+    }
 
-    // Verificar tipo de notificação
-    const type = body.type;
-    const data = body.data;
+    console.log("🔍 Iniciando criação de pagamento PIX...");
 
-    console.log("🔔 Webhook Mercado Pago recebido:", type);
+    // Verificar autenticação
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      console.log("❌ Token de autorização não encontrado");
+      return NextResponse.json(
+        { error: "Token de autorização não encontrado" },
+        { status: 401 }
+      );
+    }
 
-    if (type === "payment") {
-      const paymentId = data.id;
-      if (!paymentId) {
+    const token = authHeader.replace("Bearer ", "");
+    console.log("🔍 Verificando token...");
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      console.log("❌ Token inválido:", userError);
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    console.log("✅ Usuário autenticado:", user.id);
+
+    // ✅ Criar cliente Supabase autenticado com token do usuário para RLS
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseUser = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      }
+    );
+
+    // Ler body da requisição
+    const body = await request.json().catch(() => ({}));
+    const purchaseType = body.type || "prompt_single"; // 'prompt_single', 'prompt_triple' ou 'prompt_pro_5'
+    const couponCodeInput = body.couponCode as string | undefined; // 👈 novo
+
+    // Buscar dados do usuário usando cliente autenticado
+    const { data: userProfile } = await supabaseUser
+      .from("user_profiles")
+      .select("email, full_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    console.log("🔍 Tipo de compra:", purchaseType);
+
+    // Determinar valor base e quantidade
+    let amount = PRODUCT_PRICES[purchaseType as keyof typeof PRODUCT_PRICES];
+    const promptsAmount =
+      purchaseType === "prompt_triple"
+        ? 3
+        : purchaseType === "prompt_pro_5"
+          ? 5
+          : 1;
+
+    if (!amount) {
+      return NextResponse.json(
+        { error: "Tipo de compra inválido" },
+        { status: 400 }
+      );
+    }
+
+    // 👇 Validar e aplicar cupom, se enviado
+    let appliedCoupon: Coupon | null = null;
+
+    if (couponCodeInput) {
+      const normalizedCode = couponCodeInput.trim().toUpperCase();
+
+      const { data: coupon, error: couponError } = await supabaseUser
+        .from("coupons")
+        .select(
+          "id, code, discount_percent, max_uses, used_count, expires_at, active"
+        )
+        .ilike("code", normalizedCode)
+        .maybeSingle();
+
+      if (couponError || !coupon) {
+        console.log("❌ Cupom não encontrado:", normalizedCode);
+        return NextResponse.json({ error: "Cupom inválido" }, { status: 400 });
+      }
+
+      const isExpired =
+        coupon.expires_at !== null && new Date(coupon.expires_at) < new Date();
+      const isMaxedOut =
+        coupon.max_uses !== null && coupon.used_count >= coupon.max_uses;
+
+      if (!coupon.active || isExpired || isMaxedOut) {
+        console.log("❌ Cupom expirado, inativo ou esgotado:", normalizedCode);
         return NextResponse.json(
-          { error: "Payment ID não encontrado" },
+          { error: "Cupom expirado ou inválido" },
           { status: 400 }
         );
       }
 
-      // Criar cliente do Mercado Pago
-      const client = getClient();
-      const payment = new Payment(client);
-
-      // Buscar pagamento no Mercado Pago
-      const mercadoPagoPayment = await payment.get({ id: parseInt(paymentId) });
-
-      // Buscar pagamento no banco de dados
-      const { data: pixPayment, error: dbError } = await supabase
-        .from("pix_payments")
-        .select("*")
-        .eq("mercado_pago_payment_id", paymentId)
-        .maybeSingle();
-
-      if (dbError || !pixPayment) {
-        console.log("⚠️ Pagamento não encontrado no banco:", paymentId);
-        return NextResponse.json({ received: true });
-      }
-
-      // Determinar novo status
-      const newStatus =
-        mercadoPagoPayment.status === "approved"
-          ? "approved"
-          : mercadoPagoPayment.status === "rejected"
-            ? "rejected"
-            : mercadoPagoPayment.status === "cancelled"
-              ? "cancelled"
-              : "pending";
-
-      // Atualizar status no banco
-      const updateData: {
-        status: string;
-        mercado_pago_status: string;
-        paid_at?: string;
-        updated_at: string;
-      } = {
-        status: newStatus,
-        mercado_pago_status: mercadoPagoPayment.status || "",
-        updated_at: new Date().toISOString(),
-      };
-
-      if (newStatus === "approved" && pixPayment.status !== "approved") {
-        updateData.paid_at = new Date().toISOString();
-
-        // Adicionar prompts ao usuário
-        await addPromptsToUser(
-          pixPayment.user_id,
-          pixPayment.prompts_amount,
-          pixPayment.purchase_type
-        );
-
-        console.log(
-          `✅ Pagamento PIX aprovado: ${paymentId}. ${pixPayment.prompts_amount} prompt(s) adicionado(s) ao usuário ${pixPayment.user_id}`
-        );
-      }
-
-      await supabase
-        .from("pix_payments")
-        .update(updateData)
-        .eq("id", pixPayment.id);
+      amount = Number(
+        (amount * (1 - coupon.discount_percent / 100)).toFixed(2)
+      );
+      appliedCoupon = coupon as Coupon;
 
       console.log(
-        `✅ Status do pagamento ${paymentId} atualizado para: ${newStatus}`
+        `🎟️ Cupom ${appliedCoupon.code} aplicado: -${appliedCoupon.discount_percent}%. Novo valor: ${amount}`
       );
     }
 
-    return NextResponse.json({ received: true });
+    // Criar cliente do Mercado Pago
+    const client = getClient();
+    const payment = new Payment(client);
+
+    // Criar pagamento no Mercado Pago
+    const paymentData = {
+      transaction_amount: amount,
+      description: `Mova+ - ${promptsAmount} Prompt${promptsAmount > 1 ? "s" : ""}`,
+      payment_method_id: "pix",
+      payer: {
+        email: userProfile?.email || user.email || "",
+        first_name: userProfile?.full_name?.split(" ")[0] || "Usuário",
+      },
+      metadata: {
+        user_id: user.id,
+        purchase_type: purchaseType,
+        prompts_amount: promptsAmount.toString(),
+        coupon_code: appliedCoupon?.code || "",
+      },
+    };
+
+    console.log("💳 Criando pagamento no Mercado Pago...");
+    const paymentResponse = await payment.create({ body: paymentData });
+
+    if (!paymentResponse || !paymentResponse.id) {
+      console.error("❌ Erro ao criar pagamento no Mercado Pago");
+      return NextResponse.json(
+        { error: "Erro ao criar pagamento" },
+        { status: 500 }
+      );
+    }
+
+    console.log("✅ Pagamento criado:", paymentResponse.id);
+
+    // Extrair dados do QR Code PIX
+    const pointOfInteraction = paymentResponse.point_of_interaction;
+    const transactionData = pointOfInteraction?.transaction_data;
+    const qrCode = transactionData?.qr_code || "";
+    const qrCodeBase64 = transactionData?.qr_code_base64 || "";
+    const pixCode = qrCode || transactionData?.qr_code_base64 || ""; // Fallback
+
+    // Log para debug
+    console.log("📋 Dados do pagamento:", {
+      paymentId: paymentResponse.id,
+      hasPointOfInteraction: !!pointOfInteraction,
+      hasTransactionData: !!transactionData,
+      qrCodeLength: qrCode.length,
+      qrCodeBase64Length: qrCodeBase64.length,
+    });
+
+    // Calcular data de expiração (30 minutos)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+
+    // Salvar pagamento no banco de dados usando cliente autenticado
+    const { data: pixPayment, error: dbError } = await supabaseUser
+      .from("pix_payments")
+      .insert({
+        user_id: user.id,
+        mercado_pago_payment_id: paymentResponse.id.toString(),
+        purchase_type: purchaseType,
+        prompts_amount: promptsAmount,
+        amount: amount,
+        currency: "BRL",
+        coupon_code: appliedCoupon?.code || null, // 👈 novo
+        qr_code: qrCode || pixCode || "",
+        qr_code_base64: qrCodeBase64 || null,
+        pix_code: pixCode || null,
+        status: "pending",
+        mercado_pago_status: paymentResponse.status || "pending",
+        payment_method_id: paymentResponse.payment_method_id || "pix",
+        point_of_interaction: pointOfInteraction as unknown as Record<
+          string,
+          unknown
+        >,
+        metadata: paymentResponse.metadata as unknown as Record<
+          string,
+          unknown
+        >,
+        expires_at: expiresAt.toISOString(),
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error("❌ Erro ao salvar pagamento no banco:", dbError);
+      console.error("❌ Detalhes do erro:", JSON.stringify(dbError, null, 2));
+      console.error("❌ Código do erro:", dbError.code);
+      console.error("❌ Mensagem:", dbError.message);
+
+      // Verificar se é erro de tabela não existe
+      if (
+        dbError.code === "42P01" ||
+        dbError.message?.includes("does not exist")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Tabela pix_payments não encontrada. Execute a migration SQL primeiro.",
+            details: dbError.message,
+          },
+          { status: 500 }
+        );
+      }
+
+      // Verificar se é erro de RLS
+      if (
+        dbError.code === "42501" ||
+        dbError.message?.includes("permission denied")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Erro de permissão. Verifique as políticas RLS da tabela pix_payments.",
+            details: dbError.message,
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error: "Erro ao salvar pagamento",
+          details:
+            process.env.NODE_ENV === "development"
+              ? dbError.message
+              : undefined,
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log("✅ Pagamento salvo no banco:", pixPayment.id);
+
+    // Retornar dados do pagamento
+    return NextResponse.json({
+      payment_id: pixPayment.id,
+      mercado_pago_payment_id: paymentResponse.id,
+      qr_code: qrCode,
+      qr_code_base64: qrCodeBase64,
+      pix_code: pixCode,
+      amount,
+      coupon_applied: appliedCoupon
+        ? {
+            code: appliedCoupon.code,
+            discount_percent: appliedCoupon.discount_percent,
+          }
+        : null,
+      expires_at: expiresAt.toISOString(),
+      status: "pending",
+    });
   } catch (error) {
-    console.error("❌ Erro ao processar webhook Mercado Pago:", error);
+    console.error("❌ Erro ao criar pagamento PIX:", error);
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
     );
-  }
-}
-
-async function addPromptsToUser(
-  userId: string,
-  promptsAmount: number,
-  purchaseType: string
-) {
-  try {
-    const now = new Date().toISOString();
-
-    // Buscar trial existente
-    const { data: existingTrial } = await supabase
-      .from("user_trials")
-      .select("*")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (existingTrial) {
-      const currentPrompts = existingTrial.available_prompts || 0;
-      const currentPackagePrompts = existingTrial.package_prompts || 0;
-      const newPrompts = currentPrompts + promptsAmount;
-
-      const updateData: Record<string, number | string> = {
-        available_prompts: newPrompts,
-        updated_at: now,
-      };
-
-      if (purchaseType === "prompt_triple") {
-        // Apenas pacote de 3 tem cooldown
-        const newPackagePrompts = currentPackagePrompts + promptsAmount;
-        updateData.package_prompts = newPackagePrompts;
-        console.log(
-          `📦 Adicionando ${promptsAmount} prompt(s) do pacote (com cooldown). Total do pacote: ${newPackagePrompts}`
-        );
-      } else if (purchaseType === "prompt_pro_5") {
-        // Pacote Pro = sem cooldown (não adicionar package_prompts)
-        console.log(
-          `✅ Adicionando ${promptsAmount} prompt(s) do Pacote Pro (sem cooldown). Total disponível: ${newPrompts}`
-        );
-      }
-
-      await supabase
-        .from("user_trials")
-        .update(updateData)
-        .eq("user_id", userId);
-
-      console.log(
-        `✅ ${promptsAmount} prompt(s) adicionado(s) via PIX. Total disponível: ${newPrompts}`
-      );
-    } else {
-      // Criar novo trial
-      const insertData: Record<string, number | string | boolean> = {
-        user_id: userId,
-        trial_start_date: now,
-        trial_end_date: new Date(
-          Date.now() + 365 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-        plans_generated: 0,
-        max_plans_allowed: 1,
-        is_active: true,
-        upgraded_to_premium: false,
-        available_prompts: promptsAmount,
-      };
-
-      if (purchaseType === "prompt_triple") {
-        insertData.package_prompts = promptsAmount;
-      }
-
-      await supabase.from("user_trials").insert(insertData);
-
-      console.log(
-        `✅ Trial criado com ${promptsAmount} prompt(s) via PIX para usuário:`,
-        userId
-      );
-    }
-  } catch (error) {
-    console.error("❌ Erro ao adicionar prompts ao usuário:", error);
-    throw error;
   }
 }

@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Converte texto com Markdown básico para elementos React
- * Suporta: **negrito**, *itálico*, ![imagem](url)
+ * Suporta: **negrito**, *itálico*, ![imagem](url}
  */
 export function parseMarkdown(text: string): React.ReactNode[] {
   if (!text) return [];

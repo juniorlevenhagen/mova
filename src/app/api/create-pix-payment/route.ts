@@ -22,6 +22,17 @@ const PRODUCT_PRICES = {
   prompt_pro_5: 179.9,
 };
 
+// Tipo auxiliar para o cupom
+type Coupon = {
+  id: string;
+  code: string;
+  discount_percent: number;
+  max_uses: number | null;
+  used_count: number;
+  expires_at: string | null;
+  active: boolean;
+};
+
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
@@ -75,6 +86,7 @@ export async function POST(request: NextRequest) {
     // Ler body da requisição
     const body = await request.json().catch(() => ({}));
     const purchaseType = body.type || "prompt_single"; // 'prompt_single', 'prompt_triple' ou 'prompt_pro_5'
+    const couponCodeInput = body.couponCode as string | undefined; // 👈 novo
 
     // Buscar dados do usuário usando cliente autenticado
     const { data: userProfile } = await supabaseUser
@@ -85,8 +97,8 @@ export async function POST(request: NextRequest) {
 
     console.log("🔍 Tipo de compra:", purchaseType);
 
-    // Determinar valor e quantidade
-    const amount = PRODUCT_PRICES[purchaseType as keyof typeof PRODUCT_PRICES];
+    // Determinar valor base e quantidade
+    let amount = PRODUCT_PRICES[purchaseType as keyof typeof PRODUCT_PRICES];
     const promptsAmount =
       purchaseType === "prompt_triple"
         ? 3
@@ -98,6 +110,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Tipo de compra inválido" },
         { status: 400 }
+      );
+    }
+
+    // 👇 Validar e aplicar cupom, se enviado
+    let appliedCoupon: Coupon | null = null;
+
+    if (couponCodeInput) {
+      const normalizedCode = couponCodeInput.trim().toUpperCase();
+
+      const { data: coupon, error: couponError } = await supabaseUser
+        .from("coupons")
+        .select(
+          "id, code, discount_percent, max_uses, used_count, expires_at, active"
+        )
+        .ilike("code", normalizedCode)
+        .maybeSingle();
+
+      if (couponError || !coupon) {
+        console.log("❌ Cupom não encontrado:", normalizedCode);
+        return NextResponse.json({ error: "Cupom inválido" }, { status: 400 });
+      }
+
+      const isExpired =
+        coupon.expires_at !== null && new Date(coupon.expires_at) < new Date();
+      const isMaxedOut =
+        coupon.max_uses !== null && coupon.used_count >= coupon.max_uses;
+
+      if (!coupon.active || isExpired || isMaxedOut) {
+        console.log("❌ Cupom expirado, inativo ou esgotado:", normalizedCode);
+        return NextResponse.json(
+          { error: "Cupom expirado ou inválido" },
+          { status: 400 }
+        );
+      }
+
+      amount = Number(
+        (amount * (1 - coupon.discount_percent / 100)).toFixed(2)
+      );
+      appliedCoupon = coupon as Coupon;
+
+      console.log(
+        `🎟️ Cupom ${appliedCoupon.code} aplicado: -${appliedCoupon.discount_percent}%. Novo valor: ${amount}`
       );
     }
 
@@ -118,6 +172,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         purchase_type: purchaseType,
         prompts_amount: promptsAmount.toString(),
+        coupon_code: appliedCoupon?.code || "",
       },
     };
 
@@ -164,6 +219,7 @@ export async function POST(request: NextRequest) {
         prompts_amount: promptsAmount,
         amount: amount,
         currency: "BRL",
+        coupon_code: appliedCoupon?.code || null, // 👈 novo
         qr_code: qrCode || pixCode || "",
         qr_code_base64: qrCodeBase64 || null,
         pix_code: pixCode || null,
@@ -241,6 +297,12 @@ export async function POST(request: NextRequest) {
       qr_code_base64: qrCodeBase64,
       pix_code: pixCode,
       amount,
+      coupon_applied: appliedCoupon
+        ? {
+            code: appliedCoupon.code,
+            discount_percent: appliedCoupon.discount_percent,
+          }
+        : null,
       expires_at: expiresAt.toISOString(),
       status: "pending",
     });

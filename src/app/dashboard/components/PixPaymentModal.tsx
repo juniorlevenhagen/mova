@@ -260,7 +260,7 @@ export function PixPaymentModal({
                 type="text"
                 value={couponInput}
                 onChange={(e) => setCouponInput(e.target.value)}
-                placeholder="Ex: LUCAS50"
+                placeholder="Digite o cupom de desconto"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-black"
                 disabled={couponLoading}
                 autoCapitalize="characters"

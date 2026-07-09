@@ -19,7 +19,7 @@ const socialLinks = [
   {
     name: "Instagram",
     icon: Camera,
-    url: "https://instagram.com/movaplus_oficial",
+    url: "https://www.instagram.com/movamais.fit",
     description:
       "Siga nosso Instagram para dicas diárias, transformações e motivação",
     color: "from-pink-500 to-purple-600",
@@ -28,7 +28,7 @@ const socialLinks = [
   {
     name: "WhatsApp",
     icon: MessageCircle,
-    url: "https://wa.me/5511999999999",
+    url: "https://wa.me/5531998363024",
     description:
       "Entre no nosso grupo do WhatsApp para suporte e motivação diária",
     color: "from-green-500 to-green-600",
@@ -270,7 +270,7 @@ export default function ComunidadePage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
             <a
-              href="https://instagram.com/movaplus_oficial"
+              href="https://www.instagram.com/movamais.fit"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
@@ -280,7 +280,7 @@ export default function ComunidadePage() {
               <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </a>
             <a
-              href="https://wa.me/5511999999999"
+              href="https://wa.me/5531998363024"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg font-medium hover:shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
